@@ -8,30 +8,37 @@ export type NavItem = {
   authRequired?: boolean;
   adminRequired?: boolean;
   hideWhenLoggedIn?: boolean;
-  isSectionAnchor?: boolean; // To differentiate homepage anchors
+  isSectionAnchor?: boolean;
+  children?: NavItem[]; // Added for dropdown support
 };
 
 export const siteConfig = {
   name: "LissanHub",
-  description: "Learn Amharic with native speakers. Personalized lessons and cultural immersion for diaspora and global learners.", // Updated description
-  url: "https://lissanhub.example.com", 
+  description: "Learn Amharic with native speakers. Personalized lessons and cultural immersion for diaspora and global learners.",
+  url: "https://lissanhub.example.com",
   mainNav: [
     { title: "Home", href: "/" },
     { title: "About", href: "/#about", isSectionAnchor: true },
     { title: "Lessons", href: "/#lessons", isSectionAnchor: true },
     { title: "Reviews", href: "/#testimonials", isSectionAnchor: true },
-    { title: "Blog", href: "/blog" },
-    { title: "News", href: "/news" },
     { title: "Resources", href: "/resources" },
+    {
+      title: "More",
+      href: "/more", // Fallback/main page for "More"
+      children: [
+        { title: "News & Updates", href: "/news" },
+        { title: "Learning Blog", href: "/blog" },
+      ],
+    },
     { title: "Contact", href: "/#contact", isSectionAnchor: true },
-    // { title: "Tutor Profile", href: "/tutor-profile" }, // Can be part of "About" on homepage
     { title: "Book a Lesson", href: "/bookings", authRequired: true },
     { title: "Chat Room", href: "/chat", authRequired: true },
     { title: "Accent Helper", href: "/accent-improvement", authRequired: true },
   ] satisfies NavItem[],
   userNav: [
-    { title: "Dashboard", href: "/profile", authRequired: true }, // Renamed from Profile to Dashboard
-    { title: "Testimonials", href: "/testimonials", authRequired: true }, 
+    { title: "Dashboard", href: "/profile", authRequired: true },
+    { title: "Testimonials", href: "/testimonials", authRequired: true },
+    { title: "Messages", href: "/messages", authRequired: true },
   ] satisfies NavItem[],
   adminNav: [
     { title: "Dashboard", href: "/admin/dashboard" },
@@ -51,11 +58,9 @@ export const tutorInfo = {
   shortIntro: "Native Amharic Speaker & Cultural Ambassador",
   teachingStyle: "Interactive conversation, grammar in context, cultural insights, personalized feedback. My goal is to make learning Amharic engaging, relevant, and enjoyable for all students, helping them not only speak the language but also understand the rich cultural tapestry of Ethiopia.",
   services: ["One-on-one lessons", "Group classes (coming soon)", "Accent coaching", "Cultural Immersion sessions"],
-  imageUrl: "https://placehold.co/400x400.png", 
+  imageUrl: "https://placehold.co/400x400.png",
   dataAiHint: "tutor portrait",
-  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", 
+  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
 };
 
-export const ADMIN_EMAIL = "admin@lissanhub.example.com"; 
-
-    
+export const ADMIN_EMAIL = "admin@lissanhub.example.com";
