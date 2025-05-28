@@ -17,9 +17,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet"; // Added SheetClose
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Logo } from "./logo";
-import React from "react"; // Imported React
+import React from "react";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -39,6 +39,7 @@ export function Navbar() {
               <SheetClose asChild>
                 <Link
                   href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
                     "block py-2 text-lg font-medium transition-colors hover:text-primary",
                     pathname === item.href ? "text-primary" : "text-muted-foreground"
@@ -52,13 +53,14 @@ export function Navbar() {
                   {item.children.map((child) => (
                      <SheetClose asChild key={child.href}>
                         <Link
-                        href={child.href}
-                        className={cn(
+                          href={child.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={cn(
                             "block py-2 text-base font-medium transition-colors hover:text-primary",
                             pathname === child.href ? "text-primary" : "text-muted-foreground"
-                        )}
+                          )}
                         >
-                        {child.title}
+                          {child.title}
                         </Link>
                      </SheetClose>
                   ))}
@@ -71,7 +73,7 @@ export function Navbar() {
           if (item.children && item.children.length > 0) {
             const isParentActive = item.href === pathname || item.children.some(child => child.href === pathname);
             return (
-              <DropdownMenu key={item.href}>
+              <DropdownMenu key={item.title}> {/* Use item.title or item.href for key */}
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -122,7 +124,8 @@ export function Navbar() {
         <Logo />
 
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-6">
-          {renderNavLinks(siteConfig.mainNav.filter(item => !item.isSectionAnchor))}
+          {/* For desktop, filter out section anchors if they are only for homepage local nav */}
+          {renderNavLinks(siteConfig.mainNav.filter(item => !item.isSectionAnchor || pathname === "/"))}
         </nav>
 
         <div className="flex items-center space-x-2">
@@ -181,15 +184,19 @@ export function Navbar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <nav className="grid gap-2 text-lg font-medium mt-8"> {/* Reduced gap */}
+              <div className="mt-6 mb-4 px-2"> {/* Added padding for Logo in Sheet */}
+                <Logo />
+              </div>
+              <nav className="grid gap-2 text-lg font-medium px-2">
+                {/* For mobile, show all mainNav items */}
                 {renderNavLinks(siteConfig.mainNav, true)}
                 {!user && (
                   <>
                    <SheetClose asChild>
-                    <Link href="/login" className="block py-2 text-lg font-medium text-muted-foreground hover:text-primary">Log In</Link>
+                    <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-muted-foreground hover:text-primary">Log In</Link>
                    </SheetClose>
                    <SheetClose asChild>
-                    <Link href="/register" className="block py-2 text-lg font-medium text-muted-foreground hover:text-primary">Sign Up</Link>
+                    <Link href="/register" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-muted-foreground hover:text-primary">Sign Up</Link>
                    </SheetClose>
                   </>
                 )}

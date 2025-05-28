@@ -8,23 +8,25 @@ export type NavItem = {
   authRequired?: boolean;
   adminRequired?: boolean;
   hideWhenLoggedIn?: boolean;
-  isSectionAnchor?: boolean;
-  children?: NavItem[]; // Added for dropdown support
+  isSectionAnchor?: boolean; // Used for homepage sections
+  children?: NavItem[]; // For dropdowns
 };
 
 export const siteConfig = {
   name: "LissanHub",
   description: "Learn Amharic with native speakers. Personalized lessons and cultural immersion for diaspora and global learners.",
-  url: "https://lissanhub.example.com",
+  url: "https://lissanhub.example.com", // Replace with your actual domain
   mainNav: [
     { title: "Home", href: "/" },
+    // Homepage specific anchors, handled by homepage's local nav if user is on homepage.
+    // Included here so they appear in global nav when on other pages.
     { title: "About", href: "/#about", isSectionAnchor: true },
     { title: "Lessons", href: "/#lessons", isSectionAnchor: true },
     { title: "Reviews", href: "/#testimonials", isSectionAnchor: true },
     { title: "Resources", href: "/resources" },
     {
       title: "More",
-      href: "/more", // Fallback/main page for "More"
+      href: "/more", // Main page for the "More" section
       children: [
         { title: "News & Updates", href: "/news" },
         { title: "Learning Blog", href: "/blog" },
@@ -58,9 +60,9 @@ export const tutorInfo = {
   shortIntro: "Native Amharic Speaker & Cultural Ambassador",
   teachingStyle: "Interactive conversation, grammar in context, cultural insights, personalized feedback. My goal is to make learning Amharic engaging, relevant, and enjoyable for all students, helping them not only speak the language but also understand the rich cultural tapestry of Ethiopia.",
   services: ["One-on-one lessons", "Group classes (coming soon)", "Accent coaching", "Cultural Immersion sessions"],
-  imageUrl: "https://placehold.co/400x400.png",
-  dataAiHint: "tutor portrait",
-  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+  imageUrl: "https://placehold.co/400x400.png", // Replace with actual image
+  dataAiHint: "tutor portrait", // For placeholder image replacement hint
+  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder video
 };
 
-export const ADMIN_EMAIL = "admin@lissanhub.example.com";
+export const ADMIN_EMAIL = "admin@lissanhub.example.com"; // Make sure this is correct
