@@ -13,27 +13,25 @@ export type NavItem = {
 
 export const siteConfig = {
   name: "LissanHub",
-  description: "Live, bookable Amharic language lessons for diaspora and global learners. Learn Amharic • Connect Culture.",
-  url: "https://lissanhub.example.com", // Replace with your actual URL
+  description: "Learn Amharic with native speakers. Personalized lessons and cultural immersion for diaspora and global learners.", // Updated description
+  url: "https://lissanhub.example.com", 
   mainNav: [
     { title: "Home", href: "/" },
     { title: "About", href: "/#about", isSectionAnchor: true },
     { title: "Lessons", href: "/#lessons", isSectionAnchor: true },
-    { title: "Reviews", href: "/#testimonials", isSectionAnchor: true }, // Assuming #testimonials is the ID for reviews section on homepage
-    { title: "Contact", href: "/#contact", isSectionAnchor: true },
-    { title: "Tutor Profile", href: "/tutor-profile" },
-    { title: "Book a Lesson", href: "/bookings", authRequired: true },
-    { title: "Testimonials Page", href: "/testimonials" }, // Separate page for all testimonials
+    { title: "Reviews", href: "/#testimonials", isSectionAnchor: true },
     { title: "Blog", href: "/blog" },
     { title: "News", href: "/news" },
+    { title: "Resources", href: "/resources" },
+    { title: "Contact", href: "/#contact", isSectionAnchor: true },
+    // { title: "Tutor Profile", href: "/tutor-profile" }, // Can be part of "About" on homepage
+    { title: "Book a Lesson", href: "/bookings", authRequired: true },
     { title: "Chat Room", href: "/chat", authRequired: true },
     { title: "Accent Helper", href: "/accent-improvement", authRequired: true },
-    // { title: "Site Contact", href: "/contact" }, // This was for the separate contact page
   ] satisfies NavItem[],
   userNav: [
-    { title: "Profile", href: "/profile", authRequired: true },
-    // { title: "My Bookings", href: "/profile#my-bookings", authRequired: true }, // Removed as it's part of profile dashboard
-    { title: "Submit Testimonial", href: "/testimonials", authRequired: true }, // Points to the main testimonials page where form is
+    { title: "Dashboard", href: "/profile", authRequired: true }, // Renamed from Profile to Dashboard
+    { title: "Testimonials", href: "/testimonials", authRequired: true }, 
   ] satisfies NavItem[],
   adminNav: [
     { title: "Dashboard", href: "/admin/dashboard" },
@@ -53,9 +51,11 @@ export const tutorInfo = {
   shortIntro: "Native Amharic Speaker & Cultural Ambassador",
   teachingStyle: "Interactive conversation, grammar in context, cultural insights, personalized feedback. My goal is to make learning Amharic engaging, relevant, and enjoyable for all students, helping them not only speak the language but also understand the rich cultural tapestry of Ethiopia.",
   services: ["One-on-one lessons", "Group classes (coming soon)", "Accent coaching", "Cultural Immersion sessions"],
-  imageUrl: "https://placehold.co/400x400.png", // Placeholder, replace with actual tutor image
+  imageUrl: "https://placehold.co/400x400.png", 
   dataAiHint: "tutor portrait",
-  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder video
+  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", 
 };
 
-export const ADMIN_EMAIL = "admin@lissanhub.example.com"; // Replace with actual admin email
+export const ADMIN_EMAIL = "admin@lissanhub.example.com"; 
+
+    
