@@ -1,5 +1,7 @@
 
-import type { Metadata } from "next";
+"use client"; // Required for usePathname
+
+import type { Metadata } from "next"; // This import will become unused and can be removed by a linter later, or I can remove it now.
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import "./globals.css";
@@ -7,31 +9,35 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { FirebaseProvider } from "@/components/providers/firebase-provider";
 import { Toaster } from "@/components/ui/toaster";
-import { siteConfig } from "@/config/site";
+// siteConfig can still be used by individual pages if they import it for their metadata
+// import { siteConfig } from "@/config/site"; 
+import { usePathname } from "next/navigation"; // Import usePathname
 
-export const metadata: Metadata = {
-  title: {
-    default: siteConfig.name,
-    template: `%s | ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  // icons: { // You can add favicon here if you have one
-  //   icon: "/favicon.ico", 
-  // },
-};
+// Metadata cannot be exported from a Client Component.
+// Individual pages (page.tsx) should define their own metadata.
+// export const metadata: Metadata = {
+//   title: {
+//     default: siteConfig.name,
+//     template: `%s | ${siteConfig.name}`,
+//   },
+//   description: siteConfig.description,
+// };
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isHomePage = pathname === '/';
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen flex flex-col`}>
         <FirebaseProvider>
-          <Navbar />
+          {!isHomePage && <Navbar />} {/* Conditionally render Navbar */}
           <main className="flex-grow">{children}</main>
-          <Footer />
+          {!isHomePage && <Footer />} {/* Conditionally render Footer */}
           <Toaster />
         </FirebaseProvider>
       </body>
