@@ -25,8 +25,12 @@ export interface Testimonial {
   rating: number; // 1-5
   comment: string;
   imageUrl?: string; // Optional
+  location?: string; // Added from new design
   status: "pending" | "approved" | "rejected";
   createdAt: Timestamp;
+  // For display purposes, not stored in DB directly if fetched and formatted
+  date?: string; 
+  verified?: boolean; 
 }
 
 export interface ContactMessage {

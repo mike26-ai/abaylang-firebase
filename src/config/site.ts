@@ -18,6 +18,7 @@ export const siteConfig = {
     { title: "Home", href: "/" },
     { title: "Tutor Profile", href: "/tutor-profile" },
     { title: "Book a Lesson", href: "/bookings", authRequired: true },
+    { title: "Testimonials", href: "/testimonials" },
     { title: "Chat Room", href: "/chat", authRequired: true },
     { title: "Accent Helper", href: "/accent-improvement", authRequired: true },
     { title: "Contact", href: "/contact" },
@@ -25,7 +26,7 @@ export const siteConfig = {
   userNav: [
     { title: "Profile", href: "/profile", authRequired: true },
     { title: "My Bookings", href: "/profile#my-bookings", authRequired: true },
-    { title: "Submit Testimonial", href: "/submit-testimonial", authRequired: true },
+    { title: "Testimonials", href: "/testimonials", authRequired: true },
   ] satisfies NavItem[],
   adminNav: [
     { title: "Dashboard", href: "/admin/dashboard" },
