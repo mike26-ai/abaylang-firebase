@@ -48,3 +48,12 @@ export interface UserProfile {
   nativeLanguage?: string;
   // other fields as needed
 }
+
+export interface ChatMessage {
+  id: string; // Firestore document ID
+  text: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string | null; // Optional: user.photoURL
+  timestamp: Timestamp; // Firestore Timestamp
+}

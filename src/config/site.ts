@@ -18,6 +18,7 @@ export const siteConfig = {
     { title: "Home", href: "/" },
     { title: "Tutor Profile", href: "/tutor-profile" },
     { title: "Book a Lesson", href: "/bookings", authRequired: true },
+    { title: "Chat Room", href: "/chat", authRequired: true },
     { title: "Accent Helper", href: "/accent-improvement", authRequired: true },
     { title: "Contact", href: "/contact" },
   ] satisfies NavItem[],
