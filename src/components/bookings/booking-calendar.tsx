@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { format, addDays, isPast, startOfDay } from 'date-fns';
+import { format, addDays, isPast, startOfDay, isEqual } from 'date-fns';
 import { Spinner } from "../ui/spinner";
+import type { Booking } from "@/lib/types";
+
 
 // Mock available time slots for simplicity
 const availableTimeSlots = [
@@ -18,17 +20,23 @@ const availableTimeSlots = [
   "02:00 PM", "03:00 PM", "04:00 PM",
 ];
 
-// Mock function to simulate fetching already booked slots for a date
-// In a real app, this would query Firestore
+// Function to fetch already booked slots for a date from Firestore
 async function getBookedSlots(date: Date): Promise<string[]> {
+  if (!date) return [];
   // console.log(`Fetching booked slots for ${format(date, 'yyyy-MM-dd')}`);
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 300)); 
-  // Example: if date is tomorrow, 10:00 AM is booked
-  if (format(date, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd')) {
-    return ["10:00 AM"];
+  try {
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    const bookingsRef = collection(db, "bookings");
+    // Query for bookings on the selected date that are confirmed
+    const q = query(bookingsRef, where("date", "==", formattedDate), where("status", "in", ["confirmed", "completed"]));
+    const querySnapshot = await getDocs(q);
+    const bookedTimes = querySnapshot.docs.map(doc => (doc.data() as Booking).time);
+    return bookedTimes;
+  } catch (error) {
+    console.error("Error fetching booked slots:", error);
+    // Consider showing a toast or error message to the user
+    return []; // Return empty array on error to avoid breaking UI
   }
-  return [];
 }
 
 
@@ -48,22 +56,25 @@ export function BookingCalendar() {
         setDailyBookedSlots(slots);
         setIsFetchingSlots(false);
         setSelectedTime(undefined); // Reset time selection when date changes
+      }).catch(error => {
+        console.error("Failed to get booked slots:", error);
+        toast({ title: "Error", description: "Could not fetch available slots. Please try again.", variant: "destructive"});
+        setIsFetchingSlots(false);
       });
     }
-  }, [selectedDate]);
+  }, [selectedDate, toast]);
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (date && isPast(date) && !isSameDay(date, new Date())) { // Allow today but not past days
+    // isPast compares the date to the *current moment*, not just the day.
+    // We want to allow booking for today, but not for past days.
+    // startOfDay ensures we compare dates without the time component.
+    if (date && isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))) {
         toast({ title: "Invalid Date", description: "Cannot select a past date.", variant: "destructive"});
         setSelectedDate(undefined);
     } else {
         setSelectedDate(date);
     }
   };
-
-  const isSameDay = (date1: Date, date2: Date) => {
-    return startOfDay(date1).getTime() === startOfDay(date2).getTime();
-  }
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
@@ -87,17 +98,21 @@ export function BookingCalendar() {
         userEmail: user.email,
         date: format(selectedDate, 'yyyy-MM-dd'), // Store date consistently
         time: selectedTime,
-        status: "confirmed",
+        status: "confirmed", // Default to confirmed, admin can manage
         tutorId: "MahirAbasMustefa", // Assuming single tutor
-        tutorName: "Mahir A.",
+        tutorName: "Mahir A.", // From siteConfig potentially
         createdAt: serverTimestamp(),
       });
       toast({
         title: "Booking Confirmed!",
         description: `Your lesson on ${format(selectedDate, 'PPP')} at ${selectedTime} is booked.`,
       });
-      // Optionally, refetch booked slots for the day
-      getBookedSlots(selectedDate).then(setDailyBookedSlots);
+      // Refetch booked slots for the day to update UI
+      setIsFetchingSlots(true);
+      getBookedSlots(selectedDate).then(slots => {
+        setDailyBookedSlots(slots);
+        setIsFetchingSlots(false);
+      });
       setSelectedTime(undefined); // Reset time selection
     } catch (error) {
       console.error("Error booking lesson:", error);
@@ -124,7 +139,7 @@ export function BookingCalendar() {
             selected={selectedDate}
             onSelect={handleDateSelect}
             className="rounded-md border p-0"
-            disabled={(date) => isPast(date) && !isSameDay(date, new Date())} // Disable past dates except today
+            disabled={(date) => isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))}
             fromDate={new Date()} // Start from today
           />
         </CardContent>
@@ -151,7 +166,7 @@ export function BookingCalendar() {
                       variant={selectedTime === time ? "default" : "outline"}
                       onClick={() => handleTimeSelect(time)}
                       disabled={isBooked}
-                      className={isBooked ? "bg-muted text-muted-foreground line-through" : ""}
+                      className={isBooked ? "bg-muted text-muted-foreground line-through hover:bg-muted" : ""}
                     >
                       {time}
                       {isBooked && <span className="text-xs ml-1">(Booked)</span>}

@@ -2,28 +2,79 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { CalendarDays, MessageSquareText, Award, Users } from "lucide-react";
+import { CalendarDays, MessageSquareText, Award, Users, BookOpenText } from "lucide-react";
 import type { Metadata } from 'next';
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs,getCountFromServer, Timestamp } from "firebase/firestore";
+import { format, startOfDay } from 'date-fns';
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',
   description: 'Manage Amharic Connect operations.',
 };
 
-// Mock data for dashboard stats (replace with actual data fetching)
-const dashboardStats = {
-  upcomingBookings: 5, // Example
-  pendingTestimonials: 2, // Example
-  newInquiries: 3, // Example
-  totalStudents: 25, // Example
-};
+async function getDashboardStats() {
+  try {
+    const today = format(startOfDay(new Date()), 'yyyy-MM-dd');
 
-export default function AdminDashboardPage() {
+    // Upcoming Bookings
+    const upcomingBookingsQuery = query(
+      collection(db, "bookings"),
+      where("date", ">=", today), // Query for dates from today onwards
+      where("status", "==", "confirmed")
+    );
+    const upcomingBookingsSnapshot = await getCountFromServer(upcomingBookingsQuery);
+    const upcomingBookings = upcomingBookingsSnapshot.data().count;
+
+    // Pending Testimonials
+    const pendingTestimonialsQuery = query(collection(db, "testimonials"), where("status", "==", "pending"));
+    const pendingTestimonialsSnapshot = await getCountFromServer(pendingTestimonialsQuery);
+    const pendingTestimonials = pendingTestimonialsSnapshot.data().count;
+
+    // New Inquiries (Unread)
+    const newInquiriesQuery = query(collection(db, "contactMessages"), where("read", "==", false));
+    const newInquiriesSnapshot = await getCountFromServer(newInquiriesQuery);
+    const newInquiries = newInquiriesSnapshot.data().count;
+
+    // Total Students (Users)
+    const totalStudentsQuery = collection(db, "users"); // Assuming 'users' collection for students
+    const totalStudentsSnapshot = await getCountFromServer(totalStudentsQuery);
+    const totalStudents = totalStudentsSnapshot.data().count;
+    
+    return {
+      upcomingBookings,
+      pendingTestimonials,
+      newInquiries,
+      totalStudents,
+    };
+
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    // Return default/zero values in case of error to prevent page crash
+    return {
+      upcomingBookings: 0,
+      pendingTestimonials: 0,
+      newInquiries: 0,
+      totalStudents: 0,
+    };
+  }
+}
+
+
+export default async function AdminDashboardPage() {
+  const dashboardStats = await getDashboardStats();
+
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Overview of Amharic Connect activities.</p>
+      <header className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Admin Dashboard</h1>
+          <p className="text-muted-foreground">Overview of Amharic Connect activities.</p>
+        </div>
+         <Link href="/" className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary">
+            <BookOpenText className="h-5 w-5" />
+            <span>View Site</span>
+        </Link>
       </header>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
