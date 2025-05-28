@@ -8,29 +8,30 @@ body {
 
 @layer base {
   :root {
-    --background: 210 60% 98%; /* Very light cool gray/off-white for background */
-    --foreground: 145 30% 25%; /* Dark desaturated emerald/forest green for text */
+    /* Emerald Theme for LissanHub based on image */
+    --background: 0 0% 98%; /* Very light, almost white (for navbar, some sections) */
+    --foreground: 210 20% 25%; /* Dark cool gray for text */
 
-    --muted: 150 30% 90%; /* Lighter shade for muted backgrounds */
-    --muted-foreground: 145 25% 50%; /* Muted text color */
+    --muted: 210 30% 90%; /* Lighter shade for muted backgrounds */
+    --muted-foreground: 210 25% 55%; /* Muted text color (grayer than foreground) */
 
-    --popover: 210 60% 98%;
-    --popover-foreground: 145 30% 25%;
+    --popover: 0 0% 100%; /* White popovers */
+    --popover-foreground: 210 20% 25%;
 
     --card: 0 0% 100%; /* White cards */
-    --card-foreground: 145 30% 25%;
+    --card-foreground: 210 20% 25%;
 
-    --border: 150 30% 85%; /* Light border color to complement emerald */
+    --border: 150 25% 88%; /* Light, slightly desaturated minty border */
     --input: 150 30% 94%; /* Input background, light and neutral */
 
     --primary: 150 56% 45%; /* Emerald Green (e.g., HSL for #34D399) */
-    --primary-foreground: 150 60% 95%; /* Light color for text on primary, almost white */
+    --primary-foreground: 0 0% 100%; /* White for text on primary */
 
-    --secondary: 148 45% 60%; /* Lighter, slightly desaturated emerald */
-    --secondary-foreground: 145 30% 20%; /* Darker text for secondary elements */
+    --secondary: 150 45% 60%; /* Lighter, slightly desaturated emerald for secondary elements */
+    --secondary-foreground: 150 30% 20%; /* Darker text for secondary elements */
 
-    --accent: 160 50% 92%; /* Very light mint/emerald accent background */
-    --accent-foreground: 150 56% 35%; /* Darker emerald for text on accent */
+    --accent: 150 60% 93%; /* Very light mint/emerald for icon backgrounds, badges (e.g. bg-emerald-100) */
+    --accent-foreground: 150 50% 30%; /* Darker emerald for text on accent (e.g. text-emerald-800) */
 
     --destructive: 0 72% 51%; /* Standard red for destructive actions */
     --destructive-foreground: 0 0% 98%; /* Light text for destructive */
@@ -39,13 +40,13 @@ body {
 
     --radius: 0.5rem;
 
-    /* Sidebar specific theme variables for admin panel */
-    --sidebar-background: 150 40% 96%; /* Light emerald/mint for sidebar */
-    --sidebar-foreground: 145 30% 20%; /* Dark text for sidebar */
-    --sidebar-primary: 150 56% 40%; /* Darker emerald for sidebar primary elements */
-    --sidebar-primary-foreground: 150 60% 95%; /* Light text on sidebar primary */
-    --sidebar-accent: 160 50% 90%; /* Light mint for sidebar accents */
-    --sidebar-accent-foreground: 150 56% 30%; /* Darker emerald text on sidebar accent */
+    /* Sidebar specific theme variables - these can remain or be adjusted if admin panel needs different theming */
+    --sidebar-background: 150 40% 96%; 
+    --sidebar-foreground: 145 30% 20%; 
+    --sidebar-primary: 150 56% 40%; 
+    --sidebar-primary-foreground: 150 60% 95%; 
+    --sidebar-accent: 160 50% 90%; 
+    --sidebar-accent-foreground: 150 56% 30%; 
     --sidebar-border: 150 30% 80%;
     --sidebar-ring: 150 56% 50%;
 
@@ -57,21 +58,21 @@ body {
   }
 
   .dark {
-    /* Keeping dark mode fairly standard but can be adjusted for emerald if needed */
-    --background: 210 29% 10%; 
-    --foreground: 210 30% 95%; 
+    /* Dark Emerald Theme (example, can be refined) */
+    --background: 150 15% 10%; 
+    --foreground: 150 30% 90%; 
 
-    --muted: 210 29% 15%;
-    --muted-foreground: 210 30% 65%;
+    --muted: 150 15% 15%;
+    --muted-foreground: 150 30% 65%;
 
-    --popover: 210 29% 10%;
-    --popover-foreground: 210 30% 95%;
+    --popover: 150 15% 8%;
+    --popover-foreground: 150 30% 90%;
 
-    --card: 210 29% 12%;
-    --card-foreground: 210 30% 95%;
+    --card: 150 15% 12%;
+    --card-foreground: 150 30% 90%;
 
-    --border: 210 29% 20%;
-    --input: 210 29% 20%;
+    --border: 150 20% 25%;
+    --input: 150 20% 20%;
 
     --primary: 150 56% 50%; /* Brighter Emerald for dark mode */
     --primary-foreground: 150 60% 10%; /* Dark text on dark primary */
@@ -79,14 +80,14 @@ body {
     --secondary: 148 40% 40%; 
     --secondary-foreground: 0 0% 98%;
 
-    --accent: 160 45% 30%; 
-    --accent-foreground: 0 0% 98%;
+    --accent: 150 40% 20%; 
+    --accent-foreground: 150 30% 85%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
     --ring: 150 56% 55%;
-
+    
     /* Dark Sidebar */
     --sidebar-background: 150 30% 12%;
     --sidebar-foreground: 150 30% 90%;
