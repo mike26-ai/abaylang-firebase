@@ -1,48 +1,31 @@
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
 
-"use client"; // Required for usePathname
+const inter = Inter({ subsets: ["latin"] })
 
-import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
-import "./globals.css";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
-import { FirebaseProvider } from "@/components/providers/firebase-provider";
-import { Toaster } from "@/components/ui/toaster";
-// siteConfig can still be used by individual pages if they import it for their metadata
-// import { siteConfig } from "@/config/site"; 
-import { usePathname } from "next/navigation"; // Import usePathname
-
-// Metadata cannot be exported from a Client Component.
-// Individual pages (page.tsx) should define their own metadata.
-// export const metadata: Metadata = {
-//   title: {
-//     default: siteConfig.name,
-//     template: `%s | ${siteConfig.name}`,
-//   },
-//   description: siteConfig.description,
-// };
+export const metadata: Metadata = {
+  title: "LissanHub - Learn Amharic with Native Speakers",
+  description: "Connect with native Amharic speakers for personalized language learning",
+  manifest: "/manifest.json",
+  themeColor: "#059669",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const pathname = usePathname();
-  const isHomePage = pathname === '/';
-
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#059669" />
+        <link rel="apple-touch-icon" href="/icon-192x192.png" />
       </head>
-      <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen flex flex-col`}>
-        <FirebaseProvider>
-          {!isHomePage && <Navbar />} {/* Conditionally render Navbar */}
-          <main className="flex-grow">{children}</main>
-          {!isHomePage && <Footer />} {/* Conditionally render Footer */}
-          <Toaster />
-        </FirebaseProvider>
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
-  );
+  )
 }
