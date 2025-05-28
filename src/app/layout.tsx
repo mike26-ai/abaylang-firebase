@@ -1,7 +1,6 @@
 
 "use client"; // Required for usePathname
 
-import type { Metadata } from "next"; // This import will become unused and can be removed by a linter later, or I can remove it now.
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import "./globals.css";
@@ -33,6 +32,9 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen flex flex-col`}>
         <FirebaseProvider>
           {!isHomePage && <Navbar />} {/* Conditionally render Navbar */}
