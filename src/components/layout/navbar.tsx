@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -35,14 +34,14 @@ export function Navbar() {
         if (inSheet) {
           // Mobile Sheet Navigation
           return (
-            <React.Fragment key={item.href}>
+            <React.Fragment key={`${item.href}-${item.title}-mobile`}>
               <SheetClose asChild>
                 <Link
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
                     "block py-2 text-lg font-medium transition-colors hover:text-primary",
-                    pathname === item.href ? "text-primary" : "text-muted-foreground"
+                    pathname === item.href && (!item.children || item.children.length === 0) ? "text-primary" : "text-muted-foreground"
                   )}
                 >
                   {item.title}
@@ -73,7 +72,7 @@ export function Navbar() {
           if (item.children && item.children.length > 0) {
             const isParentActive = item.href === pathname || item.children.some(child => child.href === pathname);
             return (
-              <DropdownMenu key={item.title}> {/* Use item.title or item.href for key */}
+              <DropdownMenu key={`${item.href}-${item.title}-desktop`}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -92,6 +91,7 @@ export function Navbar() {
                       <Link
                         href={child.href}
                         className={cn(
+                          "w-full", // Ensure link takes full width of item
                           pathname === child.href ? "font-semibold text-primary" : ""
                         )}
                       >
@@ -102,19 +102,20 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             );
+          } else { // Item does not have children, render as a plain link
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  pathname === item.href ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                {item.title}
+              </Link>
+            );
           }
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "text-sm font-medium transition-colors hover:text-primary",
-                pathname === item.href ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              {item.title}
-            </Link>
-          );
         }
       });
 
@@ -144,14 +145,14 @@ export function Navbar() {
                 <DropdownMenuSeparator />
                 {siteConfig.userNav.map(item => (
                    <DropdownMenuItem key={item.href} asChild>
-                     <Link href={item.href}>{item.title}</Link>
+                     <Link href={item.href} className="w-full">{item.title}</Link>
                    </DropdownMenuItem>
                 ))}
                 {isAdmin && (
                   <>
                     <DropdownMenuSeparator />
                      <DropdownMenuItem asChild>
-                       <Link href="/admin/dashboard">
+                       <Link href="/admin/dashboard" className="w-full">
                          <ShieldCheck className="mr-2 h-4 w-4" />
                          Admin Panel
                        </Link>
@@ -184,11 +185,12 @@ export function Navbar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <div className="mt-6 mb-4 px-2"> {/* Added padding for Logo in Sheet */}
-                <Logo />
-              </div>
+              <SheetClose asChild>
+                <div className="mt-6 mb-4 px-2">
+                  <Logo />
+                </div>
+              </SheetClose>
               <nav className="grid gap-2 text-lg font-medium px-2">
-                {/* For mobile, show all mainNav items */}
                 {renderNavLinks(siteConfig.mainNav, true)}
                 {!user && (
                   <>

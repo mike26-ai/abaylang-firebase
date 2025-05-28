@@ -1,4 +1,3 @@
-
 export type NavItem = {
   title: string;
   href: string;
@@ -18,12 +17,11 @@ export const siteConfig = {
   url: "https://lissanhub.example.com", // Replace with your actual domain
   mainNav: [
     { title: "Home", href: "/" },
-    // Homepage specific anchors, handled by homepage's local nav if user is on homepage.
-    // Included here so they appear in global nav when on other pages.
+    // Homepage specific anchors, appear in global nav when on other pages.
     { title: "About", href: "/#about", isSectionAnchor: true },
     { title: "Lessons", href: "/#lessons", isSectionAnchor: true },
     { title: "Reviews", href: "/#testimonials", isSectionAnchor: true },
-    { title: "Resources", href: "/resources" },
+    { title: "Resources", href: "/resources" }, // Standalone top-level link
     {
       title: "More",
       href: "/more", // Main page for the "More" section
@@ -33,14 +31,15 @@ export const siteConfig = {
       ],
     },
     { title: "Contact", href: "/#contact", isSectionAnchor: true },
+    // Auth required links
     { title: "Book a Lesson", href: "/bookings", authRequired: true },
     { title: "Chat Room", href: "/chat", authRequired: true },
     { title: "Accent Helper", href: "/accent-improvement", authRequired: true },
   ] satisfies NavItem[],
   userNav: [
     { title: "Dashboard", href: "/profile", authRequired: true },
-    { title: "Testimonials", href: "/testimonials", authRequired: true },
     { title: "Messages", href: "/messages", authRequired: true },
+    { title: "Testimonials", href: "/testimonials", authRequired: true },
   ] satisfies NavItem[],
   adminNav: [
     { title: "Dashboard", href: "/admin/dashboard" },
@@ -65,4 +64,4 @@ export const tutorInfo = {
   videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder video
 };
 
-export const ADMIN_EMAIL = "admin@lissanhub.example.com"; // Make sure this is correct
+export const ADMIN_EMAIL = "admin@lissanhub.example.com";
