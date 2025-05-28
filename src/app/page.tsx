@@ -1,34 +1,40 @@
+
 "use client"
-// This page uses its own local header and footer as per the new design.
-// The global Navbar and Footer from src/app/layout.tsx will still wrap this content.
-// If this is not desired, layout.tsx or middleware would need adjustment.
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock } from "lucide-react"
+import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock, ChevronDown } from "lucide-react"
 import Link from "next/link"
-import { Logo } from "@/components/layout/logo" // Import the Logo component
-import { Input } from "@/components/ui/input" // For contact form
-import { Textarea } from "@/components/ui/textarea" // For contact form
-import { useToast } from "@/hooks/use-toast" // For contact form submission
-import { useState } from "react" // For contact form
-import { addDoc, collection, serverTimestamp } from "firebase/firestore" // For contact form
-import { db } from "@/lib/firebase" // For contact form
-import { Spinner } from "@/components/ui/spinner" // For contact form loading
-import { tutorInfo } from "@/config/site" // To get tutor name
-import Image from "next/image" // For tutor image if available
+import { Logo } from "@/components/layout/logo"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
+import { useState, type ChangeEvent, type FormEvent } from "react"
+import { addDoc, collection, serverTimestamp } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import { Spinner } from "@/components/ui/spinner"
+import { tutorInfo } from "@/config/site"
+import Image from "next/image"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
+
 
 export default function HomePage() {
   const { toast } = useToast();
   const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
   const [isSubmittingContact, setIsSubmittingContact] = useState(false);
 
-  const handleContactInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleContactInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setContactForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleContactSubmit = async (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmittingContact(true);
     try {
@@ -43,7 +49,7 @@ export default function HomePage() {
         title: "Message Sent!",
         description: "Thank you for reaching out. We'll get back to you soon.",
       });
-      setContactForm({ name: "", email: "", message: "" }); // Reset form
+      setContactForm({ name: "", email: "", message: "" });
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -57,11 +63,11 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background"> {/* Adjusted gradient to theme */}
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
       {/* Local Header for this Homepage */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Logo /> {/* Use the Logo component */}
+          <Logo />
           <nav className="hidden md:flex items-center gap-6">
             <Link href="#about" className="text-muted-foreground hover:text-primary transition-colors">
               About
@@ -69,17 +75,33 @@ export default function HomePage() {
             <Link href="#lessons" className="text-muted-foreground hover:text-primary transition-colors">
               Lessons
             </Link>
-            {/* Resources link can be added to siteConfig.mainNav if it's a separate page */}
-            {/* <Link href="#resources" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link href="/resources" className="text-muted-foreground hover:text-primary transition-colors">
               Resources
-            </Link> */}
+            </Link>
             <Link href="#testimonials" className="text-muted-foreground hover:text-primary transition-colors">
               Reviews
             </Link>
-            {/* More dropdown can be implemented later using DropdownMenu component */}
-            {/* <Link href="#more" className="text-muted-foreground hover:text-primary transition-colors">
-              More <ChevronDown className="inline h-4 w-4" />
-            </Link> */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 px-0 md:px-3"
+                  )}
+                >
+                  More
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <Link href="/news">News & Updates</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/blog">Learning Blog</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Link href="#contact" className="text-muted-foreground hover:text-primary transition-colors">
               Contact
             </Link>
@@ -120,7 +142,7 @@ export default function HomePage() {
             <Button
               size="lg"
               variant="outline"
-              className="text-lg px-8 py-4 h-auto border-primary/30 hover:bg-accent"
+              className="text-lg px-8 py-4 h-auto border-primary/30 hover:bg-accent text-foreground"
               asChild
             >
               <Link href="#about">
@@ -165,7 +187,7 @@ export default function HomePage() {
       </section>
 
       {/* About/Tutor Profile Section */}
-      <section id="about" className="py-20 px-4 bg-card"> {/* Changed to bg-card for white */}
+      <section id="about" className="py-20 px-4 bg-card">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
@@ -174,24 +196,23 @@ export default function HomePage() {
               <p className="text-xl text-primary font-medium">{tutorInfo.shortIntro}</p>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  ሰላም! {tutorInfo.bio.split('.')[0]}. {/* Displaying first sentence of bio */}
+                  {tutorInfo.bio.split('.')[0] + '.'}
                 </p>
                 <p>
-                  {tutorInfo.bio.substring(tutorInfo.bio.indexOf('.') + 1).trim()} {/* Displaying rest of bio */}
+                  {tutorInfo.bio.substring(tutorInfo.bio.indexOf('.') + 1).trim()}
                 </p>
               </div>
 
-              {/* Credentials */}
               <div className="grid md:grid-cols-2 gap-4">
                 {tutorInfo.services.map((service, index) => (
                    <div key={index} className="flex items-center gap-3">
                     <CheckCircle className="w-5 h-5 text-primary" />
-                    <span className="text-sm">{service}</span>
+                    <span className="text-sm text-muted-foreground">{service}</span>
                   </div>
                 ))}
                 <div className="flex items-center gap-3">
                   <CheckCircle className="w-5 h-5 text-primary" />
-                  <span className="text-sm">Native Amharic Speaker</span>
+                  <span className="text-sm text-muted-foreground">Native Amharic Speaker</span>
                 </div>
               </div>
 
@@ -200,7 +221,7 @@ export default function HomePage() {
                     <Link href="/bookings">Book a Lesson</Link>
                 </Button>
                 {tutorInfo.videoUrl && (
-                    <Button variant="outline" className="border-primary/30 hover:bg-accent" asChild>
+                    <Button variant="outline" className="border-primary/30 hover:bg-accent text-foreground" asChild>
                         <Link href={tutorInfo.videoUrl} target="_blank" rel="noopener noreferrer">
                             <Play className="w-4 h-4 mr-2" />
                             Watch Introduction
@@ -212,7 +233,7 @@ export default function HomePage() {
 
             <div className="relative">
               <div className="aspect-square bg-gradient-to-br from-accent/50 to-accent/80 rounded-2xl flex items-center justify-center">
-                {tutorInfo.imageUrl.includes('placehold.co') ? (
+                {tutorInfo.imageUrl.includes('placehold.co') || !tutorInfo.imageUrl ? (
                   <div className="text-center">
                     <div className="w-32 h-32 bg-primary rounded-full mx-auto mb-4 flex items-center justify-center">
                       <span className="text-4xl text-primary-foreground font-bold">{tutorInfo.name.split(" ").map(n=>n[0]).join("")}</span>
@@ -223,7 +244,6 @@ export default function HomePage() {
                   <Image src={tutorInfo.imageUrl} alt={tutorInfo.name} width={400} height={400} className="rounded-2xl object-cover" data-ai-hint={tutorInfo.dataAiHint || "tutor portrait"}/>
                 )}
               </div>
-              {/* Floating Stats */}
               <div className="absolute -bottom-6 -left-6 bg-card rounded-xl shadow-lg p-4 border">
                 <div className="text-2xl font-bold text-primary">200+</div>
                 <div className="text-sm text-muted-foreground">Happy Students</div>
@@ -242,7 +262,7 @@ export default function HomePage() {
       </section>
 
       {/* Lessons/Services Section */}
-      <section id="lessons" className="py-20 px-4 bg-muted/30"> {/* Adjusted bg to theme */}
+      <section id="lessons" className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-accent text-accent-foreground">Learning Options</Badge>
@@ -254,15 +274,14 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Quick Practice */}
-            <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
                   <Clock className="w-8 h-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl text-foreground">Quick Practice</CardTitle>
                 <div className="text-3xl font-bold text-primary">$25</div>
-                <CardDescription>30-minute focused session</CardDescription>
+                <CardDescription className="text-muted-foreground">30-minute focused session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3">
@@ -277,8 +296,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Comprehensive Lesson */}
-            <Card className="border-2 border-primary/30 shadow-lg hover:shadow-xl transition-all duration-300 group relative">
+            <Card className="border-2 border-primary/30 shadow-lg hover:shadow-xl transition-all duration-300 group relative bg-card">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
               </div>
@@ -288,7 +306,7 @@ export default function HomePage() {
                 </div>
                 <CardTitle className="text-xl text-foreground">Comprehensive Lesson</CardTitle>
                 <div className="text-3xl font-bold text-primary">$45</div>
-                <CardDescription>60-minute deep dive session</CardDescription>
+                <CardDescription className="text-muted-foreground">60-minute deep dive session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3">
@@ -304,15 +322,14 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Cultural Immersion */}
-            <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
                   <Heart className="w-8 h-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl text-foreground">Cultural Immersion</CardTitle>
                 <div className="text-3xl font-bold text-primary">$65</div>
-                <CardDescription>90-minute heritage journey</CardDescription>
+                <CardDescription className="text-muted-foreground">90-minute heritage journey</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3">
@@ -329,7 +346,6 @@ export default function HomePage() {
             </Card>
           </div>
 
-          {/* Learning Approach */}
           <div className="mt-16 text-center">
             <h3 className="text-2xl font-bold text-foreground mb-8">My Teaching Approach</h3>
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
@@ -363,8 +379,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 px-4 bg-card"> {/* Changed to bg-card */}
+      <section id="testimonials" className="py-20 px-4 bg-card">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-accent text-accent-foreground">Student Success</Badge>
@@ -375,8 +390,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Static Testimonials - can be replaced with dynamic fetching */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg bg-card">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />))}
@@ -393,7 +407,7 @@ export default function HomePage() {
                 </div>
               </CardContent>
             </Card>
-             <Card className="shadow-lg">
+             <Card className="shadow-lg bg-card">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />))}
@@ -410,7 +424,7 @@ export default function HomePage() {
                 </div>
               </CardContent>
             </Card>
-             <Card className="shadow-lg">
+             <Card className="shadow-lg bg-card">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />))}
@@ -430,15 +444,14 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="outline" className="border-primary/30 hover:bg-accent" asChild>
+            <Button variant="outline" className="border-primary/30 hover:bg-accent text-foreground" asChild>
                 <Link href="/testimonials">Read More Success Stories</Link>
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-20 px-4 bg-primary/5"> {/* Adjusted bg to theme */}
+      <section id="contact" className="py-20 px-4 bg-primary/5">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12">
             <Badge className="mb-4 bg-accent text-accent-foreground">Get in Touch</Badge>
@@ -466,16 +479,16 @@ export default function HomePage() {
                 <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
                     <Link href="/bookings">Book First Lesson</Link>
                 </Button>
-                <Button variant="outline" className="border-primary/30 hover:bg-accent" asChild>
+                <Button variant="outline" className="border-primary/30 hover:bg-accent text-foreground" asChild>
                     <Link href="/contact">Send Message</Link>
                 </Button>
               </div>
             </div>
 
-            <Card className="shadow-lg">
+            <Card className="shadow-lg bg-card">
               <CardHeader>
                 <CardTitle className="text-foreground">Quick Contact</CardTitle>
-                <CardDescription>Send me a message and I'll get back to you within 24 hours</CardDescription>
+                <CardDescription className="text-muted-foreground">Send me a message and I'll get back to you within 24 hours</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleContactSubmit} className="space-y-4">
@@ -504,28 +517,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Local Footer for this Homepage */}
-      <footer className="bg-foreground text-background py-12 px-4"> {/* Adjusted to theme */}
+      <footer className="bg-foreground text-background py-12 px-4">
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
-              <Logo showText={true} className="mb-4"/> {/* Use Logo component */}
-              <p className="text-muted-foreground mb-4 max-w-md"> {/* text-gray-400 -> text-muted-foreground */}
+              <Logo showText={true} className="mb-4"/>
+              <p className="text-muted-foreground mb-4 max-w-md">
                 Connecting diaspora learners with their Ethiopian heritage through personalized Amharic lessons and
                 cultural immersion.
               </p>
-              {/* Social media icons can be actual icons */}
               <div className="flex gap-4">
-                <Link href="#" className="w-8 h-8 bg-background/10 hover:bg-background/20 rounded-lg flex items-center justify-center text-sm">FB</Link>
-                <Link href="#" className="w-8 h-8 bg-background/10 hover:bg-background/20 rounded-lg flex items-center justify-center text-sm">IG</Link>
-                <Link href="#" className="w-8 h-8 bg-background/10 hover:bg-background/20 rounded-lg flex items-center justify-center text-sm">YT</Link>
+                <Link href="#" className="w-8 h-8 bg-background/10 hover:bg-background/20 rounded-lg flex items-center justify-center text-sm text-background">FB</Link>
+                <Link href="#" className="w-8 h-8 bg-background/10 hover:bg-background/20 rounded-lg flex items-center justify-center text-sm text-background">IG</Link>
+                <Link href="#" className="w-8 h-8 bg-background/10 hover:bg-background/20 rounded-lg flex items-center justify-center text-sm text-background">YT</Link>
               </div>
             </div>
             <div>
-              <h3 className="font-semibold mb-4 text-primary-foreground">Learning</h3> {/* text-white -> text-primary-foreground (or just text-background if on dark bg) */}
+              <h3 className="font-semibold mb-4 text-primary-foreground">Learning</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li><Link href="/bookings" className="hover:text-primary-foreground">Book Lesson</Link></li>
-                {/* <li><Link href="/pricing" className="hover:text-primary-foreground">Pricing</Link></li> Pricing page not in current sitemap */}
                 <li><Link href="/tutor-profile" className="hover:text-primary-foreground">About Mahir</Link></li>
                 <li><Link href="/testimonials" className="hover:text-primary-foreground">Success Stories</Link></li>
               </ul>
@@ -534,10 +544,8 @@ export default function HomePage() {
               <h3 className="font-semibold mb-4 text-primary-foreground">Support</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li><Link href="/contact" className="hover:text-primary-foreground">Contact</Link></li>
-                {/* <li><Link href="/faq" className="hover:text-primary-foreground">FAQ</Link></li> FAQ page not in current sitemap */}
                 <li><Link href="/privacy" className="hover:text-primary-foreground">Privacy</Link></li>
-                <li><Link href="/terms" className
-="hover:text-primary-foreground">Terms</Link></li>
+                <li><Link href="/terms" className="hover:text-primary-foreground">Terms</Link></li>
               </ul>
             </div>
           </div>
