@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,60 +14,107 @@ import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { format, isPast, startOfDay, isEqual, addDays } from 'date-fns';
+import { format, isPast, startOfDay, isEqual, addDays, addMinutes, parse } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site" // Import tutorInfo
+import type { Booking as BookingType } from "@/lib/types";
 
-// Function to fetch already booked slots for a date from Firestore
-async function getBookedSlots(date: Date): Promise<string[]> {
+interface BookedSlotInfo {
+  startTimeValue: string; // "09:00 AM"
+  startTimeDate: Date;
+  endTimeDate: Date;
+}
+
+// Function to fetch already booked slots (start time and duration) for a date from Firestore
+async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
   if (!date) return [];
   try {
     const formattedDate = format(date, 'yyyy-MM-dd');
     const bookingsRef = collection(db, "bookings");
-    const q = query(bookingsRef, where("date", "==", formattedDate), where("status", "in", ["confirmed", "completed"]));
+    const q = query(
+      bookingsRef,
+      where("date", "==", formattedDate),
+      where("status", "in", ["confirmed", "completed"])
+    );
     const querySnapshot = await getDocs(q);
-    const bookedTimes = querySnapshot.docs.map(doc => (doc.data() as any).time);
-    return bookedTimes;
+    
+    const bookedSlots: BookedSlotInfo[] = [];
+    querySnapshot.forEach(doc => {
+      const data = doc.data() as BookingType;
+      if (data.time && data.duration) {
+        // Use the selected date for parsing to ensure correct day context
+        const slotDate = startOfDay(date); 
+        const parsedStartTime = parse(data.time, 'hh:mm a', slotDate);
+        if (!isNaN(parsedStartTime.getTime())) {
+            bookedSlots.push({
+                startTimeValue: data.time,
+                startTimeDate: parsedStartTime,
+                endTimeDate: addMinutes(parsedStartTime, data.duration)
+            });
+        } else {
+            console.warn(`Could not parse booked time: ${data.time} for date ${formattedDate}`);
+        }
+      }
+    });
+    return bookedSlots;
   } catch (error) {
-    console.error("Error fetching booked slots:", error);
+    console.error("Error fetching booked slots data:", error);
     return [];
   }
 }
+
+// Helper to generate base start times (e.g., every 30 mins)
+const generateBaseStartTimes = (): string[] => {
+  const times: string[] = [];
+  const refDate = new Date(); // Only for formatting, date part is ignored by 'p'
+  // 9:00 AM to 11:30 AM
+  for (let h = 9; h < 12; h++) {
+    times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'hh:mm a'));
+    times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'hh:mm a'));
+  }
+  // 2:00 PM to 4:30 PM
+  for (let h = 14; h < 17; h++) { // 2 PM to 4 PM
+    times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'hh:mm a'));
+    times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'hh:mm a'));
+  }
+  // Add 5:00 PM explicitly if needed as a start time for certain durations
+  times.push(format(new Date(refDate.setHours(17, 0, 0, 0)), 'hh:mm a')); 
+  return times;
+};
+
+const baseStartTimes = generateBaseStartTimes();
 
 export default function BookingsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
-  const [selectedDuration, setSelectedDuration] = useState("60");
+  const [selectedDuration, setSelectedDuration] = useState("60"); // Default to 60 minutes
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined); // Stores the start time string e.g., "09:00 AM"
   const [isProcessing, setIsProcessing] = useState(false);
-  const [dailyBookedSlots, setDailyBookedSlots] = useState<string[]>([]);
+  const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
   const durations = [
     { value: "30", label: "30 minutes", price: 25, description: "Quick practice session", type: "Quick Practice" },
     { value: "60", label: "60 minutes", price: 45, description: "Comprehensive lesson", type: "Comprehensive Lesson" },
-    { value: "90", label: "90 minutes", price: 65, description: "Cultural immersion", type: "Cultural Immersion" }, // Added 90 min option
+    { value: "90", label: "90 minutes", price: 65, description: "Cultural immersion", type: "Cultural Immersion" },
   ];
 
-  // Generate available dates (e.g., next 30 days)
   const availableDates = Array.from({ length: 30 }, (_, i) => addDays(startOfDay(new Date()), i));
-
-  const timeSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM"];
 
   const selectedLessonDetails = durations.find((d) => d.value === selectedDuration);
 
   useEffect(() => {
     if (selectedDate) {
       setIsFetchingSlots(true);
-      getBookedSlots(selectedDate).then(slots => {
-        setDailyBookedSlots(slots);
+      getBookedSlotsData(selectedDate).then(ranges => {
+        setDailyBookedRanges(ranges);
         setIsFetchingSlots(false);
         setSelectedTime(undefined);
       }).catch(error => {
-        console.error("Failed to get booked slots:", error);
+        console.error("Failed to get booked slots data:", error);
         toast({ title: "Error", description: "Could not fetch available slots.", variant: "destructive" });
         setIsFetchingSlots(false);
       });
@@ -81,6 +129,47 @@ export default function BookingsPage() {
       setSelectedDate(date);
     }
   };
+  
+  const displayTimeSlots = useMemo(() => {
+    if (!selectedDate || !selectedLessonDetails) return [];
+
+    const slots: { display: string; value: string; isDisabled: boolean }[] = [];
+    const userDurationMinutes = parseInt(selectedLessonDetails.value, 10);
+    const slotDate = startOfDay(selectedDate); // Use the selected date for parsing
+
+    for (const startTimeString of baseStartTimes) {
+      const potentialStartTime = parse(startTimeString, 'hh:mm a', slotDate);
+      if (isNaN(potentialStartTime.getTime())) {
+          console.warn(`Could not parse base start time: ${startTimeString}`);
+          continue;
+      }
+      const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
+
+      // Check if this slot ends after typical business hours (e.g., 6 PM for the last slot being 5-6 PM)
+      const dayEndHour = 18; // 6 PM
+      if (potentialEndTime.getHours() > dayEndHour || (potentialEndTime.getHours() === dayEndHour && potentialEndTime.getMinutes() > 0)) {
+          continue; // Skip slots that end too late
+      }
+
+
+      let isSlotBooked = false;
+      for (const bookedRange of dailyBookedRanges) {
+        // Check for overlap: (StartA < EndB) and (EndA > StartB)
+        if (potentialStartTime < bookedRange.endTimeDate && potentialEndTime > bookedRange.startTimeDate) {
+          isSlotBooked = true;
+          break;
+        }
+      }
+      
+      slots.push({
+        display: `${format(potentialStartTime, 'p')} - ${format(potentialEndTime, 'p')}`,
+        value: startTimeString, // Store the original start time string
+        isDisabled: isSlotBooked,
+      });
+    }
+    return slots;
+  }, [selectedDate, selectedLessonDetails, dailyBookedRanges]);
+
 
   const handleBooking = async () => {
     if (!user) {
@@ -101,12 +190,12 @@ export default function BookingsPage() {
         userName: user.displayName || "User",
         userEmail: user.email,
         date: format(selectedDate, 'yyyy-MM-dd'),
-        time: selectedTime,
+        time: selectedTime, // This is the start time string
         duration: parseInt(selectedLessonDetails.value, 10),
         lessonType: selectedLessonDetails.type,
         price: selectedLessonDetails.price,
         status: "confirmed",
-        tutorId: "MahirAbasMustefa", // Assuming one tutor for now
+        tutorId: "MahirAbasMustefa",
         tutorName: tutorInfo.name,
         createdAt: serverTimestamp(),
       });
@@ -115,15 +204,14 @@ export default function BookingsPage() {
         title: "Lesson Booked Successfully!",
         description: `Your ${selectedLessonDetails.label} on ${format(selectedDate, 'PPP')} at ${selectedTime} is confirmed.`,
       });
+      
       // Refetch booked slots
       setIsFetchingSlots(true);
-      getBookedSlots(selectedDate).then(slots => {
-        setDailyBookedSlots(slots);
+      getBookedSlotsData(selectedDate).then(ranges => {
+        setDailyBookedRanges(ranges);
         setIsFetchingSlots(false);
       });
       setSelectedTime(undefined); // Reset time selection
-      // Optionally redirect or reset form
-      // router.push("/profile"); // Example redirect
     } catch (error) {
       console.error("Booking error:", error);
       toast({ title: "Booking Failed", description: "Could not complete your booking. Please try again.", variant: "destructive" });
@@ -152,7 +240,7 @@ export default function BookingsPage() {
                 <CardDescription>Choose the length of your lesson.</CardDescription>
               </CardHeader>
               <CardContent>
-                <RadioGroup value={selectedDuration} onValueChange={setSelectedDuration}>
+                <RadioGroup value={selectedDuration} onValueChange={(value) => {setSelectedDuration(value); setSelectedTime(undefined);}}>
                   <div className="space-y-3">
                     {durations.map((duration) => (
                       <Label
@@ -208,29 +296,28 @@ export default function BookingsPage() {
             {selectedDate && (
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-xl">Select Time</CardTitle>
+                  <CardTitle className="text-xl">Select Time Slot</CardTitle>
                   <CardDescription>Available slots for {format(selectedDate, 'PPP')}. (Your local time)</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isFetchingSlots ? (
                      <div className="flex justify-center items-center h-24"><Spinner /></div>
+                  ) : displayTimeSlots.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">No available slots for this duration/date. Please try another selection.</p>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {timeSlots.map((time) => {
-                        const isBooked = dailyBookedSlots.includes(time);
-                        return (
-                          <Button
-                            key={time}
-                            variant={selectedTime === time ? "default" : "outline"}
-                            onClick={() => setSelectedTime(time)}
-                            disabled={isBooked}
-                            className={isBooked ? "bg-muted text-muted-foreground line-through hover:bg-muted" : ""}
-                          >
-                            {time}
-                            {isBooked && <span className="text-xs ml-1">(Booked)</span>}
-                          </Button>
-                        );
-                      })}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {displayTimeSlots.map((slot) => (
+                        <Button
+                          key={slot.value + slot.display} // Ensure unique key
+                          variant={selectedTime === slot.value ? "default" : "outline"}
+                          onClick={() => setSelectedTime(slot.value)}
+                          disabled={slot.isDisabled}
+                          className={slot.isDisabled ? "bg-muted text-muted-foreground line-through hover:bg-muted" : ""}
+                        >
+                          {slot.display}
+                          {slot.isDisabled && <span className="text-xs ml-1">(Booked)</span>}
+                        </Button>
+                      ))}
                     </div>
                   )}
                 </CardContent>
@@ -240,7 +327,7 @@ export default function BookingsPage() {
 
           {/* Booking Summary */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-20 shadow-lg"> {/* Adjusted sticky top */}
+            <Card className="sticky top-20 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <CreditCard className="w-5 h-5 text-primary" />
@@ -263,10 +350,12 @@ export default function BookingsPage() {
                     </div>
                   )}
 
-                  {selectedTime && (
+                  {selectedTime && selectedLessonDetails && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
-                      <span className="font-medium">{selectedTime}</span>
+                      <span className="font-medium">
+                        {`${format(parse(selectedTime, 'hh:mm a', selectedDate), 'p')} - ${format(addMinutes(parse(selectedTime, 'hh:mm a', selectedDate), parseInt(selectedLessonDetails.value, 10)), 'p')}`}
+                      </span>
                     </div>
                   )}
 
@@ -312,3 +401,6 @@ export default function BookingsPage() {
     </div>
   )
 }
+
+
+    
