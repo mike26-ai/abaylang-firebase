@@ -1,21 +1,62 @@
-"use client"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Clock, CreditCard, Star, BookOpen, LogOut, Plus, User, MessageSquare, Edit3, Video, XCircle } from "lucide-react" // Added Edit3, Video, XCircle
-import Link from "next/link"
-import { useAuth } from "@/hooks/use-auth"
-import { useToast } from "@/hooks/use-toast"
-import { db } from "@/lib/firebase"
-import { collection, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, deleteDoc } from "firebase/firestore"
-import type { Booking, UserProfile as UserProfileType } from "@/lib/types" // Assuming Booking type is defined
-import { format } from 'date-fns'
-import { Spinner } from "@/components/ui/spinner"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Calendar,
+  Clock,
+  CreditCard,
+  Star,
+  BookOpen,
+  LogOut,
+  Plus,
+  User,
+  MessageSquare,
+  Trophy,
+  Target,
+  Zap,
+  Award,
+  Download,
+  Play,
+  FileText,
+  Brain,
+  TrendingUp,
+  Edit3,
+  XCircle,
+  Video,
+} from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  doc,
+  updateDoc,
+  Timestamp,
+  setDoc,
+} from "firebase/firestore";
+import type { Booking as BookingType, UserProfile } from "@/lib/types";
+import { format, isPast } from "date-fns";
+import { Spinner } from "@/components/ui/spinner";
+import { Input } from "@/components/ui/input";
+import { Label } // Assuming Label is in ui/label
+from "@/components/ui/label";
+import LessonFeedbackModal from "@/components/lesson-feedback-modal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,78 +67,141 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { Logo } from "@/components/layout/logo";
+
+
+// Extend BookingType from lib/types to include hasReview locally for UI state
+interface DashboardBooking extends BookingType {
+  hasReview?: boolean;
+}
 
 
 export default function StudentDashboardPage() {
-  const { user, loading: authLoading, signOut } = useAuth()
-  const { toast } = useToast()
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [isLoadingBookings, setIsLoadingBookings] = useState(true)
-  const [userProfileData, setUserProfileData] = useState<UserProfileType | null>(null);
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { toast } = useToast();
+  const [bookings, setBookings] = useState<DashboardBooking[]>([]);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(true);
+  const [userProfileData, setUserProfileData] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: "",
     nativeLanguage: "",
-    // Add other editable fields here if needed
+    country: "",
+    amharicLevel: "",
   });
+
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    lessonId: string;
+    lessonType: string;
+    lessonDate: string;
+  }>({
+    isOpen: false,
+    lessonId: "",
+    lessonType: "",
+    lessonDate: "",
+  });
+
+  // Static data for new tabs - will be replaced by dynamic data in future iterations
+  const [currentStreak, setCurrentStreak] = useState(12);
+  const [totalXP, setTotalXP] = useState(850);
+  const [currentLevel, setCurrentLevel] = useState("Intermediate"); // Default or fetched
+  const [weeklyGoal, setWeeklyGoal] = useState({ target: 3, completed: 2 });
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      // router.push("/login"); // Already handled by useAuth typically
+      // router.push("/login"); // Handled by useAuth
       setIsLoadingBookings(false);
       setIsLoadingProfile(false);
       return;
     }
 
-    // Fetch User Profile Data
     const fetchUserProfile = async () => {
       setIsLoadingProfile(true);
       try {
         const userDocRef = doc(db, "users", user.uid);
+        // Efficiently get a single document
         const userDocSnap = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
+
         if (!userDocSnap.empty) {
-          const profile = userDocSnap.docs[0].data() as UserProfileType;
+          const profile = userDocSnap.docs[0].data() as UserProfile;
           setUserProfileData(profile);
           setEditFormData({
             name: profile.name || user.displayName || "",
-            nativeLanguage: profile.nativeLanguage || ""
+            nativeLanguage: profile.nativeLanguage || "",
+            country: profile.country || "",
+            amharicLevel: profile.amharicLevel || "",
           });
+          setCurrentLevel(profile.amharicLevel || "Beginner");
         } else {
-          // Create a basic profile if it doesn't exist (should ideally be done at signup)
-           const basicProfile: UserProfileType = {
+           // Create profile if it doesn't exist (should ideally happen at signup)
+          const basicProfile: UserProfile = {
             uid: user.uid,
             email: user.email || "",
             name: user.displayName || "New User",
             role: "student",
             createdAt: Timestamp.now(),
+            country: "",
+            amharicLevel: "beginner",
+            nativeLanguage: "",
           };
-          await doc(db, "users", user.uid).set(basicProfile);
+          await setDoc(doc(db, "users", user.uid), basicProfile);
           setUserProfileData(basicProfile);
-           setEditFormData({ name: basicProfile.name, nativeLanguage: "" });
+          setEditFormData({ name: basicProfile.name, nativeLanguage: "", country: "", amharicLevel: "beginner" });
         }
       } catch (error) {
         console.error("Error fetching user profile:", error);
-        toast({ title: "Error", description: "Could not load your profile data.", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Could not load your profile data.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoadingProfile(false);
       }
     };
 
-    // Fetch Bookings
     const fetchBookings = async () => {
       setIsLoadingBookings(true);
       try {
         const bookingsCol = collection(db, "bookings");
-        const q = query(bookingsCol, where("userId", "==", user.uid), orderBy("date", "desc"), orderBy("time", "asc"));
+        const q = query(
+          bookingsCol,
+          where("userId", "==", user.uid),
+          orderBy("date", "desc"),
+          orderBy("time", "asc")
+        );
         const querySnapshot = await getDocs(q);
-        const fetchedBookings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
-        setBookings(fetchedBookings);
+        const fetchedBookings = querySnapshot.docs.map((doc) => {
+          const data = doc.data() as BookingType;
+           // Check if a testimonial exists for this lessonId
+          // This is a simplified check; for performance, you might store `hasReview` on the booking itself
+          // or fetch testimonials once and cross-reference.
+          return { ...data, id: doc.id, hasReview: false }; // Placeholder for hasReview
+        });
+
+        // Fetch testimonials to mark bookings as reviewed
+        const testimonialsCol = collection(db, "testimonials");
+        const tesimonialsQuery = query(testimonialsCol, where("userId", "==", user.uid), where("lessonId", "!=", null));
+        const testimonialsSnapshot = await getDocs(tesimonialsQuery);
+        const reviewedLessonIds = new Set(testimonialsSnapshot.docs.map(d => d.data().lessonId));
+
+        const updatedBookings = fetchedBookings.map(b => ({
+          ...b,
+          hasReview: reviewedLessonIds.has(b.id)
+        }));
+
+        setBookings(updatedBookings);
       } catch (error) {
         console.error("Error fetching bookings:", error);
-        toast({ title: "Error", description: "Could not load your bookings.", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Could not load your bookings.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoadingBookings(false);
       }
@@ -105,47 +209,86 @@ export default function StudentDashboardPage() {
 
     fetchUserProfile();
     fetchBookings();
-
   }, [user, authLoading, toast]);
 
-  const handleProfileEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setEditFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleProfileEditInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setEditFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
+  
+  const handleAmharicLevelChange = (value: string) => {
+     setEditFormData((prev) => ({ ...prev, amharicLevel: value }));
+  };
+  
+  const handleCountryChange = (value: string) => {
+     setEditFormData((prev) => ({ ...prev, country: value }));
+  };
+
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    setIsLoadingProfile(true); // Use same loader for saving
+    setIsLoadingProfile(true);
     try {
       const userDocRef = doc(db, "users", user.uid);
-      await updateDoc(userDocRef, {
+      const updatedProfileData = {
         name: editFormData.name,
         nativeLanguage: editFormData.nativeLanguage,
-      });
-      // Also update Firebase Auth display name if it changed
-      if (user.displayName !== editFormData.name && auth.currentUser) {
+        country: editFormData.country,
+        amharicLevel: editFormData.amharicLevel,
+      };
+      await updateDoc(userDocRef, updatedProfileData);
+
+      if (auth.currentUser && user.displayName !== editFormData.name) {
         await auth.currentUser.updateProfile({ displayName: editFormData.name });
       }
-      setUserProfileData(prev => ({ ...prev, ...editFormData } as UserProfileType)); // Update local state
-      toast({ title: "Profile Updated", description: "Your profile has been saved." });
+      setUserProfileData(
+        (prev) => ({ ...prev, ...updatedProfileData } as UserProfile)
+      );
+      setCurrentLevel(updatedProfileData.amharicLevel || "Beginner");
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been saved.",
+      });
       setIsEditingProfile(false);
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast({ title: "Update Failed", description: "Could not save your profile.", variant: "destructive" });
+      toast({
+        title: "Update Failed",
+        description: "Could not save your profile.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoadingProfile(false);
     }
   };
+
+  const handleRateLesson = (booking: DashboardBooking) => {
+    setFeedbackModal({
+      isOpen: true,
+      lessonId: booking.id,
+      lessonType: booking.lessonType || "Lesson",
+      lessonDate: booking.date, // Ensure date is passed as string
+    });
+  };
+
+  const handleFeedbackSubmit = (feedbackData: { lessonId: string }) => {
+    setBookings((prev) =>
+      prev.map((booking) =>
+        booking.id === feedbackData.lessonId
+          ? { ...booking, hasReview: true }
+          : booking
+      )
+    );
+    // Actual submission is handled within the modal now
+    // toast({ title: "Feedback Recorded", description: "Thank you for rating your lesson!" });
+  };
   
   const handleCancelBooking = async (bookingId: string) => {
-    // Add confirmation dialog here
     try {
       const bookingDocRef = doc(db, "bookings", bookingId);
-      // Option 1: Soft delete (mark as cancelled by student)
-      await updateDoc(bookingDocRef, { status: "cancelled" }); 
-      // Option 2: Hard delete (if preferred, ensure rules allow)
-      // await deleteDoc(bookingDocRef);
-      
+      await updateDoc(bookingDocRef, { status: "cancelled" });
       setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled"} : b));
       toast({ title: "Booking Cancelled", description: "Your lesson has been cancelled." });
     } catch (error) {
@@ -155,37 +298,75 @@ export default function StudentDashboardPage() {
   };
 
 
-  const upcomingBookings = bookings.filter((b) => b.status === "confirmed" && !isPast(new Date(`${b.date}T${b.time.split(' ')[0]}`))); // More robust past check
-  const completedBookings = bookings.filter((b) => b.status === "completed");
-  const cancelledBookings = bookings.filter((b) => b.status === "cancelled");
+  const upcomingBookings = bookings.filter(
+    (b) => b.status === "confirmed" && !isPast(new Date(`${b.date}T${(b.time || "00:00").split(" ")[0]}`))
+  );
+  const pastBookings = bookings.filter(
+    (b) => b.status === "completed" || b.status === "cancelled" || (b.status === "confirmed" && isPast(new Date(`${b.date}T${(b.time || "00:00").split(" ")[0]}`)))
+  );
+  const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
 
-  const totalSpent = completedBookings.reduce((sum, b) => sum + b.price, 0);
-  const totalHours = completedBookings.reduce((sum, b) => sum + (b.duration || 0), 0) / 60;
-
+  const totalSpent = bookings
+    .filter((b) => b.status === "completed")
+    .reduce((sum, b) => sum + (b.price || 0), 0);
+  const totalHours =
+    bookings
+      .filter((b) => b.status === "completed")
+      .reduce((sum, b) => sum + (b.duration || 0), 0) / 60;
 
   if (authLoading || (!userProfileData && isLoadingProfile)) {
-    return <div className="min-h-screen flex items-center justify-center"><Spinner size="lg" /> <p className="ml-3">Loading dashboard...</p></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner size="lg" /> <p className="ml-3">Loading dashboard...</p>
+      </div>
+    );
   }
 
   if (!user && !authLoading) {
-     // This case should ideally be handled by a global redirect in AuthProvider or middleware
-     return <div className="min-h-screen flex flex-col items-center justify-center"><p>Please log in to view your dashboard.</p><Button asChild className="mt-4"><Link href="/login">Log In</Link></Button></div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <p>Please log in to view your dashboard.</p>
+        <Button asChild className="mt-4">
+          <Link href="/login">Log In</Link>
+        </Button>
+      </div>
+    );
   }
 
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
+      <header className="bg-card border-b sticky top-0 z-40"> {/* Use global navbar, but this is local header as per design */}
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <Logo />
+          <div className="flex items-center gap-4">
+            <Badge variant="secondary" className="bg-accent text-accent-foreground">Student</Badge>
+            <span className="text-sm text-muted-foreground hidden sm:inline">Welcome, {userProfileData?.name || user?.displayName}</span>
+            <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-primary">
+              <LogOut className="w-4 h-4 mr-0 sm:mr-2" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
       <div className="container mx-auto px-4 py-8">
-        <header className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1">Your Learning Dashboard</h1>
-          <p className="text-lg text-muted-foreground">Welcome back, {userProfileData?.name || user?.displayName}!</p>
-        </header>
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1">
+            Your Learning Journey
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Track your progress and manage your LissanHub lessons
+          </p>
+        </div>
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Lessons</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Upcoming Lessons
+              </CardTitle>
               <Calendar className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
@@ -195,17 +376,19 @@ export default function StudentDashboardPage() {
 
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed Lessons</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Completed Lessons
+              </CardTitle>
               <BookOpen className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{completedBookings.length}</div>
+              <div className="text-2xl font-bold">{completedBookingsCount}</div>
             </CardContent>
           </Card>
 
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-               <CardTitle className="text-sm font-medium">Hours Learned</CardTitle>
+              <CardTitle className="text-sm font-medium">Hours Learned</CardTitle>
               <Clock className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
@@ -215,7 +398,9 @@ export default function StudentDashboardPage() {
 
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Investment</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Investment
+              </CardTitle>
               <CreditCard className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
@@ -226,12 +411,14 @@ export default function StudentDashboardPage() {
 
         <Tabs defaultValue="upcoming" className="space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <TabsList className="bg-card border">
+            <TabsList className="bg-card border w-full sm:w-auto">
               <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
-              <TabsTrigger value="profile">My Profile</TabsTrigger>
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="resources">Resources</TabsTrigger>
+              <TabsTrigger value="progress">Progress</TabsTrigger>
             </TabsList>
-            <Button asChild>
+            <Button asChild className="w-full sm:w-auto">
               <Link href="/bookings">
                 <Plus className="w-4 h-4 mr-2" />
                 Book New Lesson
@@ -239,16 +426,19 @@ export default function StudentDashboardPage() {
             </Button>
           </div>
 
-          <TabsContent value="upcoming">
+          <TabsContent value="upcoming" className="space-y-4">
             {isLoadingBookings ? (
               <div className="flex justify-center items-center h-40"><Spinner /></div>
             ) : upcomingBookings.length === 0 ? (
               <Card className="shadow-lg">
                 <CardContent className="p-12 text-center">
                   <Calendar className="w-16 h-16 text-primary/70 mx-auto mb-4" />
-                  <h3 className="text-2xl font-semibold text-foreground mb-2">No Upcoming Lessons</h3>
+                  <h3 className="text-2xl font-semibold text-foreground mb-2">
+                    No Upcoming Lessons
+                  </h3>
                   <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    Ready to continue your LissanHub journey? Book your next lesson with your tutor.
+                    Ready to continue your LissanHub journey? Book your next
+                    lesson.
                   </p>
                   <Button asChild>
                     <Link href="/bookings">
@@ -259,114 +449,123 @@ export default function StudentDashboardPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-4">
-                {upcomingBookings.map((booking) => (
-                  <Card key={booking.id} className="shadow-md hover:shadow-lg transition-shadow">
-                    <CardContent className="p-4 md:p-6">
-                      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 md:gap-4">
-                          <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
-                            <BookOpen className="w-6 h-6 text-primary" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Lesson"}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {format(new Date(booking.date), "PPP")} at {booking.time}
-                            </p>
-                            <p className="text-sm text-primary">{booking.duration} minutes with {booking.tutorName}</p>
-                          </div>
+              upcomingBookings.map((booking) => (
+                <Card key={booking.id} className="shadow-md hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 md:gap-4">
+                        <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
+                          <BookOpen className="w-6 h-6 text-primary" />
                         </div>
-                        <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
-                          <Badge variant={booking.status === "confirmed" ? "default" : "secondary"}>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                          </Badge>
-                          <span className="font-semibold text-foreground">${booking.price}</span>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                               <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive">
-                                <XCircle className="mr-1 h-4 w-4 md:hidden" />
-                                <span className="hidden md:inline">Cancel</span>
-                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Cancel Lesson?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to cancel your lesson on {format(new Date(booking.date), "PPP")} at {booking.time}?
-                                  Please check our cancellation policy.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Keep Lesson</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleCancelBooking(booking.id)} className="bg-destructive hover:bg-destructive/90">
-                                  Yes, Cancel Lesson
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          {/* <Button variant="outline" size="sm">Reschedule</Button> */}
+                        <div>
+                          <h3 className="font-semibold text-foreground text-lg">
+                            {booking.lessonType || "Lesson"}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(booking.date), "PPP")} at {booking.time}
+                          </p>
+                          <p className="text-sm text-primary">
+                            {booking.duration} minutes with {booking.tutorName}
+                          </p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
+                        <Badge variant={booking.status === "confirmed" ? "default" : "secondary"}>
+                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        </Badge>
+                        <span className="font-semibold text-foreground">${booking.price}</span>
+                        <Button variant="outline" size="sm" className="text-xs">Reschedule</Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                             <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs">
+                              <XCircle className="mr-1 h-3 w-3 md:hidden" />
+                              <span className="hidden md:inline">Cancel</span>
+                             </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Cancel Lesson?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to cancel your lesson on {format(new Date(booking.date), "PPP")} at {booking.time}?
+                                Please check our cancellation policy.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Keep Lesson</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleCancelBooking(booking.id)} className="bg-destructive hover:bg-destructive/90">
+                                Yes, Cancel Lesson
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             )}
           </TabsContent>
 
-          <TabsContent value="history">
+          <TabsContent value="history" className="space-y-4">
              {isLoadingBookings ? (
               <div className="flex justify-center items-center h-40"><Spinner /></div>
-            ) : completedBookings.length === 0 && cancelledBookings.length === 0 ? (
-                 <Card className="shadow-lg">
-                    <CardContent className="p-12 text-center">
-                    <BookOpen className="w-16 h-16 text-primary/70 mx-auto mb-4" />
-                    <h3 className="text-2xl font-semibold text-foreground mb-2">No Lesson History</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                        Your completed and cancelled lessons will appear here.
-                    </p>
-                    </CardContent>
-                </Card>
+            ) : pastBookings.length === 0 ? (
+              <Card className="shadow-lg"><CardContent className="p-12 text-center"><p className="text-muted-foreground">No past lessons found.</p></CardContent></Card>
             ) : (
-              <div className="space-y-4">
-                {bookings.filter(b => b.status === 'completed' || b.status === 'cancelled').map((booking) => (
-                  <Card key={booking.id} className="shadow-md">
-                    <CardContent className="p-4 md:p-6">
-                      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 md:gap-4">
-                           <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${booking.status === 'completed' ? 'bg-accent' : 'bg-muted'}`}>
-                            <BookOpen className={`w-6 h-6 ${booking.status === 'completed' ? 'text-primary' : 'text-muted-foreground'}`} />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Lesson"}</h3>
-                            <p className="text-sm text-muted-foreground">
-                               {format(new Date(booking.date), "PPP")} at {booking.time}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{booking.duration} minutes with {booking.tutorName}</p>
-                          </div>
+              pastBookings.map((booking) => (
+                <Card key={booking.id} className="shadow-md">
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 md:gap-4">
+                         <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${booking.status === 'completed' ? 'bg-accent' : 'bg-muted'}`}>
+                          <BookOpen className={`w-6 h-6 ${booking.status === 'completed' ? 'text-primary' : 'text-muted-foreground'}`} />
                         </div>
-                        <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
-                           <Badge variant={booking.status === "completed" ? "default" : "destructive"} className={booking.status === "completed" ? "" : "opacity-70"}>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                          </Badge>
-                          <span className="font-semibold text-foreground">${booking.price}</span>
-                          {booking.status === 'completed' && (
-                            <Button variant="outline" size="sm" asChild>
-                              <Link href="/testimonials"> 
-                                <Star className="mr-1 h-4 w-4" /> Rate
-                              </Link>
-                            </Button>
-                          )}
-                          {/* <Button variant="outline" size="sm">View Recording</Button> */}
+                        <div>
+                          <h3 className="font-semibold text-foreground text-lg">
+                            {booking.lessonType || "Lesson"}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(booking.date), "PPP")} at {booking.time}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {booking.duration} minutes with {booking.tutorName}
+                          </p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
+                        <Badge variant={booking.status === "completed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"} className={booking.status === "completed" ? "" : "opacity-70"}>
+                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        </Badge>
+                        <span className="font-semibold text-foreground">${booking.price}</span>
+                        {booking.status === 'completed' && (
+                           booking.hasReview ? (
+                            <Badge variant="secondary" className="bg-accent text-accent-foreground">
+                              <Star className="w-3 h-3 mr-1" />
+                              Reviewed
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRateLesson(booking)}
+                              className="text-xs"
+                            >
+                              <Star className="w-4 h-4 mr-1" />
+                              Rate Lesson
+                            </Button>
+                          )
+                        )}
+                         {booking.status === 'completed' && (
+                           <Button variant="outline" size="sm" className="text-xs"><Video className="mr-1 h-4 w-4" /> View Recording</Button>
+                         )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             )}
           </TabsContent>
-
+          
           <TabsContent value="profile">
             {isLoadingProfile && !userProfileData ? (
                 <div className="flex justify-center items-center h-40"><Spinner /></div>
@@ -387,20 +586,37 @@ export default function StudentDashboardPage() {
                 <CardContent className="space-y-4">
                 {isEditingProfile ? (
                     <form onSubmit={handleSaveProfile} className="space-y-4">
-                        <div>
-                            <Label htmlFor="editName">Full Name</Label>
-                            <Input id="editName" name="name" value={editFormData.name} onChange={handleProfileEditInputChange} />
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="editName">Full Name</Label>
+                                <Input id="editName" name="name" value={editFormData.name} onChange={handleProfileEditInputChange} />
+                            </div>
+                            <div>
+                                <Label htmlFor="editNativeLanguage">Native Language</Label>
+                                <Input id="editNativeLanguage" name="nativeLanguage" value={editFormData.nativeLanguage} onChange={handleProfileEditInputChange} placeholder="e.g., English" />
+                            </div>
+                             <div>
+                                <Label htmlFor="editCountry">Country</Label>
+                                <Input id="editCountry" name="country" value={editFormData.country} onChange={handleProfileEditInputChange} placeholder="e.g., USA" />
+                            </div>
+                             <div>
+                                <Label htmlFor="editAmharicLevel">Amharic Level</Label>
+                                 <Input id="editAmharicLevel" name="amharicLevel" value={editFormData.amharicLevel} onChange={handleProfileEditInputChange} placeholder="e.g., Beginner" />
+                            </div>
                         </div>
-                        <div>
-                            <Label htmlFor="editNativeLanguage">Native Language (Optional)</Label>
-                            <Input id="editNativeLanguage" name="nativeLanguage" value={editFormData.nativeLanguage} onChange={handleProfileEditInputChange} placeholder="e.g., English, French" />
-                        </div>
-                        {/* Add other editable fields like country, Amharic level if desired */}
                         <div className="flex gap-2 pt-2">
                             <Button type="submit" disabled={isLoadingProfile}>
                                 {isLoadingProfile ? <Spinner size="sm" className="mr-2" /> : null} Save Changes
                             </Button>
-                            <Button variant="ghost" type="button" onClick={() => {setIsEditingProfile(false); setEditFormData({name: userProfileData.name || "", nativeLanguage: userProfileData.nativeLanguage || ""});}}>Cancel</Button>
+                            <Button variant="ghost" type="button" onClick={() => {
+                                setIsEditingProfile(false);
+                                setEditFormData({
+                                    name: userProfileData.name || "",
+                                    nativeLanguage: userProfileData.nativeLanguage || "",
+                                    country: userProfileData.country || "",
+                                    amharicLevel: userProfileData.amharicLevel || ""
+                                });
+                            }}>Cancel</Button>
                         </div>
                     </form>
                 ) : (
@@ -430,6 +646,10 @@ export default function StudentDashboardPage() {
                             <h4 className="text-sm font-medium text-muted-foreground">Member Since</h4>
                             <p className="text-foreground">{userProfileData.createdAt ? format(userProfileData.createdAt.toDate(), "MMMM yyyy") : "N/A"}</p>
                         </div>
+                         <div>
+                            <h4 className="text-sm font-medium text-muted-foreground">Learning Streak</h4>
+                            <p className="text-foreground">{currentStreak} days</p>
+                        </div>
                     </div>
                   </div>
                 )}
@@ -439,13 +659,242 @@ export default function StudentDashboardPage() {
                 <p className="text-muted-foreground">Could not load profile information.</p>
             )}
           </TabsContent>
-        </Tabs>
 
-        <Button variant="outline" onClick={signOut} className="mt-8 text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive">
-          <LogOut className="w-4 h-4 mr-2" />
-          Sign Out
-        </Button>
+
+          <TabsContent value="resources" className="space-y-6">
+            <div className="grid lg:grid-cols-2 gap-6">
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary" />
+                    Homework & Assignments
+                  </CardTitle>
+                  <CardDescription>
+                    Complete your assignments and track your progress
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">
+                          Family Conversation Practice
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          Due: Tomorrow
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="bg-yellow-400/20 text-yellow-700 dark:text-yellow-500">Pending</Badge>
+                    </div>
+                     <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">
+                          Fidel Script Exercise
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          Due: Jan 20
+                        </p>
+                      </div>
+                      <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">Completed</Badge>
+                    </div>
+                  </div>
+                  <Button asChild className="w-full">
+                    <Link href="/resources#assignments">View All Assignments</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-primary" />
+                    Interactive Quizzes
+                  </CardTitle>
+                  <CardDescription>
+                    Test your knowledge with fun, interactive quizzes
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                       <div>
+                        <h4 className="font-medium">Basic Greetings Quiz</h4>
+                        <p className="text-sm text-muted-foreground">10 questions • 5 min</p>
+                      </div>
+                       <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm">95%</span>
+                      </div>
+                    </div>
+                  </div>
+                   <Button asChild className="w-full">
+                    <Link href="/resources#quizzes">Take a Quiz</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+               <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-primary" />
+                    Vocabulary Builder
+                  </CardTitle>
+                  <CardDescription>
+                    Expand your Amharic vocabulary with flashcards
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                   <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-accent rounded-lg">
+                      <div className="text-2xl font-bold text-primary">247</div>
+                      <div className="text-sm text-muted-foreground">Words Learned</div>
+                    </div>
+                    <div className="text-center p-4 bg-accent/70 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">15</div>
+                      <div className="text-sm text-muted-foreground">Daily Goal</div>
+                    </div>
+                  </div>
+                   <Button asChild className="w-full">
+                    <Link href="/resources#flashcards">Practice Flashcards</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+               <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                    Digital Learning Materials
+                  </CardTitle>
+                  <CardDescription>
+                    Interactive flipbooks and study materials
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                    <div>
+                      <h4 className="font-medium">Amharic Alphabet Flipbook</h4>
+                      <p className="text-sm text-muted-foreground">Interactive Fidel guide</p>
+                    </div>
+                    <Button size="sm" variant="outline" asChild>
+                       <Link href="/resources#flipbooks"><Play className="w-4 h-4 mr-1" /> Open</Link>
+                    </Button>
+                  </div>
+                   <Button asChild className="w-full">
+                    <Link href="/resources#flipbooks">View All Materials</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="progress" className="space-y-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card className="shadow-lg bg-gradient-to-br from-accent/70 to-accent">
+                <CardContent className="p-6 text-center">
+                  <Trophy className="w-8 h-8 text-primary mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">
+                    {currentLevel.replace("-"," ")}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Current Level</div>
+                </CardContent>
+              </Card>
+              <Card className="shadow-lg bg-gradient-to-br from-primary/10 to-primary/20">
+                <CardContent className="p-6 text-center">
+                  <Zap className="w-8 h-8 text-primary mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">{totalXP}</div>
+                  <div className="text-sm text-muted-foreground">Total XP</div>
+                </CardContent>
+              </Card>
+              <Card className="shadow-lg bg-gradient-to-br from-destructive/10 to-destructive/20">
+                <CardContent className="p-6 text-center">
+                  <Target className="w-8 h-8 text-destructive mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">
+                    {currentStreak}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Day Streak</div>
+                </CardContent>
+              </Card>
+              <Card className="shadow-lg bg-gradient-to-br from-secondary/10 to-secondary/20">
+                <CardContent className="p-6 text-center">
+                  <TrendingUp className="w-8 h-8 text-secondary mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">
+                    {weeklyGoal.completed}/{weeklyGoal.target}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Weekly Goal</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    Skill Progress
+                  </CardTitle>
+                  <CardDescription>
+                    Track your improvement across different areas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {[
+                    { name: "Speaking & Conversation", progress: 85, colorClass: "bg-primary" },
+                    { name: "Reading & Fidel Script", progress: 70, colorClass: "bg-blue-500" }, // Using a distinct color
+                    { name: "Cultural Knowledge", progress: 90, colorClass: "bg-purple-500" }, // Using a distinct color
+                    { name: "Grammar & Structure", progress: 65, colorClass: "bg-orange-500" }, // Using a distinct color
+                    { name: "Vocabulary", progress: 78, colorClass: "bg-green-500" }, // Using a distinct color
+                  ].map(skill => (
+                    <div key={skill.name}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">{skill.name}</span>
+                        <span className="text-primary">{skill.progress}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className={`${skill.colorClass} h-2 rounded-full`} style={{ width: `${skill.progress}%` }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="w-5 h-5 text-primary" />
+                    Achievements & Badges
+                  </CardTitle>
+                  <CardDescription>Celebrate your learning milestones</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      { icon: Trophy, label: "First Lesson", color: "text-yellow-500", bgColor: "bg-yellow-500/10" },
+                      { icon: Target, label: "7-Day Streak", color: "text-primary", bgColor: "bg-primary/10" },
+                      { icon: BookOpen, label: "Quiz Master", color: "text-blue-500", bgColor: "bg-blue-500/10" },
+                      { icon: Star, label: "Culture Expert", color: "text-purple-500", bgColor: "bg-purple-500/10" },
+                      { icon: Zap, label: "Vocabulary Pro", color: "text-orange-500", bgColor: "bg-orange-500/10" },
+                      { icon: Award, label: "Coming Soon", color: "text-muted-foreground", bgColor: "bg-muted", locked: true },
+                    ].map(ach => (
+                      <div key={ach.label} className={`text-center p-3 ${ach.bgColor} rounded-lg ${ach.locked ? 'opacity-60' : ''}`}>
+                        <ach.icon className={`w-8 h-8 ${ach.color} mx-auto mb-2`} />
+                        <div className="text-xs font-medium text-foreground">{ach.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <LessonFeedbackModal
+        lessonId={feedbackModal.lessonId}
+        lessonType={feedbackModal.lessonType}
+        lessonDate={feedbackModal.lessonDate}
+        isOpen={feedbackModal.isOpen}
+        onClose={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+        onSubmit={handleFeedbackSubmit}
+      />
     </div>
-  )
+  );
 }
