@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,7 +38,7 @@ import {
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
+import { db, auth as firebaseAuth } from "@/lib/firebase"; // Renamed auth to firebaseAuth to avoid conflict
 import {
   collection,
   query,
@@ -47,14 +47,16 @@ import {
   orderBy,
   doc,
   updateDoc,
-  Timestamp,
   setDoc,
+  Timestamp,
+  getDoc,
 } from "firebase/firestore";
+import { updateProfile as updateFirebaseUserProfile } from "firebase/auth";
 import type { Booking as BookingType, UserProfile } from "@/lib/types";
 import { format, isPast } from "date-fns";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
-import { Label } // Assuming Label is in ui/label
+import { Label }
 from "@/components/ui/label";
 import LessonFeedbackModal from "@/components/lesson-feedback-modal";
 import {
@@ -69,13 +71,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Logo } from "@/components/layout/logo";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-
-// Extend BookingType from lib/types to include hasReview locally for UI state
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
 }
-
 
 export default function StudentDashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -104,112 +104,108 @@ export default function StudentDashboardPage() {
     lessonDate: "",
   });
 
-  // Static data for new tabs - will be replaced by dynamic data in future iterations
-  const [currentStreak, setCurrentStreak] = useState(12);
-  const [totalXP, setTotalXP] = useState(850);
-  const [currentLevel, setCurrentLevel] = useState("Intermediate"); // Default or fetched
-  const [weeklyGoal, setWeeklyGoal] = useState({ target: 3, completed: 2 });
+  const [currentStreak, setCurrentStreak] = useState(12); // Static for now
+  const [totalXP, setTotalXP] = useState(850); // Static for now
+  const [currentLevel, setCurrentLevel] = useState("Intermediate"); // Will be updated from profile
+  const [weeklyGoal, setWeeklyGoal] = useState({ target: 3, completed: 2 }); // Static for now
+
+  const fetchBookings = async () => {
+    if (!user) return;
+    setIsLoadingBookings(true);
+    try {
+      const bookingsCol = collection(db, "bookings");
+      const q = query(
+        bookingsCol,
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      let fetchedBookings = querySnapshot.docs.map((doc) => {
+        const data = doc.data() as BookingType;
+        return { ...data, id: doc.id, hasReview: false };
+      });
+
+      const testimonialsCol = collection(db, "testimonials");
+      const tesimonialsQuery = query(testimonialsCol, where("userId", "==", user.uid), where("lessonId", "!=", null));
+      const testimonialsSnapshot = await getDocs(tesimonialsQuery);
+      const reviewedLessonIds = new Set(testimonialsSnapshot.docs.map(d => d.data().lessonId));
+
+      fetchedBookings = fetchedBookings.map(b => ({
+        ...b,
+        hasReview: reviewedLessonIds.has(b.id)
+      }));
+
+      setBookings(fetchedBookings);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      toast({
+        title: "Error",
+        description: "Could not load your bookings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingBookings(false);
+    }
+  };
+  
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    setIsLoadingProfile(true);
+    try {
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const profile = userDocSnap.data() as UserProfile;
+        setUserProfileData(profile);
+        setEditFormData({
+          name: profile.name || user.displayName || "",
+          nativeLanguage: profile.nativeLanguage || "",
+          country: profile.country || "",
+          amharicLevel: profile.amharicLevel || "beginner",
+        });
+        setCurrentLevel(profile.amharicLevel || "Beginner");
+      } else {
+        const basicProfile: UserProfile = {
+          uid: user.uid,
+          email: user.email || "",
+          name: user.displayName || "New User",
+          role: "student",
+          createdAt: Timestamp.now(),
+          photoURL: user.photoURL || null,
+          country: "",
+          amharicLevel: "beginner",
+          nativeLanguage: "",
+        };
+        await setDoc(doc(db, "users", user.uid), basicProfile);
+        setUserProfileData(basicProfile);
+        setEditFormData({ name: basicProfile.name, nativeLanguage: "", country: "", amharicLevel: "beginner" });
+        setCurrentLevel("Beginner");
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      toast({
+        title: "Error",
+        description: "Could not load your profile data.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      // router.push("/login"); // Handled by useAuth
       setIsLoadingBookings(false);
       setIsLoadingProfile(false);
       return;
     }
-
-    const fetchUserProfile = async () => {
-      setIsLoadingProfile(true);
-      try {
-        const userDocRef = doc(db, "users", user.uid);
-        // Efficiently get a single document
-        const userDocSnap = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
-
-        if (!userDocSnap.empty) {
-          const profile = userDocSnap.docs[0].data() as UserProfile;
-          setUserProfileData(profile);
-          setEditFormData({
-            name: profile.name || user.displayName || "",
-            nativeLanguage: profile.nativeLanguage || "",
-            country: profile.country || "",
-            amharicLevel: profile.amharicLevel || "",
-          });
-          setCurrentLevel(profile.amharicLevel || "Beginner");
-        } else {
-           // Create profile if it doesn't exist (should ideally happen at signup)
-          const basicProfile: UserProfile = {
-            uid: user.uid,
-            email: user.email || "",
-            name: user.displayName || "New User",
-            role: "student",
-            createdAt: Timestamp.now(),
-            country: "",
-            amharicLevel: "beginner",
-            nativeLanguage: "",
-          };
-          await setDoc(doc(db, "users", user.uid), basicProfile);
-          setUserProfileData(basicProfile);
-          setEditFormData({ name: basicProfile.name, nativeLanguage: "", country: "", amharicLevel: "beginner" });
-        }
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-        toast({
-          title: "Error",
-          description: "Could not load your profile data.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingProfile(false);
-      }
-    };
-
-    const fetchBookings = async () => {
-      setIsLoadingBookings(true);
-      try {
-        const bookingsCol = collection(db, "bookings");
-        const q = query(
-          bookingsCol,
-          where("userId", "==", user.uid),
-          orderBy("date", "desc"),
-          orderBy("time", "asc")
-        );
-        const querySnapshot = await getDocs(q);
-        const fetchedBookings = querySnapshot.docs.map((doc) => {
-          const data = doc.data() as BookingType;
-           // Check if a testimonial exists for this lessonId
-          // This is a simplified check; for performance, you might store `hasReview` on the booking itself
-          // or fetch testimonials once and cross-reference.
-          return { ...data, id: doc.id, hasReview: false }; // Placeholder for hasReview
-        });
-
-        // Fetch testimonials to mark bookings as reviewed
-        const testimonialsCol = collection(db, "testimonials");
-        const tesimonialsQuery = query(testimonialsCol, where("userId", "==", user.uid), where("lessonId", "!=", null));
-        const testimonialsSnapshot = await getDocs(tesimonialsQuery);
-        const reviewedLessonIds = new Set(testimonialsSnapshot.docs.map(d => d.data().lessonId));
-
-        const updatedBookings = fetchedBookings.map(b => ({
-          ...b,
-          hasReview: reviewedLessonIds.has(b.id)
-        }));
-
-        setBookings(updatedBookings);
-      } catch (error) {
-        console.error("Error fetching bookings:", error);
-        toast({
-          title: "Error",
-          description: "Could not load your bookings.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingBookings(false);
-      }
-    };
-
     fetchUserProfile();
     fetchBookings();
-  }, [user, authLoading, toast]);
+  }, [user, authLoading]);
+
 
   const handleProfileEditInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -217,19 +213,15 @@ export default function StudentDashboardPage() {
     setEditFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
   
-  const handleAmharicLevelChange = (value: string) => {
-     setEditFormData((prev) => ({ ...prev, amharicLevel: value }));
+  const handleProfileSelectChange = (name: string, value: string) => {
+     setEditFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
-  const handleCountryChange = (value: string) => {
-     setEditFormData((prev) => ({ ...prev, country: value }));
-  };
-
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-    setIsLoadingProfile(true);
+    if (!user || !firebaseAuth.currentUser) return; // Ensure firebaseAuth.currentUser is checked
+    
+    setIsLoadingProfile(true); // Use a specific loading state for profile saving
     try {
       const userDocRef = doc(db, "users", user.uid);
       const updatedProfileData = {
@@ -240,13 +232,13 @@ export default function StudentDashboardPage() {
       };
       await updateDoc(userDocRef, updatedProfileData);
 
-      if (auth.currentUser && user.displayName !== editFormData.name) {
-        await auth.currentUser.updateProfile({ displayName: editFormData.name });
+      if (firebaseAuth.currentUser.displayName !== editFormData.name) {
+        await updateFirebaseUserProfile(firebaseAuth.currentUser, { displayName: editFormData.name });
       }
-      setUserProfileData(
-        (prev) => ({ ...prev, ...updatedProfileData } as UserProfile)
-      );
+      // Optimistically update local state or refetch
+      setUserProfileData(prev => ({ ...prev, ...updatedProfileData } as UserProfile));
       setCurrentLevel(updatedProfileData.amharicLevel || "Beginner");
+
       toast({
         title: "Profile Updated",
         description: "Your profile has been saved.",
@@ -269,11 +261,13 @@ export default function StudentDashboardPage() {
       isOpen: true,
       lessonId: booking.id,
       lessonType: booking.lessonType || "Lesson",
-      lessonDate: booking.date, // Ensure date is passed as string
+      lessonDate: booking.date,
     });
   };
 
-  const handleFeedbackSubmit = (feedbackData: { lessonId: string }) => {
+  const handleFeedbackSubmit = async (feedbackData: { lessonId: string; rating: number; comment: string; specificRatings: Record<string, number>}) => {
+     // The LessonFeedbackModal now handles Firestore submission.
+     // This function is mainly to update the local UI state.
     setBookings((prev) =>
       prev.map((booking) =>
         booking.id === feedbackData.lessonId
@@ -281,15 +275,15 @@ export default function StudentDashboardPage() {
           : booking
       )
     );
-    // Actual submission is handled within the modal now
-    // toast({ title: "Feedback Recorded", description: "Thank you for rating your lesson!" });
+    // Toast is shown by the modal on successful submission.
   };
   
   const handleCancelBooking = async (bookingId: string) => {
     try {
       const bookingDocRef = doc(db, "bookings", bookingId);
       await updateDoc(bookingDocRef, { status: "cancelled" });
-      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled"} : b));
+      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled"} : b).filter(b => b.id !== bookingId || b.status !== "cancelled"));
+      fetchBookings(); // Re-fetch to get the latest list
       toast({ title: "Booking Cancelled", description: "Your lesson has been cancelled." });
     } catch (error) {
       console.error("Error cancelling booking:", error);
@@ -297,13 +291,13 @@ export default function StudentDashboardPage() {
     }
   };
 
-
   const upcomingBookings = bookings.filter(
     (b) => b.status === "confirmed" && !isPast(new Date(`${b.date}T${(b.time || "00:00").split(" ")[0]}`))
   );
   const pastBookings = bookings.filter(
     (b) => b.status === "completed" || b.status === "cancelled" || (b.status === "confirmed" && isPast(new Date(`${b.date}T${(b.time || "00:00").split(" ")[0]}`)))
   );
+  
   const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
 
   const totalSpent = bookings
@@ -314,18 +308,18 @@ export default function StudentDashboardPage() {
       .filter((b) => b.status === "completed")
       .reduce((sum, b) => sum + (b.duration || 0), 0) / 60;
 
-  if (authLoading || (!userProfileData && isLoadingProfile)) {
+  if (authLoading || (!userProfileData && isLoadingProfile && !user)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner size="lg" /> <p className="ml-3">Loading dashboard...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Spinner size="lg" /> <p className="ml-3 text-muted-foreground">Loading LissanHub Dashboard...</p>
       </div>
     );
   }
 
   if (!user && !authLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <p>Please log in to view your dashboard.</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <p className="text-muted-foreground">Please log in to view your LissanHub dashboard.</p>
         <Button asChild className="mt-4">
           <Link href="/login">Log In</Link>
         </Button>
@@ -333,10 +327,9 @@ export default function StudentDashboardPage() {
     );
   }
 
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
-      <header className="bg-card border-b sticky top-0 z-40"> {/* Use global navbar, but this is local header as per design */}
+      <header className="bg-card border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Logo />
           <div className="flex items-center gap-4">
@@ -360,32 +353,25 @@ export default function StudentDashboardPage() {
           </p>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Upcoming Lessons
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Upcoming Lessons</CardTitle>
               <Calendar className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{upcomingBookings.length}</div>
             </CardContent>
           </Card>
-
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Completed Lessons
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Completed Lessons</CardTitle>
               <BookOpen className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{completedBookingsCount}</div>
             </CardContent>
           </Card>
-
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Hours Learned</CardTitle>
@@ -395,12 +381,9 @@ export default function StudentDashboardPage() {
               <div className="text-2xl font-bold">{totalHours.toFixed(1)}</div>
             </CardContent>
           </Card>
-
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Investment
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Total Investment</CardTitle>
               <CreditCard className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
@@ -433,17 +416,13 @@ export default function StudentDashboardPage() {
               <Card className="shadow-lg">
                 <CardContent className="p-12 text-center">
                   <Calendar className="w-16 h-16 text-primary/70 mx-auto mb-4" />
-                  <h3 className="text-2xl font-semibold text-foreground mb-2">
-                    No Upcoming Lessons
-                  </h3>
+                  <h3 className="text-2xl font-semibold text-foreground mb-2">No Upcoming Lessons</h3>
                   <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    Ready to continue your LissanHub journey? Book your next
-                    lesson.
+                    Ready to continue your LissanHub journey? Book your next lesson.
                   </p>
                   <Button asChild>
                     <Link href="/bookings">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Book Your Next Lesson
+                      <Plus className="w-4 h-4 mr-2" /> Book Your Next Lesson
                     </Link>
                   </Button>
                 </CardContent>
@@ -458,15 +437,11 @@ export default function StudentDashboardPage() {
                           <BookOpen className="w-6 h-6 text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-foreground text-lg">
-                            {booking.lessonType || "Lesson"}
-                          </h3>
+                          <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Lesson"}</h3>
                           <p className="text-sm text-muted-foreground">
                             {format(new Date(booking.date), "PPP")} at {booking.time}
                           </p>
-                          <p className="text-sm text-primary">
-                            {booking.duration} minutes with {booking.tutorName}
-                          </p>
+                          <p className="text-sm text-primary">{booking.duration} minutes with {booking.tutorName}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
@@ -474,7 +449,7 @@ export default function StudentDashboardPage() {
                           {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                         </Badge>
                         <span className="font-semibold text-foreground">${booking.price}</span>
-                        <Button variant="outline" size="sm" className="text-xs">Reschedule</Button>
+                        <Button variant="outline" size="sm" className="text-xs border-primary/30 hover:bg-accent">Reschedule</Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                              <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs">
@@ -521,15 +496,11 @@ export default function StudentDashboardPage() {
                           <BookOpen className={`w-6 h-6 ${booking.status === 'completed' ? 'text-primary' : 'text-muted-foreground'}`} />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-foreground text-lg">
-                            {booking.lessonType || "Lesson"}
-                          </h3>
+                          <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Lesson"}</h3>
                           <p className="text-sm text-muted-foreground">
                             {format(new Date(booking.date), "PPP")} at {booking.time}
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            {booking.duration} minutes with {booking.tutorName}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{booking.duration} minutes with {booking.tutorName}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
@@ -540,23 +511,16 @@ export default function StudentDashboardPage() {
                         {booking.status === 'completed' && (
                            booking.hasReview ? (
                             <Badge variant="secondary" className="bg-accent text-accent-foreground">
-                              <Star className="w-3 h-3 mr-1" />
-                              Reviewed
+                              <Star className="w-3 h-3 mr-1" /> Reviewed
                             </Badge>
                           ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRateLesson(booking)}
-                              className="text-xs"
-                            >
-                              <Star className="w-4 h-4 mr-1" />
-                              Rate Lesson
+                            <Button variant="outline" size="sm" onClick={() => handleRateLesson(booking)} className="text-xs border-primary/30 hover:bg-accent">
+                              <Star className="w-4 h-4 mr-1" /> Rate Lesson
                             </Button>
                           )
                         )}
                          {booking.status === 'completed' && (
-                           <Button variant="outline" size="sm" className="text-xs"><Video className="mr-1 h-4 w-4" /> View Recording</Button>
+                           <Button variant="outline" size="sm" className="text-xs border-primary/30 hover:bg-accent"><Video className="mr-1 h-4 w-4" /> View Recording</Button>
                          )}
                       </div>
                     </div>
@@ -575,8 +539,7 @@ export default function StudentDashboardPage() {
                   <div className="flex justify-between items-center">
                     <div>
                         <CardTitle className="text-xl flex items-center gap-2">
-                        <User className="w-5 h-5 text-primary" />
-                        Profile Information
+                        <User className="w-5 h-5 text-primary" /> Profile Information
                         </CardTitle>
                         <CardDescription>Manage your account details and learning preferences.</CardDescription>
                     </div>
@@ -585,7 +548,7 @@ export default function StudentDashboardPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                 {isEditingProfile ? (
-                    <form onSubmit={handleSaveProfile} className="space-y-4">
+                    <form onSubmit={handleSaveProfile} className="space-y-6">
                         <div className="grid sm:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="editName">Full Name</Label>
@@ -601,7 +564,16 @@ export default function StudentDashboardPage() {
                             </div>
                              <div>
                                 <Label htmlFor="editAmharicLevel">Amharic Level</Label>
-                                 <Input id="editAmharicLevel" name="amharicLevel" value={editFormData.amharicLevel} onChange={handleProfileEditInputChange} placeholder="e.g., Beginner" />
+                                <Select value={editFormData.amharicLevel} onValueChange={(value) => handleProfileSelectChange("amharicLevel", value)}>
+                                    <SelectTrigger><SelectValue placeholder="Select your level" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="complete-beginner">Complete Beginner</SelectItem>
+                                        <SelectItem value="some-words">Know Some Words</SelectItem>
+                                        <SelectItem value="basic-conversation">Basic Conversation</SelectItem>
+                                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                                        <SelectItem value="advanced">Advanced</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                         <div className="flex gap-2 pt-2">
@@ -610,12 +582,15 @@ export default function StudentDashboardPage() {
                             </Button>
                             <Button variant="ghost" type="button" onClick={() => {
                                 setIsEditingProfile(false);
-                                setEditFormData({
-                                    name: userProfileData.name || "",
-                                    nativeLanguage: userProfileData.nativeLanguage || "",
-                                    country: userProfileData.country || "",
-                                    amharicLevel: userProfileData.amharicLevel || ""
-                                });
+                                // Reset form data to original profile data
+                                if(userProfileData) {
+                                   setEditFormData({
+                                        name: userProfileData.name || firebaseAuth.currentUser?.displayName || "",
+                                        nativeLanguage: userProfileData.nativeLanguage || "",
+                                        country: userProfileData.country || "",
+                                        amharicLevel: userProfileData.amharicLevel || "beginner"
+                                    });
+                                }
                             }}>Cancel</Button>
                         </div>
                     </form>
@@ -648,7 +623,7 @@ export default function StudentDashboardPage() {
                         </div>
                          <div>
                             <h4 className="text-sm font-medium text-muted-foreground">Learning Streak</h4>
-                            <p className="text-foreground">{currentStreak} days</p>
+                            <p className="text-foreground">{currentStreak} days (Static)</p>
                         </div>
                     </div>
                   </div>
@@ -660,127 +635,70 @@ export default function StudentDashboardPage() {
             )}
           </TabsContent>
 
-
           <TabsContent value="resources" className="space-y-6">
             <div className="grid lg:grid-cols-2 gap-6">
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-primary" />
-                    Homework & Assignments
-                  </CardTitle>
-                  <CardDescription>
-                    Complete your assignments and track your progress
-                  </CardDescription>
+                  <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5 text-primary" /> Homework & Assignments</CardTitle>
+                  <CardDescription>Complete your assignments and track your progress</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">
-                          Family Conversation Practice
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          Due: Tomorrow
-                        </p>
-                      </div>
+                      <div><h4 className="font-medium">Family Conversation Practice</h4><p className="text-sm text-muted-foreground">Due: Tomorrow</p></div>
                       <Badge variant="secondary" className="bg-yellow-400/20 text-yellow-700 dark:text-yellow-500">Pending</Badge>
                     </div>
                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">
-                          Fidel Script Exercise
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          Due: Jan 20
-                        </p>
-                      </div>
+                      <div><h4 className="font-medium">Fidel Script Exercise</h4><p className="text-sm text-muted-foreground">Due: Jan 20</p></div>
                       <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">Completed</Badge>
                     </div>
                   </div>
-                  <Button asChild className="w-full">
-                    <Link href="/resources#assignments">View All Assignments</Link>
-                  </Button>
+                  <Button asChild className="w-full"><Link href="/resources#assignments">View All Assignments</Link></Button>
                 </CardContent>
               </Card>
-
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-primary" />
-                    Interactive Quizzes
-                  </CardTitle>
-                  <CardDescription>
-                    Test your knowledge with fun, interactive quizzes
-                  </CardDescription>
+                  <CardTitle className="flex items-center gap-2"><Brain className="w-5 h-5 text-primary" /> Interactive Quizzes</CardTitle>
+                  <CardDescription>Test your knowledge with fun, interactive quizzes</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
-                       <div>
-                        <h4 className="font-medium">Basic Greetings Quiz</h4>
-                        <p className="text-sm text-muted-foreground">10 questions • 5 min</p>
-                      </div>
-                       <div className="flex items-center gap-2">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm">95%</span>
-                      </div>
+                       <div><h4 className="font-medium">Basic Greetings Quiz</h4><p className="text-sm text-muted-foreground">10 questions • 5 min</p></div>
+                       <div className="flex items-center gap-2"><Star className="w-4 h-4 fill-yellow-400 text-yellow-400" /><span className="text-sm">95%</span></div>
                     </div>
                   </div>
-                   <Button asChild className="w-full">
-                    <Link href="/resources#quizzes">Take a Quiz</Link>
-                  </Button>
+                   <Button asChild className="w-full"><Link href="/resources#quizzes">Take a Quiz</Link></Button>
                 </CardContent>
               </Card>
                <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-primary" />
-                    Vocabulary Builder
-                  </CardTitle>
-                  <CardDescription>
-                    Expand your Amharic vocabulary with flashcards
-                  </CardDescription>
+                  <CardTitle className="flex items-center gap-2"><Zap className="w-5 h-5 text-primary" /> Vocabulary Builder</CardTitle>
+                  <CardDescription>Expand your Amharic vocabulary with flashcards</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-4 bg-accent rounded-lg">
-                      <div className="text-2xl font-bold text-primary">247</div>
-                      <div className="text-sm text-muted-foreground">Words Learned</div>
+                      <div className="text-2xl font-bold text-primary">247</div><div className="text-sm text-muted-foreground">Words Learned</div>
                     </div>
                     <div className="text-center p-4 bg-accent/70 rounded-lg">
-                      <div className="text-2xl font-bold text-primary">15</div>
-                      <div className="text-sm text-muted-foreground">Daily Goal</div>
+                      <div className="text-2xl font-bold text-primary">15</div><div className="text-sm text-muted-foreground">Daily Goal</div>
                     </div>
                   </div>
-                   <Button asChild className="w-full">
-                    <Link href="/resources#flashcards">Practice Flashcards</Link>
-                  </Button>
+                   <Button asChild className="w-full"><Link href="/resources#flashcards">Practice Flashcards</Link></Button>
                 </CardContent>
               </Card>
                <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-primary" />
-                    Digital Learning Materials
-                  </CardTitle>
-                  <CardDescription>
-                    Interactive flipbooks and study materials
-                  </CardDescription>
+                  <CardTitle className="flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> Digital Learning Materials</CardTitle>
+                  <CardDescription>Interactive flipbooks and study materials</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
-                    <div>
-                      <h4 className="font-medium">Amharic Alphabet Flipbook</h4>
-                      <p className="text-sm text-muted-foreground">Interactive Fidel guide</p>
-                    </div>
-                    <Button size="sm" variant="outline" asChild>
-                       <Link href="/resources#flipbooks"><Play className="w-4 h-4 mr-1" /> Open</Link>
-                    </Button>
+                    <div><h4 className="font-medium">Amharic Alphabet Flipbook</h4><p className="text-sm text-muted-foreground">Interactive Fidel guide</p></div>
+                    <Button size="sm" variant="outline" asChild><Link href="/resources#flipbooks"><Play className="w-4 h-4 mr-1" /> Open</Link></Button>
                   </div>
-                   <Button asChild className="w-full">
-                    <Link href="/resources#flipbooks">View All Materials</Link>
-                  </Button>
+                   <Button asChild className="w-full"><Link href="/resources#flipbooks">View All Materials</Link></Button>
                 </CardContent>
               </Card>
             </div>
@@ -791,9 +709,7 @@ export default function StudentDashboardPage() {
               <Card className="shadow-lg bg-gradient-to-br from-accent/70 to-accent">
                 <CardContent className="p-6 text-center">
                   <Trophy className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">
-                    {currentLevel.replace("-"," ")}
-                  </div>
+                  <div className="text-2xl font-bold text-foreground">{currentLevel.replace("-"," ")}</div>
                   <div className="text-sm text-muted-foreground">Current Level</div>
                 </CardContent>
               </Card>
@@ -807,18 +723,14 @@ export default function StudentDashboardPage() {
               <Card className="shadow-lg bg-gradient-to-br from-destructive/10 to-destructive/20">
                 <CardContent className="p-6 text-center">
                   <Target className="w-8 h-8 text-destructive mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">
-                    {currentStreak}
-                  </div>
+                  <div className="text-2xl font-bold text-foreground">{currentStreak}</div>
                   <div className="text-sm text-muted-foreground">Day Streak</div>
                 </CardContent>
               </Card>
               <Card className="shadow-lg bg-gradient-to-br from-secondary/10 to-secondary/20">
                 <CardContent className="p-6 text-center">
                   <TrendingUp className="w-8 h-8 text-secondary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">
-                    {weeklyGoal.completed}/{weeklyGoal.target}
-                  </div>
+                  <div className="text-2xl font-bold text-foreground">{weeklyGoal.completed}/{weeklyGoal.target}</div>
                   <div className="text-sm text-muted-foreground">Weekly Goal</div>
                 </CardContent>
               </Card>
@@ -827,21 +739,16 @@ export default function StudentDashboardPage() {
             <div className="grid lg:grid-cols-2 gap-6">
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                    Skill Progress
-                  </CardTitle>
-                  <CardDescription>
-                    Track your improvement across different areas
-                  </CardDescription>
+                  <CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary" /> Skill Progress</CardTitle>
+                  <CardDescription>Track your improvement across different areas</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {[
                     { name: "Speaking & Conversation", progress: 85, colorClass: "bg-primary" },
-                    { name: "Reading & Fidel Script", progress: 70, colorClass: "bg-blue-500" }, // Using a distinct color
-                    { name: "Cultural Knowledge", progress: 90, colorClass: "bg-purple-500" }, // Using a distinct color
-                    { name: "Grammar & Structure", progress: 65, colorClass: "bg-orange-500" }, // Using a distinct color
-                    { name: "Vocabulary", progress: 78, colorClass: "bg-green-500" }, // Using a distinct color
+                    { name: "Reading & Fidel Script", progress: 70, colorClass: "bg-blue-500" },
+                    { name: "Cultural Knowledge", progress: 90, colorClass: "bg-purple-500" },
+                    { name: "Grammar & Structure", progress: 65, colorClass: "bg-orange-500" },
+                    { name: "Vocabulary", progress: 78, colorClass: "bg-green-500" },
                   ].map(skill => (
                     <div key={skill.name}>
                       <div className="flex justify-between text-sm mb-1">
@@ -855,13 +762,9 @@ export default function StudentDashboardPage() {
                   ))}
                 </CardContent>
               </Card>
-
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="w-5 h-5 text-primary" />
-                    Achievements & Badges
-                  </CardTitle>
+                  <CardTitle className="flex items-center gap-2"><Award className="w-5 h-5 text-primary" /> Achievements & Badges</CardTitle>
                   <CardDescription>Celebrate your learning milestones</CardDescription>
                 </CardHeader>
                 <CardContent>

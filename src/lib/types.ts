@@ -1,4 +1,3 @@
-
 import type { Timestamp } from "firebase/firestore";
 
 export interface Booking {
@@ -15,9 +14,10 @@ export interface Booking {
   // Optional fields
   lessonNotes?: string;
   duration?: number; // in minutes
-  lessonType?: string; // Added from booking form
-  price?: number; // Added from booking form
-  learningGoals?: string; // Added from booking form
+  lessonType?: string;
+  price?: number;
+  learningGoals?: string;
+  hasReview?: boolean; // Added for student dashboard
 }
 
 export interface Testimonial {
@@ -28,10 +28,9 @@ export interface Testimonial {
   rating: number; // 1-5
   comment: string;
   imageUrl?: string; // Optional
-  location?: string; 
+  location?: string;
   status: "pending" | "approved" | "rejected";
   createdAt: Timestamp;
-  // Fields from new Review design
   studentInitials?: string;
   lessonType?: string;
   specificRatings?: {
@@ -42,9 +41,9 @@ export interface Testimonial {
     engagement?: number;
   };
   helpful?: number;
-  // For display purposes, not stored in DB directly if fetched and formatted
-  date?: string; 
-  verified?: boolean; 
+  date?: string;
+  verified?: boolean;
+  lessonId?: string; // Added for linking testimonial to a lesson
 }
 
 export interface ContactMessage {
@@ -66,7 +65,7 @@ export interface UserProfile {
   nativeLanguage?: string;
   country?: string;
   amharicLevel?: string;
-  // other fields as needed
+  photoURL?: string | null;
 }
 
 export interface ChatMessage {
@@ -76,4 +75,10 @@ export interface ChatMessage {
   userName: string;
   userAvatar?: string | null; // Optional: user.photoURL
   timestamp: Timestamp; // Firestore Timestamp
+}
+
+export interface NewsletterSubscription {
+  id: string;
+  email: string;
+  subscribedAt: Timestamp;
 }
