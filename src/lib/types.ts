@@ -15,6 +15,9 @@ export interface Booking {
   // Optional fields
   lessonNotes?: string;
   duration?: number; // in minutes
+  lessonType?: string; // Added from booking form
+  price?: number; // Added from booking form
+  learningGoals?: string; // Added from booking form
 }
 
 export interface Testimonial {
@@ -25,9 +28,20 @@ export interface Testimonial {
   rating: number; // 1-5
   comment: string;
   imageUrl?: string; // Optional
-  location?: string; // Added from new design
+  location?: string; 
   status: "pending" | "approved" | "rejected";
   createdAt: Timestamp;
+  // Fields from new Review design
+  studentInitials?: string;
+  lessonType?: string;
+  specificRatings?: {
+    teachingQuality?: number;
+    materialClarity?: number;
+    culturalInsights?: number;
+    pacing?: number;
+    engagement?: number;
+  };
+  helpful?: number;
   // For display purposes, not stored in DB directly if fetched and formatted
   date?: string; 
   verified?: boolean; 
@@ -50,6 +64,8 @@ export interface UserProfile {
   role: "student" | "admin";
   createdAt: Timestamp;
   nativeLanguage?: string;
+  country?: string;
+  amharicLevel?: string;
   // other fields as needed
 }
 
