@@ -19,7 +19,11 @@ import {
   Zap,
   Volume2,
   RotateCcw,
+  MessageCircle, // For AI Chatbot
+  MicVocal, // For Pronunciation
 } from "lucide-react"
+import { AIChatbot } from "@/components/ai/AIChatbot"
+import { PronunciationFeedbackTool } from "@/components/ai/PronunciationFeedbackTool"
 
 export default function ResourcesPage() {
   const [currentCard, setCurrentCard] = useState(0)
@@ -31,6 +35,20 @@ export default function ResourcesPage() {
     { amharic: "አመሰግናለሁ", english: "Thank you", pronunciation: "ameseginalew" },
     { amharic: "እንደምን አደርሽ?", english: "How are you doing? (to female)", pronunciation: "indemin adersh?" },
   ]
+
+  // quizQuestions is not used in the current JSX, keeping it for potential future use
+  // const quizQuestions = [
+  //   {
+  //     question: "What does 'ሰላም' mean?",
+  //     options: ["Goodbye", "Hello/Peace", "Thank you", "Please"],
+  //     correct: 1,
+  //   },
+  //   {
+  //     question: "How do you say 'Thank you' in Amharic?",
+  //     options: ["ሰላም", "አመሰግናለሁ", "እንዴት ነሽ", "እንደምን አደርሽ"],
+  //     correct: 1,
+  //   },
+  // ]
 
   const flipCard = () => {
     setShowAnswer(!showAnswer)
@@ -57,7 +75,7 @@ export default function ResourcesPage() {
         </div>
 
         <Tabs defaultValue="flashcards" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 bg-card border">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-7 bg-card border">
             <TabsTrigger
               value="flashcards"
               className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
@@ -87,6 +105,18 @@ export default function ResourcesPage() {
               className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
             >
               Assignments
+            </TabsTrigger>
+             <TabsTrigger
+              value="ai-tutor-chat"
+              className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+            >
+              AI Tutor
+            </TabsTrigger>
+            <TabsTrigger
+              value="pronunciation-practice"
+              className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+            >
+              Pronunciation
             </TabsTrigger>
           </TabsList>
 
@@ -174,7 +204,7 @@ export default function ResourcesPage() {
                         <div className="text-lg font-bold text-primary">5</div>
                         <div className="text-xs text-muted-foreground">Day Streak</div>
                       </div>
-                      <div className="p-3 bg-accent/30 rounded-lg"> 
+                       <div className="p-3 bg-accent/30 rounded-lg">
                         <div className="text-lg font-bold text-primary">92%</div>
                         <div className="text-xs text-muted-foreground">Accuracy</div>
                       </div>
@@ -268,14 +298,14 @@ export default function ResourcesPage() {
                     <div className="p-4 border rounded-lg hover:bg-accent/50 cursor-pointer">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-foreground">Family & Relationships</h4>
-                        <Badge variant="default" className="bg-accent text-accent-foreground">New</Badge> 
+                         <Badge variant="default" className="bg-accent text-accent-foreground">New</Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">15 questions • 8 min</div>
                     </div>
                     <div className="p-4 border rounded-lg hover:bg-accent/50 cursor-pointer">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-foreground">Cultural Knowledge</h4>
-                         <Badge variant="secondary" className="bg-yellow-400/20 text-yellow-700 dark:text-yellow-500">In Progress</Badge>
+                        <Badge variant="secondary" className="bg-yellow-400/20 text-yellow-700 dark:text-yellow-500">In Progress</Badge>
                       </div>
                       <div className="text-sm text-muted-foreground mb-2">20 questions • 12 min</div>
                       <Progress value={60} className="h-1 bg-primary/20 [&>div]:bg-primary" />
@@ -283,7 +313,7 @@ export default function ResourcesPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-xl bg-gradient-to-br from-accent/50 to-accent/30">
+                 <Card className="shadow-xl bg-gradient-to-br from-accent/50 to-accent/30">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <Trophy className="w-8 h-8 text-primary" />
@@ -305,7 +335,7 @@ export default function ResourcesPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Card className="shadow-xl hover:shadow-2xl transition-shadow">
                 <CardHeader>
-                  <div className="aspect-[3/4] bg-gradient-to-br from-accent/70 to-accent/90 rounded-lg flex items-center justify-center mb-4">
+                   <div className="aspect-[3/4] bg-gradient-to-br from-accent/70 to-accent/90 rounded-lg flex items-center justify-center mb-4">
                     <BookOpen className="w-16 h-16 text-primary" />
                   </div>
                   <CardTitle className="text-lg text-foreground">Amharic Alphabet Guide</CardTitle>
@@ -328,7 +358,7 @@ export default function ResourcesPage() {
 
               <Card className="shadow-xl hover:shadow-2xl transition-shadow">
                 <CardHeader>
-                   <div className="aspect-[3/4] bg-gradient-to-br from-accent/50 to-accent/30 rounded-lg flex items-center justify-center mb-4"> 
+                   <div className="aspect-[3/4] bg-gradient-to-br from-accent/50 to-accent/30 rounded-lg flex items-center justify-center mb-4">
                     <BookOpen className="w-16 h-16 text-primary" />
                   </div>
                   <CardTitle className="text-lg text-foreground">Ethiopian Culture & Traditions</CardTitle>
@@ -336,7 +366,7 @@ export default function ResourcesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                     <Badge variant="default" className="bg-primary text-primary-foreground">New Release</Badge>
+                    <Badge variant="default" className="bg-primary text-primary-foreground">New Release</Badge>
                     <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                       <Play className="w-4 h-4 mr-2" />
                       Start Reading
@@ -347,7 +377,7 @@ export default function ResourcesPage() {
 
               <Card className="shadow-xl hover:shadow-2xl transition-shadow">
                 <CardHeader>
-                   <div className="aspect-[3/4] bg-gradient-to-br from-secondary/20 to-secondary/40 rounded-lg flex items-center justify-center mb-4"> 
+                   <div className="aspect-[3/4] bg-gradient-to-br from-secondary/20 to-secondary/40 rounded-lg flex items-center justify-center mb-4">
                     <BookOpen className="w-16 h-16 text-secondary-foreground" />
                   </div>
                   <CardTitle className="text-lg text-foreground">Common Phrases Handbook</CardTitle>
@@ -429,7 +459,7 @@ export default function ResourcesPage() {
                 <CardContent className="space-y-4">
                   <div className="p-4 border rounded-lg hover:bg-accent/50 cursor-pointer">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
+                       <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
                         <Play className="w-6 h-6 text-primary" />
                       </div>
                       <div>
@@ -438,9 +468,9 @@ export default function ResourcesPage() {
                       </div>
                     </div>
                   </div>
-                   <div className="p-4 border rounded-lg hover:bg-accent/30 cursor-pointer"> 
+                   <div className="p-4 border rounded-lg hover:bg-accent/30 cursor-pointer">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-accent/80 rounded-lg flex items-center justify-center">
+                       <div className="w-12 h-12 bg-accent/80 rounded-lg flex items-center justify-center">
                         <Play className="w-6 h-6 text-primary" />
                       </div>
                       <div>
@@ -451,7 +481,7 @@ export default function ResourcesPage() {
                   </div>
                    <div className="p-4 border rounded-lg hover:bg-secondary/10 cursor-pointer">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
+                       <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
                         <Play className="w-6 h-6 text-secondary-foreground" />
                       </div>
                       <div>
@@ -481,7 +511,7 @@ export default function ResourcesPage() {
                     <div className="p-4 border rounded-lg border-l-4 border-l-yellow-400 dark:border-l-yellow-600">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-foreground">Family Conversation Practice</h4>
-                         <Badge variant="secondary" className="bg-yellow-400/20 text-yellow-700 dark:text-yellow-500">Due Tomorrow</Badge>
+                        <Badge variant="secondary" className="bg-yellow-400/20 text-yellow-700 dark:text-yellow-500">Due Tomorrow</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-3">
                         Record a 3-minute conversation with a family member using the phrases learned in lesson 5.
@@ -497,7 +527,7 @@ export default function ResourcesPage() {
                       </div>
                     </div>
 
-                    <div className="p-4 border rounded-lg border-l-4 border-l-primary/50 dark:border-l-primary">
+                     <div className="p-4 border rounded-lg border-l-4 border-l-primary/50 dark:border-l-primary">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-foreground">Fidel Script Writing Exercise</h4>
                         <Badge variant="default" className="bg-accent text-accent-foreground">In Progress</Badge>
@@ -509,12 +539,12 @@ export default function ResourcesPage() {
                         <Progress value={60} className="h-2 bg-primary/20 [&>div]:bg-primary" />
                         <div className="text-xs text-muted-foreground mt-1">6/10 exercises completed</div>
                       </div>
-                       <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                      <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                         Continue Assignment
                       </Button>
                     </div>
 
-                    <div className="p-4 border rounded-lg border-l-4 border-l-green-400 dark:border-l-green-600">
+                     <div className="p-4 border rounded-lg border-l-4 border-l-green-400 dark:border-l-green-600"> {/* Using green for completed */}
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-foreground">Cultural Research Project</h4>
                         <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">Completed</Badge>
@@ -575,6 +605,37 @@ export default function ResourcesPage() {
               </div>
             </div>
           </TabsContent>
+
+          <TabsContent value="ai-tutor-chat">
+            <Card className="shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <MessageCircle className="w-5 h-5 text-primary" />
+                  AI Tutor Chat (Beta)
+                </CardTitle>
+                <CardDescription>Practice your conversation skills with our AI tutor.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AIChatbot />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="pronunciation-practice">
+             <Card className="shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <MicVocal className="w-5 h-5 text-primary" />
+                  Pronunciation Practice (Beta)
+                </CardTitle>
+                <CardDescription>Get feedback on your Amharic pronunciation.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PronunciationFeedbackTool />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
         </Tabs>
       </div>
     </div>
