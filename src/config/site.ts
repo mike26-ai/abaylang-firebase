@@ -1,3 +1,4 @@
+
 export type NavItem = {
   title: string;
   href: string;
@@ -16,15 +17,17 @@ export const siteConfig = {
   description: "Learn Amharic with native speakers. Personalized lessons and cultural immersion for diaspora and global learners.",
   url: "https://lissanhub.example.com", // Replace with your actual domain
   mainNav: [
-    { title: "Home", href: "/" },
     // Homepage specific anchors, appear in global nav when on other pages.
+    // Note: The homepage at "/" has its own local navigation.
+    // These links in mainNav are for when users are on other pages.
+    { title: "Home", href: "/" },
     { title: "About", href: "/#about", isSectionAnchor: true },
     { title: "Lessons", href: "/#lessons", isSectionAnchor: true },
+    { title: "Resources", href: "/resources" },
     { title: "Reviews", href: "/#testimonials", isSectionAnchor: true },
-    { title: "Resources", href: "/resources" }, // Standalone top-level link
     {
       title: "More",
-      href: "/more", // Main page for the "More" section
+      href: "/more", 
       children: [
         { title: "News & Updates", href: "/news" },
         { title: "Learning Blog", href: "/blog" },
@@ -50,6 +53,7 @@ export const siteConfig = {
   footerNav: [
      { title: "Privacy Policy", href: "/privacy" },
      { title: "Terms of Service", href: "/terms" },
+     { title: "FAQ", href: "/faq" },
   ]
 };
 
@@ -59,8 +63,8 @@ export const tutorInfo = {
   shortIntro: "Native Amharic Speaker & Cultural Ambassador",
   teachingStyle: "Interactive conversation, grammar in context, cultural insights, personalized feedback. My goal is to make learning Amharic engaging, relevant, and enjoyable for all students, helping them not only speak the language but also understand the rich cultural tapestry of Ethiopia.",
   services: ["One-on-one lessons", "Group classes (coming soon)", "Accent coaching", "Cultural Immersion sessions"],
-  imageUrl: "https://placehold.co/400x400.png", // Replace with actual image
-  dataAiHint: "tutor portrait", // For placeholder image replacement hint
+  imageUrl: "https://placehold.co/400x400.png", 
+  dataAiHint: "tutor portrait",
   videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder video
 };
 
