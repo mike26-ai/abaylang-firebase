@@ -1,18 +1,20 @@
+
 "use client"
 
-import { useState } from "react"
+import { useState, FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Send, Bot, User, Volume2 } from "lucide-react"
+import { aiTutorChat, type AiTutorChatInput, type AiTutorChatOutput } from "@/ai/flows/ai-tutor-chat-flow";
+import { Spinner } from "../ui/spinner";
 
 interface Message {
   id: string
-  text: string
+  text: string // This will be the Amharic response from the bot
   sender: "user" | "bot"
-  amharic?: string
-  translation?: string
+  translation?: string // English translation for the bot's Amharic response
 }
 
 export function AIChatbot() {
@@ -25,17 +27,10 @@ export function AIChatbot() {
     },
   ])
   const [inputText, setInputText] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
+  const [isTyping, setIsTyping] = useState(false) // For AI response loading
 
-  const botResponses = [
-    { amharic: "ደህና ነኝ፣ አመሰግናለሁ!", translation: "I'm fine, thank you!" },
-    { amharic: "ጥሩ ነው! ዛሬ ምን ትማራለህ?", translation: "Great! What are you learning today?" },
-    { amharic: "በጣም ጥሩ! ቀጥል!", translation: "Very good! Continue!" },
-    { amharic: "እንደገና ሞክር", translation: "Try again" },
-    { amharic: "ምርጥ! አሁን ሌላ ሐረግ ንሞክር", translation: "Excellent! Now let's try another phrase" },
-  ]
-
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
     if (!inputText.trim()) return
 
     const userMessage: Message = {
@@ -45,35 +40,62 @@ export function AIChatbot() {
     }
 
     setMessages((prev) => [...prev, userMessage])
+    const currentInput = inputText;
     setInputText("")
     setIsTyping(true)
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)]
+    try {
+      const inputForFlow: AiTutorChatInput = { userInput: currentInput };
+      const result: AiTutorChatOutput = await aiTutorChat(inputForFlow);
+      
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: randomResponse.amharic,
+        text: result.amharicResponse,
         sender: "bot",
-        translation: randomResponse.translation,
+        translation: result.englishTranslation,
       }
-
       setMessages((prev) => [...prev, botMessage])
+    } catch (error) {
+      console.error("Error calling AI Tutor Chat flow:", error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "ይቅርታ፣ አንድ ችግር ተፈጥሯል። እባክዎ ቆየት ብለው ይሞክሩ።",
+        sender: "bot",
+        translation: "Sorry, something went wrong. Please try again later.",
+      }
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false)
-    }, 1500)
+    }
   }
 
   const playAudio = (text: string) => {
     // In a real app, this would use text-to-speech
-    alert(`Playing audio for: ${text}`)
+    // For now, we can use the browser's built-in speech synthesis if available
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      // Attempt to find an Amharic voice, though availability is very browser/OS dependent
+      const voices = window.speechSynthesis.getVoices();
+      const amharicVoice = voices.find(voice => voice.lang.toLowerCase().startsWith('am'));
+      if (amharicVoice) {
+        utterance.voice = amharicVoice;
+      } else {
+        // Fallback if no Amharic voice, might not sound right
+        utterance.lang = 'am'; 
+      }
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert(`Audio playback not supported for: ${text}`)
+    }
   }
+
 
   return (
     <Card className="h-96 flex flex-col shadow-lg">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg text-foreground">
           <Bot className="w-5 h-5 text-primary" />
-          Amharic AI Tutor
+          Lissan AI Tutor
           <Badge variant="secondary" className="bg-accent text-accent-foreground">Beta</Badge>
         </CardTitle>
       </CardHeader>
@@ -92,15 +114,15 @@ export function AIChatbot() {
                   {message.sender === "user" && <User className="w-4 h-4 mt-1" />}
                   <div className="flex-1">
                     <div className="font-medium">{message.text}</div>
-                    {message.translation && <div className={`text-xs mt-1 ${message.sender === 'user' ? 'opacity-80' : 'opacity-70'}`}>{message.translation}</div>}
-                    {message.sender === "bot" && (
+                    {message.translation && <div className={`text-xs mt-1 ${message.sender === 'user' ? 'opacity-80' : 'text-muted-foreground'}`}>{message.translation}</div>}
+                    {message.sender === "bot" && message.text && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => playAudio(message.text)}
                         className={`mt-1 h-6 px-2 text-xs ${message.sender === 'user' ? 'text-primary-foreground/80 hover:text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                       >
-                        <Volume2 className="w-3 h-3" />
+                        <Volume2 className="w-3 h-3 mr-1" /> Listen
                       </Button>
                     )}
                   </div>
@@ -131,22 +153,22 @@ export function AIChatbot() {
           )}
         </div>
 
-        <div className="flex gap-2">
+        <form onSubmit={handleSendMessage} className="flex gap-2">
           <Input
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Type in Amharic or English..."
-            onKeyPress={(e) => e.key === "Enter" && !isTyping && inputText.trim() && handleSendMessage()}
             className="flex-1"
+            disabled={isTyping}
           />
           <Button
-            onClick={handleSendMessage}
+            type="submit"
             disabled={!inputText.trim() || isTyping}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            <Send className="w-4 h-4" />
+            {isTyping ? <Spinner size="sm" /> : <Send className="w-4 h-4" />}
           </Button>
-        </div>
+        </form>
       </CardContent>
     </Card>
   )
