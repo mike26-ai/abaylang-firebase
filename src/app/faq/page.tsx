@@ -1,7 +1,7 @@
 
 import type { Metadata } from 'next';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookQuestion } from 'lucide-react';
+import { HelpCircle } from 'lucide-react'; // Changed from BookQuestion to HelpCircle
 
 export const metadata: Metadata = {
   title: 'Frequently Asked Questions (FAQ)',
@@ -52,7 +52,7 @@ export default function FAQPage() {
     <div className="container py-12 px-4 md:px-6">
       <header className="mb-10 text-center">
         <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
-          <BookQuestion className="h-10 w-10 text-primary" />
+          <HelpCircle className="h-10 w-10 text-primary" /> {/* Changed from BookQuestion to HelpCircle */}
         </div>
         <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
           Frequently Asked Questions
