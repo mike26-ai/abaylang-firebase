@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -23,14 +24,10 @@ import {
   Calendar,
   DollarSign,
   Users,
-  LogOut,
   Star,
-  Eye,
-  MessageSquareText,
   BookOpenText,
   CheckCircle,
   X,
-  Award,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -60,9 +57,12 @@ interface DashboardStats {
   pendingTestimonialsCount: number;
   newInquiries: number;
   totalStudents: number;
-  totalRevenue: number; // Placeholder for now
-  averageRating: number; // Placeholder for now
+  totalRevenue: number; 
+  averageRating: number; 
 }
+
+// Define action type for spinner logic
+type TestimonialActionType = "approved" | "rejected" | null;
 
 export default function AdminDashboardPage() {
   const { user, loading: authLoading, signOut, isAdmin } = useAuth();
@@ -74,15 +74,16 @@ export default function AdminDashboardPage() {
     pendingTestimonialsCount: 0,
     newInquiries: 0,
     totalStudents: 0,
-    totalRevenue: 0, // Static for now
-    averageRating: 4.9, // Static for now
+    totalRevenue: 0, // Will be calculated or remain placeholder
+    averageRating: 0, // Will be calculated or remain placeholder
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
   const [pendingTestimonials, setPendingTestimonials] = useState<Testimonial[]>([]);
   const [recentMessages, setRecentMessages] = useState<ContactMessage[]>([]);
   const [recentStudents, setRecentStudents] = useState<UserProfile[]>([]);
-  const [isUpdatingTestimonial, setIsUpdatingTestimonial] = useState<string | null>(null);
+  
+  const [updatingTestimonial, setUpdatingTestimonial] = useState<{ id: string | null; action: TestimonialActionType }>({ id: null, action: null });
 
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export default function AdminDashboardPage() {
       return;
     }
     if (!isAdmin) {
-      router.push("/profile"); // Redirect non-admins
+      router.push("/profile"); 
       return;
     }
 
@@ -111,17 +112,19 @@ export default function AdminDashboardPage() {
         const pendingTestimonialsQuery = query(collection(db, "testimonials"), where("status", "==", "pending"));
         const pendingTestimonialsSnapshot = await getCountFromServer(pendingTestimonialsQuery);
         
-        // Fetch actual pending testimonials for display
         const latestPendingTestimonialsQuery = query(pendingTestimonialsQuery, orderBy("createdAt", "desc"), limit(5));
         const latestPendingTestimonialsDocs = await getDocs(latestPendingTestimonialsQuery);
-        setPendingTestimonials(latestPendingTestimonialsDocs.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial)));
-
+        setPendingTestimonials(latestPendingTestimonialsDocs.docs.map(d => ({ id: d.id, ...d.data() } as Testimonial)));
 
         const newInquiriesQuery = query(collection(db, "contactMessages"), where("read", "==", false));
         const newInquiriesSnapshot = await getCountFromServer(newInquiriesQuery);
 
-        const totalStudentsQuery = collection(db, "users");
+        const totalStudentsQuery = query(collection(db, "users"), where("role", "==", "student"));
         const totalStudentsSnapshot = await getCountFromServer(totalStudentsQuery);
+        
+        // Placeholder for revenue and average rating calculation
+        // For revenue: sum prices of 'completed' bookings
+        // For average rating: average of 'approved' testimonial ratings
 
         setStats({
           upcomingBookings: upcomingBookingsSnapshot.data().count,
@@ -132,20 +135,14 @@ export default function AdminDashboardPage() {
           averageRating: 4.9, // Placeholder
         });
 
-        // Fetch recent bookings for the tab (example)
-        const recentBookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(5));
-        const recentBookingsDocs = await getDocs(recentBookingsQuery);
-        setRecentBookings(recentBookingsDocs.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking)));
+        const recentBookingsDocs = await getDocs(query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(5)));
+        setRecentBookings(recentBookingsDocs.docs.map(d => ({ id: d.id, ...d.data() } as Booking)));
         
-        // Fetch recent messages for the tab (example)
-        const recentMessagesQuery = query(collection(db, "contactMessages"), orderBy("createdAt", "desc"), limit(5));
-        const recentMessagesDocs = await getDocs(recentMessagesQuery);
-        setRecentMessages(recentMessagesDocs.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactMessage)));
+        const recentMessagesDocs = await getDocs(query(collection(db, "contactMessages"), orderBy("createdAt", "desc"), limit(5)));
+        setRecentMessages(recentMessagesDocs.docs.map(d => ({ id: d.id, ...d.data() } as ContactMessage)));
 
-        // Fetch recent students for the tab (example)
-        const recentStudentsQuery = query(collection(db, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5));
-        const recentStudentsDocs = await getDocs(recentStudentsQuery);
-        setRecentStudents(recentStudentsDocs.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile)));
+        const recentStudentsDocs = await getDocs(query(collection(db, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5)));
+        setRecentStudents(recentStudentsDocs.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile)));
 
 
       } catch (error) {
@@ -160,19 +157,18 @@ export default function AdminDashboardPage() {
   }, [user, isAdmin, authLoading, router, toast]);
 
   const handleTestimonialAction = async (id: string, action: "approved" | "rejected") => {
-    setIsUpdatingTestimonial(id);
+    setUpdatingTestimonial({ id, action });
     try {
       const testimonialDocRef = doc(db, "testimonials", id);
       await updateDoc(testimonialDocRef, { status: action });
       setPendingTestimonials((prev) => prev.filter((testimonial) => testimonial.id !== id));
-      // Optionally update the main count if it's critical for immediate display
       setStats(prev => ({...prev, pendingTestimonialsCount: Math.max(0, prev.pendingTestimonialsCount -1)}));
       toast({ title: "Success", description: `Testimonial ${action}.` });
     } catch (error) {
       console.error("Error updating testimonial:", error);
       toast({ title: "Error", description: "Could not update testimonial status.", variant: "destructive" });
     } finally {
-      setIsUpdatingTestimonial(null);
+      setUpdatingTestimonial({ id: null, action: null });
     }
   };
   
@@ -183,7 +179,6 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
-      {/* Header is part of AdminLayout */}
       <div className="container mx-auto px-4 py-8">
         <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
@@ -196,7 +191,6 @@ export default function AdminDashboardPage() {
           </Link>
         </header>
 
-        {/* Stats Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="shadow-lg hover-lift">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -243,7 +237,6 @@ export default function AdminDashboardPage() {
           </Card>
         </div>
 
-        {/* Quick Actions Notification */}
         {(stats.pendingTestimonialsCount > 0 || stats.newInquiries > 0) && (
           <Card className="shadow-lg mb-8 bg-gradient-to-r from-primary/5 to-accent/30">
             <CardContent className="p-6">
@@ -361,18 +354,18 @@ export default function AdminDashboardPage() {
                               size="sm"
                               className="text-primary border-primary/30 hover:bg-primary/10 hover:text-primary"
                               onClick={() => handleTestimonialAction(testimonial.id, "approved")}
-                              disabled={isUpdatingTestimonial === testimonial.id}
+                              disabled={updatingTestimonial.id === testimonial.id}
                             >
-                              {isUpdatingTestimonial === testimonial.id && action === "approved" ? <Spinner size="sm" className="mr-1"/> : <CheckCircle className="w-4 h-4 mr-1" />} Approve
+                              {updatingTestimonial.id === testimonial.id && updatingTestimonial.action === "approved" ? <Spinner size="sm" className="mr-1"/> : <CheckCircle className="w-4 h-4 mr-1" />} Approve
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
                               onClick={() => handleTestimonialAction(testimonial.id, "rejected")}
-                              disabled={isUpdatingTestimonial === testimonial.id}
+                              disabled={updatingTestimonial.id === testimonial.id}
                             >
-                               {isUpdatingTestimonial === testimonial.id && action === "rejected" ? <Spinner size="sm" className="mr-1"/> : <X className="w-4 h-4 mr-1" />} Reject
+                               {updatingTestimonial.id === testimonial.id && updatingTestimonial.action === "rejected" ? <Spinner size="sm" className="mr-1"/> : <X className="w-4 h-4 mr-1" />} Reject
                             </Button>
                           </div>
                         </TableCell>
@@ -450,7 +443,7 @@ export default function AdminDashboardPage() {
                       <TableRow key={student.uid}>
                         <TableCell className="font-medium">{student.name}</TableCell>
                         <TableCell>{student.email}</TableCell>
-                        <TableCell>{format(student.createdAt.toDate(), "PP")}</TableCell>
+                        <TableCell>{student.createdAt ? format(student.createdAt.toDate(), "PP") : "N/A"}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{student.amharicLevel || "N/A"}</Badge>
                         </TableCell>
@@ -459,8 +452,8 @@ export default function AdminDashboardPage() {
                   </TableBody>
                 </Table>
                 )}
-                {/* We don't have a dedicated student management page yet beyond user profiles */}
                  <div className="mt-4 text-right">
+                    {/* For now, no dedicated "all students" management page beyond profiles, so disable or link to a future page */}
                     <Button variant="outline" disabled>View All Students (Coming Soon)</Button>
                 </div>
               </CardContent>
@@ -472,52 +465,4 @@ export default function AdminDashboardPage() {
   );
 }
 
-// Helper variable 'action' for spinner logic - needs to be defined outside the component or passed appropriately if used within map
-let action: "approved" | "rejected" | null = null;
-// This is a quick fix for the spinner logic in the provided code. Ideally, this state would be managed more locally or per item.
-// For now, setting it globally like this allows the conditional rendering to work without more extensive refactoring.
-// In a more complex scenario, you'd likely have a loading state per testimonial item.
-
-// To handle this better, the spinner logic for testimonial actions:
-// setIsUpdatingTestimonial(testimonial.id + '_' + action);
-// And then check: isUpdatingTestimonial === testimonial.id + '_approved'
-
-// For simplicity of this single-file change, the global 'action' variable hack is used.
-// The provided code will compile and the spinner will appear, but only for one action type at a time globally.
-// This isn't ideal but fulfills the immediate request of making the provided snippet functional.
-// The `handleTestimonialAction` should also set this 'action' variable before setting `isUpdatingTestimonial`.
-// Example:
-// const handleTestimonialAction = async (id: string, currentAction: "approved" | "rejected") => {
-//   action = currentAction; // Set the global action
-//   setIsUpdatingTestimonial(id);
-// ... rest of the function
-// }
-// And then use `isUpdatingTestimonial === testimonial.id && action === "approved"` for the spinner.
-// The existing code only uses `isUpdatingTestimonial === testimonial.id` which will show spinner for both buttons if one is clicked.
-// This note is for understanding the limitations of the quick fix.
-// The most robust solution is to manage loading state per item and action type.
-// For now, I will make the minimal change to allow the spinner logic to conditionally show on the correct button.
-// I will update the handleTestimonialAction function to set this global action variable.
-
-const handleTestimonialAction = async (id: string, currentAction: "approved" | "rejected", setIsUpdatingTestimonial: Function, setPendingTestimonials: Function, setStats: Function, toast: Function) => {
-  action = currentAction; // Set the global action
-  setIsUpdatingTestimonial(id);
-  try {
-    const testimonialDocRef = doc(db, "testimonials", id);
-    await updateDoc(testimonialDocRef, { status: currentAction });
-    setPendingTestimonials((prev: Testimonial[]) => prev.filter((testimonial) => testimonial.id !== id));
-    setStats((prev: DashboardStats) => ({...prev, pendingTestimonialsCount: Math.max(0, prev.pendingTestimonialsCount -1)}));
-    toast({ title: "Success", description: `Testimonial ${currentAction}.` });
-  } catch (error) {
-    console.error("Error updating testimonial:", error);
-    toast({ title: "Error", description: "Could not update testimonial status.", variant: "destructive" });
-  } finally {
-    setIsUpdatingTestimonial(null);
-    action = null; // Reset global action
-  }
-};
-
-// The above 'handleTestimonialAction' should replace the one inside the component.
-// This is a bit messy for a single file update but makes the spinner logic slightly more accurate.
-// The ideal way is to manage `actionInProgress` state within the component for each item.
-// For this request, I will update the existing component's function.
+    
