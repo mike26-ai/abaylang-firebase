@@ -17,9 +17,6 @@ export const siteConfig = {
   description: "Learn Amharic with native speakers. Personalized lessons and cultural immersion for diaspora and global learners.",
   url: "https://lissanhub.example.com", // Replace with your actual domain
   mainNav: [
-    // Homepage specific anchors, appear in global nav when on other pages.
-    // Note: The homepage at "/" has its own local navigation.
-    // These links in mainNav are for when users are on other pages.
     { title: "Home", href: "/" },
     { title: "About", href: "/#about", isSectionAnchor: true },
     { title: "Lessons", href: "/#lessons", isSectionAnchor: true },
@@ -27,17 +24,17 @@ export const siteConfig = {
     { title: "Reviews", href: "/#testimonials", isSectionAnchor: true },
     {
       title: "More",
-      href: "/more", 
+      href: "/more",
       children: [
         { title: "News & Updates", href: "/news" },
         { title: "Learning Blog", href: "/blog" },
       ],
     },
     { title: "Contact", href: "/#contact", isSectionAnchor: true },
-    // Auth required links
     { title: "Book a Lesson", href: "/bookings", authRequired: true },
     { title: "Chat Room", href: "/chat", authRequired: true },
     { title: "Accent Helper", href: "/accent-improvement", authRequired: true },
+    { title: "Messages", href: "/messages", authRequired: true }, // Added for the new 1-on-1 messages page
   ] satisfies NavItem[],
   userNav: [
     { title: "Dashboard", href: "/profile", authRequired: true },
@@ -63,9 +60,10 @@ export const tutorInfo = {
   shortIntro: "Native Amharic Speaker & Cultural Ambassador",
   teachingStyle: "Interactive conversation, grammar in context, cultural insights, personalized feedback. My goal is to make learning Amharic engaging, relevant, and enjoyable for all students, helping them not only speak the language but also understand the rich cultural tapestry of Ethiopia.",
   services: ["One-on-one lessons", "Group classes (coming soon)", "Accent coaching", "Cultural Immersion sessions"],
-  imageUrl: "https://placehold.co/400x400.png", 
+  imageUrl: "https://placehold.co/400x400.png", // YOU NEED TO REPLACE THIS
   dataAiHint: "tutor portrait",
-  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder video
+  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder video - YOU NEED TO REPLACE THIS
 };
 
-export const ADMIN_EMAIL = "admin@lissanhub.example.com";
+// Source ADMIN_EMAIL from environment variable with a fallback for easier setup/dev
+export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@lissanhub.example.com"; // YOU NEED TO SET NEXT_PUBLIC_ADMIN_EMAIL in your environment
