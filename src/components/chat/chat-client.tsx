@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, AlertCircle, LogIn } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
 import Link from 'next/link';
 import { Spinner } from '../ui/spinner';
@@ -160,10 +160,10 @@ export function ChatClient() {
                 {msg.userId === user.uid ? 'You' : msg.userName}
               </p>
               <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
-              {msg.timestamp && (
+              {msg.timestamp && typeof msg.timestamp === 'object' && 'toDate' in msg.timestamp && (
                 <p className={`text-xs mt-1 ${msg.userId === user.uid ? 'text-primary-foreground/70' : 'text-muted-foreground/70'}`}>
                   {formatDistanceToNow(msg.timestamp.toDate(), { addSuffix: true })}
-                </P>
+                </p>
               )}
             </div>
             {msg.userId === user.uid && (

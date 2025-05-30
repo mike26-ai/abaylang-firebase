@@ -282,7 +282,7 @@ export default function StudentDashboardPage() {
     try {
       const bookingDocRef = doc(db, "bookings", bookingId);
       await updateDoc(bookingDocRef, { status: "cancelled" });
-      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled"} : b).filter(b => b.id !== bookingId || b.status !== "cancelled"));
+      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled" as "cancelled"} : b).filter(b => b.id !== bookingId || b.status !== "cancelled"));
       fetchBookings(); // Re-fetch to get the latest list
       toast({ title: "Booking Cancelled", description: "Your lesson has been cancelled." });
     } catch (error) {

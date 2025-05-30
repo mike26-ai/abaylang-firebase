@@ -1,4 +1,7 @@
 
+import type React from "react";
+import { LayoutDashboard, CalendarCheck, Star, Mail } from "lucide-react"; // Added imports
+
 export type NavItem = {
   title: string;
   href: string;
@@ -34,18 +37,18 @@ export const siteConfig = {
     { title: "Book a Lesson", href: "/bookings", authRequired: true },
     { title: "Chat Room", href: "/chat", authRequired: true },
     { title: "Accent Helper", href: "/accent-improvement", authRequired: true },
-    { title: "Messages", href: "/messages", authRequired: true }, // Added for the new 1-on-1 messages page
+    { title: "Messages", href: "/messages", authRequired: true },
   ] satisfies NavItem[],
   userNav: [
     { title: "Dashboard", href: "/profile", authRequired: true },
     { title: "Messages", href: "/messages", authRequired: true },
     { title: "Testimonials", href: "/testimonials", authRequired: true },
   ] satisfies NavItem[],
-  adminNav: [
-    { title: "Dashboard", href: "/admin/dashboard" },
-    { title: "Manage Bookings", href: "/admin/bookings" },
-    { title: "Manage Testimonials", href: "/admin/testimonials" },
-    { title: "View Inquiries", href: "/admin/inquiries" },
+  adminNav: [ // Added icons for admin navigation
+    { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { title: "Manage Bookings", href: "/admin/bookings", icon: CalendarCheck },
+    { title: "Manage Testimonials", href: "/admin/testimonials", icon: Star },
+    { title: "View Inquiries", href: "/admin/inquiries", icon: Mail },
   ] satisfies NavItem[],
   footerNav: [
      { title: "Privacy Policy", href: "/privacy" },
@@ -66,4 +69,4 @@ export const tutorInfo = {
 };
 
 // Source ADMIN_EMAIL from environment variable with a fallback for easier setup/dev
-export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@lissanhub.example.com"; // YOU NEED TO SET NEXT_PUBLIC_ADMIN_EMAIL in your environment
+export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@lissanhub.example.com";

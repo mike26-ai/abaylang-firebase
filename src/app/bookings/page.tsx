@@ -341,7 +341,7 @@ export default function BookingsPage() {
                     <span className="font-medium">{selectedLessonDetails?.label}</span>
                   </div>
 
-                  {selectedDate && (
+                  {selectedDate && selectedLessonDetails && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date:</span>
                       <span className="font-medium">
@@ -350,7 +350,7 @@ export default function BookingsPage() {
                     </div>
                   )}
 
-                  {selectedTime && selectedLessonDetails && (
+                  {selectedDate && selectedTime && selectedLessonDetails && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
                       <span className="font-medium">
