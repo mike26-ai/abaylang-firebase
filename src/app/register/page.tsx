@@ -15,10 +15,16 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Timestamp, doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase"; // auth is imported here
 import type { UserProfile } from "@/lib/types";
 import { Logo } from "@/components/layout/logo";
 import { Spinner } from "@/components/ui/spinner";
+
+// Ensure the placeholder values match exactly those in src/lib/firebase.ts
+const PLACEHOLDER_API_KEY = "YOUR_API_KEY";
+const PLACEHOLDER_AUTH_DOMAIN = "YOUR_AUTH_DOMAIN";
+const PLACEHOLDER_PROJECT_ID = "YOUR_PROJECT_ID";
+
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -48,6 +54,19 @@ export default function RegisterPage() {
     e.preventDefault()
     setIsLoading(true)
     setError("")
+
+    // Check for Firebase configuration before attempting to call Firebase services
+    if (
+      auth.app.options.apiKey === PLACEHOLDER_API_KEY ||
+      auth.app.options.authDomain === PLACEHOLDER_AUTH_DOMAIN ||
+      auth.app.options.projectId === PLACEHOLDER_PROJECT_ID
+    ) {
+      setError(
+        "Firebase is not configured correctly. Please ensure API key and other Firebase project settings are correctly set in your environment variables."
+      );
+      setIsLoading(false);
+      return;
+    }
 
     if (!formData.country) {
       setError("Please select your country.");
@@ -97,9 +116,8 @@ export default function RegisterPage() {
         await setDoc(doc(db, "users", user.uid), userProfileForFirestore);
       }
 
-      // Using alert for now as toast is not set up in this specific file context easily
       alert("Registration Successful! Your account has been created. Welcome to LissanHub!");
-      router.push("/profile"); // Redirect to profile or dashboard
+      router.push("/profile"); 
     } catch (err: any) {
       console.error("Registration error:", err);
       let friendlyMessage = "An error occurred during registration. Please try again.";
@@ -107,8 +125,11 @@ export default function RegisterPage() {
         friendlyMessage = "This email address is already in use. Please try logging in or use a different email.";
       } else if (err.code === 'auth/weak-password') {
         friendlyMessage = "The password is too weak. Please choose a stronger password (at least 6 characters).";
+      } else if (err.code === 'auth/invalid-email') {
+        friendlyMessage = "The email address is not valid.";
       } else if (err.message) {
-        friendlyMessage = err.message; // Display more specific Firebase error if available
+         // Use the Firebase error message if it's somewhat user-friendly
+        friendlyMessage = err.message.includes("Firebase:") ? err.message.split("Firebase: ")[1].split(" (")[0] : err.message;
       }
       setError(friendlyMessage);
     } finally {
@@ -187,7 +208,7 @@ export default function RegisterPage() {
                 <Select
                   value={formData.country}
                   onValueChange={(value) => setFormData((prev) => ({ ...prev, country: value }))}
-                  name="country"
+                  name="country" 
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select your country" />
@@ -312,5 +333,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-
-    
