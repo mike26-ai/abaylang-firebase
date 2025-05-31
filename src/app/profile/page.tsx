@@ -38,7 +38,7 @@ import {
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { db, auth as firebaseAuth } from "@/lib/firebase"; // Renamed auth to firebaseAuth to avoid conflict
+import { db, auth as firebaseAuth } from "@/lib/firebase";
 import {
   collection,
   query,
@@ -53,11 +53,10 @@ import {
 } from "firebase/firestore";
 import { updateProfile as updateFirebaseUserProfile } from "firebase/auth";
 import type { Booking as BookingType, UserProfile } from "@/lib/types";
-import { format, isPast } from "date-fns";
+import { format, isPast, parse } from "date-fns";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
-import { Label }
-from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
 import LessonFeedbackModal from "@/components/lesson-feedback-modal";
 import {
   AlertDialog,
@@ -72,6 +71,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Logo } from "@/components/layout/logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { InteractiveCalendar } from "@/components/calendar/interactive-calendar"; // Import the new calendar
+
+// Define the Lesson interface for the calendar
+interface CalendarLesson {
+  id: string;
+  date: Date;
+  time: string;
+  duration: number;
+  type: string;
+  status: "booked" | "completed" | "cancelled";
+}
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -81,6 +91,7 @@ export default function StudentDashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<DashboardBooking[]>([]);
+  const [calendarLessons, setCalendarLessons] = useState<CalendarLesson[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
   const [userProfileData, setUserProfileData] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -104,10 +115,10 @@ export default function StudentDashboardPage() {
     lessonDate: "",
   });
 
-  const [currentStreak, setCurrentStreak] = useState(12); // Static for now
-  const [totalXP, setTotalXP] = useState(850); // Static for now
-  const [currentLevel, setCurrentLevel] = useState("Intermediate"); // Will be updated from profile
-  const [weeklyGoal, setWeeklyGoal] = useState({ target: 3, completed: 2 }); // Static for now
+  const [currentStreak, setCurrentStreak] = useState(12); 
+  const [totalXP, setTotalXP] = useState(850); 
+  const [currentLevel, setCurrentLevel] = useState("Intermediate"); 
+  const [weeklyGoal, setWeeklyGoal] = useState({ target: 3, completed: 2 }); 
 
   const fetchBookings = async () => {
     if (!user) return;
@@ -136,6 +147,25 @@ export default function StudentDashboardPage() {
       }));
 
       setBookings(fetchedBookings);
+
+      // Transform bookings for the InteractiveCalendar
+      const formattedCalendarLessons: CalendarLesson[] = fetchedBookings.map(b => {
+        let lessonStatus: CalendarLesson['status'] = "booked";
+        if (b.status === "completed") lessonStatus = "completed";
+        else if (b.status === "cancelled") lessonStatus = "cancelled";
+        // 'pending' and 'confirmed' are treated as 'booked' for calendar display
+        
+        return {
+          id: b.id,
+          date: parse(b.date, 'yyyy-MM-dd', new Date()), // Parse date string to Date object
+          time: b.time || "N/A",
+          duration: b.duration || 0,
+          type: b.lessonType || "Lesson",
+          status: lessonStatus,
+        };
+      });
+      setCalendarLessons(formattedCalendarLessons);
+
     } catch (error) {
       console.error("Error fetching bookings:", error);
       toast({
@@ -219,9 +249,9 @@ export default function StudentDashboardPage() {
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !firebaseAuth.currentUser) return; // Ensure firebaseAuth.currentUser is checked
+    if (!user || !firebaseAuth.currentUser) return; 
     
-    setIsLoadingProfile(true); // Use a specific loading state for profile saving
+    setIsLoadingProfile(true); 
     try {
       const userDocRef = doc(db, "users", user.uid);
       const updatedProfileData = {
@@ -235,7 +265,7 @@ export default function StudentDashboardPage() {
       if (firebaseAuth.currentUser.displayName !== editFormData.name) {
         await updateFirebaseUserProfile(firebaseAuth.currentUser, { displayName: editFormData.name });
       }
-      // Optimistically update local state or refetch
+      
       setUserProfileData(prev => ({ ...prev, ...updatedProfileData } as UserProfile));
       setCurrentLevel(updatedProfileData.amharicLevel || "Beginner");
 
@@ -266,8 +296,6 @@ export default function StudentDashboardPage() {
   };
 
   const handleFeedbackSubmit = async (feedbackData: { lessonId: string; rating: number; comment: string; specificRatings: Record<string, number>}) => {
-     // The LessonFeedbackModal now handles Firestore submission.
-     // This function is mainly to update the local UI state.
     setBookings((prev) =>
       prev.map((booking) =>
         booking.id === feedbackData.lessonId
@@ -275,7 +303,6 @@ export default function StudentDashboardPage() {
           : booking
       )
     );
-    // Toast is shown by the modal on successful submission.
   };
   
   const handleCancelBooking = async (bookingId: string) => {
@@ -283,7 +310,7 @@ export default function StudentDashboardPage() {
       const bookingDocRef = doc(db, "bookings", bookingId);
       await updateDoc(bookingDocRef, { status: "cancelled" });
       setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled" as "cancelled"} : b).filter(b => b.id !== bookingId || b.status !== "cancelled"));
-      fetchBookings(); // Re-fetch to get the latest list
+      fetchBookings(); 
       toast({ title: "Booking Cancelled", description: "Your lesson has been cancelled." });
     } catch (error) {
       console.error("Error cancelling booking:", error);
@@ -292,10 +319,10 @@ export default function StudentDashboardPage() {
   };
 
   const upcomingBookings = bookings.filter(
-    (b) => b.status === "confirmed" && !isPast(new Date(`${b.date}T${(b.time || "00:00").split(" ")[0]}`))
+    (b) => b.status === "confirmed" && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd hh:mm a', new Date()))
   );
   const pastBookings = bookings.filter(
-    (b) => b.status === "completed" || b.status === "cancelled" || (b.status === "confirmed" && isPast(new Date(`${b.date}T${(b.time || "00:00").split(" ")[0]}`)))
+    (b) => b.status === "completed" || b.status === "cancelled" || (b.status === "confirmed" && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd hh:mm a', new Date())))
   );
   
   const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
@@ -392,10 +419,11 @@ export default function StudentDashboardPage() {
           </Card>
         </div>
 
-        <Tabs defaultValue="upcoming" className="space-y-6">
+        <Tabs defaultValue="calendar" className="space-y-6"> {/* Default to calendar view */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <TabsList className="bg-card border w-full sm:w-auto">
-              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+            <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-3 sm:grid-cols-6"> {/* Adjusted grid for more tabs */}
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+              <TabsTrigger value="upcoming">Upcoming List</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
@@ -408,6 +436,34 @@ export default function StudentDashboardPage() {
               </Link>
             </Button>
           </div>
+
+          <TabsContent value="calendar" className="space-y-4">
+            {isLoadingBookings ? (
+              <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>
+            ) : bookings.length === 0 ? (
+              <Card className="shadow-lg">
+                <CardContent className="p-12 text-center">
+                  <Calendar className="w-16 h-16 text-primary/70 mx-auto mb-4" />
+                  <h3 className="text-2xl font-semibold text-foreground mb-2">No Lessons Scheduled</h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    Your calendar is empty. Book a lesson to get started!
+                  </p>
+                  <Button asChild>
+                    <Link href="/bookings">
+                      <Plus className="w-4 h-4 mr-2" /> Book Your First Lesson
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <InteractiveCalendar
+                lessons={calendarLessons}
+                onSelectDate={(date) => console.log("Date selected in profile:", date)}
+                onSelectLesson={(lesson) => toast({ title: "Lesson Selected", description: `${lesson.type} on ${format(lesson.date, 'PPP')} at ${lesson.time}` })}
+              />
+            )}
+          </TabsContent>
+
 
           <TabsContent value="upcoming" className="space-y-4">
             {isLoadingBookings ? (
@@ -439,7 +495,7 @@ export default function StudentDashboardPage() {
                         <div>
                           <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Lesson"}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {format(new Date(booking.date), "PPP")} at {booking.time}
+                            {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}
                           </p>
                           <p className="text-sm text-primary">{booking.duration} minutes with {booking.tutorName}</p>
                         </div>
@@ -461,7 +517,7 @@ export default function StudentDashboardPage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Cancel Lesson?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to cancel your lesson on {format(new Date(booking.date), "PPP")} at {booking.time}?
+                                Are you sure you want to cancel your lesson on {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}?
                                 Please check our cancellation policy.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
@@ -498,7 +554,7 @@ export default function StudentDashboardPage() {
                         <div>
                           <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Lesson"}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {format(new Date(booking.date), "PPP")} at {booking.time}
+                            {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}
                           </p>
                           <p className="text-sm text-muted-foreground">{booking.duration} minutes with {booking.tutorName}</p>
                         </div>
@@ -582,7 +638,6 @@ export default function StudentDashboardPage() {
                             </Button>
                             <Button variant="ghost" type="button" onClick={() => {
                                 setIsEditingProfile(false);
-                                // Reset form data to original profile data
                                 if(userProfileData) {
                                    setEditFormData({
                                         name: userProfileData.name || firebaseAuth.currentUser?.displayName || "",
@@ -801,3 +856,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+```
