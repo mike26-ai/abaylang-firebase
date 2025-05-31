@@ -71,9 +71,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Logo } from "@/components/layout/logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { InteractiveCalendar } from "@/components/calendar/interactive-calendar"; // Import the new calendar
+import { InteractiveCalendar } from "@/components/calendar/interactive-calendar";
+import { ProgressCharts, type ProgressData } from "@/components/progress/progress-charts";
 
-// Define the Lesson interface for the calendar
+
 interface CalendarLesson {
   id: string;
   date: Date;
@@ -86,6 +87,31 @@ interface CalendarLesson {
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
 }
+
+// Mock data for ProgressCharts
+const mockSkillsData: ProgressData = {
+  labels: ["Speaking", "Reading", "Listening", "Writing", "Culture"],
+  datasets: [{
+    label: "Skill Level",
+    data: [85, 70, 75, 60, 90], // Percentages
+    // backgroundColor: 'hsl(var(--chart-1))' // Example: Recharts might use 'fill' prop on <Bar>
+  }],
+};
+const mockVocabularyData: ProgressData = { // Placeholder, chart not implemented yet
+  labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  datasets: [{
+    label: "Words Learned",
+    data: [50, 70, 100, 130, 180, 247],
+  }],
+};
+const mockLessonData: ProgressData = { // Placeholder, chart not implemented yet
+  labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
+  datasets: [{
+    label: "Lessons Completed",
+    data: [2, 3, 2, 4],
+  }],
+};
+
 
 export default function StudentDashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -148,16 +174,14 @@ export default function StudentDashboardPage() {
 
       setBookings(fetchedBookings);
 
-      // Transform bookings for the InteractiveCalendar
       const formattedCalendarLessons: CalendarLesson[] = fetchedBookings.map(b => {
         let lessonStatus: CalendarLesson['status'] = "booked";
         if (b.status === "completed") lessonStatus = "completed";
         else if (b.status === "cancelled") lessonStatus = "cancelled";
-        // 'pending' and 'confirmed' are treated as 'booked' for calendar display
         
         return {
           id: b.id,
-          date: parse(b.date, 'yyyy-MM-dd', new Date()), // Parse date string to Date object
+          date: parse(b.date, 'yyyy-MM-dd', new Date()), 
           time: b.time || "N/A",
           duration: b.duration || 0,
           type: b.lessonType || "Lesson",
@@ -234,7 +258,7 @@ export default function StudentDashboardPage() {
     }
     fetchUserProfile();
     fetchBookings();
-  }, [user, authLoading]);
+  }, [user, authLoading, toast]); // Added toast to dependencies
 
 
   const handleProfileEditInputChange = (
@@ -419,9 +443,9 @@ export default function StudentDashboardPage() {
           </Card>
         </div>
 
-        <Tabs defaultValue="calendar" className="space-y-6"> {/* Default to calendar view */}
+        <Tabs defaultValue="calendar" className="space-y-6"> 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-3 sm:grid-cols-6"> {/* Adjusted grid for more tabs */}
+            <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-3 sm:grid-cols-6"> 
               <TabsTrigger value="calendar">Calendar</TabsTrigger>
               <TabsTrigger value="upcoming">Upcoming List</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
@@ -458,7 +482,7 @@ export default function StudentDashboardPage() {
             ) : (
               <InteractiveCalendar
                 lessons={calendarLessons}
-                onSelectDate={(date) => console.log("Date selected in profile:", date)}
+                onSelectDate={(date) => toast({ title: "Date Selected", description: `Viewing lessons for ${format(date, 'PPP')}`})}
                 onSelectLesson={(lesson) => toast({ title: "Lesson Selected", description: `${lesson.type} on ${format(lesson.date, 'PPP')} at ${lesson.time}` })}
               />
             )}
@@ -760,87 +784,11 @@ export default function StudentDashboardPage() {
           </TabsContent>
 
           <TabsContent value="progress" className="space-y-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card className="shadow-lg bg-gradient-to-br from-accent/70 to-accent">
-                <CardContent className="p-6 text-center">
-                  <Trophy className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">{currentLevel.replace("-"," ")}</div>
-                  <div className="text-sm text-muted-foreground">Current Level</div>
-                </CardContent>
-              </Card>
-              <Card className="shadow-lg bg-gradient-to-br from-primary/10 to-primary/20">
-                <CardContent className="p-6 text-center">
-                  <Zap className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">{totalXP}</div>
-                  <div className="text-sm text-muted-foreground">Total XP</div>
-                </CardContent>
-              </Card>
-              <Card className="shadow-lg bg-gradient-to-br from-destructive/10 to-destructive/20">
-                <CardContent className="p-6 text-center">
-                  <Target className="w-8 h-8 text-destructive mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">{currentStreak}</div>
-                  <div className="text-sm text-muted-foreground">Day Streak</div>
-                </CardContent>
-              </Card>
-              <Card className="shadow-lg bg-gradient-to-br from-secondary/10 to-secondary/20">
-                <CardContent className="p-6 text-center">
-                  <TrendingUp className="w-8 h-8 text-secondary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">{weeklyGoal.completed}/{weeklyGoal.target}</div>
-                  <div className="text-sm text-muted-foreground">Weekly Goal</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary" /> Skill Progress</CardTitle>
-                  <CardDescription>Track your improvement across different areas</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {[
-                    { name: "Speaking & Conversation", progress: 85, colorClass: "bg-primary" },
-                    { name: "Reading & Fidel Script", progress: 70, colorClass: "bg-blue-500" },
-                    { name: "Cultural Knowledge", progress: 90, colorClass: "bg-purple-500" },
-                    { name: "Grammar & Structure", progress: 65, colorClass: "bg-orange-500" },
-                    { name: "Vocabulary", progress: 78, colorClass: "bg-green-500" },
-                  ].map(skill => (
-                    <div key={skill.name}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground">{skill.name}</span>
-                        <span className="text-primary">{skill.progress}%</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className={`${skill.colorClass} h-2 rounded-full`} style={{ width: `${skill.progress}%` }}></div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Award className="w-5 h-5 text-primary" /> Achievements & Badges</CardTitle>
-                  <CardDescription>Celebrate your learning milestones</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[
-                      { icon: Trophy, label: "First Lesson", color: "text-yellow-500", bgColor: "bg-yellow-500/10" },
-                      { icon: Target, label: "7-Day Streak", color: "text-primary", bgColor: "bg-primary/10" },
-                      { icon: BookOpen, label: "Quiz Master", color: "text-blue-500", bgColor: "bg-blue-500/10" },
-                      { icon: Star, label: "Culture Expert", color: "text-purple-500", bgColor: "bg-purple-500/10" },
-                      { icon: Zap, label: "Vocabulary Pro", color: "text-orange-500", bgColor: "bg-orange-500/10" },
-                      { icon: Award, label: "Coming Soon", color: "text-muted-foreground", bgColor: "bg-muted", locked: true },
-                    ].map(ach => (
-                      <div key={ach.label} className={`text-center p-3 ${ach.bgColor} rounded-lg ${ach.locked ? 'opacity-60' : ''}`}>
-                        <ach.icon className={`w-8 h-8 ${ach.color} mx-auto mb-2`} />
-                        <div className="text-xs font-medium text-foreground">{ach.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <ProgressCharts 
+                skillsData={mockSkillsData} 
+                vocabularyData={mockVocabularyData} 
+                lessonData={mockLessonData} 
+            />
           </TabsContent>
         </Tabs>
       </div>
