@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock, ChevronDown } from "lucide-react"
+import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock, ChevronDown, Package } from "lucide-react" // Added Package
 import Link from "next/link"
 import { Logo } from "@/components/layout/logo"
 import { Input } from "@/components/ui/input"
@@ -74,6 +74,9 @@ export default function HomePage() {
             </Link>
             <Link href="#lessons" className="text-muted-foreground hover:text-primary transition-colors">
               Lessons
+            </Link>
+            <Link href="#packages" className="text-muted-foreground hover:text-primary transition-colors">
+              Packages
             </Link>
             <Link href="/resources" className="text-muted-foreground hover:text-primary transition-colors">
               Resources
@@ -379,7 +382,92 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="testimonials" className="py-20 px-4 bg-card">
+      {/* Packages Section */}
+      <section id="packages" className="py-20 px-4 bg-card">
+        <div className="container mx-auto">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-accent text-accent-foreground">Lesson Packages & Bundles</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Save More, Learn More</h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Choose from our carefully crafted lesson packages designed to fit your learning style and budget. The more you learn, the more you save!
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Featured Package 1: Practice Bundle */}
+            <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card border-2 border-primary/30 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
+              </div>
+              <CardHeader className="text-center pb-4">
+                <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
+                  <Package className="w-8 h-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl text-foreground">Practice Bundle</CardTitle>
+                <div className="text-3xl font-bold text-primary">$220 <span className="text-lg text-muted-foreground line-through">$250</span></div>
+                <CardDescription className="text-muted-foreground">10 x 30-minute lessons</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Conversation practice focus</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Pronunciation correction</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Valid for 4 months</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Priority booking</span></li>
+                </ul>
+                <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
+                  <Link href="/bookings?packageId=quick-10">Choose This Bundle</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Featured Package 2: Learning Intensive */}
+            <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card">
+              <CardHeader className="text-center pb-4">
+                <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
+                  <Package className="w-8 h-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl text-foreground">Learning Intensive</CardTitle>
+                 <div className="text-3xl font-bold text-primary">$304 <span className="text-lg text-muted-foreground line-through">$360</span></div>
+                <CardDescription className="text-muted-foreground">8 x 60-minute lessons</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Structured lesson plans</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Homework & materials</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Valid for 4 months</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Bi-weekly progress reviews</span></li>
+                </ul>
+                <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
+                  <Link href="/bookings?packageId=comp-8">Choose This Bundle</Link>
+                </Button>
+              </CardContent>
+            </Card>
+            
+            {/* Placeholder for a third package or a "View All" Card */}
+             <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-accent/70 flex flex-col items-center justify-center">
+              <CardContent className="text-center p-6">
+                  <Package className="w-12 h-12 text-primary mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-foreground mb-2">Explore All Options</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Find the perfect package to match your learning pace and goals.
+                  </p>
+                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
+                    <Link href="/packages">View All Packages</Link>
+                  </Button>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="text-center mt-12">
+            <Button variant="outline" size="lg" className="border-primary/30 hover:bg-accent text-foreground text-base" asChild>
+                <Link href="/packages">See All Lesson Packages</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+
+      <section id="testimonials" className="py-20 px-4 bg-muted/30"> {/* Changed from bg-card to bg-muted/30 for variety */}
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-accent text-accent-foreground">Student Success</Badge>
@@ -538,6 +626,7 @@ export default function HomePage() {
                 <li><Link href="/bookings" className="hover:text-primary-foreground">Book Lesson</Link></li>
                 <li><Link href="/tutor-profile" className="hover:text-primary-foreground">About Mahir</Link></li>
                 <li><Link href="/testimonials" className="hover:text-primary-foreground">Success Stories</Link></li>
+                 <li><Link href="/packages" className="hover:text-primary-foreground">View Packages</Link></li>
               </ul>
             </div>
             <div>
@@ -557,3 +646,4 @@ export default function HomePage() {
     </div>
   )
 }
+

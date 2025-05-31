@@ -1,6 +1,6 @@
 
 import type React from "react";
-import { LayoutDashboard, CalendarCheck, Star, Mail } from "lucide-react"; // Added imports
+import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, PackageIcon } from "lucide-react"; // Added LibraryBig, PackageIcon
 
 export type NavItem = {
   title: string;
@@ -23,6 +23,7 @@ export const siteConfig = {
     { title: "Home", href: "/" },
     { title: "About", href: "/#about", isSectionAnchor: true },
     { title: "Lessons", href: "/#lessons", isSectionAnchor: true },
+    { title: "Packages", href: "/packages", icon: PackageIcon }, // Added Packages link
     { title: "Resources", href: "/resources" },
     { title: "Reviews", href: "/#testimonials", isSectionAnchor: true },
     {
@@ -37,18 +38,20 @@ export const siteConfig = {
     { title: "Book a Lesson", href: "/bookings", authRequired: true },
     { title: "Chat Room", href: "/chat", authRequired: true },
     { title: "Accent Helper", href: "/accent-improvement", authRequired: true },
-    { title: "Messages", href: "/messages", authRequired: true },
+    // { title: "Messages", href: "/messages", authRequired: true }, // Temporarily remove from main, present in userNav
   ] satisfies NavItem[],
   userNav: [
     { title: "Dashboard", href: "/profile", authRequired: true },
-    { title: "Messages", href: "/messages", authRequired: true },
-    { title: "Testimonials", href: "/testimonials", authRequired: true },
+    // { title: "Messages", href: "/messages", authRequired: true }, // Assuming messages might be part of dashboard or direct contact
+    { title: "My Bookings", href: "/profile#my-bookings", authRequired: true}, // Link to section in profile
+    { title: "Submit Testimonial", href: "/testimonials", authRequired: true }, // Changed from "Testimonials" to be more action-oriented
   ] satisfies NavItem[],
-  adminNav: [ // Added icons for admin navigation
+  adminNav: [ 
     { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { title: "Manage Bookings", href: "/admin/bookings", icon: CalendarCheck },
     { title: "Manage Testimonials", href: "/admin/testimonials", icon: Star },
     { title: "View Inquiries", href: "/admin/inquiries", icon: Mail },
+    { title: "Manage Materials", href: "/admin/materials", icon: LibraryBig },
   ] satisfies NavItem[],
   footerNav: [
      { title: "Privacy Policy", href: "/privacy" },
@@ -63,10 +66,10 @@ export const tutorInfo = {
   shortIntro: "Native Amharic Speaker & Cultural Ambassador",
   teachingStyle: "Interactive conversation, grammar in context, cultural insights, personalized feedback. My goal is to make learning Amharic engaging, relevant, and enjoyable for all students, helping them not only speak the language but also understand the rich cultural tapestry of Ethiopia.",
   services: ["One-on-one lessons", "Group classes (coming soon)", "Accent coaching", "Cultural Immersion sessions"],
-  imageUrl: "https://placehold.co/400x400.png", // YOU NEED TO REPLACE THIS
+  imageUrl: "https://placehold.co/400x400.png", 
   dataAiHint: "tutor portrait",
-  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder video - YOU NEED TO REPLACE THIS
+  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", 
 };
 
-// Source ADMIN_EMAIL from environment variable with a fallback for easier setup/dev
 export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@lissanhub.example.com";
+
