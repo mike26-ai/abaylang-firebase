@@ -1,3 +1,4 @@
+
 import type { Timestamp } from "firebase/firestore";
 
 export interface Booking {
@@ -81,4 +82,29 @@ export interface NewsletterSubscription {
   id: string;
   email: string;
   subscribedAt: Timestamp;
+}
+
+export interface HomeworkAssignment {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: Timestamp; // Store as Timestamp in Firestore
+  status: "pending" | "submitted" | "graded" | "late";
+  feedback?: string;
+  grade?: string;
+  createdAt?: Timestamp; // For ordering if needed
+}
+
+export interface HomeworkSubmissionType {
+  id?: string; // Firestore ID, generated automatically
+  assignmentId: string;
+  userId: string;
+  userName: string;
+  userEmail: string; // Good to have for admin view
+  submissionText: string;
+  // files: { name: string, url: string }[]; // Future: store file metadata
+  submittedAt: Timestamp;
+  status: "submitted" | "graded" | "late_submission"; // Status of the submission itself
+  feedback?: string; // Tutor's feedback on this submission
+  grade?: string; // Grade for this submission
 }
