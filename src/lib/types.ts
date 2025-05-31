@@ -84,27 +84,62 @@ export interface NewsletterSubscription {
   subscribedAt: Timestamp;
 }
 
+export interface LearningLesson {
+  id: string;
+  title: string;
+  type: "video" | "interactive" | "quiz" | "reading";
+  duration: number; // minutes
+  status: "completed" | "in-progress" | "not-started" | "locked";
+  // contentUrl?: string; // URL to video, quiz, etc.
+}
+
+export interface LearningModule {
+  id: string; // Firestore document ID
+  title: string;
+  description: string;
+  order: number; // For sequencing modules
+  status: "completed" | "in-progress" | "locked"; // User-specific progress, might be handled differently
+  progress: number; // User-specific progress (0-100), might be handled differently
+  lessons: LearningLesson[];
+  // totalLessons?: number; // Calculated or stored
+  // completedLessons?: number; // User-specific, calculated or stored
+}
+
+
 export interface HomeworkAssignment {
   id: string;
   title: string;
   description: string;
-  dueDate: Timestamp; // Store as Timestamp in Firestore
+  dueDate: Timestamp;
   status: "pending" | "submitted" | "graded" | "late";
   feedback?: string;
   grade?: string;
-  createdAt?: Timestamp; // For ordering if needed
+  createdAt?: Timestamp;
 }
 
 export interface HomeworkSubmissionType {
-  id?: string; // Firestore ID, generated automatically
+  id?: string;
   assignmentId: string;
   userId: string;
   userName: string;
-  userEmail: string; // Good to have for admin view
+  userEmail: string;
   submissionText: string;
-  // files: { name: string, url: string }[]; // Future: store file metadata
   submittedAt: Timestamp;
-  status: "submitted" | "graded" | "late_submission"; // Status of the submission itself
-  feedback?: string; // Tutor's feedback on this submission
-  grade?: string; // Grade for this submission
+  status: "submitted" | "graded" | "late_submission";
+  feedback?: string;
+  grade?: string;
+}
+
+export interface LessonMaterial {
+  id: string; // Firestore document ID
+  title: string;
+  type: "document" | "video" | "audio" | "interactive";
+  category: string;
+  level: "beginner" | "intermediate" | "advanced";
+  description: string;
+  downloadUrl: string; // URL to the material in Firebase Storage
+  fileName?: string;
+  fileSize?: string; // e.g., "2.4 MB"
+  duration?: string; // e.g., "15:24" for video/audio
+  createdAt: Timestamp; // For dateCreated and sorting
 }
