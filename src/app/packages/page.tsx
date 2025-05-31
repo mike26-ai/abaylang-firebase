@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Check, Clock, Package, Star, Users, Calendar, Gift, Zap, Target } from "lucide-react"
 import Link from "next/link"
-import { Logo } from "@/components/layout/logo" // Import Logo component
+import { Logo } from "@/components/layout/logo"
 
 export default function PackagesPage() {
   const [selectedCategory, setSelectedCategory] = useState("individual")
@@ -391,12 +391,12 @@ export default function PackagesPage() {
                           </li>
                         ))}
                       </ul>
-                      <Button asChild className={`w-full ${pkg.popular ? "bg-primary hover:bg-primary/90" : "bg-foreground hover:bg-foreground/90 text-background"}`}>
-                        <Link href={`/bookings?packageId=${pkg.id}`}>
+                        <Button asChild className={`w-full ${pkg.popular ? "bg-primary hover:bg-primary/90" : "bg-foreground hover:bg-foreground/90 text-background"}`}>
+                         <Link href={`/bookings?packageId=${pkg.id}`}>
                           <Package className="w-4 h-4 mr-2" />
                           Get {pkg.name}
-                        </Link>
-                      </Button>
+                         </Link>
+                        </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -421,8 +421,8 @@ export default function PackagesPage() {
                       </div>
                     )}
                     <CardHeader className="text-center pb-4">
-                      <div className="w-16 h-16 bg-blue-500/10 rounded-full mx-auto mb-4 flex items-center justify-center"> {/* Example secondary accent color */}
-                        <Target className="w-8 h-8 text-blue-600" />
+                      <div className="w-16 h-16 bg-accent rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <Target className="w-8 h-8 text-primary" />
                       </div>
                       <CardTitle className="text-xl text-foreground">{pkg.name}</CardTitle>
                       <div className="space-y-1">
@@ -437,8 +437,8 @@ export default function PackagesPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="text-center p-3 bg-blue-500/5 rounded-lg">
-                        <div className="font-semibold text-blue-700">{pkg.bestFor}</div>
+                      <div className="text-center p-3 bg-accent/70 rounded-lg">
+                        <div className="font-semibold text-accent-foreground">{pkg.bestFor}</div>
                       </div>
                       <ul className="space-y-2">
                         {pkg.features.map((feature, index) => (
@@ -478,8 +478,8 @@ export default function PackagesPage() {
                     </div>
                   )}
                   <CardHeader className="text-center pb-4">
-                    <div className="w-16 h-16 bg-purple-500/10 rounded-full mx-auto mb-4 flex items-center justify-center"> {/* Example accent */}
-                      <Zap className="w-8 h-8 text-purple-600" />
+                    <div className="w-16 h-16 bg-accent rounded-full mx-auto mb-4 flex items-center justify-center">
+                      <Zap className="w-8 h-8 text-primary" />
                     </div>
                     <CardTitle className="text-xl text-foreground">{pkg.name}</CardTitle>
                     <div className="space-y-1">
@@ -492,8 +492,8 @@ export default function PackagesPage() {
                     <div className="text-sm text-muted-foreground">{pkg.lessons}</div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="text-center p-3 bg-purple-500/5 rounded-lg">
-                      <div className="font-semibold text-purple-700">{pkg.bestFor}</div>
+                    <div className="text-center p-3 bg-accent/70 rounded-lg">
+                      <div className="font-semibold text-accent-foreground">{pkg.bestFor}</div>
                     </div>
                     <ul className="space-y-2">
                       {pkg.features.map((feature, index) => (
@@ -532,8 +532,8 @@ export default function PackagesPage() {
                     </div>
                   )}
                   <CardHeader className="text-center pb-4">
-                    <div className="w-16 h-16 bg-orange-500/10 rounded-full mx-auto mb-4 flex items-center justify-center"> {/* Example accent */}
-                      <Users className="w-8 h-8 text-orange-600" />
+                    <div className="w-16 h-16 bg-accent rounded-full mx-auto mb-4 flex items-center justify-center">
+                      <Users className="w-8 h-8 text-primary" />
                     </div>
                     <CardTitle className="text-xl text-foreground">{pkg.name}</CardTitle>
                     <div className="space-y-1">
@@ -548,8 +548,8 @@ export default function PackagesPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="text-center p-3 bg-orange-500/5 rounded-lg">
-                      <div className="font-semibold text-orange-700">{pkg.bestFor}</div>
+                    <div className="text-center p-3 bg-accent/70 rounded-lg">
+                      <div className="font-semibold text-accent-foreground">{pkg.bestFor}</div>
                     </div>
                     <ul className="space-y-2">
                       {pkg.features.map((feature, index) => (
@@ -766,11 +766,3 @@ export default function PackagesPage() {
     </div>
   )
 }
-
-// Note to AI: Ensure the import for Logo component is added if not already present.
-// Ensure all hardcoded colors (e.g. bg-emerald-100, text-gray-900) are replaced with theme variables 
-// (e.g. bg-accent, text-foreground) for consistency with globals.css.
-// Link for package selection buttons should lead to /bookings (or /bookings?packageId=PKG_ID if desired)
-// The logo in the header should use the <Logo /> component.
-// "Browse All Packages" button in CTA should likely go to /bookings.
-```
