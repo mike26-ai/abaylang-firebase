@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -6,193 +7,243 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { Star } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { Spinner } from "./ui/spinner";
-
+import { Star, Send, CheckCircle } from "lucide-react";
+import { Spinner } from "./ui/spinner"; // Added Spinner import
 
 interface LessonFeedbackModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (feedbackData: {
-    lessonId: string;
-    rating: number;
-    comment: string;
-    specificRatings: Record<string, number>;
-  }) => void; // This prop will be called by the dashboard to update its local state
   lessonId: string;
   lessonType: string;
   lessonDate: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (feedback: any) => void; // The actual submission logic (including Firestore) is in the parent
 }
 
 export default function LessonFeedbackModal({
-  isOpen,
-  onClose,
-  onSubmit,
   lessonId,
   lessonType,
   lessonDate,
+  isOpen,
+  onClose,
+  onSubmit,
 }: LessonFeedbackModalProps) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState("");
-  const [specificRatings, setSpecificRatings] = useState({
-    teachingQuality: 5,
-    materialClarity: 5,
-    culturalInsights: 5,
-    pacing: 5,
-    engagement: 5,
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [feedback, setFeedback] = useState("");
+  const [specificFeedback, setSpecificFeedback] = useState({
+    teachingQuality: 0,
+    materialClarity: 0,
+    culturalInsights: 0,
+    pacing: 0,
+    engagement: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const ratingCategories = [
-    { key: "teachingQuality", label: "Teaching Quality" },
-    { key: "materialClarity", label: "Material Clarity" },
-    { key: "culturalInsights", label: "Cultural Insights" },
-    { key: "pacing", label: "Lesson Pacing" },
-    { key: "engagement", label: "Engagement" },
-  ];
-
-  const handleSpecificRatingChange = (categoryKey: string, value: number) => {
-    setSpecificRatings((prev) => ({ ...prev, [categoryKey]: value }));
+  const handleStarClick = (starRating: number) => {
+    setRating(starRating);
   };
 
-  const handleSubmitFeedback = async () => {
-    if (!user) {
-      toast({ title: "Error", description: "You must be logged in to submit feedback.", variant: "destructive" });
-      return;
-    }
-    if (comment.trim().length < 10) {
-      toast({ title: "Error", description: "Comment must be at least 10 characters.", variant: "destructive" });
-      return;
-    }
+  const handleSpecificRating = (category: string, value: number) => {
+    setSpecificFeedback((prev) => ({
+      ...prev,
+      [category]: value,
+    }));
+  };
 
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    try {
-      // Save to Firestore 'testimonials' collection
-      const testimonialData = {
-        userId: user.uid,
-        name: user.displayName || "Anonymous Student",
-        userEmail: user.email,
-        rating: rating,
-        comment: comment,
-        lessonId: lessonId, // Link feedback to specific lesson
-        lessonType: lessonType,
-        lessonDate: lessonDate, // Store lesson date for context
-        specificRatings: specificRatings,
-        status: "pending", // All new testimonials/feedback are pending approval
-        createdAt: serverTimestamp(),
-        helpful: 0,
-        studentInitials: user.displayName?.split(" ").map(n => n[0]).join("").toUpperCase() || "S",
-        verified: true, // Assuming if they booked and are rating, they are verified for this lesson
-      };
-      await addDoc(collection(db, "testimonials"), testimonialData);
 
-      toast({ title: "Feedback Submitted!", description: "Thank you for your valuable input." });
-      onSubmit({ lessonId, rating, comment, specificRatings }); // Call the prop to notify the dashboard
-      onClose(); // Close the modal
-      // Reset form
-      setRating(5);
-      setComment("");
-      setSpecificRatings({ teachingQuality: 5, materialClarity: 5, culturalInsights: 5, pacing: 5, engagement: 5 });
-    } catch (error) {
-      console.error("Error submitting feedback:", error);
-      toast({ title: "Submission Error", description: "Could not submit your feedback. Please try again.", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
+    const feedbackData = {
+      lessonId,
+      rating,
+      feedbackText: feedback, // Changed key to avoid conflict if 'feedback' is a general object
+      specificRatings: specificFeedback, // Changed key to match parent
+      date: new Date().toISOString(),
+    };
+
+    // Simulate API call (actual submission is handled by parent via onSubmit prop)
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    onSubmit(feedbackData); // This will call the function passed from StudentDashboardPage
+    setIsSubmitted(true);
+    setIsSubmitting(false);
+
+    // Auto close after 2 seconds
+    setTimeout(() => {
+      onClose(); // This will trigger the parent to close the modal
+      // Reset state after successful submission AND closing
+      setIsSubmitted(false);
+      setRating(0);
+      setFeedback("");
+      setSpecificFeedback({
+        teachingQuality: 0,
+        materialClarity: 0,
+        culturalInsights: 0,
+        pacing: 0,
+        engagement: 0,
+      });
+    }, 2000);
+  };
+
+  // When the modal is closed externally (e.g., by clicking outside or pressing Esc),
+  // and it wasn't through the successful submission flow, we should also reset.
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      if (!isSubmitted) { // Only reset if not already reset by successful submission
+        setRating(0);
+        setFeedback("");
+        setSpecificFeedback({
+            teachingQuality: 0,
+            materialClarity: 0,
+            culturalInsights: 0,
+            pacing: 0,
+            engagement: 0,
+        });
+      }
+      onClose(); // Ensure parent's onClose is always called
     }
   };
 
 
-  if (!isOpen) return null;
+  if (isSubmitted) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className="max-w-md">
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Thank You!</h3>
+            <p className="text-muted-foreground">Your feedback has been submitted.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Rate Your Lesson</DialogTitle>
+          <DialogTitle className="flex items-center gap-2 text-foreground">
+            <Star className="w-5 h-5 text-yellow-400" /> {/* Themed color */}
+            Rate Your Lesson Experience
+          </DialogTitle>
           <DialogDescription>
-            Provide feedback for your {lessonType} on {new Date(lessonDate).toLocaleDateString()}.
+            Help us improve by sharing your feedback about your {lessonType} lesson on{" "}
+            {new Date(lessonDate).toLocaleDateString()}.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-6">
-          <div>
-            <Label className="text-base font-medium">Overall Rating</Label>
-            <div className="flex items-center gap-2 mt-2">
+
+        <div className="space-y-6 py-4">
+          {/* Overall Rating */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium text-foreground">Overall Rating</Label>
+            <div className="flex items-center gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
-                <Button
+                <button
                   key={star}
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setRating(star)}
-                  className="p-1 h-auto w-auto"
+                  type="button"
+                  onClick={() => handleStarClick(star)}
+                  onMouseEnter={() => setHoveredRating(star)}
+                  onMouseLeave={() => setHoveredRating(0)}
+                  className="focus:outline-none transition-transform hover:scale-110 p-1"
                 >
                   <Star
-                    className={`w-7 h-7 transition-colors ${
-                      rating >= star ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/50"
+                    className={`w-8 h-8 ${
+                      star <= (hoveredRating || rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
                     }`}
                   />
-                </Button>
+                </button>
               ))}
+              <span className="ml-2 text-sm text-muted-foreground">
+                {rating > 0 && (
+                  <>
+                    {rating === 1 && "Poor"}
+                    {rating === 2 && "Fair"}
+                    {rating === 3 && "Good"}
+                    {rating === 4 && "Very Good"}
+                    {rating === 5 && "Excellent"}
+                  </>
+                )}
+              </span>
             </div>
           </div>
 
-          {ratingCategories.map((cat) => (
-             <div key={cat.key}>
-              <Label className="text-sm font-medium">{cat.label}</Label>
-              <div className="flex items-center gap-1 mt-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Button
-                    key={star}
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleSpecificRatingChange(cat.key, star)}
-                    className="p-0.5 h-auto w-auto"
-                  >
-                    <Star
-                      className={`w-5 h-5 transition-colors ${
-                         (specificRatings as any)[cat.key] >= star ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"
-                      }`}
-                    />
-                  </Button>
-                ))}
+          {/* Specific Feedback Categories */}
+          <div className="space-y-4">
+            <Label className="text-base font-medium text-foreground">Rate Specific Aspects</Label>
+            {[
+              { key: "teachingQuality", label: "Teaching Quality" },
+              { key: "materialClarity", label: "Material Clarity" },
+              { key: "culturalInsights", label: "Cultural Insights" },
+              { key: "pacing", label: "Lesson Pacing" },
+              { key: "engagement", label: "Engagement Level" },
+            ].map(({ key, label }) => (
+              <div key={key} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                <span className="text-sm font-medium text-foreground">{label}</span>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => handleSpecificRating(key, star)}
+                      className="focus:outline-none p-0.5"
+                    >
+                      <Star
+                        className={`w-4 h-4 ${
+                          star <= specificFeedback[key as keyof typeof specificFeedback]
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-muted-foreground/30"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
 
-          <div>
-            <Label htmlFor="comment" className="text-base font-medium">Comments</Label>
+          {/* Written Feedback */}
+          <div className="space-y-2">
+            <Label htmlFor="feedback" className="text-base font-medium text-foreground">
+              Additional Comments
+            </Label>
             <Textarea
-              id="comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Share your thoughts on the lesson..."
-              className="mt-2 min-h-[100px]"
+              id="feedback"
+              placeholder="Share your thoughts about the lesson, what you enjoyed, and any suggestions for improvement..."
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              rows={4}
+              className="resize-none"
             />
           </div>
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
+
+          {/* Submit Button */}
+          <div className="flex gap-3 pt-4">
+            <Button variant="outline" onClick={onClose} className="flex-1">
               Cancel
             </Button>
-          </DialogClose>
-          <Button type="button" onClick={handleSubmitFeedback} disabled={isSubmitting}>
-            {isSubmitting ? <Spinner size="sm" className="mr-2" /> : null}
-            Submit Feedback
-          </Button>
-        </DialogFooter>
+            <Button
+              onClick={handleSubmit}
+              disabled={rating === 0 || isSubmitting}
+              className="flex-1" // Primary button will use default theme
+            >
+              {isSubmitting ? (
+                <Spinner size="sm" className="mr-2" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              {isSubmitting ? "Submitting..." : "Submit Feedback"}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
