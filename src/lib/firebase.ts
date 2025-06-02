@@ -16,6 +16,14 @@ const firebaseConfig = {
   // measurementId: "YOUR_MEASUREMENT_ID" // Optional: if using Firebase Analytics
 };
 
+// Diagnostic log to check loaded Firebase config
+console.log("LissanHub Firebase Config Initializing:", {
+  apiKeyStatus: firebaseConfig.apiKey === "YOUR_API_KEY" ? "USING_PLACEHOLDER_API_KEY" : (firebaseConfig.apiKey ? "LOADED_FROM_ENV" : "MISSING_ENV_VAR"),
+  authDomainStatus: firebaseConfig.authDomain === "YOUR_AUTH_DOMAIN" ? "USING_PLACEHOLDER_AUTH_DOMAIN" : (firebaseConfig.authDomain ? "LOADED_FROM_ENV" : "MISSING_ENV_VAR"),
+  projectIdStatus: firebaseConfig.projectId === "YOUR_PROJECT_ID" ? "USING_PLACEHOLDER_PROJECT_ID" : (firebaseConfig.projectId ? "LOADED_FROM_ENV" : "MISSING_ENV_VAR"),
+  // We don't log actual keys, just their status.
+});
+
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
