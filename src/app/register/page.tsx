@@ -20,10 +20,10 @@ import type { UserProfile } from "@/lib/types";
 import { Logo } from "@/components/layout/logo";
 import { Spinner } from "@/components/ui/spinner";
 
-// Ensure the placeholder values match exactly those in src/lib/firebase.ts
-// const PLACEHOLDER_API_KEY = "YOUR_API_KEY";
-// const PLACEHOLDER_AUTH_DOMAIN = "YOUR_AUTH_DOMAIN";
-// const PLACEHOLDER_PROJECT_ID = "YOUR_PROJECT_ID";
+// Placeholder values to check against
+const PLACEHOLDER_API_KEY = "YOUR_API_KEY";
+const PLACEHOLDER_AUTH_DOMAIN = "YOUR_AUTH_DOMAIN";
+const PLACEHOLDER_PROJECT_ID = "YOUR_PROJECT_ID";
 
 
 export default function RegisterPage() {
@@ -55,18 +55,19 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError("")
 
-    // Temporarily removed the explicit Firebase config check to see Firebase SDK's own errors
-    // if (
-    //   auth.app.options.apiKey === PLACEHOLDER_API_KEY ||
-    //   auth.app.options.authDomain === PLACEHOLDER_AUTH_DOMAIN ||
-    //   auth.app.options.projectId === PLACEHOLDER_PROJECT_ID
-    // ) {
-    //   setError(
-    //     "Firebase is not configured correctly. Please ensure API key and other Firebase project settings are correctly set in your environment variables."
-    //   );
-    //   setIsLoading(false);
-    //   return;
-    // }
+    // Explicitly check if the Firebase config being used by the auth object contains placeholders
+    if (
+      auth.app.options.apiKey === PLACEHOLDER_API_KEY ||
+      auth.app.options.authDomain === PLACEHOLDER_AUTH_DOMAIN ||
+      auth.app.options.projectId === PLACEHOLDER_PROJECT_ID ||
+      !auth.app.options.apiKey // Also check if apiKey is missing/empty
+    ) {
+      setError(
+        "Firebase is not configured correctly. Please ensure your actual Firebase project API key, Auth Domain, and Project ID are correctly set in your environment variables (e.g., .env file or Firebase Studio settings) and that the application has been restarted to pick them up."
+      );
+      setIsLoading(false);
+      return;
+    }
 
     if (!formData.country) {
       setError("Please select your country.");
@@ -116,12 +117,13 @@ export default function RegisterPage() {
         await setDoc(doc(db, "users", user.uid), userProfileForFirestore);
       }
 
+      // Using alert for now, but ideally a toast notification
       alert("Registration Successful! Your account has been created. Welcome to LissanHub!");
       router.push("/profile"); 
     } catch (err: any) {
       console.error("Registration error:", err);
       let friendlyMessage = "An error occurred during registration. Please try again.";
-      // More specific Firebase Auth error codes:
+      
       if (err.code) {
         switch (err.code) {
           case 'auth/email-already-in-use':
@@ -134,18 +136,17 @@ export default function RegisterPage() {
             friendlyMessage = "The email address is not valid.";
             break;
           case 'auth/operation-not-allowed':
-            friendlyMessage = "Email/password accounts are not enabled. Please contact support."; // Should be enabled in Firebase console
+            friendlyMessage = "Email/password accounts are not enabled. Please contact support.";
             break;
-          // Errors related to incorrect Firebase setup (these might surface now):
+          // Firebase SDK specific errors if config is bad, which our above check tries to pre-empt
           case 'auth/invalid-api-key':
-            friendlyMessage = "Firebase API Key is invalid. Please check your configuration.";
+            friendlyMessage = "Firebase API Key is invalid. This indicates an issue with your Firebase project setup or environment variables.";
             break;
           case 'auth/project-not-found':
           case 'auth/app-deleted':
-            friendlyMessage = "Firebase project not found or app deleted. Please check your configuration.";
+            friendlyMessage = "Firebase project not found or app deleted. Please check your Firebase configuration and environment variables.";
             break;
           default:
-            // Try to get a cleaner message from Firebase
             if (err.message && err.message.includes("Firebase:")) {
               friendlyMessage = err.message.split("Firebase: ")[1].split(" (")[0];
             } else if (err.message) {
