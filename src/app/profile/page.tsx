@@ -190,12 +190,19 @@ export default function StudentDashboardPage() {
       });
       setCalendarLessons(formattedCalendarLessons);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching bookings:", error);
+      let description = "Could not load your bookings. Please try again later.";
+      if (error.code === 'failed-precondition') {
+        description = "Could not load bookings. This often means a required database index is missing. Please check the browser console for a link to create it, or check your Firestore indexes in the Firebase console for the 'bookings' collection (fields: userId, createdAt desc).";
+      } else if (error.code === 'permission-denied') {
+        description = "Could not load bookings due to a permission issue. Please check your Firestore security rules for the 'bookings' collection.";
+      }
       toast({
-        title: "Error",
-        description: "Could not load your bookings.",
+        title: "Error Fetching Bookings",
+        description: description,
         variant: "destructive",
+        duration: 9000, // Longer duration for important errors
       });
     } finally {
       setIsLoadingBookings(false);
@@ -258,7 +265,7 @@ export default function StudentDashboardPage() {
     }
     fetchUserProfile();
     fetchBookings();
-  }, [user, authLoading, toast]); // Added toast to dependencies
+  }, [user, authLoading, toast]); 
 
 
   const handleProfileEditInputChange = (
@@ -804,3 +811,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
