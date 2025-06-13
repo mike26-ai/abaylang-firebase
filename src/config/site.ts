@@ -1,6 +1,6 @@
 
 import type React from "react";
-import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, PackageIcon } from "lucide-react"; // Added LibraryBig, PackageIcon
+import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, PackageIcon, Users } from "lucide-react"; // Added Users
 
 export type NavItem = {
   title: string;
@@ -52,6 +52,7 @@ export const siteConfig = {
     { title: "Manage Testimonials", href: "/admin/testimonials", icon: Star },
     { title: "View Inquiries", href: "/admin/inquiries", icon: Mail },
     { title: "Manage Materials", href: "/admin/materials", icon: LibraryBig },
+    { title: "Manage Students", href: "/admin/students", icon: Users }, // Added Manage Students
   ] satisfies NavItem[],
   footerNav: [
      { title: "Privacy Policy", href: "/privacy" },
