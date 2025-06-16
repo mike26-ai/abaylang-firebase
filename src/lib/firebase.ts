@@ -2,7 +2,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// import { getAnalytics } from "firebase/analytics"; // Optional: if using Firebase Analytics
+import { getStorage } from "firebase/storage"; // Import Firebase Storage
 
 // Your web app's Firebase configuration
 // REPLACE WITH YOUR ACTUAL CONFIGURATION
@@ -21,6 +21,7 @@ console.log("LissanHub Firebase Config Initializing:", {
   apiKeyStatus: firebaseConfig.apiKey === "YOUR_API_KEY" ? "USING_PLACEHOLDER_API_KEY" : (firebaseConfig.apiKey ? "LOADED_FROM_ENV" : "MISSING_ENV_VAR"),
   authDomainStatus: firebaseConfig.authDomain === "YOUR_AUTH_DOMAIN" ? "USING_PLACEHOLDER_AUTH_DOMAIN" : (firebaseConfig.authDomain ? "LOADED_FROM_ENV" : "MISSING_ENV_VAR"),
   projectIdStatus: firebaseConfig.projectId === "YOUR_PROJECT_ID" ? "USING_PLACEHOLDER_PROJECT_ID" : (firebaseConfig.projectId ? "LOADED_FROM_ENV" : "MISSING_ENV_VAR"),
+  storageBucketStatus: firebaseConfig.storageBucket === "YOUR_STORAGE_BUCKET" ? "USING_PLACEHOLDER_STORAGE_BUCKET" : (firebaseConfig.storageBucket ? "LOADED_FROM_ENV" : "MISSING_ENV_VAR"),
   // We don't log actual keys, just their status.
 });
 
@@ -28,6 +29,6 @@ console.log("LissanHub Firebase Config Initializing:", {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
-// const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null; // Optional
+const storage = getStorage(app); // Initialize Firebase Storage
 
-export { app, auth, db };
+export { app, auth, db, storage }; // Export storage
