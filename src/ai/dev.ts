@@ -2,5 +2,6 @@
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/accent-improvement-suggestions.ts';
-import '@/ai/flows/ai-tutor-chat-flow.ts'; // Add the new chat flow
+// MVP: Defer AI features, so comment out flow imports to prevent build issues if files are modified/removed.
+// import '@/ai/flows/accent-improvement-suggestions.ts';
+// import '@/ai/flows/ai-tutor-chat-flow.ts';

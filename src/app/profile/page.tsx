@@ -21,19 +21,19 @@ import {
   LogOut,
   Plus,
   User,
-  MessageSquare,
-  Trophy,
-  Target,
-  Zap,
-  Award,
-  Download,
-  Play,
-  FileText,
-  Brain,
-  TrendingUp,
+  // MessageSquare, // MVP: Defer some icons
+  // Trophy,
+  // Target,
+  // Zap,
+  // Award,
+  // Download,
+  // Play,
+  // FileText,
+  // Brain,
+  // TrendingUp,
   Edit3,
   XCircle,
-  Video,
+  // Video, // MVP: Defer video icon
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -71,53 +71,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Logo } from "@/components/layout/logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { InteractiveCalendar } from "@/components/calendar/interactive-calendar";
-import { ProgressCharts, type ProgressData } from "@/components/progress/progress-charts";
-
-
-interface CalendarLesson {
-  id: string;
-  date: Date;
-  time: string;
-  duration: number;
-  type: string;
-  status: "booked" | "completed" | "cancelled";
-}
+// import { InteractiveCalendar } from "@/components/calendar/interactive-calendar"; // MVP: Simplify, show list first
+// import { ProgressCharts, type ProgressData } from "@/components/progress/progress-charts"; // MVP: Defer progress charts
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
 }
 
-// Mock data for ProgressCharts
-const mockSkillsData: ProgressData = {
-  labels: ["Speaking", "Reading", "Listening", "Writing", "Culture"],
-  datasets: [{
-    label: "Skill Level",
-    data: [85, 70, 75, 60, 90], // Percentages
-    // backgroundColor: 'hsl(var(--chart-1))' // Example: Recharts might use 'fill' prop on <Bar>
-  }],
-};
-const mockVocabularyData: ProgressData = { // Placeholder, chart not implemented yet
-  labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-  datasets: [{
-    label: "Words Learned",
-    data: [50, 70, 100, 130, 180, 247],
-  }],
-};
-const mockLessonData: ProgressData = { // Placeholder, chart not implemented yet
-  labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-  datasets: [{
-    label: "Lessons Completed",
-    data: [2, 3, 2, 4],
-  }],
-};
-
-
 export default function StudentDashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<DashboardBooking[]>([]);
-  const [calendarLessons, setCalendarLessons] = useState<CalendarLesson[]>([]);
+  // const [calendarLessons, setCalendarLessons] = useState<CalendarLesson[]>([]); // MVP: Defer full calendar view
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
   const [userProfileData, setUserProfileData] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -141,10 +106,11 @@ export default function StudentDashboardPage() {
     lessonDate: "",
   });
 
-  const [currentStreak, setCurrentStreak] = useState(12); 
-  const [totalXP, setTotalXP] = useState(850); 
-  const [currentLevel, setCurrentLevel] = useState("Intermediate"); 
-  const [weeklyGoal, setWeeklyGoal] = useState({ target: 3, completed: 2 }); 
+  // MVP: Defer gamification stats
+  // const [currentStreak, setCurrentStreak] = useState(12); 
+  // const [totalXP, setTotalXP] = useState(850); 
+  // const [currentLevel, setCurrentLevel] = useState("Intermediate"); 
+  // const [weeklyGoal, setWeeklyGoal] = useState({ target: 3, completed: 2 }); 
 
   const fetchBookings = async () => {
     if (!user) return;
@@ -171,38 +137,25 @@ export default function StudentDashboardPage() {
         ...b,
         hasReview: reviewedLessonIds.has(b.id)
       }));
-
       setBookings(fetchedBookings);
 
-      const formattedCalendarLessons: CalendarLesson[] = fetchedBookings.map(b => {
-        let lessonStatus: CalendarLesson['status'] = "booked";
-        if (b.status === "completed") lessonStatus = "completed";
-        else if (b.status === "cancelled") lessonStatus = "cancelled";
-        
-        return {
-          id: b.id,
-          date: parse(b.date, 'yyyy-MM-dd', new Date()), 
-          time: b.time || "N/A",
-          duration: b.duration || 0,
-          type: b.lessonType || "Lesson",
-          status: lessonStatus,
-        };
-      });
-      setCalendarLessons(formattedCalendarLessons);
+      // MVP: Defer calendar-specific lesson formatting
+      // const formattedCalendarLessons: CalendarLesson[] = fetchedBookings.map(b => { ... });
+      // setCalendarLessons(formattedCalendarLessons);
 
     } catch (error: any) {
       console.error("Error fetching bookings:", error);
       let description = "Could not load your bookings. Please try again later.";
       if (error.code === 'failed-precondition') {
-        description = "Could not load bookings. This often means a required database index is missing. Please check the browser console for a link to create it, or check your Firestore indexes in the Firebase console for the 'bookings' collection (fields: userId, createdAt desc).";
+        description = "Could not load bookings. This often means a required database index is missing (bookings collection: userId, createdAt desc). Please check the browser console for a link to create it, or check Firestore indexes.";
       } else if (error.code === 'permission-denied') {
-        description = "Could not load bookings due to a permission issue. Please check your Firestore security rules for the 'bookings' collection.";
+        description = "Could not load bookings due to a permission issue. Please check Firestore security rules for 'bookings'.";
       }
       toast({
         title: "Error Fetching Bookings",
         description: description,
         variant: "destructive",
-        duration: 9000, // Longer duration for important errors
+        duration: 9000,
       });
     } finally {
       setIsLoadingBookings(false);
@@ -225,7 +178,7 @@ export default function StudentDashboardPage() {
           country: profile.country || "",
           amharicLevel: profile.amharicLevel || "beginner",
         });
-        setCurrentLevel(profile.amharicLevel || "Beginner");
+        // setCurrentLevel(profile.amharicLevel || "Beginner"); // MVP: Defer level
       } else {
         const basicProfile: UserProfile = {
           uid: user.uid,
@@ -241,7 +194,7 @@ export default function StudentDashboardPage() {
         await setDoc(doc(db, "users", user.uid), basicProfile);
         setUserProfileData(basicProfile);
         setEditFormData({ name: basicProfile.name, nativeLanguage: "", country: "", amharicLevel: "beginner" });
-        setCurrentLevel("Beginner");
+        // setCurrentLevel("Beginner"); // MVP: Defer level
       }
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -255,7 +208,6 @@ export default function StudentDashboardPage() {
     }
   };
 
-
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -266,7 +218,6 @@ export default function StudentDashboardPage() {
     fetchUserProfile();
     fetchBookings();
   }, [user, authLoading, toast]); 
-
 
   const handleProfileEditInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -298,7 +249,7 @@ export default function StudentDashboardPage() {
       }
       
       setUserProfileData(prev => ({ ...prev, ...updatedProfileData } as UserProfile));
-      setCurrentLevel(updatedProfileData.amharicLevel || "Beginner");
+      // setCurrentLevel(updatedProfileData.amharicLevel || "Beginner"); // MVP: Defer level
 
       toast({
         title: "Profile Updated",
@@ -334,14 +285,17 @@ export default function StudentDashboardPage() {
           : booking
       )
     );
+     // Logic to submit to Firestore should be in a separate function,
+     // but for MVP, parent component (or global context) handles this.
+     // For now, this just updates local UI state.
   };
   
   const handleCancelBooking = async (bookingId: string) => {
     try {
       const bookingDocRef = doc(db, "bookings", bookingId);
       await updateDoc(bookingDocRef, { status: "cancelled" });
-      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled" as "cancelled"} : b).filter(b => b.id !== bookingId || b.status !== "cancelled"));
-      fetchBookings(); 
+      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled" as "cancelled"} : b));
+      // fetchBookings(); // Could refetch or just update local state
       toast({ title: "Booking Cancelled", description: "Your lesson has been cancelled." });
     } catch (error) {
       console.error("Error cancelling booking:", error);
@@ -351,20 +305,14 @@ export default function StudentDashboardPage() {
 
   const upcomingBookings = bookings.filter(
     (b) => b.status === "confirmed" && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd hh:mm a', new Date()))
-  );
+  ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime()); // Sort upcoming soonest first
+
   const pastBookings = bookings.filter(
     (b) => b.status === "completed" || b.status === "cancelled" || (b.status === "confirmed" && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd hh:mm a', new Date())))
   );
   
   const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
-
-  const totalSpent = bookings
-    .filter((b) => b.status === "completed")
-    .reduce((sum, b) => sum + (b.price || 0), 0);
-  const totalHours =
-    bookings
-      .filter((b) => b.status === "completed")
-      .reduce((sum, b) => sum + (b.duration || 0), 0) / 60;
+  const totalHours = bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 0), 0) / 60;
 
   if (authLoading || (!userProfileData && isLoadingProfile && !user)) {
     return (
@@ -404,10 +352,10 @@ export default function StudentDashboardPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1">
-            Your Learning Journey
+            My Dashboard
           </h1>
           <p className="text-lg text-muted-foreground">
-            Track your progress and manage your LissanHub lessons
+            Manage your lessons and profile.
           </p>
         </div>
 
@@ -439,63 +387,34 @@ export default function StudentDashboardPage() {
               <div className="text-2xl font-bold">{totalHours.toFixed(1)}</div>
             </CardContent>
           </Card>
-          <Card className="shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Investment</CardTitle>
-              <CreditCard className="h-4 w-4 text-primary" />
+           <Card className="shadow-lg">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalSpent.toFixed(2)}</div>
+                 <Button asChild className="w-full">
+                    <Link href="/bookings">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Book New Lesson
+                    </Link>
+                </Button>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="calendar" className="space-y-6"> 
+        <Tabs defaultValue="upcoming" className="space-y-6"> 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-3 sm:grid-cols-6"> 
-              <TabsTrigger value="calendar">Calendar</TabsTrigger>
-              <TabsTrigger value="upcoming">Upcoming List</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="resources">Resources</TabsTrigger>
-              <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-2 sm:grid-cols-3"> {/* MVP: Reduced tabs */}
+              <TabsTrigger value="upcoming">Upcoming Lessons</TabsTrigger>
+              <TabsTrigger value="history">Lesson History</TabsTrigger>
+              <TabsTrigger value="profile">My Profile</TabsTrigger>
+              {/* MVP: Deferred tabs: Calendar, Resources, Progress */}
+              {/* <TabsTrigger value="calendar">Calendar</TabsTrigger> */}
+              {/* <TabsTrigger value="resources">Resources</TabsTrigger> */}
+              {/* <TabsTrigger value="progress">Progress</TabsTrigger> */}
             </TabsList>
-            <Button asChild className="w-full sm:w-auto">
-              <Link href="/bookings">
-                <Plus className="w-4 h-4 mr-2" />
-                Book New Lesson
-              </Link>
-            </Button>
           </div>
-
-          <TabsContent value="calendar" className="space-y-4">
-            {isLoadingBookings ? (
-              <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>
-            ) : bookings.length === 0 ? (
-              <Card className="shadow-lg">
-                <CardContent className="p-12 text-center">
-                  <Calendar className="w-16 h-16 text-primary/70 mx-auto mb-4" />
-                  <h3 className="text-2xl font-semibold text-foreground mb-2">No Lessons Scheduled</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    Your calendar is empty. Book a lesson to get started!
-                  </p>
-                  <Button asChild>
-                    <Link href="/bookings">
-                      <Plus className="w-4 h-4 mr-2" /> Book Your First Lesson
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <InteractiveCalendar
-                lessons={calendarLessons}
-                onSelectDate={(date) => toast({ title: "Date Selected", description: `Viewing lessons for ${format(date, 'PPP')}`})}
-                onSelectLesson={(lesson) => toast({ title: "Lesson Selected", description: `${lesson.type} on ${format(lesson.date, 'PPP')} at ${lesson.time}` })}
-              />
-            )}
-          </TabsContent>
-
-
+          
           <TabsContent value="upcoming" className="space-y-4">
             {isLoadingBookings ? (
               <div className="flex justify-center items-center h-40"><Spinner /></div>
@@ -536,7 +455,8 @@ export default function StudentDashboardPage() {
                           {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                         </Badge>
                         <span className="font-semibold text-foreground">${booking.price}</span>
-                        <Button variant="outline" size="sm" className="text-xs border-primary/30 hover:bg-accent">Reschedule</Button>
+                        {/* MVP: Reschedule deferred */}
+                        {/* <Button variant="outline" size="sm" className="text-xs border-primary/30 hover:bg-accent">Reschedule</Button> */}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                              <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs">
@@ -549,7 +469,7 @@ export default function StudentDashboardPage() {
                               <AlertDialogTitle>Cancel Lesson?</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Are you sure you want to cancel your lesson on {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}?
-                                Please check our cancellation policy.
+                                (Please check our 24-hour cancellation policy).
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -606,9 +526,11 @@ export default function StudentDashboardPage() {
                             </Button>
                           )
                         )}
+                         {/* MVP: Defer View Recording
                          {booking.status === 'completed' && (
                            <Button variant="outline" size="sm" className="text-xs border-primary/30 hover:bg-accent"><Video className="mr-1 h-4 w-4" /> View Recording</Button>
                          )}
+                         */}
                       </div>
                     </div>
                   </CardContent>
@@ -628,7 +550,7 @@ export default function StudentDashboardPage() {
                         <CardTitle className="text-xl flex items-center gap-2">
                         <User className="w-5 h-5 text-primary" /> Profile Information
                         </CardTitle>
-                        <CardDescription>Manage your account details and learning preferences.</CardDescription>
+                        <CardDescription>Manage your account details.</CardDescription>
                     </div>
                     {!isEditingProfile && <Button variant="outline" size="sm" onClick={() => setIsEditingProfile(true)}><Edit3 className="mr-2 h-4 w-4" />Edit</Button>}
                   </div>
@@ -707,10 +629,12 @@ export default function StudentDashboardPage() {
                             <h4 className="text-sm font-medium text-muted-foreground">Member Since</h4>
                             <p className="text-foreground">{userProfileData.createdAt ? format(userProfileData.createdAt.toDate(), "MMMM yyyy") : "N/A"}</p>
                         </div>
+                        {/* MVP: Defer Gamification
                          <div>
                             <h4 className="text-sm font-medium text-muted-foreground">Learning Streak</h4>
                             <p className="text-foreground">{currentStreak} days (Static)</p>
                         </div>
+                        */}
                     </div>
                   </div>
                 )}
@@ -721,82 +645,12 @@ export default function StudentDashboardPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="resources" className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5 text-primary" /> Homework & Assignments</CardTitle>
-                  <CardDescription>Complete your assignments and track your progress</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div><h4 className="font-medium">Family Conversation Practice</h4><p className="text-sm text-muted-foreground">Due: Tomorrow</p></div>
-                      <Badge variant="secondary" className="bg-yellow-400/20 text-yellow-700 dark:text-yellow-500">Pending</Badge>
-                    </div>
-                     <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div><h4 className="font-medium">Fidel Script Exercise</h4><p className="text-sm text-muted-foreground">Due: Jan 20</p></div>
-                      <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">Completed</Badge>
-                    </div>
-                  </div>
-                  <Button asChild className="w-full"><Link href="/resources#assignments">View All Assignments</Link></Button>
-                </CardContent>
-              </Card>
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Brain className="w-5 h-5 text-primary" /> Interactive Quizzes</CardTitle>
-                  <CardDescription>Test your knowledge with fun, interactive quizzes</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
-                       <div><h4 className="font-medium">Basic Greetings Quiz</h4><p className="text-sm text-muted-foreground">10 questions • 5 min</p></div>
-                       <div className="flex items-center gap-2"><Star className="w-4 h-4 fill-yellow-400 text-yellow-400" /><span className="text-sm">95%</span></div>
-                    </div>
-                  </div>
-                   <Button asChild className="w-full"><Link href="/resources#quizzes">Take a Quiz</Link></Button>
-                </CardContent>
-              </Card>
-               <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Zap className="w-5 h-5 text-primary" /> Vocabulary Builder</CardTitle>
-                  <CardDescription>Expand your Amharic vocabulary with flashcards</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-4 bg-accent rounded-lg">
-                      <div className="text-2xl font-bold text-primary">247</div><div className="text-sm text-muted-foreground">Words Learned</div>
-                    </div>
-                    <div className="text-center p-4 bg-accent/70 rounded-lg">
-                      <div className="text-2xl font-bold text-primary">15</div><div className="text-sm text-muted-foreground">Daily Goal</div>
-                    </div>
-                  </div>
-                   <Button asChild className="w-full"><Link href="/resources#flashcards">Practice Flashcards</Link></Button>
-                </CardContent>
-              </Card>
-               <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> Digital Learning Materials</CardTitle>
-                  <CardDescription>Interactive flipbooks and study materials</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
-                    <div><h4 className="font-medium">Amharic Alphabet Flipbook</h4><p className="text-sm text-muted-foreground">Interactive Fidel guide</p></div>
-                    <Button size="sm" variant="outline" asChild><Link href="/resources#flipbooks"><Play className="w-4 h-4 mr-1" /> Open</Link></Button>
-                  </div>
-                   <Button asChild className="w-full"><Link href="/resources#flipbooks">View All Materials</Link></Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="progress" className="space-y-6">
-            <ProgressCharts 
-                skillsData={mockSkillsData} 
-                vocabularyData={mockVocabularyData} 
-                lessonData={mockLessonData} 
-            />
-          </TabsContent>
+          {/* MVP: Defer Calendar, Resources, Progress Tabs */}
+          {/* 
+          <TabsContent value="calendar"> ... </TabsContent>
+          <TabsContent value="resources"> ... </TabsContent>
+          <TabsContent value="progress"> ... </TabsContent>
+          */}
         </Tabs>
       </div>
 
@@ -811,5 +665,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    

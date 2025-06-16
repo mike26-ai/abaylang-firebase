@@ -11,10 +11,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { PronunciationFeedbackTool } from "@/components/ai/PronunciationFeedbackTool" // Corrected path
-import { AIChatbot } from "@/components/ai/AIChatbot" // Corrected path
-import { NewsletterSignup } from "@/components/newsletter/newsletter-signup"
-import { ReferralCodeInput } from "@/components/payment/ReferralCodeInput"
+// import { PronunciationFeedbackTool } from "@/components/ai/PronunciationFeedbackTool" // MVP: Defer AI tools
+// import { AIChatbot } from "@/components/ai/AIChatbot" // MVP: Defer AI tools
+// import { NewsletterSignup } from "@/components/newsletter/newsletter-signup" // MVP: Defer newsletter
+// import { ReferralCodeInput } from "@/components/payment/ReferralCodeInput" // MVP: Defer referral
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
@@ -31,7 +31,6 @@ interface BookedSlotInfo {
   endTimeDate: Date;
 }
 
-// Function to fetch already booked slots (start time and duration) for a date from Firestore
 async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
   if (!date) return [];
   try {
@@ -68,21 +67,17 @@ async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
   }
 }
 
-// Helper to generate base start times (e.g., every 30 mins from 9 AM to 5 PM)
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
   const refDate = new Date(); 
-  // 9:00 AM to 11:30 AM
   for (let h = 9; h < 12; h++) {
     times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'hh:mm a'));
     times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'hh:mm a'));
   }
-  // 2:00 PM to 4:30 PM (14:00 to 16:30)
   for (let h = 14; h < 17; h++) { 
     times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'hh:mm a'));
     times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'hh:mm a'));
   }
-  // Add 5:00 PM explicitly if needed
   times.push(format(new Date(refDate.setHours(17, 0, 0, 0)), 'hh:mm a')); 
   return times;
 };
@@ -99,7 +94,7 @@ export default function BookLessonPage() {
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [learningGoals, setLearningGoals] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [referralCode, setReferralCode] = useState("");
+  // const [referralCode, setReferralCode] = useState(""); // MVP: Defer referral
   const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
@@ -116,29 +111,24 @@ export default function BookLessonPage() {
       value: "cultural", label: "Cultural Immersion", duration: 90, price: 65, description: "Deep dive into Ethiopian culture and heritage",
       features: ["Traditional stories & proverbs", "Cultural customs & etiquette", "Family conversation prep", "Regional dialects", "Cultural materials included"], type: "individual",
     },
-    {
-      value: "group-conversation", label: "Group Conversation", duration: 60, price: 20, description: "Practice with fellow learners (4-6 students)",
-      features: ["Small group setting (4-6 students)", "Conversation practice", "Peer learning experience", "Cultural discussions", "Session recording"], type: "group",
-    },
+    // MVP: Simplify, maybe hide group/package options from direct booking initially or link to package page
+    // {
+    //   value: "group-conversation", label: "Group Conversation", duration: 60, price: 20, description: "Practice with fellow learners (4-6 students)",
+    //   features: ["Small group setting (4-6 students)", "Conversation practice", "Peer learning experience", "Cultural discussions", "Session recording"], type: "group",
+    // },
     {
       value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: 30, price: 220, originalPrice: 250, totalLessons: 10,
       description: "10 conversation practice sessions with 12% savings",
-      features: ["10 x 30-minute lessons", "Conversation practice focus", "12% discount ($30 savings)", "Valid for 4 months", "Priority booking", "Progress tracking"], type: "package",
+      features: ["10 x 30-minute lessons", "Conversation practice focus", "12% discount", "Valid for 4 months", "Priority booking"], type: "package",
     },
     {
       value: "learning-intensive", label: "Learning Intensive", duration: 60, price: 304, originalPrice: 360, totalLessons: 8,
       description: "8 comprehensive lessons with 15% savings",
-      features: ["8 x 60-minute lessons", "Structured lesson plans", "15% discount ($56 savings)", "Valid for 4 months", "Bi-weekly progress reviews", "Custom learning materials"], type: "package",
-    },
-     {
-      value: "flexible-learning", label: "Flexible Learning", duration: 60, price: 280, originalPrice: 320, totalLessons: 8, // Duration is nominal for mixed
-      description: "8 lessons - mix 30min and 60min sessions",
-      features: ["Choose any combination:", "• 30-min conversation practice", "• 60-min comprehensive lessons", "12% discount ($40 savings)", "Valid for 4 months", "Maximum flexibility"], type: "package",
+      features: ["8 x 60-minute lessons", "Structured lesson plans", "15% discount", "Valid for 4 months", "Progress reviews"], type: "package",
     },
   ];
 
   const availableDates = Array.from({ length: 30 }, (_, i) => addDays(startOfDay(new Date()), i));
-
   const selectedLessonDetails = lessonTypes.find((type) => type.value === selectedType);
 
   useEffect(() => {
@@ -167,9 +157,8 @@ export default function BookLessonPage() {
   
   const displayTimeSlots = useMemo(() => {
     if (!selectedDate || !selectedLessonDetails || selectedLessonDetails.type === 'package') return [];
-
     const slots: { display: string; value: string; isDisabled: boolean }[] = [];
-    const userDurationMinutes = selectedLessonDetails.duration as number; // Assume duration is number for non-package
+    const userDurationMinutes = selectedLessonDetails.duration as number;
     const slotDate = startOfDay(selectedDate); 
 
     for (const startTimeString of baseStartTimes) {
@@ -179,12 +168,10 @@ export default function BookLessonPage() {
           continue;
       }
       const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
-
-      const dayEndHour = 18; // 6 PM
+      const dayEndHour = 18;
       if (potentialEndTime.getHours() > dayEndHour || (potentialEndTime.getHours() === dayEndHour && potentialEndTime.getMinutes() > 0)) {
           continue; 
       }
-
       let isSlotBooked = false;
       for (const bookedRange of dailyBookedRanges) {
         if (potentialStartTime < bookedRange.endTimeDate && potentialEndTime > bookedRange.startTimeDate) {
@@ -192,7 +179,6 @@ export default function BookLessonPage() {
           break;
         }
       }
-      
       slots.push({
         display: `${format(potentialStartTime, 'p')} - ${format(potentialEndTime, 'p')}`,
         value: startTimeString,
@@ -201,7 +187,6 @@ export default function BookLessonPage() {
     }
     return slots;
   }, [selectedDate, selectedLessonDetails, dailyBookedRanges]);
-
 
   const handleBooking = async () => {
     if (!user) {
@@ -218,15 +203,9 @@ export default function BookLessonPage() {
       return;
     }
     if (selectedLessonDetails.type === 'package' && !selectedDate) {
-        // For packages, we might only need a start date or no date if it's just buying credits
-        // For now, let's assume packages are purchased and then individual sessions from the package are scheduled.
-        // This current booking flow is more for single sessions.
-        // We can simplify package booking here to just "purchase" the package.
-        // For now, let's require a date for all.
          toast({ title: "Selection Incomplete", description: "Please select a start date for your package.", variant: "destructive" });
          return;
     }
-
 
     setIsProcessing(true);
     try {
@@ -234,12 +213,12 @@ export default function BookLessonPage() {
         userId: user.uid,
         userName: user.displayName || "User",
         userEmail: user.email || "",
-        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "N/A_PACKAGE", // Handle package date
-        time: selectedTime || "N/A_PACKAGE", // Handle package time
-        duration: typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : 0, // Or handle package duration string
+        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "N/A_PACKAGE",
+        time: selectedTime || "N/A_PACKAGE",
+        duration: typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : 0,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: "confirmed", // Or "pending_payment" if integrating payments
+        status: "confirmed", // MVP: Confirm directly. Later, might be "pending_payment"
         tutorId: "MahirAbasMustefa",
         tutorName: tutorInfo.name,
         learningGoals: learningGoals || undefined,
@@ -276,7 +255,6 @@ export default function BookLessonPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
-      {/* Header */}
       <header className="bg-card border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
@@ -296,7 +274,6 @@ export default function BookLessonPage() {
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            {/* Lesson Type Selection */}
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl text-foreground">
@@ -308,7 +285,7 @@ export default function BookLessonPage() {
               <CardContent>
                 <RadioGroup value={selectedType} onValueChange={(value) => {setSelectedType(value); setSelectedTime(undefined); setSelectedDateState(undefined);}}>
                   <div className="space-y-6">
-                    {["individual", "group", "package"].map(lessonGroupType => (
+                    {["individual", "package"].map(lessonGroupType => ( // MVP: Removed "group" for simplicity
                        <div key={lessonGroupType}>
                         <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">{lessonGroupType} Lessons</h3>
                         <div className="space-y-4">
@@ -329,7 +306,6 @@ export default function BookLessonPage() {
                                         <div className="mb-2 sm:mb-0">
                                         <div className="font-semibold text-lg text-foreground flex items-center gap-2">
                                             {lesson.label}
-                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group</Badge>}
                                             {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
@@ -344,11 +320,11 @@ export default function BookLessonPage() {
                                         </div>
                                     </div>
                                     <div className="grid md:grid-cols-2 gap-2 mt-3 text-sm">
-                                        {lesson.features.map((feature, index) => (
-                                        <div key={index} className="flex items-center gap-2">
+                                        {lesson.features.slice(0, 2).map((feature, index) => ( // MVP: Show fewer features
+                                        <li key={index} className="flex items-center gap-2">
                                             <Check className="w-4 h-4 text-primary flex-shrink-0" />
                                             <span className="text-muted-foreground">{feature}</span>
-                                        </div>
+                                        </li>
                                         ))}
                                     </div>
                                     </div>
@@ -360,11 +336,8 @@ export default function BookLessonPage() {
                              <div className="mt-4 p-4 bg-accent/70 rounded-lg">
                                 <div className="flex items-center gap-2 mb-2">
                                 <Package className="w-5 h-5 text-primary" />
-                                <span className="font-semibold text-accent-foreground">Want more package options?</span>
+                                <span className="font-semibold text-accent-foreground">More Packages Available</span>
                                 </div>
-                                <p className="text-sm text-muted-foreground mb-3">
-                                Explore our full range of packages with savings up to 25% on larger bundles.
-                                </p>
                                 <Button asChild variant="outline" size="sm" className="border-primary/30 hover:bg-primary/10">
                                   <Link href="/packages">View All Packages</Link>
                                 </Button>
@@ -379,7 +352,6 @@ export default function BookLessonPage() {
 
             {!isPackageSelected && (
               <>
-                {/* Date Selection */}
                 <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-xl text-foreground">
@@ -410,7 +382,6 @@ export default function BookLessonPage() {
                 </CardContent>
                 </Card>
 
-                {/* Time Selection */}
                 {selectedDate && (
                 <Card className="shadow-lg">
                     <CardHeader>
@@ -424,7 +395,7 @@ export default function BookLessonPage() {
                     {isFetchingSlots ? (
                         <div className="flex justify-center items-center h-24"><Spinner /></div>
                     ) : displayTimeSlots.length === 0 ? (
-                        <p className="text-muted-foreground text-center py-4">No available slots for this duration/date. Please try another selection.</p>
+                        <p className="text-muted-foreground text-center py-4">No available slots for this duration/date.</p>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {displayTimeSlots.map((slot) => (
@@ -479,8 +450,6 @@ export default function BookLessonPage() {
                 </Card>
             )}
 
-
-            {/* Learning Goals */}
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl text-foreground">
@@ -491,7 +460,7 @@ export default function BookLessonPage() {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="What would you like to focus on? (e.g., family conversations, business Amharic, cultural traditions, etc.)"
+                  placeholder="What would you like to focus on?"
                   value={learningGoals}
                   onChange={(e) => setLearningGoals(e.target.value)}
                   rows={4}
@@ -500,8 +469,9 @@ export default function BookLessonPage() {
               </CardContent>
             </Card>
 
-            {/* Integrated Tools as separate cards - can be toggled or moved */}
-             <Card className="shadow-lg">
+            {/* MVP: Comment out AI tools & Newsletter from booking page */}
+            {/* 
+            <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl text-foreground">
                   <Star className="w-5 h-5 text-primary" /> Pronunciation Practice
@@ -536,9 +506,9 @@ export default function BookLessonPage() {
                 <NewsletterSignup />
               </CardContent>
             </Card>
+            */}
           </div>
 
-          {/* Booking Summary & Tutor Info */}
           <div className="lg:col-span-1">
             <Card className="shadow-lg sticky top-20">
               <CardHeader>
@@ -564,7 +534,6 @@ export default function BookLessonPage() {
 
                 <div className="border-t border-border pt-4 space-y-3">
                   <h4 className="font-semibold text-foreground">Booking Summary</h4>
-
                   {selectedLessonDetails && (
                     <div className="space-y-2">
                       <div className="flex justify-between">
@@ -585,7 +554,6 @@ export default function BookLessonPage() {
                        )}
                     </div>
                   )}
-
                   {selectedDate && !isPackageSelected && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date:</span>
@@ -602,8 +570,6 @@ export default function BookLessonPage() {
                       </span>
                     </div>
                   )}
-
-
                   {selectedTime && !isPackageSelected && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
@@ -626,11 +592,9 @@ export default function BookLessonPage() {
                 <div className="space-y-3">
                   <Badge variant="secondary" className="w-full justify-center py-2 bg-accent text-accent-foreground">
                     <Check className="w-4 h-4 mr-2 text-primary" />
-                    Secure Booking (Payment later)
+                    Secure Booking (Payment later for MVP)
                   </Badge>
-
-                  <ReferralCodeInput referralCode={referralCode} setReferralCode={setReferralCode} />
-
+                  {/* <ReferralCodeInput referralCode={referralCode} setReferralCode={setReferralCode} /> MVP: Defer referral */ }
                   <Button
                     className="w-full"
                     onClick={handleBooking}
@@ -640,11 +604,9 @@ export default function BookLessonPage() {
                     {isProcessing ? "Processing..." : `Confirm Booking - $${selectedLessonDetails?.price || 0}`}
                   </Button>
                 </div>
-
                 <div className="text-xs text-muted-foreground space-y-1 text-center">
-                  <p>• Free cancellation up to 24 hours before (for individual lessons).</p>
-                  <p>• You'll receive a Zoom link via email for scheduled lessons.</p>
-                  <p>• Session recordings provided for most lessons.</p>
+                  <p>• Free cancellation up to 24 hours before.</p>
+                  <p>• You'll receive a Zoom link via email.</p>
                 </div>
               </CardContent>
             </Card>
@@ -654,4 +616,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-

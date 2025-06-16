@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock, ChevronDown, Package } from "lucide-react" // Added Package
+import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock, ChevronDown, Package } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/layout/logo"
 import { Input } from "@/components/ui/input"
@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import type { LessonPackageDefinition } from "@/lib/types";
+// import type { LessonPackageDefinition } from "@/lib/types"; // Simplified, not fetching dynamic packages for MVP homepage
 
 
 export default function HomePage() {
@@ -31,39 +31,39 @@ export default function HomePage() {
   const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
   const [isSubmittingContact, setIsSubmittingContact] = useState(false);
 
-  const [featuredPackages, setFeaturedPackages] = useState<LessonPackageDefinition[]>([]);
-  const [isLoadingHighlights, setIsLoadingHighlights] = useState(true);
+  // const [featuredPackages, setFeaturedPackages] = useState<LessonPackageDefinition[]>([]); // MVP: static or simplified packages section
+  // const [isLoadingHighlights, setIsLoadingHighlights] = useState(true);
 
 
-  useEffect(() => {
-    const fetchFeatured = async () => {
-      setIsLoadingHighlights(true);
-      try {
-        const packagesRef = collection(db, "lessonPackageDefinitions");
-        const q = query(
-          packagesRef,
-          where("featuredOnHomepage", "==", true),
-          orderBy("order", "asc"),
-          limit(3)
-        );
-        const snapshot = await getDocs(q);
-        const fp = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as LessonPackageDefinition)
-        );
-        setFeaturedPackages(fp);
-      } catch (err) {
-        console.error("Error fetching featured packages:", err);
-        toast({
-          title: "Error",
-          description: "Could not load featured packages for homepage.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingHighlights(false);
-      }
-    };
-    fetchFeatured();
-  }, []); // Changed [toast] to []
+  // useEffect(() => { // MVP: Defer dynamic package fetching for homepage
+  //   const fetchFeatured = async () => {
+  //     setIsLoadingHighlights(true);
+  //     try {
+  //       const packagesRef = collection(db, "lessonPackageDefinitions");
+  //       const q = query(
+  //         packagesRef,
+  //         where("featuredOnHomepage", "==", true),
+  //         orderBy("order", "asc"),
+  //         limit(3)
+  //       );
+  //       const snapshot = await getDocs(q);
+  //       const fp = snapshot.docs.map(
+  //         (doc) => ({ id: doc.id, ...doc.data() } as LessonPackageDefinition)
+  //       );
+  //       setFeaturedPackages(fp);
+  //     } catch (err) {
+  //       console.error("Error fetching featured packages:", err);
+  //       toast({
+  //         title: "Error",
+  //         description: "Could not load featured packages for homepage.",
+  //         variant: "destructive",
+  //       });
+  //     } finally {
+  //       setIsLoadingHighlights(false);
+  //     }
+  //   };
+  //   fetchFeatured();
+  // }, []);
 
   const handleContactInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setContactForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -107,42 +107,12 @@ export default function HomePage() {
             <Link href="/#about" className="text-muted-foreground hover:text-primary transition-colors">
               About
             </Link>
-            <Link href="/#lessons" className="text-muted-foreground hover:text-primary transition-colors">
-              Lessons
-            </Link>
-            <Link href="/#packages" className="text-muted-foreground hover:text-primary transition-colors">
-              Packages
-            </Link>
-            <Link href="/resources" className="text-muted-foreground hover:text-primary transition-colors">
-              Resources
+            <Link href="/packages" className="text-muted-foreground hover:text-primary transition-colors">
+              Pricing
             </Link>
             <Link href="/#testimonials" className="text-muted-foreground hover:text-primary transition-colors">
               Reviews
             </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 px-0 md:px-3"
-                  )}
-                >
-                  More
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem asChild>
-                  <Link href="/news">News & Updates</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/blog">Learning Blog</Link>
-                </DropdownMenuItem>
-                 <DropdownMenuItem asChild>
-                  <Link href="/packages">All Packages</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <Link href="/#contact" className="text-muted-foreground hover:text-primary transition-colors">
               Contact
             </Link>
@@ -193,7 +163,6 @@ export default function HomePage() {
             </Button>
           </div>
 
-          {/* Trust Indicators */}
           <div className="grid md:grid-cols-4 gap-6 mt-16">
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mb-3">
@@ -302,19 +271,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Lessons/Services Section */}
+      {/* Simplified Lessons/Services Section for MVP */}
       <section id="lessons" className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-accent text-accent-foreground">Learning Options</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Choose Your Learning Journey</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Choose Your Lesson Type</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Flexible lesson formats designed for busy diaspora learners. From quick conversation practice to
-              comprehensive cultural immersion.
+              Select from our core lesson formats. More options available on the booking page.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Quick Practice - kept for MVP */}
             <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
@@ -328,8 +297,6 @@ export default function HomePage() {
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Conversation practice</span></li>
                   <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Pronunciation correction</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Quick grammar review</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Session recording</span></li>
                 </ul>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
                   <Link href="/bookings?type=quick">Book Quick Session</Link>
@@ -337,6 +304,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
+            {/* Comprehensive Lesson - kept for MVP */}
             <Card className="border-2 border-primary/30 shadow-lg hover:shadow-xl transition-all duration-300 group relative bg-card">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
@@ -352,10 +320,7 @@ export default function HomePage() {
               <CardContent className="space-y-4">
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Structured lesson plan</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Cultural context & stories</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Homework & materials</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Progress tracking</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Session recording</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Cultural context</span></li>
                 </ul>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
                   <Link href="/bookings?type=comprehensive">Book Full Lesson</Link>
@@ -363,6 +328,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
+            {/* Cultural Immersion - kept for MVP */}
             <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
@@ -375,10 +341,7 @@ export default function HomePage() {
               <CardContent className="space-y-4">
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Traditional stories & proverbs</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Cultural customs & etiquette</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Family conversation prep</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Regional dialects</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Cultural materials included</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Cultural customs</span></li>
                 </ul>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
                   <Link href="/bookings?type=cultural">Book Cultural Session</Link>
@@ -387,126 +350,30 @@ export default function HomePage() {
             </Card>
           </div>
 
-          <div className="mt-16 text-center">
-            <h3 className="text-2xl font-bold text-foreground mb-8">My Teaching Approach</h3>
-            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-primary font-bold">1</span>
-                </div>
-                <h4 className="font-semibold text-foreground mb-2">Assess Your Level</h4>
-                <p className="text-sm text-muted-foreground">
-                  We start by understanding your current Amharic knowledge and learning goals
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-primary font-bold">2</span>
-                </div>
-                <h4 className="font-semibold text-foreground mb-2">Personalized Plan</h4>
-                <p className="text-sm text-muted-foreground">
-                  Create a custom learning path that fits your schedule and objectives
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-primary font-bold">3</span>
-                </div>
-                <h4 className="font-semibold text-foreground mb-2">Practice & Progress</h4>
-                <p className="text-sm text-muted-foreground">Regular practice with real-world scenarios and cultural context</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Package Highlights Section */}
-      <section id="packages" className="py-20 bg-gradient-to-b from-card to-primary/5">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-accent text-accent-foreground">Save More with Packages</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Lesson Packages & Bundles</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              The more you learn, the more you save! Choose from our carefully crafted packages designed for every learning style.
-            </p>
-          </div>
-          
-          {isLoadingHighlights ? (
-            <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" />
-            </div>
-          ) : featuredPackages.length === 0 && !isLoadingHighlights ? (
-            <div className="text-center text-muted-foreground">
-              <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground/70" />
-              <p>No featured packages available at the moment. Please check our full packages page!</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
-              {featuredPackages.map((pkg, index) => (
-                 <Card key={pkg.id || index} className={`shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card ${pkg.popular ? "border-2 border-primary/50 scale-105" : "border-border"}`}>
-                  {pkg.popular && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
-                    </div>
-                  )}
-                  <CardHeader className="text-center">
-                    <div className={`w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center ${
-                        index === 0 ? 'bg-accent' : index === 1 ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-purple-100 dark:bg-purple-900/30'
-                      }`}
-                    >
-                      <Package className={`w-6 h-6 ${
-                          index === 0 ? 'text-primary' : index === 1 ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400'
-                        }`} />
-                    </div>
-                    <CardTitle className="text-lg text-foreground">{pkg.name}</CardTitle>
-                    <div className="text-2xl font-bold text-primary">${pkg.price}</div>
-                    {pkg.originalPrice && <div className="text-sm text-muted-foreground line-through">${pkg.originalPrice}</div>}
-                    <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
-                      Save ${pkg.originalPrice ? pkg.originalPrice - pkg.price : 'N/A'} ({pkg.discountPercentage || '...'}%)
-                    </Badge>
-                    <CardDescription className="text-muted-foreground">{pkg.shortDescription || pkg.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2 mb-4">
-                      {(pkg.features || []).slice(0, 3).map((feature, idx) => (
-                        <li key={idx} className="flex items-center gap-2">
-                          <Check className="w-4 h-4 text-primary" />
-                          <span className="text-sm text-muted-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
-                       <Link href={`/bookings?packageId=${pkg.id}`}>View Package Details</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          <div className="text-center">
+          <div className="mt-12 text-center">
             <Button variant="outline" size="lg" className="border-primary/30 hover:bg-accent text-foreground text-base" asChild>
               <Link href="/packages">
                 <Package className="w-5 h-5 mr-2" />
-                View All Packages & Save Up to 25%
+                View All Packages & Options
               </Link>
             </Button>
           </div>
         </div>
       </section>
 
-
-      <section id="testimonials" className="py-20 px-4 bg-muted/30"> {/* Changed from bg-card to bg-muted/30 for variety */}
+      {/* Testimonials Section - Kept for MVP (can be static or fetch few) */}
+      <section id="testimonials" className="py-20 px-4 bg-card">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-accent text-accent-foreground">Student Success</Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">What Students Say</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Real stories from diaspora learners who've reconnected with their heritage through Amharic
+              Real stories from diaspora learners who've reconnected with their heritage
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+             {/* MVP: Could hardcode 1-3 testimonials or fetch dynamically if that part is stable */}
             <Card className="shadow-lg bg-card">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-1 mb-4">
@@ -514,13 +381,13 @@ export default function HomePage() {
                 </div>
                 <p className="text-muted-foreground mb-6 leading-relaxed">
                   "Mahir helped me reconnect with my Ethiopian roots. After just 3 months, I can finally have meaningful
-                  conversations with my grandmother. The cultural context he provides makes all the difference."
+                  conversations with my grandmother."
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
                     <span className="text-primary font-semibold">SM</span>
                   </div>
-                  <div><div className="font-semibold text-foreground">Sara M.</div><div className="text-sm text-muted-foreground">Second-generation Ethiopian, Toronto</div></div>
+                  <div><div className="font-semibold text-foreground">Sara M.</div><div className="text-sm text-muted-foreground">Toronto</div></div>
                 </div>
               </CardContent>
             </Card>
@@ -530,14 +397,13 @@ export default function HomePage() {
                   {[...Array(5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />))}
                 </div>
                 <p className="text-muted-foreground mb-6 leading-relaxed">
-                  "As someone who grew up speaking English, learning Amharic felt impossible. Mahir's patient teaching
-                  style and cultural stories made it enjoyable. Now I'm planning my first trip to Ethiopia!"
+                  "Mahir's patient teaching style and cultural stories made learning enjoyable. Now I'm planning my first trip to Ethiopia!"
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
                     <span className="text-primary font-semibold">DK</span>
                   </div>
-                  <div><div className="font-semibold text-foreground">Daniel K.</div><div className="text-sm text-muted-foreground">Third-generation Ethiopian, London</div></div>
+                  <div><div className="font-semibold text-foreground">Daniel K.</div><div className="text-sm text-muted-foreground">London</div></div>
                 </div>
               </CardContent>
             </Card>
@@ -547,27 +413,26 @@ export default function HomePage() {
                   {[...Array(5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />))}
                 </div>
                 <p className="text-muted-foreground mb-6 leading-relaxed">
-                  "The flexibility of online lessons fits perfectly with my busy schedule. Mahir's teaching goes beyond
-                  language - I'm learning about my culture and heritage. Highly recommend!"
+                  "The flexibility of online lessons fits perfectly with my busy schedule. Highly recommend!"
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
                     <span className="text-primary font-semibold">AL</span>
                   </div>
-                  <div><div className="font-semibold text-foreground">Aisha L.</div><div className="text-sm text-muted-foreground">Working Professional, Washington DC</div></div>
+                  <div><div className="font-semibold text-foreground">Aisha L.</div><div className="text-sm text-muted-foreground">Washington DC</div></div>
                 </div>
               </CardContent>
             </Card>
           </div>
-
           <div className="text-center mt-12">
             <Button variant="outline" className="border-primary/30 hover:bg-accent text-foreground" asChild>
-                <Link href="/testimonials">Read More Success Stories</Link>
+                <Link href="/testimonials">Read More Reviews</Link>
             </Button>
           </div>
         </div>
       </section>
 
+      {/* Contact Section - Kept for MVP */}
       <section id="contact" className="py-20 px-4 bg-primary/5">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12">
@@ -585,13 +450,6 @@ export default function HomePage() {
                 Whether you're a complete beginner or looking to improve your existing Amharic skills, I'm excited to
                 help you connect with your Ethiopian heritage through language.
               </p>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3"><div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center"><Calendar className="w-5 h-5 text-primary" /></div><div><div className="font-semibold text-foreground">Book a Free Consultation</div><div className="text-sm text-muted-foreground">15-minute chat to discuss your goals</div></div></div>
-                <div className="flex items-center gap-3"><div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center"><Users className="w-5 h-5 text-primary" /></div><div><div className="font-semibold text-foreground">Join the Community</div><div className="text-sm text-muted-foreground">Connect with other learners</div></div></div>
-                <div className="flex items-center gap-3"><div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center"><Award className="w-5 h-5 text-primary" /></div><div><div className="font-semibold text-foreground">Flexible Scheduling</div><div className="text-sm text-muted-foreground">Lessons that fit your timezone</div></div></div>
-              </div>
-
               <div className="flex gap-4">
                 <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
                     <Link href="/bookings">Book First Lesson</Link>
@@ -640,21 +498,15 @@ export default function HomePage() {
             <div className="md:col-span-2">
               <Logo showText={true} className="mb-4"/>
               <p className="text-muted-foreground mb-4 max-w-md">
-                Connecting diaspora learners with their Ethiopian heritage through personalized Amharic lessons and
-                cultural immersion.
+                Connecting diaspora learners with their Ethiopian heritage through personalized Amharic lessons.
               </p>
-              <div className="flex gap-4">
-                <Link href="#" className="w-8 h-8 bg-background/10 hover:bg-background/20 rounded-lg flex items-center justify-center text-sm text-background">FB</Link>
-                <Link href="#" className="w-8 h-8 bg-background/10 hover:bg-background/20 rounded-lg flex items-center justify-center text-sm text-background">IG</Link>
-                <Link href="#" className="w-8 h-8 bg-background/10 hover:bg-background/20 rounded-lg flex items-center justify-center text-sm text-background">YT</Link>
-              </div>
             </div>
             <div>
               <h3 className="font-semibold mb-4 text-primary-foreground">Learning</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li><Link href="/bookings" className="hover:text-primary-foreground">Book Lesson</Link></li>
                 <li><Link href="/tutor-profile" className="hover:text-primary-foreground">About Mahir</Link></li>
-                <li><Link href="/testimonials" className="hover:text-primary-foreground">Success Stories</Link></li>
+                <li><Link href="/testimonials" className="hover:text-primary-foreground">Reviews</Link></li>
                  <li><Link href="/packages" className="hover:text-primary-foreground">View Packages</Link></li>
               </ul>
             </div>

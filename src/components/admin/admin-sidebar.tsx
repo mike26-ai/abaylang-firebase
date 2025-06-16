@@ -5,14 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, CalendarDays, MessageSquareText, Award, BookOpenText } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquareText, Award, BookOpenText, Users, LibraryBig } from "lucide-react"; // Ensure all used icons are here
 import type { NavItem } from "@/config/site";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Dashboard: LayoutDashboard,
+  "Admin Dashboard": LayoutDashboard, // Key used in siteConfig
   "Manage Bookings": CalendarDays,
   "Manage Testimonials": Award,
   "View Inquiries": MessageSquareText,
+  "Manage Students": Users,
+  "Manage Materials": LibraryBig,
 };
 
 
@@ -28,7 +30,7 @@ export function AdminSidebar() {
       
       <nav className="space-y-2">
         {siteConfig.adminNav.map((item) => {
-          const Icon = item.icon || iconMap[item.title] || LayoutDashboard;
+          const Icon = item.icon || iconMap[item.title] || LayoutDashboard; // Default icon
           return (
             <Link
               key={item.href}
