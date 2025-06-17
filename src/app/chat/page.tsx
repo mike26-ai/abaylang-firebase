@@ -4,7 +4,7 @@ import { MessageSquare } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Chat Room - LissanHub',
-  description: 'Join the conversation in the Amharic Connect chat room.',
+  description: 'Join the conversation in the LissanHub community chat room.',
 };
 
 export default function ChatPage() {
@@ -18,14 +18,9 @@ export default function ChatPage() {
           Community Chat
         </h1>
         <p className="mt-2 text-md text-muted-foreground">
-          This feature is part of our future enhancements and is currently under development. Come back soon to connect with other learners!
+          Our community chat feature is coming soon! This is where you'll be able to connect with fellow Amharic learners.
         </p>
       </header>
-      {/* MVP: ChatClient removed
-      <div className="flex-grow flex flex-col min-h-0">
-        <ChatClient />
-      </div> 
-      */}
     </div>
   );
 }

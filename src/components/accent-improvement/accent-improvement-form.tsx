@@ -1,6 +1,9 @@
 
 "use client";
 
+// This component is not used in the MVP as AI features are removed.
+// Kept for potential future reintegration. User sees "Coming Soon" on the page.
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -13,14 +16,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input"; // Added missing import
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getAccentImprovementSuggestions } from "@/ai/flows/accent-improvement-suggestions";
-import type { AccentImprovementInput, AccentImprovementOutput } from "@/ai/flows/accent-improvement-suggestions";
+// import { getAccentImprovementSuggestions } from "@/ai/flows/accent-improvement-suggestions"; // Removed for MVP
+// import type { AccentImprovementInput, AccentImprovementOutput } from "@/ai/flows/accent-improvement-suggestions"; // Removed for MVP
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth"; // To get student profile info (e.g. native language if stored)
+import { useAuth } from "@/hooks/use-auth";
 import { Sparkles } from "lucide-react";
 import { Spinner } from "../ui/spinner";
 
@@ -32,7 +35,7 @@ const accentFormSchema = z.object({
 type AccentFormValues = z.infer<typeof accentFormSchema>;
 
 export function AccentImprovementForm() {
-  const { user } = useAuth(); // Can be used to prefill studentProfile or fetch more details
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string | null>(null);
@@ -41,12 +44,10 @@ export function AccentImprovementForm() {
     resolver: zodResolver(accentFormSchema),
     defaultValues: {
       lessonTranscript: "",
-      // Example prefill, ideally this comes from user's actual profile data
       studentProfile: user ? `Student name: ${user.displayName || 'N/A'}. Native language: [Please specify e.g., English]` : "Native language: [Please specify e.g., English]",
     },
   });
   
-  // Update student profile if user logs in after form is rendered
   if (user && form.getValues("studentProfile").includes("[Please specify e.g., English]")) {
      form.setValue("studentProfile", `Student name: ${user.displayName || 'N/A'}. Native language: [Please specify e.g., English]`);
   }
@@ -55,27 +56,32 @@ export function AccentImprovementForm() {
   async function onSubmit(values: AccentFormValues) {
     setIsLoading(true);
     setSuggestions(null);
-    try {
-      const input: AccentImprovementInput = {
-        lessonTranscript: values.lessonTranscript,
-        studentProfile: values.studentProfile,
-      };
-      const result: AccentImprovementOutput = await getAccentImprovementSuggestions(input);
-      setSuggestions(result.suggestions);
-      toast({
-        title: "Suggestions Ready!",
-        description: "Check below for your personalized accent improvement tips.",
+    toast({
+        title: "Feature Coming Soon",
+        description: "The AI Accent Helper is under development. Thank you for your interest!",
+        variant: "default",
       });
-    } catch (error) {
-      console.error("Error getting accent suggestions:", error);
-      toast({
-        title: "Error",
-        description: "Could not fetch suggestions. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
+    // try { // AI Logic removed for MVP
+    //   const input: AccentImprovementInput = {
+    //     lessonTranscript: values.lessonTranscript,
+    //     studentProfile: values.studentProfile,
+    //   };
+    //   const result: AccentImprovementOutput = await getAccentImprovementSuggestions(input);
+    //   setSuggestions(result.suggestions);
+    //   toast({
+    //     title: "Suggestions Ready!",
+    //     description: "Check below for your personalized accent improvement tips.",
+    //   });
+    // } catch (error) {
+    //   console.error("Error getting accent suggestions:", error);
+    //   toast({
+    //     title: "Error",
+    //     description: "Could not fetch suggestions. Please try again.",
+    //     variant: "destructive",
+    //   });
+    // } finally {
       setIsLoading(false);
-    }
+    // }
   }
 
   return (
@@ -84,10 +90,10 @@ export function AccentImprovementForm() {
         <CardHeader>
           <CardTitle className="text-2xl flex items-center">
             <Sparkles className="h-6 w-6 mr-2 text-primary" />
-            AI Accent Helper
+            AI Accent Helper (Coming Soon)
           </CardTitle>
           <CardDescription>
-            Paste your lesson transcript (or any Amharic text you practiced) and some brief info about yourself (e.g., native language) to get personalized pronunciation tips.
+            This feature is under development. In the future, you'll be able to paste Amharic text here to get pronunciation tips.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -104,6 +110,7 @@ export function AccentImprovementForm() {
                         placeholder="Paste your Amharic text here..."
                         className="min-h-[150px]"
                         {...field}
+                        disabled // Disabled for MVP
                       />
                     </FormControl>
                     <FormMessage />
@@ -120,48 +127,23 @@ export function AccentImprovementForm() {
                       <Input
                         placeholder="e.g., Native English speaker, learning Amharic for 3 months."
                         {...field}
+                        disabled // Disabled for MVP
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || true}> {/* Disabled for MVP */}
                  {isLoading ? <Spinner size="sm" className="mr-2" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Get Suggestions
+                Get Suggestions (Coming Soon)
               </Button>
             </form>
           </Form>
         </CardContent>
       </Card>
 
-      {isLoading && (
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-xl">Generating Suggestions...</CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center items-center py-10">
-            <Spinner size="lg" />
-            <p className="ml-4 text-muted-foreground">The AI is thinking, please wait...</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {suggestions && !isLoading && (
-        <Card className="shadow-xl animate-in fade-in-50 duration-500">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center">
-              <Sparkles className="h-5 w-5 mr-2 text-primary" />
-              Your Personalized Suggestions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm sm:prose dark:prose-invert max-w-none bg-muted/30 p-4 rounded-md whitespace-pre-wrap font-mono text-sm">
-              {suggestions}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Suggestion display logic removed for MVP */}
     </div>
   );
 }

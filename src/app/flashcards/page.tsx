@@ -1,13 +1,13 @@
 
 "use client";
 
-import type { Metadata } from 'next';
-import { CardStackIcon } from '@radix-ui/react-icons'; // Using a different icon
+import { CardStackIcon } from '@radix-ui/react-icons';
 import StaticFlashcardViewer from '@/components/flashcards/static-flashcard-viewer';
 import flashcardsData from '@/data/flashcards.json';
+// Note: Metadata should be defined statically or handled differently for client components if dynamic.
+// For this MVP, we will assume static metadata is acceptable.
 
-// Metadata can't be dynamic here since it's a client component using data.
-// export const metadata: Metadata = {
+// export const metadata: Metadata = { // Cannot be used in client component this way
 //   title: 'Amharic Flashcards - LissanHub',
 //   description: 'Practice common Amharic words and phrases with our flashcards.',
 // };
@@ -23,7 +23,7 @@ export default function FlashcardsPage() {
           Amharic Flashcards
         </h1>
         <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Practice common Amharic words and phrases. Click on a card to flip it!
+          Practice common Amharic words and phrases. Click on a card to flip it! These are beginner-level flashcards for now.
         </p>
       </header>
 
@@ -33,7 +33,7 @@ export default function FlashcardsPage() {
       
       <div className="mt-12 text-center">
         <p className="text-muted-foreground">
-          More flashcard sets for different levels coming soon!
+          More flashcard sets for different levels and categories are coming soon!
         </p>
       </div>
     </div>

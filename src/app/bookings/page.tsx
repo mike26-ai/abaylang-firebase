@@ -17,7 +17,7 @@ import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp }
 import { db } from "@/lib/firebase";
 import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
-import { tutorInfo } from "@/config/site"
+import { tutorInfo, defaultLessonConfig } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { Logo } from "@/components/layout/logo"
 
@@ -35,7 +35,7 @@ async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
     const q = query(
       bookingsRef,
       where("date", "==", formattedDate),
-      where("status", "in", ["confirmed", "completed"])
+      where("status", "in", ["confirmed", "completed"]) // Consider only confirmed/completed bookings as blocking slots
     );
     const querySnapshot = await getDocs(q);
     
@@ -66,15 +66,15 @@ async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
   const refDate = new Date(); 
-  for (let h = 9; h < 12; h++) {
+  for (let h = 9; h < 12; h++) { // 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM
     times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'hh:mm a'));
     times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'hh:mm a'));
   }
-  for (let h = 14; h < 17; h++) { 
+  for (let h = 14; h < 17; h++) { // 2:00 PM, 2:30 PM, 3:00 PM, 3:30 PM, 4:00 PM, 4:30 PM
     times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'hh:mm a'));
     times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'hh:mm a'));
   }
-  times.push(format(new Date(refDate.setHours(17, 0, 0, 0)), 'hh:mm a')); 
+  times.push(format(new Date(refDate.setHours(17, 0, 0, 0)), 'hh:mm a')); // 5:00 PM
   return times;
 };
 
@@ -96,23 +96,23 @@ export default function BookLessonPage() {
   const lessonTypes = [
     {
       value: "quick", label: "Quick Practice", duration: 30, price: 25, description: "Conversation practice and pronunciation",
-      features: ["Conversation practice", "Pronunciation correction", "Quick grammar review", "Session recording"], type: "individual",
+      features: ["Conversation practice", "Pronunciation correction", "Quick grammar review", "Session recording (upon request)"], type: "individual",
     },
     {
       value: "comprehensive", label: "Comprehensive Lesson", duration: 60, price: 45, description: "Structured lesson with cultural context",
-      features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials", "Progress tracking", "Session recording"], type: "individual",
+      features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials", "Progress tracking (basic)", "Session recording (upon request)"], type: "individual",
     },
     {
       value: "cultural", label: "Cultural Immersion", duration: 90, price: 65, description: "Deep dive into Ethiopian culture and heritage",
-      features: ["Traditional stories & proverbs", "Cultural customs & etiquette", "Family conversation prep", "Regional dialects", "Cultural materials included"], type: "individual",
+      features: ["Traditional stories & proverbs", "Cultural customs & etiquette", "Family conversation prep", "Regional dialects introduction", "Cultural materials included"], type: "individual",
     },
     {
-      value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: 30, price: 220, originalPrice: 250, totalLessons: 10,
+      value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: "10x 30min", price: 220, originalPrice: 250, totalLessons: 10, unitDuration: 30,
       description: "10 conversation practice sessions with 12% savings",
-      features: ["10 x 30-minute lessons", "Conversation practice focus", "12% discount", "Valid for 4 months", "Priority booking"], type: "package",
+      features: ["10 x 30-minute lessons", "Conversation practice focus", "12% discount", "Flexible scheduling", "Priority booking access"], type: "package",
     },
     {
-      value: "learning-intensive", label: "Learning Intensive", duration: 60, price: 304, originalPrice: 360, totalLessons: 8,
+      value: "learning-intensive", label: "Learning Intensive Package", duration: "8x 60min", price: 304, originalPrice: 360, totalLessons: 8, unitDuration: 60,
       description: "8 comprehensive lessons with 15% savings",
       features: ["8 x 60-minute lessons", "Structured lesson plans", "15% discount", "Valid for 4 months", "Progress reviews"], type: "package",
     },
@@ -148,7 +148,7 @@ export default function BookLessonPage() {
   const displayTimeSlots = useMemo(() => {
     if (!selectedDate || !selectedLessonDetails || selectedLessonDetails.type === 'package') return [];
     const slots: { display: string; value: string; isDisabled: boolean }[] = [];
-    const userDurationMinutes = selectedLessonDetails.duration as number;
+    const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number; // Use unitDuration for packages if applicable, else duration
     const slotDate = startOfDay(selectedDate); 
 
     for (const startTimeString of baseStartTimes) {
@@ -158,7 +158,7 @@ export default function BookLessonPage() {
           continue;
       }
       const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
-      const dayEndHour = 18;
+      const dayEndHour = 18; // Assuming lessons end by 6 PM
       if (potentialEndTime.getHours() > dayEndHour || (potentialEndTime.getHours() === dayEndHour && potentialEndTime.getMinutes() > 0)) {
           continue; 
       }
@@ -192,10 +192,11 @@ export default function BookLessonPage() {
       toast({ title: "Selection Incomplete", description: "Please select date and time for your lesson.", variant: "destructive" });
       return;
     }
-    if (selectedLessonDetails.type === 'package' && !selectedDate) {
-         toast({ title: "Selection Incomplete", description: "Please select a start date for your package.", variant: "destructive" });
-         return;
-    }
+    // For packages, date is optional if not scheduling the first one now
+    // if (selectedLessonDetails.type === 'package' && !selectedDate) {
+    //      toast({ title: "Selection Incomplete", description: "Please select a start date for your package.", variant: "destructive" });
+    //      return;
+    // }
 
     setIsProcessing(true);
     try {
@@ -203,13 +204,13 @@ export default function BookLessonPage() {
         userId: user.uid,
         userName: user.displayName || "User",
         userEmail: user.email || "",
-        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "N/A_PACKAGE",
-        time: selectedTime || "N/A_PACKAGE",
-        duration: typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : 0,
+        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "N/A_PACKAGE", // For packages, date might be for the first lesson or N/A
+        time: selectedTime || "N/A_PACKAGE", // For packages, time might be for the first lesson or N/A
+        duration: typeof selectedLessonDetails.unitDuration === 'number' ? selectedLessonDetails.unitDuration : (typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : defaultLessonConfig.duration),
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
         status: "confirmed", // MVP: Confirm directly. No payment step.
-        tutorId: "MahirAbasMustefa",
+        tutorId: "MahirAbasMustefa", // Hardcoded tutor ID
         tutorName: tutorInfo.name,
         learningGoals: learningGoals || undefined,
       };
@@ -221,7 +222,7 @@ export default function BookLessonPage() {
 
       toast({
         title: "Lesson Booked Successfully!",
-        description: `Your ${selectedLessonDetails.label} ${selectedDate && selectedTime ? `on ${format(selectedDate, 'PPP')} at ${selectedTime}`: ''} is confirmed.`,
+        description: `Your ${selectedLessonDetails.label} ${selectedDate && selectedTime ? `on ${format(selectedDate, 'PPP')} at ${selectedTime}`: (selectedDate ? `package starting around ${format(selectedDate, 'PPP')}` : `package purchased`)} is confirmed.`,
       });
       
       if(selectedDate) {
@@ -233,6 +234,9 @@ export default function BookLessonPage() {
       }
       setSelectedTime(undefined); 
       setLearningGoals("");
+      // Optionally reset selectedDate as well, or redirect to profile
+      // setSelectedDateState(undefined); 
+      // router.push('/profile');
     } catch (error) {
       console.error("Booking error:", error);
       toast({ title: "Booking Failed", description: "Could not complete your booking. Please try again.", variant: "destructive" });
@@ -299,7 +303,7 @@ export default function BookLessonPage() {
                                             {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
-                                            {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
+                                            {lesson.type === "package" ? `${lesson.duration}` : `${lesson.duration} minutes`} • {lesson.description}
                                         </div>
                                         </div>
                                         <div className="text-right">
@@ -415,7 +419,7 @@ export default function BookLessonPage() {
                         <Calendar className="w-5 h-5 text-primary" />
                         Package Start Date (Optional)
                         </CardTitle>
-                        <CardDescription>You can select a preferred start date, or schedule lessons individually later from your dashboard.</CardDescription>
+                        <CardDescription>Select a preferred start date for your first lesson in the package. Subsequent lessons can be scheduled from your dashboard.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
@@ -450,7 +454,7 @@ export default function BookLessonPage() {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="What would you like to focus on?"
+                  placeholder="What would you like to focus on? (e.g., conversational Amharic for family, basic reading/writing, specific cultural topics)"
                   value={learningGoals}
                   onChange={(e) => setLearningGoals(e.target.value)}
                   rows={4}
@@ -458,8 +462,6 @@ export default function BookLessonPage() {
                 />
               </CardContent>
             </Card>
-
-            {/* MVP: AI tools, Newsletter, Referral Code sections removed */}
           </div>
 
           <div className="lg:col-span-1">
@@ -473,6 +475,7 @@ export default function BookLessonPage() {
               <CardContent className="space-y-4">
                 <div className="text-center">
                   <div className="w-20 h-20 bg-accent rounded-full mx-auto mb-3 flex items-center justify-center">
+                    {/* Placeholder for tutor image or initials */}
                     <span className="text-2xl text-primary font-bold">{tutorInfo.name.split(" ").map(n=>n[0]).join("")}</span>
                   </div>
                   <h3 className="font-semibold text-foreground">{tutorInfo.name}</h3>
@@ -481,7 +484,7 @@ export default function BookLessonPage() {
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                     ))}
-                    <span className="text-sm text-muted-foreground ml-1">(200+ reviews)</span>
+                    <span className="text-sm text-muted-foreground ml-1">(Highly Rated)</span>
                   </div>
                 </div>
 
@@ -499,7 +502,7 @@ export default function BookLessonPage() {
                           <span className="font-medium text-foreground">{selectedLessonDetails.duration} minutes</span>
                         </div>
                       )}
-                       {selectedLessonDetails.type === 'package' && typeof selectedLessonDetails.duration === 'string' && (
+                       {selectedLessonDetails.type === 'package' && (
                          <div className="flex justify-between">
                           <span className="text-muted-foreground">Contains:</span>
                           <span className="font-medium text-foreground">{selectedLessonDetails.duration}</span>
@@ -556,7 +559,7 @@ export default function BookLessonPage() {
                   <Button
                     className="w-full"
                     onClick={handleBooking}
-                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate) }
+                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !learningGoals) } // Allow package booking without date if goals are set
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
                     {isProcessing ? "Processing..." : `Confirm Booking - $${selectedLessonDetails?.price || 0}`}
@@ -564,7 +567,7 @@ export default function BookLessonPage() {
                 </div>
                 <div className="text-xs text-muted-foreground space-y-1 text-center">
                   <p>• Free cancellation up to 24 hours before.</p>
-                  <p>• You'll receive a Zoom link via email.</p>
+                  <p>• You'll receive a confirmation and lesson link via email.</p>
                 </div>
               </CardContent>
             </Card>

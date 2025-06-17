@@ -1,7 +1,40 @@
+
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
+# The version of the App Hosting runtime.
+# We recommend using the latest major version.
+runtime: nodejs18 # Or nodejs20, depending on your Next.js version and preferences
+
+# buildSteps allows you to install dependencies and build your static assets.
+# These commands are executed on the server during every new deployment.
+# Npm is used by default, but you can specify pnpm or yarn via packageManager.
+buildSteps:
+  - run: npm install # Or your preferred install command
+  - run: npm run build # Or your preferred build command (e.g., next build)
+
+# Settings for the server that serves your app.
+# https://firebase.google.com/docs/app-hosting/configure#server-settings
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  # App Hosting uses Cloud Run instances to run your application.
+  # You can specify the CPU and memory of these instances.
+  # Default: 0.5 CPU, 512MiB memory
+  # cpu: 1
+  # memoryMiB: 1024
+  # The maximum number of instances that can be started to handle requests.
+  # Default: 100
+  maxInstances: 2 # Keep low for MVP / cost control, adjust based on traffic
+  # The minimum number of instances that will be kept warm to reduce cold starts.
+  # Default: 0
+  # minInstances: 0
+  # The number of concurrent requests an instance can receive.
+  # Default: 80
+  # concurrency: 80
+
+# Defines environment variables that will be available at build time and runtime.
+# https://firebase.google.com/docs/app-hosting/configure#environment-variables
+# env:
+#   - variable: API_KEY
+#     value: "your_api_key_here" # Example, use secrets for sensitive data
+#   - variable: STRIPE_SECRET_KEY
+#     secret: STRIPE_SECRET_KEY_NAME # Secret name in Google Secret Manager

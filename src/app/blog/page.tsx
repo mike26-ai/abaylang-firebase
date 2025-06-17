@@ -1,14 +1,11 @@
 
-"use client"
+import type { Metadata } from 'next';
+import { BookOpen } from 'lucide-react';
 
-import type { Metadata } from 'next'; // Added Metadata import
-import { BookOpen } from 'lucide-react'; // Added icon import
-
-// export const metadata: Metadata = { // This would be if Metadata was static
-//   title: 'LissanHub Blog',
-//   description: 'Insights, tips, and stories to help you master Amharic!',
-// };
-
+export const metadata: Metadata = {
+  title: 'LissanHub Blog',
+  description: 'Insights, tips, and stories to help you master Amharic!',
+};
 
 export default function BlogPage() {
   return (
@@ -25,9 +22,9 @@ export default function BlogPage() {
                 Our blog is currently under construction. Please check back soon for insightful articles, learning tips, and cultural stories to enhance your Amharic journey!
             </p>
         </header>
-        {/* Placeholder for future blog posts list or content */}
         <div className="text-center">
-             {/* <img src="https://placehold.co/600x400.png?text=Blog+Coming+Soon" alt="Blog coming soon" className="mx-auto rounded-lg shadow-md" /> */}
+            {/* Placeholder for future blog posts list or featured content */}
+            <p className="text-muted-foreground">Content coming soon...</p>
         </div>
       </div>
     </div>

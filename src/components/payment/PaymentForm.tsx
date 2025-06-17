@@ -1,4 +1,8 @@
+
 "use client"
+
+// This component is not used in the MVP as payment features are removed.
+// It's kept here for potential future reintegration.
 
 import type React from "react"
 import { useState } from "react"
@@ -8,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CreditCard, Lock } from "lucide-react"
-import { Spinner } from "@/components/ui/spinner"; // Added for processing state
+import { Spinner } from "@/components/ui/spinner";
 
 interface PaymentFormProps {
   amount: number
@@ -71,9 +75,9 @@ export default function PaymentForm({ amount, onPaymentSuccess, onPaymentError }
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-foreground">
           <CreditCard className="w-5 h-5 text-primary" />
-          Payment Information
+          Payment Information (Placeholder for MVP)
         </CardTitle>
-        <CardDescription>Enter your payment details to complete the booking</CardDescription>
+        <CardDescription>Actual payment processing is not part of the MVP. This is a UI placeholder.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -86,6 +90,7 @@ export default function PaymentForm({ amount, onPaymentSuccess, onPaymentError }
               onChange={(e) => setCardholderName(e.target.value)}
               required
               className="border-input"
+              disabled
             />
           </div>
 
@@ -99,6 +104,7 @@ export default function PaymentForm({ amount, onPaymentSuccess, onPaymentError }
               maxLength={19}
               required
               className="border-input"
+              disabled
             />
           </div>
 
@@ -113,6 +119,7 @@ export default function PaymentForm({ amount, onPaymentSuccess, onPaymentError }
                 maxLength={5}
                 required
                 className="border-input"
+                disabled
               />
             </div>
             <div className="space-y-2">
@@ -125,13 +132,14 @@ export default function PaymentForm({ amount, onPaymentSuccess, onPaymentError }
                 maxLength={4}
                 required
                 className="border-input"
+                disabled
               />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="country">Country</Label>
-            <Select defaultValue="us">
+            <Select defaultValue="us" disabled>
               <SelectTrigger className="border-input">
                 <SelectValue placeholder="Select country" />
               </SelectTrigger>
@@ -155,13 +163,13 @@ export default function PaymentForm({ amount, onPaymentSuccess, onPaymentError }
               <span className="text-primary">${amount}</span>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isProcessing}>
+            <Button type="submit" className="w-full" disabled={isProcessing || true}>
               {isProcessing ? (
                 <Spinner size="sm" className="mr-2" />
               ) : (
                 <Lock className="w-4 h-4 mr-2" />
               )}
-              {isProcessing ? "Processing Payment..." : `Pay $${amount}`}
+              {isProcessing ? "Processing Payment..." : `Pay $${amount} (Disabled for MVP)`}
             </Button>
           </div>
 

@@ -1,13 +1,11 @@
 
-"use client"
+import type { Metadata } from 'next';
+import { Newspaper } from 'lucide-react';
 
-import type { Metadata } from 'next'; // Added Metadata import
-import { Newspaper } from 'lucide-react'; // Added icon import
-
-// export const metadata: Metadata = { // Static metadata example
-//   title: 'News & Updates - LissanHub',
-//   description: 'Stay updated with the latest news and announcements from LissanHub.',
-// };
+export const metadata: Metadata = {
+  title: 'News & Updates - LissanHub',
+  description: 'Stay updated with the latest news and announcements from LissanHub.',
+};
 
 export default function NewsPage() {
   return (
@@ -24,9 +22,8 @@ export default function NewsPage() {
                 This section is coming soon! Stay tuned for the latest news, announcements, and developments from LissanHub.
             </p>
         </header>
-        {/* Placeholder for future news items */}
-         <div className="text-center">
-            {/* <img src="https://placehold.co/600x400.png?text=News+Coming+Soon" alt="News coming soon" className="mx-auto rounded-lg shadow-md" /> */}
+        <div className="text-center">
+             <p className="text-muted-foreground">Content coming soon...</p>
         </div>
       </div>
     </div>

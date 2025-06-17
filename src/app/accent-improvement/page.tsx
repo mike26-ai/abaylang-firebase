@@ -18,14 +18,9 @@ export default function AccentImprovementPage() {
           AI Accent Helper
         </h1>
         <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
-          This feature is part of our future enhancements and is currently under development. Stay tuned!
+          This advanced AI feature is currently under development and will be available in a future version of LissanHub. Stay tuned!
         </p>
       </header>
-      {/* MVP: AccentImprovementForm removed
-      <div className="max-w-2xl mx-auto">
-        <AccentImprovementForm />
-      </div> 
-      */}
     </div>
   );
 }
