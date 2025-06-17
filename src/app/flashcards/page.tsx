@@ -1,0 +1,41 @@
+
+"use client";
+
+import type { Metadata } from 'next';
+import { CardStackIcon } from '@radix-ui/react-icons'; // Using a different icon
+import StaticFlashcardViewer from '@/components/flashcards/static-flashcard-viewer';
+import flashcardsData from '@/data/flashcards.json';
+
+// Metadata can't be dynamic here since it's a client component using data.
+// export const metadata: Metadata = {
+//   title: 'Amharic Flashcards - LissanHub',
+//   description: 'Practice common Amharic words and phrases with our flashcards.',
+// };
+
+export default function FlashcardsPage() {
+  return (
+    <div className="container py-12 px-4 md:px-6">
+      <header className="mb-10 text-center">
+        <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
+          <CardStackIcon className="h-10 w-10 text-primary" />
+        </div>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+          Amharic Flashcards
+        </h1>
+        <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
+          Practice common Amharic words and phrases. Click on a card to flip it!
+        </p>
+      </header>
+
+      <div className="max-w-4xl mx-auto">
+        <StaticFlashcardViewer cards={flashcardsData.beginner} />
+      </div>
+      
+      <div className="mt-12 text-center">
+        <p className="text-muted-foreground">
+          More flashcard sets for different levels coming soon!
+        </p>
+      </div>
+    </div>
+  );
+}

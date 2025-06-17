@@ -11,10 +11,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-// import { PronunciationFeedbackTool } from "@/components/ai/PronunciationFeedbackTool" // MVP: Defer AI tools
-// import { AIChatbot } from "@/components/ai/AIChatbot" // MVP: Defer AI tools
-// import { NewsletterSignup } from "@/components/newsletter/newsletter-signup" // MVP: Defer newsletter
-// import { ReferralCodeInput } from "@/components/payment/ReferralCodeInput" // MVP: Defer referral
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
@@ -94,7 +90,6 @@ export default function BookLessonPage() {
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [learningGoals, setLearningGoals] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  // const [referralCode, setReferralCode] = useState(""); // MVP: Defer referral
   const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
@@ -111,11 +106,6 @@ export default function BookLessonPage() {
       value: "cultural", label: "Cultural Immersion", duration: 90, price: 65, description: "Deep dive into Ethiopian culture and heritage",
       features: ["Traditional stories & proverbs", "Cultural customs & etiquette", "Family conversation prep", "Regional dialects", "Cultural materials included"], type: "individual",
     },
-    // MVP: Simplify, maybe hide group/package options from direct booking initially or link to package page
-    // {
-    //   value: "group-conversation", label: "Group Conversation", duration: 60, price: 20, description: "Practice with fellow learners (4-6 students)",
-    //   features: ["Small group setting (4-6 students)", "Conversation practice", "Peer learning experience", "Cultural discussions", "Session recording"], type: "group",
-    // },
     {
       value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: 30, price: 220, originalPrice: 250, totalLessons: 10,
       description: "10 conversation practice sessions with 12% savings",
@@ -218,7 +208,7 @@ export default function BookLessonPage() {
         duration: typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : 0,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: "confirmed", // MVP: Confirm directly. Later, might be "pending_payment"
+        status: "confirmed", // MVP: Confirm directly. No payment step.
         tutorId: "MahirAbasMustefa",
         tutorName: tutorInfo.name,
         learningGoals: learningGoals || undefined,
@@ -285,7 +275,7 @@ export default function BookLessonPage() {
               <CardContent>
                 <RadioGroup value={selectedType} onValueChange={(value) => {setSelectedType(value); setSelectedTime(undefined); setSelectedDateState(undefined);}}>
                   <div className="space-y-6">
-                    {["individual", "package"].map(lessonGroupType => ( // MVP: Removed "group" for simplicity
+                    {["individual", "package"].map(lessonGroupType => (
                        <div key={lessonGroupType}>
                         <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">{lessonGroupType} Lessons</h3>
                         <div className="space-y-4">
@@ -320,7 +310,7 @@ export default function BookLessonPage() {
                                         </div>
                                     </div>
                                     <div className="grid md:grid-cols-2 gap-2 mt-3 text-sm">
-                                        {lesson.features.slice(0, 2).map((feature, index) => ( // MVP: Show fewer features
+                                        {lesson.features.slice(0, 2).map((feature, index) => (
                                         <li key={index} className="flex items-center gap-2">
                                             <Check className="w-4 h-4 text-primary flex-shrink-0" />
                                             <span className="text-muted-foreground">{feature}</span>
@@ -469,44 +459,7 @@ export default function BookLessonPage() {
               </CardContent>
             </Card>
 
-            {/* MVP: Comment out AI tools & Newsletter from booking page */}
-            {/* 
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl text-foreground">
-                  <Star className="w-5 h-5 text-primary" /> Pronunciation Practice
-                </CardTitle>
-                 <CardDescription>Warm up or test your pronunciation.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PronunciationFeedbackTool />
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-lg">
-               <CardHeader>
-                 <CardTitle className="flex items-center gap-2 text-xl text-foreground">
-                  <User className="w-5 h-5 text-primary" /> AI Tutor Chat
-                 </CardTitle>
-                  <CardDescription>Practice basic conversation with Lissan AI.</CardDescription>
-               </CardHeader>
-               <CardContent>
-                <AIChatbot />
-               </CardContent>
-            </Card>
-
-            <Card className="shadow-lg">
-              <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl text-foreground">
-                  <MessageSquare className="w-5 h-5 text-primary" /> Stay Updated
-                  </CardTitle>
-                  <CardDescription>Get weekly Amharic tips and news from LissanHub.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <NewsletterSignup />
-              </CardContent>
-            </Card>
-            */}
+            {/* MVP: AI tools, Newsletter, Referral Code sections removed */}
           </div>
 
           <div className="lg:col-span-1">
@@ -552,6 +505,12 @@ export default function BookLessonPage() {
                           <span className="font-medium text-foreground">{selectedLessonDetails.duration}</span>
                         </div>
                        )}
+                         {selectedLessonDetails.type === 'package' && typeof selectedLessonDetails.totalLessons === 'number' && (
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Lessons:</span>
+                                <span className="font-medium text-foreground">{selectedLessonDetails.totalLessons}</span>
+                            </div>
+                        )}
                     </div>
                   )}
                   {selectedDate && !isPackageSelected && (
@@ -592,9 +551,8 @@ export default function BookLessonPage() {
                 <div className="space-y-3">
                   <Badge variant="secondary" className="w-full justify-center py-2 bg-accent text-accent-foreground">
                     <Check className="w-4 h-4 mr-2 text-primary" />
-                    Secure Booking (Payment later for MVP)
+                    Secure Booking (No Payment for MVP)
                   </Badge>
-                  {/* <ReferralCodeInput referralCode={referralCode} setReferralCode={setReferralCode} /> MVP: Defer referral */ }
                   <Button
                     className="w-full"
                     onClick={handleBooking}

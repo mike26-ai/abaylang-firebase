@@ -15,25 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Calendar,
   Clock,
-  CreditCard,
-  Star,
   BookOpen,
   LogOut,
   Plus,
   User,
-  // MessageSquare, // MVP: Defer some icons
-  // Trophy,
-  // Target,
-  // Zap,
-  // Award,
-  // Download,
-  // Play,
-  // FileText,
-  // Brain,
-  // TrendingUp,
   Edit3,
   XCircle,
-  // Video, // MVP: Defer video icon
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -71,8 +59,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Logo } from "@/components/layout/logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { InteractiveCalendar } from "@/components/calendar/interactive-calendar"; // MVP: Simplify, show list first
-// import { ProgressCharts, type ProgressData } from "@/components/progress/progress-charts"; // MVP: Defer progress charts
+
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -82,7 +69,6 @@ export default function StudentDashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<DashboardBooking[]>([]);
-  // const [calendarLessons, setCalendarLessons] = useState<CalendarLesson[]>([]); // MVP: Defer full calendar view
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
   const [userProfileData, setUserProfileData] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -105,12 +91,6 @@ export default function StudentDashboardPage() {
     lessonType: "",
     lessonDate: "",
   });
-
-  // MVP: Defer gamification stats
-  // const [currentStreak, setCurrentStreak] = useState(12); 
-  // const [totalXP, setTotalXP] = useState(850); 
-  // const [currentLevel, setCurrentLevel] = useState("Intermediate"); 
-  // const [weeklyGoal, setWeeklyGoal] = useState({ target: 3, completed: 2 }); 
 
   const fetchBookings = async () => {
     if (!user) return;
@@ -138,10 +118,6 @@ export default function StudentDashboardPage() {
         hasReview: reviewedLessonIds.has(b.id)
       }));
       setBookings(fetchedBookings);
-
-      // MVP: Defer calendar-specific lesson formatting
-      // const formattedCalendarLessons: CalendarLesson[] = fetchedBookings.map(b => { ... });
-      // setCalendarLessons(formattedCalendarLessons);
 
     } catch (error: any) {
       console.error("Error fetching bookings:", error);
@@ -178,7 +154,6 @@ export default function StudentDashboardPage() {
           country: profile.country || "",
           amharicLevel: profile.amharicLevel || "beginner",
         });
-        // setCurrentLevel(profile.amharicLevel || "Beginner"); // MVP: Defer level
       } else {
         const basicProfile: UserProfile = {
           uid: user.uid,
@@ -194,7 +169,6 @@ export default function StudentDashboardPage() {
         await setDoc(doc(db, "users", user.uid), basicProfile);
         setUserProfileData(basicProfile);
         setEditFormData({ name: basicProfile.name, nativeLanguage: "", country: "", amharicLevel: "beginner" });
-        // setCurrentLevel("Beginner"); // MVP: Defer level
       }
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -217,7 +191,8 @@ export default function StudentDashboardPage() {
     }
     fetchUserProfile();
     fetchBookings();
-  }, [user, authLoading, toast]); 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]); 
 
   const handleProfileEditInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -249,7 +224,6 @@ export default function StudentDashboardPage() {
       }
       
       setUserProfileData(prev => ({ ...prev, ...updatedProfileData } as UserProfile));
-      // setCurrentLevel(updatedProfileData.amharicLevel || "Beginner"); // MVP: Defer level
 
       toast({
         title: "Profile Updated",
@@ -277,17 +251,41 @@ export default function StudentDashboardPage() {
     });
   };
 
-  const handleFeedbackSubmit = async (feedbackData: { lessonId: string; rating: number; comment: string; specificRatings: Record<string, number>}) => {
-    setBookings((prev) =>
-      prev.map((booking) =>
-        booking.id === feedbackData.lessonId
-          ? { ...booking, hasReview: true }
-          : booking
-      )
-    );
-     // Logic to submit to Firestore should be in a separate function,
-     // but for MVP, parent component (or global context) handles this.
-     // For now, this just updates local UI state.
+  const handleFeedbackSubmit = async (feedbackData: { lessonId: string; name: string; email: string; rating: number; comment: string; specificRatings: Record<string, number>}) => {
+     if (!user) {
+        toast({ title: "Error", description: "You must be logged in to submit feedback.", variant: "destructive"});
+        return;
+    }
+    // Actual submission to Firestore
+    try {
+        await addDoc(collection(db, "testimonials"), {
+            userId: user.uid,
+            name: feedbackData.name,
+            userEmail: feedbackData.email, // Added userEmail
+            lessonId: feedbackData.lessonId,
+            lessonType: feedbackModal.lessonType, // From modal state
+            lessonDate: feedbackModal.lessonDate, // From modal state
+            rating: feedbackData.rating,
+            comment: feedbackData.comment,
+            specificRatings: feedbackData.specificRatings,
+            status: "pending", // Default status
+            createdAt: serverTimestamp(),
+        });
+        
+        setBookings((prev) =>
+        prev.map((booking) =>
+            booking.id === feedbackData.lessonId
+            ? { ...booking, hasReview: true }
+            : booking
+        )
+        );
+        toast({ title: "Feedback Submitted", description: "Thank you for your review!"});
+        return Promise.resolve(); // Indicate success
+    } catch (error) {
+        console.error("Error submitting testimonial:", error);
+        toast({ title: "Submission Error", description: "Could not submit your feedback.", variant: "destructive"});
+        return Promise.reject(error); // Indicate failure
+    }
   };
   
   const handleCancelBooking = async (bookingId: string) => {
@@ -295,7 +293,6 @@ export default function StudentDashboardPage() {
       const bookingDocRef = doc(db, "bookings", bookingId);
       await updateDoc(bookingDocRef, { status: "cancelled" });
       setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled" as "cancelled"} : b));
-      // fetchBookings(); // Could refetch or just update local state
       toast({ title: "Booking Cancelled", description: "Your lesson has been cancelled." });
     } catch (error) {
       console.error("Error cancelling booking:", error);
@@ -304,12 +301,12 @@ export default function StudentDashboardPage() {
   };
 
   const upcomingBookings = bookings.filter(
-    (b) => b.status === "confirmed" && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd hh:mm a', new Date()))
-  ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime()); // Sort upcoming soonest first
+    (b) => b.status === "confirmed" && !isPast(parse(b.date + ' ' + (b.time || "00:00 AM"), 'yyyy-MM-dd hh:mm a', new Date()))
+  ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00 AM")).getTime() - new Date(b.date + ' ' + (b.time || "00:00 AM")).getTime());
 
   const pastBookings = bookings.filter(
-    (b) => b.status === "completed" || b.status === "cancelled" || (b.status === "confirmed" && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd hh:mm a', new Date())))
-  );
+    (b) => b.status === "completed" || b.status === "cancelled" || (b.status === "confirmed" && isPast(parse(b.date + ' ' + (b.time || "00:00 AM"), 'yyyy-MM-dd hh:mm a', new Date())))
+  ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00 AM")).getTime() - new Date(a.date + ' ' + (a.time || "00:00 AM")).getTime());
   
   const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
   const totalHours = bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 0), 0) / 60;
@@ -404,14 +401,10 @@ export default function StudentDashboardPage() {
 
         <Tabs defaultValue="upcoming" className="space-y-6"> 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-2 sm:grid-cols-3"> {/* MVP: Reduced tabs */}
+            <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-2 sm:grid-cols-3">
               <TabsTrigger value="upcoming">Upcoming Lessons</TabsTrigger>
               <TabsTrigger value="history">Lesson History</TabsTrigger>
               <TabsTrigger value="profile">My Profile</TabsTrigger>
-              {/* MVP: Deferred tabs: Calendar, Resources, Progress */}
-              {/* <TabsTrigger value="calendar">Calendar</TabsTrigger> */}
-              {/* <TabsTrigger value="resources">Resources</TabsTrigger> */}
-              {/* <TabsTrigger value="progress">Progress</TabsTrigger> */}
             </TabsList>
           </div>
           
@@ -455,8 +448,6 @@ export default function StudentDashboardPage() {
                           {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                         </Badge>
                         <span className="font-semibold text-foreground">${booking.price}</span>
-                        {/* MVP: Reschedule deferred */}
-                        {/* <Button variant="outline" size="sm" className="text-xs border-primary/30 hover:bg-accent">Reschedule</Button> */}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                              <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs">
@@ -526,11 +517,6 @@ export default function StudentDashboardPage() {
                             </Button>
                           )
                         )}
-                         {/* MVP: Defer View Recording
-                         {booking.status === 'completed' && (
-                           <Button variant="outline" size="sm" className="text-xs border-primary/30 hover:bg-accent"><Video className="mr-1 h-4 w-4" /> View Recording</Button>
-                         )}
-                         */}
                       </div>
                     </div>
                   </CardContent>
@@ -629,12 +615,6 @@ export default function StudentDashboardPage() {
                             <h4 className="text-sm font-medium text-muted-foreground">Member Since</h4>
                             <p className="text-foreground">{userProfileData.createdAt ? format(userProfileData.createdAt.toDate(), "MMMM yyyy") : "N/A"}</p>
                         </div>
-                        {/* MVP: Defer Gamification
-                         <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Learning Streak</h4>
-                            <p className="text-foreground">{currentStreak} days (Static)</p>
-                        </div>
-                        */}
                     </div>
                   </div>
                 )}
@@ -644,13 +624,6 @@ export default function StudentDashboardPage() {
                 <p className="text-muted-foreground">Could not load profile information.</p>
             )}
           </TabsContent>
-
-          {/* MVP: Defer Calendar, Resources, Progress Tabs */}
-          {/* 
-          <TabsContent value="calendar"> ... </TabsContent>
-          <TabsContent value="resources"> ... </TabsContent>
-          <TabsContent value="progress"> ... </TabsContent>
-          */}
         </Tabs>
       </div>
 

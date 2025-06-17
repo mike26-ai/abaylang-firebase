@@ -1,10 +1,9 @@
 
 import type { Metadata } from 'next';
-// import { ChatClient } from '@/components/chat/chat-client'; // MVP: Defer ChatClient
 import { MessageSquare } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Chat Room',
+  title: 'Chat Room - LissanHub',
   description: 'Join the conversation in the Amharic Connect chat room.',
 };
 
@@ -19,10 +18,10 @@ export default function ChatPage() {
           Community Chat
         </h1>
         <p className="mt-2 text-md text-muted-foreground">
-          This feature is currently under development. Come back soon to connect with other learners!
+          This feature is part of our future enhancements and is currently under development. Come back soon to connect with other learners!
         </p>
       </header>
-      {/* MVP: Defer ChatClient
+      {/* MVP: ChatClient removed
       <div className="flex-grow flex flex-col min-h-0">
         <ChatClient />
       </div> 

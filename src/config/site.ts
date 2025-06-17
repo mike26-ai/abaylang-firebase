@@ -1,6 +1,6 @@
 
 import type React from "react";
-import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, PackageIcon, Users, BookOpen } from "lucide-react"; // Added BookOpen
+import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, Users, FileText, BookOpen, Package } from "lucide-react"; // Added FileText, BookOpen, Package
 
 export type NavItem = {
   title: string;
@@ -21,41 +21,39 @@ export const siteConfig = {
   url: "https://lissanhub.example.com", // Replace with your actual domain
   mainNav: [
     { title: "Home", href: "/" },
-    { title: "About", href: "/#about", isSectionAnchor: true },
-    // { title: "Lessons", href: "/#lessons", isSectionAnchor: true }, // Covered by booking
-    { title: "Packages", href: "/packages", icon: PackageIcon }, // Simple pricing/package info
-    // { title: "Resources", href: "/resources" }, // Deferred for MVP
-    { title: "Reviews", href: "/#testimonials", isSectionAnchor: true },
-    // {
-    //   title: "More",
-    //   href: "/more",
-    //   children: [
-    //     { title: "News & Updates", href: "/news" },
-    //     { title: "Learning Blog", href: "/blog" },
-    //   ],
-    // }, // Deferred for MVP
-    { title: "Contact", href: "/#contact", isSectionAnchor: true },
-    { title: "Book a Lesson", href: "/bookings", authRequired: true },
-    // { title: "Chat Room", href: "/chat", authRequired: true }, // Deferred for MVP
-    // { title: "Accent Helper", href: "/accent-improvement", authRequired: true }, // Deferred for MVP
+    { title: "About Tutor", href: "/tutor-profile", icon: Users },
+    { title: "Packages", href: "/packages", icon: Package },
+    { title: "Reviews", href: "/testimonials", icon: Star },
+    {
+      title: "Resources",
+      href: "/resources",
+      icon: LibraryBig,
+      children: [
+        { title: "Lesson Materials", href: "/resources" }, // Points to general resources page for now
+        { title: "Flashcards", href: "/flashcards", icon: BookOpen },
+      ]
+    },
+    { title: "FAQ", href: "/faq" },
+    { title: "Contact", href: "/contact", icon: Mail },
+    { title: "Book a Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
   ] satisfies NavItem[],
   userNav: [
     { title: "My Dashboard", href: "/profile", authRequired: true, icon: LayoutDashboard },
     { title: "Book New Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
-    // { title: "Submit Testimonial", href: "/testimonials", authRequired: true }, // Simplified - may submit from profile
   ] satisfies NavItem[],
   adminNav: [
     { title: "Admin Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { title: "Manage Bookings", href: "/admin/bookings", icon: CalendarCheck },
     { title: "Manage Students", href: "/admin/students", icon: Users },
-    { title: "Manage Testimonials", href: "/admin/testimonials", icon: Star }, // Keep for basic approval
-    // { title: "View Inquiries", href: "/admin/inquiries", icon: Mail }, // Rely on email for MVP
-    // { title: "Manage Materials", href: "/admin/materials", icon: LibraryBig }, // Deferred for MVP
+    { title: "Manage Materials", href: "/admin/materials", icon: FileText }, // Added for MVP
+    { title: "Manage Testimonials", href: "/admin/testimonials", icon: Star },
+    { title: "View Inquiries", href: "/admin/inquiries", icon: Mail },
   ] satisfies NavItem[],
   footerNav: [
      { title: "Privacy Policy", href: "/privacy" },
      { title: "Terms of Service", href: "/terms" },
      { title: "FAQ", href: "/faq" },
+     { title: "Contact", href: "/contact" },
   ]
 };
 
@@ -67,7 +65,7 @@ export const tutorInfo = {
   services: ["One-on-one lessons", "Group classes (coming soon)", "Accent coaching", "Cultural Immersion sessions"],
   imageUrl: "https://placehold.co/400x400.png",
   dataAiHint: "tutor portrait",
-  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Example video
 };
 
 export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@lissanhub.example.com";

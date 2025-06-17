@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock, ChevronDown, Package } from "lucide-react"
+import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock, Package } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/layout/logo"
 import { Input } from "@/components/ui/input"
@@ -16,54 +16,39 @@ import { db } from "@/lib/firebase"
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo, siteConfig } from "@/config/site"
 import Image from "next/image"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
-// import type { LessonPackageDefinition } from "@/lib/types"; // Simplified, not fetching dynamic packages for MVP homepage
-
+import type { Testimonial as TestimonialType } from "@/lib/types"; // For fetching testimonials
 
 export default function HomePage() {
   const { toast } = useToast();
   const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
   const [isSubmittingContact, setIsSubmittingContact] = useState(false);
+  const [testimonials, setTestimonials] = useState<TestimonialType[]>([]);
+  const [isLoadingTestimonials, setIsLoadingTestimonials] = useState(true);
 
-  // const [featuredPackages, setFeaturedPackages] = useState<LessonPackageDefinition[]>([]); // MVP: static or simplified packages section
-  // const [isLoadingHighlights, setIsLoadingHighlights] = useState(true);
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      setIsLoadingTestimonials(true);
+      try {
+        const testimonialsCol = collection(db, "testimonials");
+        const q = query(
+          testimonialsCol,
+          where("status", "==", "approved"),
+          orderBy("createdAt", "desc"),
+          limit(3) // Fetch latest 3 approved testimonials for homepage
+        );
+        const querySnapshot = await getDocs(q);
+        const fetchedTestimonials = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TestimonialType));
+        setTestimonials(fetchedTestimonials);
+      } catch (error) {
+        console.error("Error fetching testimonials for homepage:", error);
+        // Optionally set a default or show an error state for testimonials
+      } finally {
+        setIsLoadingTestimonials(false);
+      }
+    };
+    fetchTestimonials();
+  }, []);
 
-
-  // useEffect(() => { // MVP: Defer dynamic package fetching for homepage
-  //   const fetchFeatured = async () => {
-  //     setIsLoadingHighlights(true);
-  //     try {
-  //       const packagesRef = collection(db, "lessonPackageDefinitions");
-  //       const q = query(
-  //         packagesRef,
-  //         where("featuredOnHomepage", "==", true),
-  //         orderBy("order", "asc"),
-  //         limit(3)
-  //       );
-  //       const snapshot = await getDocs(q);
-  //       const fp = snapshot.docs.map(
-  //         (doc) => ({ id: doc.id, ...doc.data() } as LessonPackageDefinition)
-  //       );
-  //       setFeaturedPackages(fp);
-  //     } catch (err) {
-  //       console.error("Error fetching featured packages:", err);
-  //       toast({
-  //         title: "Error",
-  //         description: "Could not load featured packages for homepage.",
-  //         variant: "destructive",
-  //       });
-  //     } finally {
-  //       setIsLoadingHighlights(false);
-  //     }
-  //   };
-  //   fetchFeatured();
-  // }, []);
 
   const handleContactInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setContactForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -108,7 +93,7 @@ export default function HomePage() {
               About
             </Link>
             <Link href="/packages" className="text-muted-foreground hover:text-primary transition-colors">
-              Pricing
+              Packages
             </Link>
             <Link href="/#testimonials" className="text-muted-foreground hover:text-primary transition-colors">
               Reviews
@@ -156,7 +141,7 @@ export default function HomePage() {
               className="text-lg px-8 py-4 h-auto border-primary/30 hover:bg-accent text-foreground"
               asChild
             >
-              <Link href="#about">
+              <Link href="/tutor-profile">
                 <Play className="w-5 h-5 mr-2" />
                 Meet Your Tutor
               </Link>
@@ -196,7 +181,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* About/Tutor Profile Section */}
+      {/* About/Tutor Profile Section (Simplified Link) */}
       <section id="about" className="py-20 px-4 bg-card">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -206,42 +191,14 @@ export default function HomePage() {
               <p className="text-xl text-primary font-medium">{tutorInfo.shortIntro}</p>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  {tutorInfo.bio.split('.')[0] + '.'}
-                </p>
-                <p>
-                  {tutorInfo.bio.substring(tutorInfo.bio.indexOf('.') + 1).trim()}
+                  {tutorInfo.bio.split('.')[0] + '.'} {tutorInfo.bio.substring(tutorInfo.bio.indexOf('.') + 1).trim().split('.')[0] + '.'}
                 </p>
               </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {tutorInfo.services.map((service, index) => (
-                   <div key={index} className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-primary" />
-                    <span className="text-sm text-muted-foreground">{service}</span>
-                  </div>
-                ))}
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-primary" />
-                  <span className="text-sm text-muted-foreground">Native Amharic Speaker</span>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
-                    <Link href="/bookings">Book a Lesson</Link>
-                </Button>
-                {tutorInfo.videoUrl && (
-                    <Button variant="outline" className="border-primary/30 hover:bg-accent text-foreground" asChild>
-                        <Link href={tutorInfo.videoUrl} target="_blank" rel="noopener noreferrer">
-                            <Play className="w-4 h-4 mr-2" />
-                            Watch Introduction
-                        </Link>
-                    </Button>
-                )}
-              </div>
+              <Button asChild>
+                 <Link href="/tutor-profile">Learn More About {tutorInfo.name.split(' ')[0]}</Link>
+              </Button>
             </div>
-
-            <div className="relative">
+             <div className="relative">
               <div className="aspect-square bg-gradient-to-br from-accent/50 to-accent/80 rounded-2xl flex items-center justify-center">
                 {tutorInfo.imageUrl.includes('placehold.co') || !tutorInfo.imageUrl ? (
                   <div className="text-center">
@@ -254,24 +211,12 @@ export default function HomePage() {
                   <Image src={tutorInfo.imageUrl} alt={tutorInfo.name} width={400} height={400} className="rounded-2xl object-cover" data-ai-hint={tutorInfo.dataAiHint || "tutor portrait"}/>
                 )}
               </div>
-              <div className="absolute -bottom-6 -left-6 bg-card rounded-xl shadow-lg p-4 border">
-                <div className="text-2xl font-bold text-primary">200+</div>
-                <div className="text-sm text-muted-foreground">Happy Students</div>
-              </div>
-              <div className="absolute -top-6 -right-6 bg-card rounded-xl shadow-lg p-4 border">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <div className="text-sm text-muted-foreground">5.0 Rating</div>
-              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Simplified Lessons/Services Section for MVP */}
+      {/* Simplified Lessons/Services Section */}
       <section id="lessons" className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto">
           <div className="text-center mb-16">
@@ -283,7 +228,6 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Quick Practice - kept for MVP */}
             <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
@@ -304,7 +248,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Comprehensive Lesson - kept for MVP */}
             <Card className="border-2 border-primary/30 shadow-lg hover:shadow-xl transition-all duration-300 group relative bg-card">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
@@ -328,7 +271,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Cultural Immersion - kept for MVP */}
             <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
@@ -361,7 +303,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials Section - Kept for MVP (can be static or fetch few) */}
+      {/* Testimonials Section */}
       <section id="testimonials" className="py-20 px-4 bg-card">
         <div className="container mx-auto">
           <div className="text-center mb-16">
@@ -371,59 +313,32 @@ export default function HomePage() {
               Real stories from diaspora learners who've reconnected with their heritage
             </p>
           </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-             {/* MVP: Could hardcode 1-3 testimonials or fetch dynamically if that part is stable */}
-            <Card className="shadow-lg bg-card">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />))}
-                </div>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  "Mahir helped me reconnect with my Ethiopian roots. After just 3 months, I can finally have meaningful
-                  conversations with my grandmother."
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
-                    <span className="text-primary font-semibold">SM</span>
-                  </div>
-                  <div><div className="font-semibold text-foreground">Sara M.</div><div className="text-sm text-muted-foreground">Toronto</div></div>
-                </div>
-              </CardContent>
-            </Card>
-             <Card className="shadow-lg bg-card">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />))}
-                </div>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  "Mahir's patient teaching style and cultural stories made learning enjoyable. Now I'm planning my first trip to Ethiopia!"
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
-                    <span className="text-primary font-semibold">DK</span>
-                  </div>
-                  <div><div className="font-semibold text-foreground">Daniel K.</div><div className="text-sm text-muted-foreground">London</div></div>
-                </div>
-              </CardContent>
-            </Card>
-             <Card className="shadow-lg bg-card">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />))}
-                </div>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  "The flexibility of online lessons fits perfectly with my busy schedule. Highly recommend!"
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
-                    <span className="text-primary font-semibold">AL</span>
-                  </div>
-                  <div><div className="font-semibold text-foreground">Aisha L.</div><div className="text-sm text-muted-foreground">Washington DC</div></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+            {isLoadingTestimonials ? (
+                 <div className="flex justify-center"><Spinner size="lg" /></div>
+            ) : testimonials.length > 0 ? (
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                {testimonials.map((testimonial) => (
+                <Card key={testimonial.id} className="shadow-lg bg-card">
+                    <CardContent className="pt-6">
+                    <div className="flex items-center gap-1 mb-4">
+                        {[...Array(5)].map((_, i) => (<Star key={i} className={`w-4 h-4 ${i < testimonial.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`} />))}
+                    </div>
+                    <p className="text-muted-foreground mb-6 leading-relaxed line-clamp-4">
+                        "{testimonial.comment}"
+                    </p>
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
+                        <span className="text-primary font-semibold">{testimonial.name.split(" ").map(n=>n[0]).join("").toUpperCase()}</span>
+                        </div>
+                        <div><div className="font-semibold text-foreground">{testimonial.name}</div><div className="text-sm text-muted-foreground">{testimonial.location || "Global Student"}</div></div>
+                    </div>
+                    </CardContent>
+                </Card>
+                ))}
+            </div>
+            ) : (
+                <p className="text-center text-muted-foreground">No approved testimonials yet. Check back soon!</p>
+            )}
           <div className="text-center mt-12">
             <Button variant="outline" className="border-primary/30 hover:bg-accent text-foreground" asChild>
                 <Link href="/testimonials">Read More Reviews</Link>
@@ -432,7 +347,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Contact Section - Kept for MVP */}
+      {/* Contact Section */}
       <section id="contact" className="py-20 px-4 bg-primary/5">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12">
