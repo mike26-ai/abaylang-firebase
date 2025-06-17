@@ -17,16 +17,22 @@ const firebaseConfig = {
 };
 
 // Basic check if critical config values are present
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY" || firebaseConfig.apiKey.includes("placeholder")) {
   console.warn(
     "Firebase API Key is missing or using a placeholder. " +
     "Please ensure NEXT_PUBLIC_FIREBASE_API_KEY is set correctly in your environment."
   );
 }
-if (!firebaseConfig.projectId || firebaseConfig.projectId === "YOUR_PROJECT_ID") {
+if (!firebaseConfig.projectId || firebaseConfig.projectId === "YOUR_PROJECT_ID" || firebaseConfig.projectId.includes("placeholder")) {
   console.warn(
     "Firebase Project ID is missing or using a placeholder. " +
     "Please ensure NEXT_PUBLIC_FIREBASE_PROJECT_ID is set correctly in your environment."
+  );
+}
+if (!firebaseConfig.storageBucket || firebaseConfig.storageBucket === "YOUR_STORAGE_BUCKET" || firebaseConfig.storageBucket.includes("placeholder")) {
+  console.warn(
+    "Firebase Storage Bucket is missing or using a placeholder. " +
+    "Please ensure NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is set correctly in your environment for file uploads."
   );
 }
 

@@ -22,25 +22,23 @@ export const siteConfig = {
   mainNav: [
     { title: "Home", href: "/" },
     { title: "About Tutor", href: "/tutor-profile", icon: Users },
-    { title: "Packages", href: "/packages", icon: Package }, // Info-only for MVP
+    { title: "Packages", href: "/packages", icon: Package },
     { title: "Testimonials", href: "/testimonials", icon: Star },
     {
       title: "Resources",
-      href: "/resources", // General landing for resources
+      href: "/resources",
       icon: LibraryBig,
       children: [
         { title: "Flashcards", href: "/flashcards", icon: BookOpen },
-        // Lesson materials will be accessed via student dashboard if linked to bookings or general area
       ]
     },
     { title: "FAQ", href: "/faq", icon: HelpCircle },
     { title: "Contact", href: "/contact", icon: Mail },
-    // "Book a Lesson" is a primary CTA, often directly linked or part of user/admin dashboard flow
   ] satisfies NavItem[],
   userNav: [ // For logged-in user dropdown
     { title: "My Dashboard", href: "/profile", authRequired: true, icon: LayoutDashboard },
     { title: "Book New Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
-    { title: "Submit Testimonial", href: "/profile#testimonials", authRequired: true, icon: Star }, // Link to section in profile for feedback
+    // Testimonial submission is now part of the lesson feedback modal in profile
   ] satisfies NavItem[],
   adminNav: [
     { title: "Admin Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -76,6 +74,6 @@ export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@lissanh
 // Default booking duration and price for MVP if not specified per lesson type
 export const defaultLessonConfig = {
   duration: 60, // minutes
-  price: 45, // USD
+  price: 45, // USD - Note: Price display is informational for MVP
   currency: "USD",
 };

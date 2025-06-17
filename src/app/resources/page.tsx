@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BookOpen, FileText, Library, ExternalLink } from "lucide-react";
+import { BookOpen, FileText, Library, ExternalLink, ListChecks } from "lucide-react";
 
 export default function ResourcesPage() {
   return (
@@ -29,16 +29,15 @@ export default function ResourcesPage() {
               </CardTitle>
               <CardDescription>
                 Access PDF documents, audio, or video links shared by your tutor.
-                Materials uploaded by your tutor via the admin panel will appear here or in your student dashboard linked to specific lessons in future updates.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center py-8">
               <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground mb-4">
-                Your tutor may share materials specific to your lessons. For now, check your student dashboard or ask your tutor directly.
+                Your tutor will upload materials relevant to your lessons. Find them in your student dashboard.
               </p>
               <Button variant="outline" asChild>
-                <Link href="/profile#my-bookings">Go to My Bookings</Link>
+                <Link href="/profile#materials">Go to My Materials</Link>
               </Button>
             </CardContent>
           </Card>
@@ -69,7 +68,7 @@ export default function ResourcesPage() {
         <div className="mt-16 text-center">
             <h2 className="text-2xl font-semibold text-foreground mb-3">More Tools Coming Soon!</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-                We are continuously working on adding more resources like interactive exercises, quizzes, and advanced learning tools to enhance your LissanHub experience.
+                We are continuously working on adding more resources like interactive quizzes, AI-powered practice tools, and advanced learning paths to enhance your LissanHub experience.
             </p>
         </div>
 

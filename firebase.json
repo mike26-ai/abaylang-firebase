@@ -1,7 +1,7 @@
 
 {
   "hosting": {
-    "public": ".next/static",
+    "public": ".next", 
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -9,8 +9,28 @@
     ],
     "rewrites": [
       {
+        "source": "/_next/static/**",
+        "destination": "/_next/static/**"
+      },
+      {
+        "source": "/static/**",
+        "destination": "/static/**"
+      },
+      {
+        "source": "/favicon.ico",
+        "destination": "/favicon.ico" 
+      },
+      {
+        "source": "/manifest.json",
+        "destination": "/manifest.json" 
+      },
+      {
+        "source": "/icon-*.png",
+        "destination": "/icon-*.png"
+      },
+      {
         "source": "**",
-        "destination": "/index.html"
+        "function": "server" 
       }
     ],
     "headers": [

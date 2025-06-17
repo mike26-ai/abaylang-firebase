@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
@@ -21,7 +22,7 @@ import {
   Edit3,
   XCircle,
   Star,
-  FileText, // For materials section
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -158,7 +159,7 @@ export default function StudentDashboardPage() {
           amharicLevel: profile.amharicLevel || "beginner",
         });
       } else {
-        // Create a basic profile if it doesn't exist (e.g., for users created before profile collection was standard)
+        // Create a basic profile if it doesn't exist
         const basicProfile: UserProfile = {
           uid: user.uid,
           email: user.email || "",
@@ -187,7 +188,7 @@ export default function StudentDashboardPage() {
   };
   
   const fetchLessonMaterials = async () => {
-    if (!user) return; // Only fetch if user is logged in
+    if (!user) return; 
     setIsLoadingMaterials(true);
     try {
         const materialsCol = collection(db, "lessonMaterials");
@@ -284,11 +285,11 @@ export default function StudentDashboardPage() {
     try {
         await addDoc(collection(db, "testimonials"), {
             userId: user.uid,
-            name: userProfileData.name, // Use name from profile
+            name: userProfileData.name, 
             userEmail: userProfileData.email,
             lessonId: feedbackData.lessonId,
             lessonType: feedbackModal.lessonType,
-            lessonDate: feedbackModal.lessonDate, // The actual lesson date from booking
+            lessonDate: feedbackModal.lessonDate, 
             rating: feedbackData.rating,
             comment: feedbackData.feedbackText,
             specificRatings: feedbackData.specificRatings,
@@ -333,7 +334,6 @@ export default function StudentDashboardPage() {
   ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00 AM")).getTime() - new Date(a.date + ' ' + (a.time || "00:00 AM")).getTime());
   
   const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
-  // Use defaultLessonConfig.duration if booking.duration is not set
   const totalHours = bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || defaultLessonConfig.duration), 0) / 60;
 
 
@@ -438,7 +438,7 @@ export default function StudentDashboardPage() {
                   <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
                   <TabsTrigger value="history">History</TabsTrigger>
                   <TabsTrigger value="profile">My Profile</TabsTrigger>
-                  <TabsTrigger value="materials">Materials</TabsTrigger>
+                  <TabsTrigger value="materials" id="materials">Materials</TabsTrigger>
                 </TabsList>
               </div>
               
@@ -481,7 +481,6 @@ export default function StudentDashboardPage() {
                             <Badge variant={booking.status === "confirmed" ? "default" : "secondary"}>
                               {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                             </Badge>
-                            {/* <span className="font-semibold text-foreground">${booking.price}</span> */}
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs">
@@ -539,7 +538,6 @@ export default function StudentDashboardPage() {
                             <Badge variant={booking.status === "completed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"} className={booking.status === "completed" ? "" : "opacity-70"}>
                               {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                             </Badge>
-                            {/* <span className="font-semibold text-foreground">${booking.price}</span> */}
                             {booking.status === 'completed' && (
                               booking.hasReview ? (
                                 <Badge variant="secondary" className="bg-accent text-accent-foreground">

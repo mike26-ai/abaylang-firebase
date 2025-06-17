@@ -23,7 +23,6 @@ export default function BlogPage() {
             </p>
         </header>
         <div className="text-center">
-            {/* Placeholder for future blog posts list or featured content */}
             <p className="text-muted-foreground">Content coming soon...</p>
         </div>
       </div>

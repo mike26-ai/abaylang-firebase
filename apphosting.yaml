@@ -10,8 +10,8 @@ runtime: nodejs18 # Or nodejs20, depending on your Next.js version and preferenc
 # These commands are executed on the server during every new deployment.
 # Npm is used by default, but you can specify pnpm or yarn via packageManager.
 buildSteps:
-  - run: npm install # Or your preferred install command
-  - run: npm run build # Or your preferred build command (e.g., next build)
+  - run: npm install 
+  - run: npm run build 
 
 # Settings for the server that serves your app.
 # https://firebase.google.com/docs/app-hosting/configure#server-settings
@@ -33,8 +33,28 @@ runConfig:
 
 # Defines environment variables that will be available at build time and runtime.
 # https://firebase.google.com/docs/app-hosting/configure#environment-variables
-# env:
-#   - variable: API_KEY
-#     value: "your_api_key_here" # Example, use secrets for sensitive data
-#   - variable: STRIPE_SECRET_KEY
-#     secret: STRIPE_SECRET_KEY_NAME # Secret name in Google Secret Manager
+env:
+  - variable: NEXT_PUBLIC_ADMIN_EMAIL
+    value: "admin@lissanhub.example.com" # Replace with actual admin email if needed
+#  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+#    secret: FIREBASE_API_KEY # Example for secrets from Secret Manager
+#  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+#    secret: FIREBASE_AUTH_DOMAIN
+#  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+#    secret: FIREBASE_PROJECT_ID
+#  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+#    secret: FIREBASE_STORAGE_BUCKET
+#  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+#    secret: FIREBASE_MESSAGING_SENDER_ID
+#  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+#    secret: FIREBASE_APP_ID
+# It's generally recommended to use Secret Manager for sensitive env vars.
+# For non-sensitive NEXT_PUBLIC_ variables, you can define them here or
+# ensure they are set during the build process if your CI/CD handles it.
+# If NEXT_PUBLIC_ variables are already in your .env files and committed (not recommended for secrets),
+# Next.js might pick them up during the build on App Hosting.
+# For MVP, ensure these are available at runtime for Firebase SDK initialization on the client.
+# If these are not available as secrets, you can set them directly (not recommended for API keys).
+# Example (less secure, use secrets if possible):
+#  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+#    value: "your_actual_api_key_here"

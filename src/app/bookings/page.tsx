@@ -35,7 +35,7 @@ async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
     const q = query(
       bookingsRef,
       where("date", "==", formattedDate),
-      where("status", "in", ["confirmed", "completed"]) // Consider only confirmed/completed bookings as blocking slots
+      where("status", "in", ["confirmed", "completed"]) 
     );
     const querySnapshot = await getDocs(q);
     
@@ -66,15 +66,15 @@ async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
   const refDate = new Date(); 
-  for (let h = 9; h < 12; h++) { // 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM, 11:30 AM
+  for (let h = 9; h < 12; h++) { 
     times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'hh:mm a'));
     times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'hh:mm a'));
   }
-  for (let h = 14; h < 17; h++) { // 2:00 PM, 2:30 PM, 3:00 PM, 3:30 PM, 4:00 PM, 4:30 PM
+  for (let h = 14; h < 17; h++) { 
     times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'hh:mm a'));
     times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'hh:mm a'));
   }
-  times.push(format(new Date(refDate.setHours(17, 0, 0, 0)), 'hh:mm a')); // 5:00 PM
+  times.push(format(new Date(refDate.setHours(17, 0, 0, 0)), 'hh:mm a')); 
   return times;
 };
 
@@ -148,7 +148,7 @@ export default function BookLessonPage() {
   const displayTimeSlots = useMemo(() => {
     if (!selectedDate || !selectedLessonDetails || selectedLessonDetails.type === 'package') return [];
     const slots: { display: string; value: string; isDisabled: boolean }[] = [];
-    const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number; // Use unitDuration for packages if applicable, else duration
+    const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number; 
     const slotDate = startOfDay(selectedDate); 
 
     for (const startTimeString of baseStartTimes) {
@@ -158,7 +158,7 @@ export default function BookLessonPage() {
           continue;
       }
       const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
-      const dayEndHour = 18; // Assuming lessons end by 6 PM
+      const dayEndHour = 18; 
       if (potentialEndTime.getHours() > dayEndHour || (potentialEndTime.getHours() === dayEndHour && potentialEndTime.getMinutes() > 0)) {
           continue; 
       }
@@ -192,25 +192,20 @@ export default function BookLessonPage() {
       toast({ title: "Selection Incomplete", description: "Please select date and time for your lesson.", variant: "destructive" });
       return;
     }
-    // For packages, date is optional if not scheduling the first one now
-    // if (selectedLessonDetails.type === 'package' && !selectedDate) {
-    //      toast({ title: "Selection Incomplete", description: "Please select a start date for your package.", variant: "destructive" });
-    //      return;
-    // }
-
+    
     setIsProcessing(true);
     try {
       const bookingData: Omit<BookingType, 'id' | 'createdAt'> = {
         userId: user.uid,
         userName: user.displayName || "User",
         userEmail: user.email || "",
-        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "N/A_PACKAGE", // For packages, date might be for the first lesson or N/A
-        time: selectedTime || "N/A_PACKAGE", // For packages, time might be for the first lesson or N/A
+        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "N/A_PACKAGE", 
+        time: selectedTime || "N/A_PACKAGE", 
         duration: typeof selectedLessonDetails.unitDuration === 'number' ? selectedLessonDetails.unitDuration : (typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : defaultLessonConfig.duration),
         lessonType: selectedLessonDetails.label,
-        price: selectedLessonDetails.price,
+        price: selectedLessonDetails.price, // Price is informational for MVP
         status: "confirmed", // MVP: Confirm directly. No payment step.
-        tutorId: "MahirAbasMustefa", // Hardcoded tutor ID
+        tutorId: "MahirAbasMustefa",
         tutorName: tutorInfo.name,
         learningGoals: learningGoals || undefined,
       };
@@ -234,9 +229,6 @@ export default function BookLessonPage() {
       }
       setSelectedTime(undefined); 
       setLearningGoals("");
-      // Optionally reset selectedDate as well, or redirect to profile
-      // setSelectedDateState(undefined); 
-      // router.push('/profile');
     } catch (error) {
       console.error("Booking error:", error);
       toast({ title: "Booking Failed", description: "Could not complete your booking. Please try again.", variant: "destructive" });
@@ -475,7 +467,6 @@ export default function BookLessonPage() {
               <CardContent className="space-y-4">
                 <div className="text-center">
                   <div className="w-20 h-20 bg-accent rounded-full mx-auto mb-3 flex items-center justify-center">
-                    {/* Placeholder for tutor image or initials */}
                     <span className="text-2xl text-primary font-bold">{tutorInfo.name.split(" ").map(n=>n[0]).join("")}</span>
                   </div>
                   <h3 className="font-semibold text-foreground">{tutorInfo.name}</h3>
@@ -548,18 +539,19 @@ export default function BookLessonPage() {
                       <span className="text-foreground">Total:</span>
                       <span className="text-primary">${selectedLessonDetails.price}</span>
                     </div>
+                    <p className="text-xs text-muted-foreground text-center mt-1">(Payment not required for MVP)</p>
                   </div>
                 )}
 
                 <div className="space-y-3">
                   <Badge variant="secondary" className="w-full justify-center py-2 bg-accent text-accent-foreground">
                     <Check className="w-4 h-4 mr-2 text-primary" />
-                    Secure Booking (No Payment for MVP)
+                    Secure Booking
                   </Badge>
                   <Button
                     className="w-full"
                     onClick={handleBooking}
-                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !learningGoals) } // Allow package booking without date if goals are set
+                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !learningGoals) } 
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
                     {isProcessing ? "Processing..." : `Confirm Booking - $${selectedLessonDetails?.price || 0}`}

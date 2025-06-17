@@ -9,8 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Send, Bot, User, Volume2, MessageSquare } from "lucide-react"
-// import { aiTutorChat, type AiTutorChatInput, type AiTutorChatOutput } from "@/ai/flows/ai-tutor-chat-flow"; // Removed for MVP
+import { Send, Bot, User, Volume2 } from "lucide-react"
 import { Spinner } from "../ui/spinner";
 
 interface Message {
@@ -30,7 +29,7 @@ export function AIChatbot() {
     },
   ])
   const [inputText, setInputText] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
+  const [isTyping, setIsTyping] = useState(false) // Kept for UI consistency if re-enabled
 
   const handleSendMessage = async (e?: FormEvent) => {
     if (e) e.preventDefault();
@@ -45,31 +44,23 @@ export function AIChatbot() {
     setInputText("");
     
     // Simulate bot response indicating feature is coming soon
+    setIsTyping(true);
     setTimeout(() => {
         const botMessage: Message = {
             id: (Date.now() + 1).toString(),
-            text: "ይቅርታ ይህ የ AI Tutor ባህሪ ገና አልተገኘም። (Sorry, this AI Tutor feature is not yet available.)",
+            text: "ይቅርታ ይህ የ AI Tutor ባህሪ ገና አልተገኘም። ለጊዜው ጥያቄዎችዎን በቀጥታ ለአስተማሪዎ ማቅረብ ይችላሉ። (Sorry, this AI Tutor feature is not yet available. For now, you can direct your questions to your tutor.)",
             sender: "bot",
-            translation: "Sorry, this AI Tutor feature is not yet available.",
+            translation: "Sorry, this AI Tutor feature is not yet available. For now, you can direct your questions to your tutor.",
         };
         setMessages((prev) => [...prev, botMessage]);
-    }, 500);
+        setIsTyping(false);
+    }, 1000);
   }
 
   const playAudio = (text: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      const voices = window.speechSynthesis.getVoices();
-      const amharicVoice = voices.find(voice => voice.lang.toLowerCase().startsWith('am'));
-      if (amharicVoice) {
-        utterance.voice = amharicVoice;
-      } else {
-        utterance.lang = 'am'; 
-      }
-      window.speechSynthesis.speak(utterance);
-    } else {
-      alert(`Audio playback not supported for: ${text}`)
-    }
+    // Audio playback functionality would be here.
+    // For MVP, it's non-functional.
+    alert(`Audio playback for: "${text}" (Feature coming soon)`);
   }
 
 
@@ -115,7 +106,7 @@ export function AIChatbot() {
             </div>
           ))}
 
-          {isTyping && ( // This might not be reached if AI logic is removed
+          {isTyping && (
             <div className="flex justify-start">
               <div className="bg-card p-3 rounded-lg border shadow-sm">
                 <div className="flex items-center gap-2">
@@ -147,7 +138,7 @@ export function AIChatbot() {
           />
           <Button
             type="submit"
-            disabled={true} // Disabled for MVP
+            disabled={isTyping || !inputText.trim() || true} // Disabled for MVP
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {isTyping ? <Spinner size="sm" /> : <Send className="w-4 h-4" />}
