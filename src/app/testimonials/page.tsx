@@ -39,6 +39,8 @@ export default function ReviewsPage() {
       setIsLoading(true);
       try {
         const testimonialsCol = collection(db, "testimonials");
+        // This query requires a composite index on 'status' (ASC) and 'createdAt' (DESC)
+        // If missing, Firestore will error. Check browser console for a link to create it.
         const q = query(
           testimonialsCol,
           where("status", "==", "approved"),
@@ -66,12 +68,19 @@ export default function ReviewsPage() {
           } as TestimonialType;
         });
         setAllReviews(fetchedTestimonials);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching testimonials:", error);
+        let description = "Could not fetch reviews.";
+        if (error.code === 'failed-precondition') {
+            description = "Could not fetch reviews. This often means a required database index is missing (e.g., for testimonials: status ASC, createdAt DESC). Please check the browser console for a link to create it, or check Firestore indexes.";
+        } else if (error.code === 'permission-denied') {
+            description = "Could not fetch reviews due to a permission issue. Please check Firestore security rules for 'testimonials'.";
+        }
         toast({
-          title: "Error",
-          description: "Could not fetch reviews.",
+          title: "Error Fetching Reviews",
+          description: description,
           variant: "destructive",
+          duration: 9000,
         });
       } finally {
         setIsLoading(false);
@@ -356,3 +365,4 @@ export default function ReviewsPage() {
     </div>
   )
 }
+
