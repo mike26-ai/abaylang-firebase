@@ -39,8 +39,6 @@ export default function ReviewsPage() {
       setIsLoading(true);
       try {
         const testimonialsCol = collection(db, "testimonials");
-        // This query requires a composite index on 'status' (ASC) and 'createdAt' (DESC)
-        // If missing, Firestore will error. Check browser console for a link to create it.
         const q = query(
           testimonialsCol,
           where("status", "==", "approved"),
@@ -58,12 +56,11 @@ export default function ReviewsPage() {
             location: data.location,
             status: data.status,
             createdAt: data.createdAt,
-            // Fields from new Review design, assign defaults or map if available
-            studentInitials: getInitials(data.name), // Generate initials
-            lessonType: data.lessonType || "General Lesson", // Default if not present
+            studentInitials: getInitials(data.name), 
+            lessonType: data.lessonType || "General Lesson", 
             specificRatings: data.specificRatings || { teachingQuality: 0, materialClarity: 0, culturalInsights: 0, pacing: 0, engagement: 0 },
             helpful: data.helpful || 0,
-            verified: true, // All approved testimonials are considered verified
+            verified: true, 
             date: data.createdAt ? format(data.createdAt.toDate(), "yyyy-MM-dd") : "Date not available",
           } as TestimonialType;
         });
@@ -355,7 +352,7 @@ export default function ReviewsPage() {
                   Otherwise, a separate /submit-testimonial page might be needed, or integrate form here.
                   For now, keeping it as is to point to itself, assuming form might be added later or it's a general CTA.
               */}
-              <Link href="/testimonials"> 
+              <Link href="/profile"> 
                 <Button variant="outline">Share Your Experience</Button>
               </Link>
             </div>
@@ -366,3 +363,4 @@ export default function ReviewsPage() {
   )
 }
 
+    
