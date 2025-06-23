@@ -4,72 +4,72 @@
 
 @layer base {
   :root {
-    /* Fidelia Brand Theme */
-    --background: 33 20% 96%; /* #F7F5F2 */
-    --foreground: 210 29% 24%; /* #2C3E50 */
+    /* Abylang Brand Theme */
+    --background: 45 87% 94%; /* #FDF6E3 */
+    --foreground: 202 20% 26%; /* #36454F */
 
-    --muted: 182 6% 90%; 
-    --muted-foreground: 182 6% 53%; /* #7F8C8D */
+    --muted: 60 1% 52%; 
+    --muted-foreground: 60 1% 35%; /* Darker version of Aksumite Stone */
 
-    --popover: 33 20% 96%;
-    --popover-foreground: 210 29% 24%;
+    --popover: 45 87% 94%;
+    --popover-foreground: 202 20% 26%;
 
-    --card: 0 0% 100%; /* White cards */
-    --card-foreground: 210 29% 24%;
+    --card: 0 0% 100%; /* Keep cards white for contrast against parchment */
+    --card-foreground: 202 20% 26%;
 
-    --border: 182 6% 53%; /* #7F8C8D */
-    --input: 182 6% 85%; /* Lighter version of slate gray for input BG */
+    --border: 60 1% 52%; /* #848482 */
+    --input: 60 1% 85%; /* Lighter version for input BG */
 
-    --primary: 28 80% 52%; /* #E67E22 */
-    --primary-foreground: 33 20% 96%; /* #F7F5F2 */
+    --primary: 30 71% 47%; /* #CC7722 */
+    --primary-foreground: 45 87% 94%; /* #FDF6E3 */
 
-    --secondary: 182 6% 90%; /* Light slate gray for secondary elements */
-    --secondary-foreground: 210 29% 24%;
+    --secondary: 60 1% 90%; /* Light version of Aksumite Stone */
+    --secondary-foreground: 202 20% 26%;
 
-    --accent: 28 80% 95%; /* Very light earthy orange */
-    --accent-foreground: 28 80% 45%; /* Darker earthy orange */
+    --accent: 30 71% 95%; /* Very light ochre */
+    --accent-foreground: 30 71% 40%; /* Darker ochre */
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --ring: 28 80% 52%; /* #E67E22 */
+    --ring: 30 71% 47%; /* #CC7722 */
 
-    --radius: 0.25rem; /* 4px */
+    --radius: 0rem; /* 0px - remove rounded corners */
 
-    --font-playfair-display: "Playfair Display", serif;
-    --font-inter: "Inter", sans-serif;
+    --font-lora: "Lora", serif;
+    --font-lato: "Lato", sans-serif;
   }
 
   .dark {
-    /* Fidelia Dark Theme */
-    --background: 210 29% 15%; /* Darker blue-gray */
-    --foreground: 33 20% 96%; /* #F7F5F2 */
+    /* Abylang Dark Theme (Inverted for contrast) */
+    --background: 202 20% 15%; /* Dark charcoal-blue */
+    --foreground: 45 87% 94%; /* Parchment White */
 
-    --muted: 210 29% 25%;
-    --muted-foreground: 182 6% 70%; /* Lighter slate gray */
+    --muted: 202 20% 25%;
+    --muted-foreground: 60 1% 70%; /* Lighter stone */
 
-    --popover: 210 29% 15%;
-    --popover-foreground: 33 20% 96%;
+    --popover: 202 20% 15%;
+    --popover-foreground: 45 87% 94%;
 
-    --card: 210 29% 20%;
-    --card-foreground: 33 20% 96%;
+    --card: 202 20% 20%;
+    --card-foreground: 45 87% 94%;
 
-    --border: 182 6% 33%; /* Darker slate gray border */
-    --input: 182 6% 28%;
+    --border: 60 1% 33%; /* Darker stone border */
+    --input: 60 1% 28%;
 
-    --primary: 28 80% 52%; /* #E67E22 - Orange can stay vibrant */
-    --primary-foreground: 33 20% 96%; /* #F7F5F2 */
+    --primary: 30 71% 55%; /* Brighter Ochre for dark mode */
+    --primary-foreground: 202 20% 10%; /* Very dark for contrast on ochre */
 
-    --secondary: 182 6% 25%;
-    --secondary-foreground: 33 20% 96%;
+    --secondary: 60 1% 25%;
+    --secondary-foreground: 45 87% 94%;
 
-    --accent: 28 80% 25%; /* Dark orange for accent background */
-    --accent-foreground: 28 80% 80%; /* Lighter orange for text on accent */
+    --accent: 30 71% 25%; /* Dark ochre for accent background */
+    --accent-foreground: 30 71% 80%; /* Lighter ochre for text on accent */
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --ring: 28 80% 52%;
+    --ring: 30 71% 55%;
   }
 }
 
@@ -79,13 +79,13 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-inter), sans-serif;
+    font-family: var(--font-lato), sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-playfair-display), serif;
+    font-family: var(--font-lora), serif;
   }
 
   /* Target Shadcn Card component to remove default shadow and ensure border */
