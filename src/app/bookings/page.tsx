@@ -233,9 +233,9 @@ export default function BookLessonPage() {
       console.error("Booking error:", error);
       let description = "Could not complete your booking. Please try again.";
       if (error.code === 'permission-denied') {
-          description = "Booking failed. You might not have permission to create bookings. Please ensure you are logged in and that Firestore security rules allow this action.";
+          description = "Booking failed due to a permissions issue. Please ensure you are logged in and that Firestore security rules allow this action for authenticated users.";
       }
-      toast({ title: "Booking Failed", description, variant: "destructive" });
+      toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
     } finally {
       setIsProcessing(false);
     }
