@@ -229,9 +229,13 @@ export default function BookLessonPage() {
       }
       setSelectedTime(undefined); 
       setLearningGoals("");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Booking error:", error);
-      toast({ title: "Booking Failed", description: "Could not complete your booking. Please try again.", variant: "destructive" });
+      let description = "Could not complete your booking. Please try again.";
+      if (error.code === 'permission-denied') {
+          description = "Booking failed. You might not have permission to create bookings. Please ensure you are logged in and that Firestore security rules allow this action.";
+      }
+      toast({ title: "Booking Failed", description, variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }

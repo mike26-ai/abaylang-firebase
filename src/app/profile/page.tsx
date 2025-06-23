@@ -127,9 +127,9 @@ export default function StudentDashboardPage() {
       console.error("Error fetching bookings:", error);
       let description = "Could not load your bookings. Please try again later.";
       if (error.code === 'failed-precondition') {
-        description = "Could not load bookings. This often means a required database index is missing (bookings collection: userId, createdAt desc). Please check the browser console for a link to create it, or check Firestore indexes.";
+        description = "Could not load bookings. This often means a required database index is missing (for the bookings collection: userId ASC, createdAt DESC). Please check the browser console for a link to create it, or check your Firestore indexes.";
       } else if (error.code === 'permission-denied') {
-        description = "Could not load bookings due to a permission issue. Please check Firestore security rules for 'bookings'.";
+        description = "Could not load bookings due to a permission issue. Please check your Firestore security rules for the 'bookings' collection.";
       }
       toast({
         title: "Error Fetching Bookings",
