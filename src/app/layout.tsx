@@ -1,4 +1,3 @@
-
 import type React from "react";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
