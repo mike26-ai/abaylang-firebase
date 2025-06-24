@@ -196,7 +196,7 @@ export default function BookLessonPage() {
     setIsProcessing(true);
     try {
       const bookingData: Omit<BookingType, 'id' | 'createdAt'> = {
-        userId: user.uid,
+        userID: user.uid, // Changed from userId to userID
         userName: user.displayName || "User",
         userEmail: user.email || "",
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "N/A_PACKAGE", 

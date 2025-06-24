@@ -3,7 +3,7 @@ import type { Timestamp } from "firebase/firestore";
 
 export interface Booking {
   id: string;
-  userId: string;
+  userID: string; // Changed from userId to userID
   userName: string;
   userEmail: string;
   date: string; // YYYY-MM-DD format
@@ -94,7 +94,7 @@ export interface LearningLesson {
 }
 
 export interface LearningModule {
-  id: string; // Firestore document ID
+  id:string; // Firestore document ID
   title: string;
   description: string;
   order: number; // For sequencing modules
