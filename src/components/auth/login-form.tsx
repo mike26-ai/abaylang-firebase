@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { ADMIN_EMAIL } from "@/config/site";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -50,7 +51,12 @@ export function LoginForm() {
         title: "Login Successful",
         description: "Welcome back!",
       });
-      router.push("/profile"); // Redirect to profile or dashboard after login
+      // Redirect based on user role (email)
+      if (values.email === ADMIN_EMAIL) {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/profile");
+      }
     } catch (error: any) {
       console.error("Login error:", error);
       const errorMessage = error.code === 'auth/invalid-credential' 
