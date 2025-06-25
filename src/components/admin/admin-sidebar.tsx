@@ -23,7 +23,7 @@ export function AdminSidebar() {
 
   return (
     <aside className="w-64 border-r bg-sidebar text-sidebar-foreground p-4 space-y-6 hidden md:block">
-      <Link href="/" className="flex items-center space-x-2 pb-6 border-b border-sidebar-border">
+      <Link href="/admin/dashboard" className="flex items-center space-x-2 pb-6 border-b border-sidebar-border">
         <BookOpenText className="h-7 w-7 text-sidebar-primary" />
         <span className="font-bold text-xl">{siteConfig.name}</span>
       </Link>
