@@ -5,26 +5,26 @@
 @layer base {
   :root {
     /* Abylang Brand Theme */
-    --background: 45 87% 94%; /* #FDF6E3 */
-    --foreground: 202 20% 26%; /* #36454F */
+    --background: 39 56% 95%; /* #FDF6E3 */
+    --foreground: 210 22% 28%; /* #36454F */
 
-    --muted: 60 1% 52%; 
-    --muted-foreground: 60 1% 35%; /* Darker version of Aksumite Stone */
+    --muted: 210 9% 53%; 
+    --muted-foreground: 210 9% 31%;
 
-    --popover: 45 87% 94%;
-    --popover-foreground: 202 20% 26%;
+    --popover: 39 56% 95%;
+    --popover-foreground: 210 22% 28%;
 
-    --card: 0 0% 100%; /* Keep cards white for contrast against parchment */
-    --card-foreground: 202 20% 26%;
+    --card: 39 56% 95%; /* Parchment White for cards */
+    --card-foreground: 210 22% 28%;
 
-    --border: 60 1% 52%; /* #848482 */
-    --input: 60 1% 85%; /* Lighter version for input BG */
+    --border: 30 1% 52%; /* #848482 - Aksumite Stone */
+    --input: 30 1% 85%; /* Lighter version for input BG */
 
-    --primary: 30 71% 47%; /* #CC7722 */
-    --primary-foreground: 45 87% 94%; /* #FDF6E3 */
+    --primary: 30 71% 47%; /* #CC7722 - Deep Ochre */
+    --primary-foreground: 39 56% 95%; /* #FDF6E3 */
 
-    --secondary: 60 1% 90%; /* Light version of Aksumite Stone */
-    --secondary-foreground: 202 20% 26%;
+    --secondary: 30 1% 90%; /* Light version of Aksumite Stone */
+    --secondary-foreground: 210 22% 28%;
 
     --accent: 30 71% 95%; /* Very light ochre */
     --accent-foreground: 30 71% 40%; /* Darker ochre */
@@ -42,26 +42,26 @@
 
   .dark {
     /* Abylang Dark Theme (Inverted for contrast) */
-    --background: 202 20% 15%; /* Dark charcoal-blue */
-    --foreground: 45 87% 94%; /* Parchment White */
+    --background: 210 22% 15%; /* Dark charcoal-blue */
+    --foreground: 39 56% 95%; /* Parchment White */
 
-    --muted: 202 20% 25%;
-    --muted-foreground: 60 1% 70%; /* Lighter stone */
+    --muted: 210 22% 25%;
+    --muted-foreground: 30 1% 70%; /* Lighter stone */
 
-    --popover: 202 20% 15%;
-    --popover-foreground: 45 87% 94%;
+    --popover: 210 22% 15%;
+    --popover-foreground: 39 56% 95%;
 
-    --card: 202 20% 20%;
-    --card-foreground: 45 87% 94%;
+    --card: 210 22% 20%;
+    --card-foreground: 39 56% 95%;
 
-    --border: 60 1% 33%; /* Darker stone border */
-    --input: 60 1% 28%;
+    --border: 30 1% 33%; /* Darker stone border */
+    --input: 30 1% 28%;
 
     --primary: 30 71% 55%; /* Brighter Ochre for dark mode */
-    --primary-foreground: 202 20% 10%; /* Very dark for contrast on ochre */
+    --primary-foreground: 210 22% 10%; /* Very dark for contrast on ochre */
 
-    --secondary: 60 1% 25%;
-    --secondary-foreground: 45 87% 94%;
+    --secondary: 30 1% 25%;
+    --secondary-foreground: 39 56% 95%;
 
     --accent: 30 71% 25%; /* Dark ochre for accent background */
     --accent-foreground: 30 71% 80%; /* Lighter ochre for text on accent */
