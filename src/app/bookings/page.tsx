@@ -8,9 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package } from "lucide-react"
+import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
@@ -84,14 +84,8 @@ export default function BookLessonPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-
-  const [selectedType, setSelectedType] = useState("comprehensive");
-  const [selectedDate, setSelectedDateState] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
-  const [learningGoals, setLearningGoals] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
-  const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+  const searchParams = useSearchParams();
+  const initialType = searchParams.get('type');
 
   const lessonTypes = [
     {
@@ -107,6 +101,10 @@ export default function BookLessonPage() {
       features: ["Traditional stories & proverbs", "Cultural customs & etiquette", "Family conversation prep", "Regional dialects introduction", "Cultural materials included"], type: "individual",
     },
     {
+      value: "group-conversation", label: "Group Conversation", duration: 60, price: 20, description: "Practice with fellow learners in a supportive environment",
+      features: ["Small group setting (4-6)", "Conversation practice", "Peer learning experience", "Cultural discussions"], type: "group",
+    },
+    {
       value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: "10x 30min", price: 220, originalPrice: 250, totalLessons: 10, unitDuration: 30,
       description: "10 conversation practice sessions with 12% savings",
       features: ["10 x 30-minute lessons", "Conversation practice focus", "12% discount", "Flexible scheduling", "Priority booking access"], type: "package",
@@ -117,6 +115,14 @@ export default function BookLessonPage() {
       features: ["8 x 60-minute lessons", "Structured lesson plans", "15% discount", "Valid for 4 months", "Progress reviews"], type: "package",
     },
   ];
+
+  const [selectedType, setSelectedType] = useState(initialType && lessonTypes.some(l => l.value === initialType) ? initialType : "comprehensive");
+  const [selectedDate, setSelectedDateState] = useState<Date | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
+  const [learningGoals, setLearningGoals] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
+  const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
   const availableDates = Array.from({ length: 30 }, (_, i) => addDays(startOfDay(new Date()), i));
   const selectedLessonDetails = lessonTypes.find((type) => type.value === selectedType);
@@ -196,7 +202,7 @@ export default function BookLessonPage() {
     setIsProcessing(true);
     try {
       const bookingData: Omit<BookingType, 'id' | 'createdAt'> = {
-        userID: user.uid, // Changed from userId to userID
+        userID: user.uid,
         userName: user.displayName || "User",
         userEmail: user.email || "",
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "N/A_PACKAGE", 
@@ -275,7 +281,7 @@ export default function BookLessonPage() {
               <CardContent>
                 <RadioGroup value={selectedType} onValueChange={(value) => {setSelectedType(value); setSelectedTime(undefined); setSelectedDateState(undefined);}}>
                   <div className="space-y-6">
-                    {["individual", "package"].map(lessonGroupType => (
+                    {["individual", "group", "package"].map(lessonGroupType => (
                        <div key={lessonGroupType}>
                         <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">{lessonGroupType} Lessons</h3>
                         <div className="space-y-4">
@@ -297,6 +303,7 @@ export default function BookLessonPage() {
                                         <div className="font-semibold text-lg text-foreground flex items-center gap-2">
                                             {lesson.label}
                                             {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
+                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group</Badge>}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
                                             {lesson.type === "package" ? `${lesson.duration}` : `${lesson.duration} minutes`} • {lesson.description}
@@ -573,3 +580,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
