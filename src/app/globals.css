@@ -5,23 +5,23 @@
 @layer base {
   :root {
     /* Abylang Brand Theme */
-    --background: 39 56% 95%; /* #FDF6E3 */
+    --background: 39 81% 94%; /* #FDF6E3 */
     --foreground: 210 22% 28%; /* #36454F */
 
     --muted: 210 9% 53%; 
     --muted-foreground: 30 1% 52%; /* Aksumite Stone */
 
-    --popover: 39 56% 95%;
+    --popover: 39 81% 94%;
     --popover-foreground: 210 22% 28%;
 
-    --card: 39 56% 95%; /* Parchment White for cards */
+    --card: 39 81% 94%; /* Parchment White for cards */
     --card-foreground: 210 22% 28%;
 
     --border: 30 1% 52%; /* #848482 - Aksumite Stone */
     --input: 30 1% 52%;
 
     --primary: 30 71% 47%; /* #CC7722 - Deep Ochre */
-    --primary-foreground: 39 56% 95%; /* #FDF6E3 */
+    --primary-foreground: 39 81% 94%; /* #FDF6E3 */
 
     --secondary: 30 1% 90%; /* Light version of Aksumite Stone */
     --secondary-foreground: 210 22% 28%;
