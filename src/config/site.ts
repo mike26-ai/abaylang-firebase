@@ -16,9 +16,9 @@ export type NavItem = {
 };
 
 export const siteConfig = {
-  name: "LissanHub",
-  description: "Learn Amharic with native speakers. Personalized lessons and cultural immersion for diaspora and global learners.",
-  url: "https://lissanhub.example.com", // Replace with your actual domain
+  name: "ABYLANG",
+  description: "Connect to Ethiopian language and culture with Mahder Negash Mamo, a seasoned Amharic tutor offering live online lessons and cultural immersion through ABYLANG.",
+  url: "https://abylang.example.com",
   mainNav: [
     { title: "Home", href: "/" },
     { title: "About Tutor", href: "/tutor-profile", icon: Users },
@@ -35,10 +35,9 @@ export const siteConfig = {
     { title: "FAQ", href: "/faq", icon: HelpCircle },
     { title: "Contact", href: "/contact", icon: Mail },
   ] satisfies NavItem[],
-  userNav: [ // For logged-in user dropdown
+  userNav: [
     { title: "My Dashboard", href: "/profile", authRequired: true, icon: LayoutDashboard },
     { title: "Book New Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
-    // Testimonial submission is now part of the lesson feedback modal in profile
   ] satisfies NavItem[],
   adminNav: [
     { title: "Admin Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -57,23 +56,13 @@ export const siteConfig = {
 };
 
 export const tutorInfo = {
-  name: "Mahir Abas Mustefa",
-  bio: "ሰላም! I'm Mahir, a passionate Amharic teacher dedicated to helping diaspora learners reconnect with their Ethiopian heritage through language. Born and raised in Addis Ababa, I understand the unique challenges faced by second and third-generation Ethiopians abroad. With over 5 years of teaching experience and a deep love for Ethiopian culture, I create personalized learning experiences that go beyond grammar and vocabulary. My lessons incorporate cultural context, traditional stories, and real-world conversations that help you feel confident speaking with family and community.",
-  shortIntro: "Native Amharic Speaker & Cultural Ambassador",
-  teachingStyle: "Interactive conversation, grammar in context, cultural insights, personalized feedback. My goal is to make learning Amharic engaging, relevant, and enjoyable for all students, helping them not only speak the language but also understand the rich cultural tapestry of Ethiopia.",
-  services: ["One-on-one lessons", "Cultural Immersion sessions"],
-  imageUrl: "https://placehold.co/400x400.png",
-  dataAiHint: "tutor portrait",
-  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Example video
+  name: "Mahder Negash Mamo",
+  bio: "Experienced Amharic teacher who makes language learning fun, simple, and interactive. Join me for easy lessons packed with culture and conversation!",
+  languages: ["Amharic", "English"],
+  experience: "5+ years",
+  imageUrl: "/tutor/mahder-profile.jpg",
+  dataAiHint: "tutor portrait of Mahder Negash Mamo",
+  videoUrl: "https://www.youtube.com/embed/your_video_id_here",
 };
 
-// Ensure this email is set in your environment variables for admin checks.
-// This is used by useAuth hook to determine isAdmin status.
-export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@lissanhub.example.com";
-
-// Default booking duration and price for MVP if not specified per lesson type
-export const defaultLessonConfig = {
-  duration: 60, // minutes
-  price: 45, // USD - Note: Price display is informational for MVP
-  currency: "USD",
-};
+export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@abylang.example.com";
