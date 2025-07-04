@@ -57,12 +57,24 @@ export const siteConfig = {
 
 export const tutorInfo = {
   name: "Mahder Negash Mamo",
+  shortIntro: "Your friendly guide to Amharic and Ethiopian culture.",
   bio: "Experienced Amharic teacher who makes language learning fun, simple, and interactive. Join me for easy lessons packed with culture and conversation!",
+  teachingStyle: "My lessons are conversational, focusing on practical use from day one. I believe in a patient, encouraging approach, using stories, music, and real-life scenarios to make learning stick. We'll go at your pace, ensuring you build a strong and confident foundation.",
   languages: ["Amharic", "English"],
   experience: "5+ years",
   imageUrl: "/tutor/mahder-profile.jpg",
-  dataAiHint: "tutor portrait of Mahder Negash Mamo",
+  dataAiHint: "tutor portrait",
   videoUrl: "https://www.youtube.com/embed/your_video_id_here",
+  services: [
+    "One-on-One Lessons",
+    "Group Conversation Practice",
+    "Cultural Immersion Sessions",
+    "Personalized Learning Plans",
+  ],
 };
 
 export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@abylang.example.com";
+
+export const defaultLessonConfig = {
+  duration: 60, // Default duration in minutes
+};

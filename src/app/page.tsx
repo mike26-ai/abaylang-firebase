@@ -202,7 +202,7 @@ export default function HomePage() {
               <p className="text-xl text-primary font-medium">{tutorInfo.shortIntro}</p>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  {tutorInfo.bio.split('.')[0] + '.'} {tutorInfo.bio.substring(tutorInfo.bio.indexOf('.') + 1).trim().split('.')[0] + '.'}
+                  {tutorInfo.bio}
                 </p>
               </div>
               <Button asChild>
@@ -211,16 +211,7 @@ export default function HomePage() {
             </div>
              <div className="relative">
               <div className="aspect-square bg-gradient-to-br from-accent/50 to-accent/80 rounded-2xl flex items-center justify-center">
-                {tutorInfo.imageUrl.includes('placehold.co') || !tutorInfo.imageUrl ? (
-                  <div className="text-center">
-                    <div className="w-32 h-32 bg-primary rounded-full mx-auto mb-4 flex items-center justify-center">
-                      <span className="text-4xl text-primary-foreground font-bold">{tutorInfo.name.split(" ").map(n=>n[0]).join("")}</span>
-                    </div>
-                    <p className="text-primary font-medium">Professional Photo Coming Soon</p>
-                  </div>
-                ) : (
-                  <Image src={tutorInfo.imageUrl} alt={tutorInfo.name} width={400} height={400} className="rounded-2xl object-cover" data-ai-hint={tutorInfo.dataAiHint || "tutor portrait"}/>
-                )}
+                <Image src={tutorInfo.imageUrl} alt={tutorInfo.name} width={400} height={400} className="rounded-2xl object-cover" data-ai-hint={tutorInfo.dataAiHint || "tutor portrait"}/>
               </div>
             </div>
           </div>
@@ -424,7 +415,7 @@ export default function HomePage() {
             <div className="md:col-span-2">
               <Logo className="mb-4"/>
               <p className="text-muted-foreground mb-4 max-w-md">
-                Connecting diaspora learners with their Ethiopian heritage through personalized Amharic lessons.
+                {siteConfig.description}
               </p>
             </div>
             <div>
