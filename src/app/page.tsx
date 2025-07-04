@@ -422,7 +422,7 @@ export default function HomePage() {
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
-              <Logo showText={true} className="mb-4"/>
+              <Logo className="mb-4"/>
               <p className="text-muted-foreground mb-4 max-w-md">
                 Connecting diaspora learners with their Ethiopian heritage through personalized Amharic lessons.
               </p>
