@@ -15,10 +15,11 @@ export type NavItem = {
   children?: NavItem[]; // For dropdowns
 };
 
+// [UPDATED] - Site name and description changed to ABYLANG.
 export const siteConfig = {
   name: "ABYLANG",
   description: "Connect to Ethiopian language and culture with Mahder Negash Mamo, a seasoned Amharic tutor offering live online lessons and cultural immersion through ABYLANG.",
-  url: "https://abylang.example.com",
+  url: "https://abylang.example.com", // [UPDATED] - Domain updated for new brand
   mainNav: [
     { title: "Home", href: "/" },
     { title: "About Tutor", href: "/tutor-profile", icon: Users },
@@ -35,7 +36,7 @@ export const siteConfig = {
     { title: "FAQ", href: "/faq", icon: HelpCircle },
     { title: "Contact", href: "/contact", icon: Mail },
   ] satisfies NavItem[],
-  userNav: [
+  userNav: [ // For logged-in user dropdown
     { title: "My Dashboard", href: "/profile", authRequired: true, icon: LayoutDashboard },
     { title: "Book New Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
   ] satisfies NavItem[],
@@ -55,26 +56,20 @@ export const siteConfig = {
   ]
 };
 
+// [UPDATED] - Tutor profile details updated for Mahder Negash Mamo.
 export const tutorInfo = {
   name: "Mahder Negash Mamo",
-  shortIntro: "Your friendly guide to Amharic and Ethiopian culture.",
   bio: "Experienced Amharic teacher who makes language learning fun, simple, and interactive. Join me for easy lessons packed with culture and conversation!",
-  teachingStyle: "My lessons are conversational, focusing on practical use from day one. I believe in a patient, encouraging approach, using stories, music, and real-life scenarios to make learning stick. We'll go at your pace, ensuring you build a strong and confident foundation.",
   languages: ["Amharic", "English"],
   experience: "5+ years",
-  imageUrl: "/tutor/mahder-profile.jpg",
-  dataAiHint: "tutor portrait",
-  videoUrl: "https://www.youtube.com/embed/your_video_id_here",
-  services: [
-    "One-on-One Lessons",
-    "Group Conversation Practice",
-    "Cultural Immersion Sessions",
-    "Personalized Learning Plans",
-  ],
+  imageUrl: "/tutor/mahder-profile.jpg", // NOTE: Replace this path with the actual image file path.
+  dataAiHint: "tutor portrait of Mahder Negash Mamo",
+  videoUrl: "https://www.youtube.com/embed/your_video_id_here", // NOTE: Replace with actual video if available.
 };
 
+// [UPDATED] - Default admin email updated for new brand.
+// Ensure this email is set in your environment variables for admin checks.
 export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@abylang.example.com";
 
-export const defaultLessonConfig = {
-  duration: 60, // Default duration in minutes
-};
+// [REMOVED] - The 'defaultLessonConfig' object was removed.
+// We will create a new dedicated file for packages as per the requirements.

@@ -17,7 +17,7 @@ import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp }
 import { db } from "@/lib/firebase";
 import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
-import { tutorInfo, defaultLessonConfig } from "@/config/site"
+import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { Logo } from "@/components/layout/logo"
 
@@ -207,7 +207,7 @@ export default function BookLessonPage() {
         userEmail: user.email || "",
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "N/A_PACKAGE", 
         time: selectedTime || "N/A_PACKAGE", 
-        duration: typeof selectedLessonDetails.unitDuration === 'number' ? selectedLessonDetails.unitDuration : (typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : defaultLessonConfig.duration),
+        duration: typeof selectedLessonDetails.unitDuration === 'number' ? selectedLessonDetails.unitDuration : (typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : 60),
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price, // Price is informational for MVP
         status: "confirmed", // MVP: Confirm directly. No payment step.
@@ -580,5 +580,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    

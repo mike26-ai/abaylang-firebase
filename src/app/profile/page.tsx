@@ -60,7 +60,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Logo } from "@/components/layout/logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { defaultLessonConfig } from "@/config/site";
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -109,7 +108,7 @@ export default function StudentDashboardPage() {
       const querySnapshot = await getDocs(q);
       let fetchedBookings = querySnapshot.docs.map((doc) => {
         const data = doc.data() as BookingType;
-        return { ...data, id: doc.id, hasReview: false, duration: data.duration || defaultLessonConfig.duration };
+        return { ...data, id: doc.id, hasReview: false, duration: data.duration || 60 };
       });
 
       const testimonialsCol = collection(db, "testimonials");
@@ -334,7 +333,7 @@ export default function StudentDashboardPage() {
   ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00 AM")).getTime() - new Date(a.date + ' ' + (a.time || "00:00 AM")).getTime());
   
   const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
-  const totalHours = bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || defaultLessonConfig.duration), 0) / 60;
+  const totalHours = bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 60), 0) / 60;
 
 
   if (authLoading || (!userProfileData && isLoadingProfile && !user)) {
@@ -474,7 +473,7 @@ export default function StudentDashboardPage() {
                               <p className="text-sm text-muted-foreground">
                                 {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}
                               </p>
-                              <p className="text-sm text-primary">{booking.duration || defaultLessonConfig.duration} minutes with {booking.tutorName}</p>
+                              <p className="text-sm text-primary">{booking.duration || 60} minutes with {booking.tutorName}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
@@ -531,7 +530,7 @@ export default function StudentDashboardPage() {
                               <p className="text-sm text-muted-foreground">
                                 {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}
                               </p>
-                              <p className="text-sm text-muted-foreground">{booking.duration || defaultLessonConfig.duration} minutes with {booking.tutorName}</p>
+                              <p className="text-sm text-muted-foreground">{booking.duration || 60} minutes with {booking.tutorName}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
