@@ -127,7 +127,7 @@ export default function ReviewsPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Student Reviews & Ratings</h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            See what students are saying about their Amharic learning experience with Mahir
+            See what students are saying about their Amharic learning experience with Mahder
           </p>
         </div>
 
