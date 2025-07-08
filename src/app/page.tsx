@@ -199,10 +199,10 @@ export default function HomePage() {
             <div className="space-y-6">
               <Badge className="bg-accent text-accent-foreground">Meet Your Tutor</Badge>
               <h2 className="text-4xl md:text-5xl font-bold text-foreground">{tutorInfo.name}</h2>
-              <p className="text-xl text-primary font-medium">{tutorInfo.shortIntro}</p>
+              <p className="text-xl text-primary font-medium">{tutorInfo.bio}</p>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  {tutorInfo.bio}
+                  Experienced Amharic teacher who makes language learning fun, simple, and interactive. Join me for easy lessons packed with culture and conversation!
                 </p>
               </div>
               <Button asChild>
@@ -413,8 +413,8 @@ export default function HomePage() {
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
-              <Logo className="mb-4"/>
-              <p className="text-muted-foreground mb-4 max-w-md">
+              <Logo />
+              <p className="text-muted-foreground mt-4 mb-4 max-w-md">
                 {siteConfig.description}
               </p>
             </div>
