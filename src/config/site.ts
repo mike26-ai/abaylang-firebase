@@ -60,10 +60,19 @@ export const siteConfig = {
 export const tutorInfo = {
   name: "Mahder Negash Mamo",
   bio: "Experienced Amharic teacher who makes language learning fun, simple, and interactive. Join me for easy lessons packed with culture and conversation!",
+  shortIntro: "Professional Amharic Tutor for Diaspora Learners",
+  teachingStyle: "My teaching style is patient, interactive, and tailored to each student's pace and goals. I use a mix of conversational practice, structured exercises, and cultural insights to make learning both effective and enjoyable.",
+  services: [
+    "1-on-1 Personalized Lessons",
+    "Group Conversation Classes",
+    "Cultural Immersion Sessions",
+    "Beginner to Advanced Levels",
+    "Accent & Pronunciation Coaching"
+  ],
   languages: ["Amharic", "English"],
   experience: "5+ years",
   imageUrl: "/tutor/mahder-profile.jpg", // NOTE: Replace this path with the actual image file path.
-  dataAiHint: "tutor portrait of Mahder Negash Mamo",
+  dataAiHint: "tutor portrait",
   videoUrl: "https://www.youtube.com/embed/your_video_id_here", // NOTE: Replace with actual video if available.
 };
 
@@ -71,5 +80,4 @@ export const tutorInfo = {
 // Ensure this email is set in your environment variables for admin checks.
 export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@abylang.example.com";
 
-// [REMOVED] - The 'defaultLessonConfig' object was removed.
-// We will create a new dedicated file for packages as per the requirements.
+export const contactEmail = "contact@abylang.example.com";
