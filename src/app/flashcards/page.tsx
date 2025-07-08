@@ -1,7 +1,7 @@
 
 "use client";
 
-import { CardStackIcon } from '@radix-ui/react-icons';
+import { Layers } from 'lucide-react'; // Changed from CardStackIcon
 import StaticFlashcardViewer from '@/components/flashcards/static-flashcard-viewer';
 import flashcardsData from '@/data/flashcards.json';
 // Note: Metadata should be defined statically or handled differently for client components if dynamic.
@@ -17,7 +17,7 @@ export default function FlashcardsPage() {
     <div className="container py-12 px-4 md:px-6">
       <header className="mb-10 text-center">
         <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
-          <CardStackIcon className="h-10 w-10 text-primary" />
+          <Layers className="h-10 w-10 text-primary" />
         </div>
         <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
           Amharic Flashcards
