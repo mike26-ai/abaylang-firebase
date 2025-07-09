@@ -1,11 +1,11 @@
 {
-  "name": "LissanHub - Amharic Learning Platform",
-  "short_name": "LissanHub",
-  "description": "Learn Amharic with native speakers",
+  "name": "ABYLANG - Amharic Learning Platform",
+  "short_name": "ABYLANG",
+  "description": "Learn Amharic with Mahder Negash Mamo, a native tutor.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#059669",
+  "background_color": "#FDF6E3",
+  "theme_color": "#CC7722",
   "icons": [
     {
       "src": "/icon-192x192.png",
