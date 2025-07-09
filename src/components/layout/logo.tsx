@@ -6,9 +6,6 @@ import { siteConfig } from "@/config/site";
 
 interface LogoProps {
   className?: string;
-  // The props below are kept for compatibility but are no longer used for the image logo.
-  size?: "sm" | "md" | "lg";
-  showText?: boolean;
 }
 
 export function Logo({ className = "" }: LogoProps) {
