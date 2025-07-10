@@ -9,44 +9,31 @@ interface LogoProps {
 }
 
 export function Logo({ className = "" }: LogoProps) {
-  const showText = !className?.includes("main-logo");
+  // Logic to show the "ABYLANG" text only for the footer logo
+  const showText = className?.includes("footer-logo");
 
   return (
-    <Link href="/" className={cn("group flex items-center", className)}>
+    <Link href="/" className={cn("group flex items-center gap-2", className)}>
+      {/* User-provided SVG, formatted for JSX */}
       <svg
-        width={showText ? "120" : "60"}
-        height="auto"
-        viewBox={showText ? "0 0 150 300" : "0 15 150 250"}
-        version="1.1"
+        viewBox="0 15 150 250"
         xmlns="http://www.w3.org/2000/svg"
         role="img"
-        aria-labelledby="abylang-logo-title"
-        className="h-12 w-auto"
+        aria-label="ABYLANG Logo"
+        preserveAspectRatio="xMidYMid meet"
+        className="logo-svg"
       >
-        <title id="abylang-logo-title">ABYLANG Logo</title>
-        <g id="Abylang-Logo">
-          <path
-            fillRule="evenodd"
-            className="fill-foreground group-[.footer-logo]:fill-background"
-            d="M 35,265 L 115,265 L 115,80 C 125,75 125,60 115,55 L 115,30 A 40,40 0 0 0 35,30 L 35,55 C 25,60 25,75 35,80 L 35,265 Z M 71,36 a 3.5,3.5 0 1 1 -7,0 a 3.5,3.5 0 1 1 7,0 Z M 86,36 a 3.5,3.5 0 1 1 -7,0 a 3.5,3.5 0 1 1 7,0 Z M 75,48 a 4,4 0 1 1 -8,0 a 4,4 0 1 1 8,0 Z M 62,48 a 4,4 0 1 1 -8,0 a 4,4 0 1 1 8,0 Z M 91,180 Q 75,180 75,160 Q 75,140 91,140 L 108,140 C 100,130 105,118 114,118 C 123,118 128,130 120,140 L 91,140 Z M 108,150 L 108,170 L 91,170 Q 82,170 82,160 Q 82,150 91,150 L 108,150 Z"
-          />
-
-          {showText && (
-            <text
-              x="75"
-              y="285"
-              fontFamily="Georgia, 'Times New Roman', serif"
-              fontSize="18"
-              fontWeight="normal"
-              letterSpacing="1"
-              textAnchor="middle"
-              className="fill-primary group-[.footer-logo]:fill-primary"
-            >
-              ABYLANG
-            </text>
-          )}
-        </g>
+        <path
+          fillRule="evenodd"
+          fill="currentColor"
+          d="M 35,265 L 115,265 L 115,80 C 125,75 125,60 115,55 L 115,30 A 40,40 0 0 0 35,30 L 35,55 C 25,60 25,75 35,80 L 35,265 Z M 71,36 a 3.5,3.5 0 1 1 -7,0 a 3.5,3.5 0 1 1 7,0 Z M 86,36 a 3.5,3.5 0 1 1 -7,0 a 3.5,3.5 0 1 1 7,0 Z M 75,48 a 4,4 0 1 1 -8,0 a 4,4 0 1 1 8,0 Z M 62,48 a 4,4 0 1 1 -8,0 a 4,4 0 1 1 8,0 Z M 91,180 Q 75,180 75,160 Q 75,140 91,140 L 108,140 C 100,130 105,118 114,118 C 123,118 128,130 120,140 L 91,140 Z M 108,150 L 108,170 L 91,170 Q 82,170 82,160 Q 82,150 91,150 L 108,150 Z"
+        />
       </svg>
+      {showText && (
+        <span className="logo-text text-xl font-semibold text-primary group-[.footer-logo]:text-background">
+          ABYLANG
+        </span>
+      )}
     </Link>
   );
 }

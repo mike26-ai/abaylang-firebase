@@ -103,6 +103,34 @@
   }
 }
 
+/* New Logo Styling */
+@layer components {
+  /* Default logo style for header and other light backgrounds */
+  .logo-svg {
+    width: 30px;
+    height: auto; /* Prevents distortion */
+    color: hsl(var(--foreground)); /* Uses main text color by default */
+  }
+
+  /* Specific styling for the logo in the footer */
+  .footer-logo .logo-svg {
+    width: 35px;
+    height: auto; /* Prevents distortion */
+    color: hsl(var(--background)); /* Sets a light color for dark footers */
+  }
+
+  /* Hide the text part of the logo by default */
+  .logo-text {
+    display: none;
+  }
+  
+  /* Show the text part of the logo only in the footer */
+  .footer-logo .logo-text {
+    display: block;
+  }
+}
+
+
 /* Subtle animations */
 @layer utilities {
   .transition-default {
