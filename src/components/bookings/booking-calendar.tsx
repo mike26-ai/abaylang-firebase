@@ -99,8 +99,8 @@ export function BookingCalendar() {
         date: format(selectedDate, 'yyyy-MM-dd'), // Store date consistently
         time: selectedTime,
         status: "confirmed", // Default to confirmed, admin can manage
-        tutorId: "MahirAbasMustefa", // Assuming single tutor
-        tutorName: "Mahir A.", // From siteConfig potentially
+        tutorId: "MahderNegashMamo", // Assuming single tutor
+        tutorName: "Mahder N. Mamo", // From siteConfig potentially
         createdAt: serverTimestamp(),
       });
       toast({

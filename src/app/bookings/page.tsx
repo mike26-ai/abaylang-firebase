@@ -211,7 +211,7 @@ export default function BookLessonPage() {
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price, // Price is informational for MVP
         status: "confirmed", // MVP: Confirm directly. No payment step.
-        tutorId: "MahirAbasMustefa",
+        tutorId: "MahderNegashMamo",
         tutorName: tutorInfo.name,
         learningGoals: learningGoals || undefined,
       };

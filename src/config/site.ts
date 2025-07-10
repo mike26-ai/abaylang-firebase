@@ -65,7 +65,6 @@ export const tutorInfo = {
   services: [
     "1-on-1 Personalized Lessons",
     "Group Conversation Classes",
-    "Cultural Immersion Sessions",
     "Beginner to Advanced Levels",
     "Accent & Pronunciation Coaching"
   ],
@@ -81,5 +80,3 @@ export const tutorInfo = {
 export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@abylang.example.com";
 
 export const contactEmail = "contact@abylang.example.com";
-
-    
