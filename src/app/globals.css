@@ -118,15 +118,16 @@
     height: auto; /* Prevents distortion */
     color: hsl(var(--background)); /* Sets a light color for dark footers */
   }
-
-  /* Hide the text part of the logo by default */
+  
+  /* Styling for the text part of the logo */
   .logo-text {
-    display: none;
+    display: none; /* Hide by default */
   }
   
   /* Show the text part of the logo only in the footer */
   .footer-logo .logo-text {
     display: block;
+    color: hsl(var(--background));
   }
 }
 
