@@ -268,7 +268,7 @@ export default function HomePage() {
                   <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Pronunciation correction</span></li>
                 </ul>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
-                  <Link href="/bookings?type=quick">Book Quick Session</Link>
+                  <Link href="/bookings?type=quick-practice">Book Quick Session</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -288,7 +288,7 @@ export default function HomePage() {
                   <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Cultural context</span></li>
                 </ul>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
-                  <Link href="/bookings?type=comprehensive">Book Full Lesson</Link>
+                  <Link href="/bookings?type=comprehensive-lesson">Book Full Lesson</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -412,7 +412,7 @@ export default function HomePage() {
       <footer className="bg-foreground text-background py-12 px-4">
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 group">
               <Logo className="footer-logo" />
               <p className="text-muted-foreground mt-4 mb-4 max-w-md">
                 {siteConfig.description}
