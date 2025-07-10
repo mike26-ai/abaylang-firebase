@@ -128,7 +128,7 @@ export default function HomePage() {
       <section className="py-20 px-4">
         <div className="container mx-auto text-center max-w-5xl">
           <Badge className="mb-6 bg-accent text-accent-foreground hover:bg-accent/90 px-4 py-2">
-            🌍 Connecting Diaspora Through Language
+            🌍 Connecting Learners Through Language
           </Badge>
           <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 leading-tight">
             Master
@@ -136,7 +136,7 @@ export default function HomePage() {
             with Native Fluency
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            Join diaspora learners worldwide in live, personalized Amharic lessons. Connect with your heritage, build
+            Join learners worldwide in live, personalized Amharic lessons. Connect with the culture, build
             confidence, and speak like a native with expert guidance from {tutorInfo.name}.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -312,7 +312,7 @@ export default function HomePage() {
             <Badge className="mb-4 bg-accent text-accent-foreground">Student Success</Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">What Students Say</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Real stories from diaspora learners who've reconnected with their heritage
+              Real stories from learners who've connected with the culture
             </p>
           </div>
             {isLoadingTestimonials ? (
@@ -438,10 +438,12 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-background/20 mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} {siteConfig.name}. Made with ❤️ for the Ethiopian diaspora community.</p>
+            <p>&copy; {new Date().getFullYear()} {siteConfig.name}. Made with ❤️ for the Amharic learning community.</p>
           </div>
         </div>
       </footer>
     </div>
   )
 }
+
+    

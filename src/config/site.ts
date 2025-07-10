@@ -60,7 +60,7 @@ export const siteConfig = {
 export const tutorInfo = {
   name: "Mahder Negash Mamo",
   bio: "Experienced Amharic teacher who makes language learning fun, simple, and interactive. Join me for easy lessons packed with culture and conversation!",
-  shortIntro: "Professional Amharic Tutor for Diaspora Learners",
+  shortIntro: "Professional Amharic Tutor for Learners Worldwide",
   teachingStyle: "My teaching style is patient, interactive, and tailored to each student's pace and goals. I use a mix of conversational practice, structured exercises, and cultural insights to make learning both effective and enjoyable.",
   services: [
     "1-on-1 Personalized Lessons",
@@ -81,3 +81,5 @@ export const tutorInfo = {
 export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@abylang.example.com";
 
 export const contactEmail = "contact@abylang.example.com";
+
+    

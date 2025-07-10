@@ -172,13 +172,13 @@ export default function RegisterPage() {
             <Logo />
           </div>
           <h1 className="text-2xl font-bold text-foreground">Join LissanHub</h1>
-          <p className="text-muted-foreground">Start your journey to reconnect with your heritage</p>
+          <p className="text-muted-foreground">Start your journey to learn Amharic</p>
         </div>
 
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>Create Account</CardTitle>
-            <CardDescription>Join thousands of diaspora learners worldwide</CardDescription>
+            <CardDescription>Join thousands of learners worldwide</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -356,3 +356,5 @@ export default function RegisterPage() {
     </div>
   )
 }
+
+    

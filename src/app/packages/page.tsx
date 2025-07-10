@@ -323,7 +323,7 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
         <div className="mb-16">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-foreground mb-2">Group Sessions</h2>
-            <p className="text-muted-foreground">Learn with fellow diaspora students in small groups</p>
+            <p className="text-muted-foreground">Learn with fellow students in small groups</p>
           </div>
 
           <div className="max-w-md mx-auto">
