@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -8,8 +9,6 @@ interface LogoProps {
 }
 
 export function Logo({ className = "" }: LogoProps) {
-  // This logic determines if the text part of the logo should be shown.
-  // It is hidden if the className includes 'main-logo' (used in the main navbar).
   const showText = !className?.includes("main-logo");
 
   return (
