@@ -4,22 +4,34 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Check, Users, Package, Calendar } from "lucide-react"
+import { ArrowLeft, Check, Users, Package, Calendar, Star } from "lucide-react"
 import Link from "next/link"
-import { Logo } from "@/components/layout/logo" // Import the standard Logo component
+import { Logo } from "@/components/layout/logo"
 
-export default function PackagesPage() { // Renamed from PricingPage to match filename/route
+export default function PackagesPage() {
   const individualLessons = [
+    {
+      name: "Free Trial",
+      duration: "30 minutes",
+      price: 0,
+      description: "One-time only trial to meet the tutor and experience the teaching style",
+      features: [
+        "Meet the tutor",
+        "Experience the teaching style",
+        "Discuss your learning goals",
+        "No commitment required",
+      ],
+      popular: false,
+    },
     {
       name: "Quick Practice",
       duration: "30 minutes",
-      price: 25,
+      price: 7,
       description: "Perfect for conversation practice and quick reviews",
       features: [
         "Conversation practice",
         "Pronunciation correction",
         "Quick grammar review",
-        "Session recording",
         "Flexible scheduling",
       ],
       popular: false,
@@ -27,99 +39,106 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
     {
       name: "Comprehensive Lesson",
       duration: "60 minutes",
-      price: 45,
+      price: 15,
       description: "Our most popular lesson format for structured learning",
       features: [
         "Structured lesson plan",
         "Cultural context & stories",
         "Homework & materials",
         "Progress tracking",
-        "Session recording",
       ],
       popular: true,
-    },
-    {
-      name: "Cultural Immersion",
-      duration: "90 minutes",
-      price: 65,
-      description: "Deep dive into Ethiopian culture and heritage",
-      features: [
-        "Traditional stories & proverbs",
-        "Cultural customs & etiquette",
-        "Family conversation prep",
-        "Regional dialects",
-        "Cultural materials included",
-      ],
-      popular: false,
     },
   ]
 
   const groupSessions = [
     {
-      name: "Group Conversation",
-      duration: "60 minutes",
-      price: 20,
-      maxStudents: "4-6 students",
+      name: "Quick Group Conversation",
+      duration: "30 minutes",
+      price: 5,
+      maxStudents: "2-5 students",
       description: "Practice with fellow learners in a supportive environment",
       features: [
         "Small group setting",
-        "Conversation practice",
+        "Focused conversation practice",
         "Peer learning experience",
-        "Cultural discussions",
-        "Session recording",
+        "Themed discussions",
       ],
     },
+    {
+        name: "Immersive Conversation Practice",
+        duration: "60 minutes",
+        price: 10,
+        maxStudents: "2-5 students",
+        description: "An extended session for deeper conversation and cultural insights",
+        features: [
+          "Extended conversation time",
+          "In-depth cultural topics",
+          "Collaborative learning",
+          "Build fluency with peers",
+        ],
+      },
   ]
 
   const packages = [
     {
-      name: "Weekly Package",
-      lessons: "4 lessons/month",
-      price: 160,
-      originalPrice: 180,
+      name: "Quick Practice Bundle",
+      lessons: "10 x 30-min lessons",
+      price: 50,
+      originalPrice: 70,
       savings: 20,
-      description: "Perfect for consistent weekly practice",
+      description: "Ideal for consistent conversation practice at a great value",
       features: [
-        "4 x 60-minute lessons",
+        "10 lessons, 30 mins each",
+        "Just $5 per lesson",
+        "Focus on speaking fluency",
         "Flexible scheduling",
-        "Progress tracking",
-        "Priority booking",
-        "10% discount",
-      ],
-      popular: false,
-    },
-    {
-      name: "Monthly Intensive",
-      lessons: "10 lessons/month",
-      price: 400,
-      originalPrice: 450,
-      savings: 50,
-      description: "Accelerated learning for serious students",
-      features: [
-        "10 x 60-minute lessons",
-        "Mix of individual & cultural sessions",
-        "Weekly progress reviews",
-        "Custom learning materials",
-        "15% discount",
       ],
       popular: true,
     },
     {
-      name: "Cultural Heritage Package",
-      lessons: "12 lessons over 3 months",
-      price: 720,
-      originalPrice: 780,
-      savings: 60,
-      description: "Complete cultural immersion experience",
+        name: "Learning Intensive",
+        lessons: "10 x 60-min lessons",
+        price: 100,
+        originalPrice: 150,
+        savings: 50,
+        description: "Accelerate your structured learning and save",
+        features: [
+          "10 lessons, 60 mins each",
+          "Just $10 per lesson",
+          "Comprehensive curriculum",
+          "Priority booking",
+        ],
+        popular: false,
+      },
+    {
+      name: "Starter Bundle",
+      lessons: "5 x 30-min lessons",
+      price: 25,
+      originalPrice: 35,
+      savings: 10,
+      description: "A great way to start practicing conversation regularly",
       features: [
-        "12 x 90-minute cultural sessions",
-        "Traditional story sessions",
-        "Cultural materials package",
-        "Virtual cultural events access",
-        "Certificate of completion",
+        "5 lessons, 30 mins each",
+        "Great value to get started",
+        "Build conversational confidence",
       ],
       popular: false,
     },
+    {
+        name: "Foundation Pack",
+        lessons: "5 x 60-min lessons",
+        price: 60,
+        originalPrice: 75,
+        savings: 15,
+        description: "Build a solid foundation with five structured lessons",
+        features: [
+          "5 lessons, 60 mins each",
+          "Perfect for beginners",
+          "Covers core concepts",
+        ],
+        popular: false,
+      },
   ]
 
   return (
@@ -129,7 +148,7 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
             <ArrowLeft className="w-5 h-5" />
-            <span>Back to LissanHub</span>
+            <span>Back to ABYLANG</span>
           </Link>
           <Logo />
         </div>
@@ -148,7 +167,7 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
         <div className="mb-16">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-foreground mb-2">Individual Lessons</h2>
-            <p className="text-muted-foreground">One-on-one personalized sessions with Mahir</p>
+            <p className="text-muted-foreground">One-on-one personalized sessions with Mahder</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -162,7 +181,12 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
                     <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
                   </div>
                 )}
-                <CardHeader className="text-center">
+                 {lesson.price === 0 && (
+                    <div className="absolute top-3 left-3 transform">
+                        <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">Free Trial</Badge>
+                    </div>
+                 )}
+                <CardHeader className="text-center pt-10">
                   <CardTitle className="text-xl text-foreground">{lesson.name}</CardTitle>
                   <div className="text-3xl font-bold text-primary">${lesson.price}</div>
                   <CardDescription className="text-muted-foreground">
@@ -191,142 +215,14 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
           </div>
         </div>
 
-        {/* Package Highlights */}
-        <div className="mb-16">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-foreground mb-2">Popular Lesson Packages</h2>
-            <p className="text-muted-foreground">Save more with our lesson bundles - the more you learn, the more you save!</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-border shadow-lg">
-              <CardHeader className="text-center">
-                <div className="w-12 h-12 bg-accent rounded-lg mx-auto mb-3 flex items-center justify-center">
-                  <Package className="w-6 h-6 text-primary" />
-                </div>
-                <CardTitle className="text-lg text-foreground">Quick Practice Bundle</CardTitle>
-                <div className="text-2xl font-bold text-primary">$220</div>
-                <div className="text-sm text-muted-foreground line-through">$250</div>
-                <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">Save $30</Badge>
-                <CardDescription className="text-muted-foreground">10 x 30-minute lessons • $22/lesson</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 mb-4">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">Conversation practice focus</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">12% discount</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">Valid for 4 months</span>
-                  </li>
-                </ul>
-                <Link href="/packages">
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">View All Packages</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border shadow-lg border-2 border-primary/50 scale-105">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-primary text-primary-foreground">Best Value</Badge>
-              </div>
-              <CardHeader className="text-center">
-                <div className="w-12 h-12 bg-accent rounded-lg mx-auto mb-3 flex items-center justify-center">
-                  <Package className="w-6 h-6 text-primary" />
-                </div>
-                <CardTitle className="text-lg text-foreground">Learning Intensive</CardTitle>
-                <div className="text-2xl font-bold text-primary">$304</div>
-                <div className="text-sm text-muted-foreground line-through">$360</div>
-                <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">Save $56</Badge>
-                <CardDescription className="text-muted-foreground">8 x 60-minute lessons • $38/lesson</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 mb-4">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">Structured learning</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">15% discount</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">Progress reviews included</span>
-                  </li>
-                </ul>
-                <Link href="/packages">
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">View All Packages</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border shadow-lg">
-              <CardHeader className="text-center">
-                <div className="w-12 h-12 bg-accent rounded-lg mx-auto mb-3 flex items-center justify-center">
-                  <Package className="w-6 h-6 text-primary" />
-                </div>
-                <CardTitle className="text-lg text-foreground">Flexible Learning</CardTitle>
-                <div className="text-2xl font-bold text-primary">$280</div>
-                <div className="text-sm text-muted-foreground line-through">$320</div>
-                <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">Save $40</Badge>
-                <CardDescription className="text-muted-foreground">8 mixed lessons • Mix & match</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 mb-4">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">Mix 30 & 60-min lessons</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">12% discount</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">Maximum flexibility</span>
-                  </li>
-                </ul>
-                <Link href="/packages">
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">View All Packages</Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Separator or clear call to action to view all packages */}
-        <div className="text-center mt-8 mb-16">
-          <Card className="border-border shadow-lg bg-gradient-to-r from-accent/30 to-background">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-foreground mb-2">Want Even More Savings?</h3>
-              <p className="text-muted-foreground mb-4">
-                Explore our complete package collection with savings up to 25% and flexible learning options.
-              </p>
-              <Link href="/packages">
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Package className="w-4 h-4 mr-2" />
-                  Browse All Packages & Bundles
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-
-
         {/* Group Sessions */}
         <div className="mb-16">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-foreground mb-2">Group Sessions</h2>
-            <p className="text-muted-foreground">Learn with fellow students in small groups</p>
+            <p className="text-muted-foreground">Learn with fellow students in small groups (2-5 people)</p>
           </div>
 
-          <div className="max-w-md mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {groupSessions.map((session) => (
               <Card key={session.name} className="border-border shadow-lg">
                 <CardHeader className="text-center">
@@ -349,7 +245,7 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
                       </li>
                     ))}
                   </ul>
-                  <Link href={`/bookings?type=group-conversation`}>
+                  <Link href={`/bookings?type=${session.name.toLowerCase().replace(/\s+/g, "-")}`}>
                     <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">Join Group Session</Button>
                   </Link>
                 </CardContent>
@@ -365,7 +261,7 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
             <p className="text-muted-foreground">Save money with our lesson packages and intensive programs</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {packages.map((pkg) => (
               <Card
                 key={pkg.name}
@@ -435,7 +331,7 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">How do group sessions work?</h4>
                   <p className="text-sm text-muted-foreground">
-                    Group sessions have 4-6 students of similar levels, focusing on conversation practice and cultural
+                    Group sessions have 2-5 students of similar levels, focusing on conversation practice and cultural
                     discussions.
                   </p>
                 </div>
@@ -470,7 +366,7 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
             <CardContent className="p-8">
               <h3 className="text-2xl font-bold mb-4">Ready to Start Your Amharic Journey?</h3>
               <p className="mb-6 opacity-90">
-                Book your first lesson today and take the first step towards reconnecting with your Ethiopian heritage.
+                Book your first lesson today and take the first step towards learning Amharic.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/bookings">
@@ -481,7 +377,7 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
                 </Link>
                 <Link href="/contact">
                   <Button variant="outline" className="border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
-                    Have Questions? Contact Mahir
+                    Have Questions? Contact Mahder
                   </Button>
                 </Link>
               </div>
@@ -492,5 +388,3 @@ export default function PackagesPage() { // Renamed from PricingPage to match fi
     </div>
   )
 }
-
-    

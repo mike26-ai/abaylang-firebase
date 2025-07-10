@@ -136,8 +136,8 @@ export default function HomePage() {
             with Native Fluency
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            Join learners worldwide in live, personalized Amharic lessons. Connect with the culture, build
-            confidence, and speak like a native with expert guidance from {tutorInfo.name}.
+            Join learners worldwide in live, personalized Amharic lessons. Connect with your heritage, build
+            confidence, and speak like a native with expert guidance from Mahder Negash Mamo.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 py-4 h-auto text-primary-foreground" asChild>
@@ -233,19 +233,19 @@ export default function HomePage() {
             <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  <Clock className="w-8 h-8 text-primary" />
+                  <Star className="w-8 h-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl text-foreground">Quick Practice</CardTitle>
-                <div className="text-3xl font-bold text-primary">$25</div>
-                <CardDescription className="text-muted-foreground">30-minute focused session</CardDescription>
+                <CardTitle className="text-xl text-foreground">Free Trial</CardTitle>
+                <div className="text-3xl font-bold text-primary">$0</div>
+                <CardDescription className="text-muted-foreground">30-minute trial session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Conversation practice</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Pronunciation correction</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Meet the tutor</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Experience the teaching style</span></li>
                 </ul>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
-                  <Link href="/bookings?type=quick">Book Quick Session</Link>
+                  <Link href="/bookings?type=free-trial">Book Free Trial</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -256,10 +256,30 @@ export default function HomePage() {
               </div>
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
+                  <Clock className="w-8 h-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl text-foreground">Quick Practice</CardTitle>
+                <div className="text-3xl font-bold text-primary">$7</div>
+                <CardDescription className="text-muted-foreground">30-minute focused session</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                 <ul className="space-y-3">
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Conversation practice</span></li>
+                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Pronunciation correction</span></li>
+                </ul>
+                <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
+                  <Link href="/bookings?type=quick">Book Quick Session</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card">
+              <CardHeader className="text-center pb-4">
+                <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
                   <BookOpen className="w-8 h-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl text-foreground">Comprehensive Lesson</CardTitle>
-                <div className="text-3xl font-bold text-primary">$45</div>
+                <div className="text-3xl font-bold text-primary">$15</div>
                 <CardDescription className="text-muted-foreground">60-minute deep dive session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -269,26 +289,6 @@ export default function HomePage() {
                 </ul>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
                   <Link href="/bookings?type=comprehensive">Book Full Lesson</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg hover:shadow-xl transition-all duration-300 group bg-card">
-              <CardHeader className="text-center pb-4">
-                <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  <Heart className="w-8 h-8 text-primary" />
-                </div>
-                <CardTitle className="text-xl text-foreground">Cultural Immersion</CardTitle>
-                <div className="text-3xl font-bold text-primary">$65</div>
-                <CardDescription className="text-muted-foreground">90-minute heritage journey</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Traditional stories & proverbs</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Cultural customs</span></li>
-                </ul>
-                <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
-                  <Link href="/bookings?type=cultural">Book Cultural Session</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -422,7 +422,7 @@ export default function HomePage() {
               <h3 className="font-semibold mb-4 text-primary-foreground">Learning</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li><Link href="/bookings" className="hover:text-primary-foreground">Book Lesson</Link></li>
-                <li><Link href="/tutor-profile" className="hover:text-primary-foreground">About Mahir</Link></li>
+                <li><Link href="/tutor-profile" className="hover:text-primary-foreground">About Mahder</Link></li>
                 <li><Link href="/testimonials" className="hover:text-primary-foreground">Reviews</Link></li>
                  <li><Link href="/packages" className="hover:text-primary-foreground">View Packages</Link></li>
               </ul>
@@ -445,5 +445,3 @@ export default function HomePage() {
     </div>
   )
 }
-
-    
