@@ -165,7 +165,7 @@ export default function HomePage() {
                 <Globe className="w-8 h-8 text-primary" />
               </div>
               <h3 className="font-semibold text-foreground">Global Community</h3>
-              <p className="text-sm text-muted-foreground text-center">Students from 15+ countries</p>
+              <p className="text-sm text-muted-foreground text-center">Students from 5+ countries</p>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mb-3">
@@ -186,7 +186,7 @@ export default function HomePage() {
                 <Star className="w-8 h-8 text-primary" />
               </div>
               <h3 className="font-semibold text-foreground">5-Star Experience</h3>
-              <p className="text-sm text-muted-foreground text-center">Rated by 200+ students</p>
+              <p className="text-sm text-muted-foreground text-center">Rated by 20+ students</p>
             </div>
           </div>
         </div>
