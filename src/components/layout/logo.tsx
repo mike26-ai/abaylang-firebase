@@ -9,17 +9,17 @@ interface LogoProps {
   className?: string;
 }
 
-// This component now contains the corrected SVG code and logic 
-// to display the full logo in the footer and a compact version elsewhere.
+// This component now contains a clean, JSX-compliant SVG based on your design.
+// It separates the icon from the text for better control and styling.
 export function Logo({ className = "" }: LogoProps) {
   const showText = className?.includes("footer-logo");
 
   return (
     <Link href="/" className={cn("group flex items-center gap-2", className)}>
       {/* 
-        This is the corrected SVG code for the logo.
+        This is a clean, handcrafted SVG for React.
         It uses `currentColor` for the fill, allowing CSS to control its color.
-        The `viewBox` and path data are preserved exactly as you provided.
+        The `fillRule` is correctly cased as `fillRule`.
       */}
       <svg
         className="logo-svg"
