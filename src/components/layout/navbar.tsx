@@ -123,7 +123,7 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Logo className="main-logo" />
+        <Logo />
 
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-6">
           {/* For desktop, filter out section anchors if they are only for homepage local nav */}
