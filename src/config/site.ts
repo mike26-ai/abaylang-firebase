@@ -79,4 +79,4 @@ export const tutorInfo = {
 // Ensure this email is set in your environment variables for admin checks.
 export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@abylang.example.com";
 
-export const contactEmail = "contact@abylang.example.com";
+export const contactEmail = "mahdernmamo@gmail.com";

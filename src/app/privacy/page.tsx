@@ -1,10 +1,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Metadata } from 'next';
+import { contactEmail } from "@/config/site";
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
-  description: 'Privacy Policy for Amharic Connect.',
+  description: 'Privacy Policy for ABYLANG.',
 };
 
 export default function PrivacyPolicyPage() {
@@ -23,7 +24,7 @@ export default function PrivacyPolicyPage() {
           <CardTitle>Our Commitment to Your Privacy</CardTitle>
         </CardHeader>
         <CardContent className="prose dark:prose-invert max-w-none">
-          <p>Welcome to Amharic Connect. We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about our policy, or our practices with regards to your personal information, please contact us.</p>
+          <p>Welcome to ABYLANG. We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about our policy, or our practices with regards to your personal information, please contact us.</p>
           
           <h2>1. What Information Do We Collect?</h2>
           <p>We collect personal information that you voluntarily provide to us when you register on the website, express an interest in obtaining information about us or our products and services, when you participate in activities on the website or otherwise when you contact us.</p>
@@ -56,10 +57,9 @@ export default function PrivacyPolicyPage() {
           <p>We may update this privacy policy from time to time. The updated version will be indicated by an updated "Revised" date and the updated version will be effective as soon as it is accessible.</p>
 
           <h2>8. How Can You Contact Us About This Policy?</h2>
-          <p>If you have questions or comments about this policy, you may email us at [Your Contact Email - e.g., privacy@amharicconnect.example.com] or by post to:</p>
+          <p>If you have questions or comments about this policy, you may email us at {contactEmail} or by post to:</p>
           <p>[Your Business Address, if applicable, or state "Online Service"]</p>
           
-          <p className="mt-6 text-sm text-muted-foreground">This is a template Privacy Policy. You should consult with a legal professional to ensure it meets all legal requirements for your specific situation and jurisdiction.</p>
         </CardContent>
       </Card>
     </div>
