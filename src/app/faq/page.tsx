@@ -1,3 +1,4 @@
+
 // File: src/app/faq/page.tsx
 
 import {
@@ -6,45 +7,77 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { contactEmail } from "@/config/site"; // We import the email from our config file
+import { contactEmail } from "@/config/site"; 
 
-// Here are the 10 FAQs as requested.
 const faqData = [
+  // Getting Started & Trials
   {
-    question: "How are the lessons structured?",
-    answer: "Each lesson is tailored to you! We'll start with a quick chat, move to the main topic using PowerPoint slides, and finish with conversational practice to help you use what you've learned.",
+    question: "How do I get started?",
+    answer: "Getting started is easy! First, we recommend booking a free 30-minute trial lesson to meet the tutor and discuss your goals. After that, you can choose from individual lessons or discounted packages on our 'Packages' page and book a time that works for you.",
   },
+  {
+    question: "What happens after my free trial?",
+    answer: "The trial is a no-obligation session. If you enjoyed it and wish to continue, you can purchase single lessons or a package. If you decide it's not the right fit, there's absolutely no pressure to continue.",
+  },
+  {
+    question: "What if I'm not satisfied with the trial?",
+    answer: "Our goal is to ensure you have a great experience. The trial is designed to prevent this, but if you're not satisfied, we'd appreciate your feedback. There is no cost for the trial, so you lose nothing by trying it out.",
+  },
+  
+  // Booking, Rescheduling & Cancellations
   {
     question: "How does the booking process work?",
-    answer: "You can book a lesson directly from the 'Packages' or 'Bookings' page. Simply choose a lesson type, select an available time slot on the calendar, and confirm your booking. You'll receive an email confirmation with all the details.",
+    answer: "Our booking system is based on the tutor's live availability. Simply select an open time slot on the calendar, and your lesson is confirmed instantly. You'll receive an email confirmation with the lesson link right away—no need to wait for manual acceptance.",
   },
   {
-    question: "How does the free trial work?",
-    answer: "Every new student is entitled to one free 30-minute trial lesson (either private or group). This allows you to meet the tutor, see the teaching style, and decide if it's right for you before committing.",
-  },
-  {
-    question: "Do I need to know any Amharic to start?",
-    answer: "Not at all! Lessons are available for all levels, from absolute beginners with no prior knowledge to intermediate learners looking to improve their fluency.",
-  },
-  {
-    question: "What should I bring to a lesson?",
-    answer: "Just bring yourself and a positive attitude! Make sure you have a stable internet connection, a microphone, and a device (computer or tablet recommended). All lesson materials (PowerPoint slides) will be provided by the tutor.",
+    question: "How do I reschedule a lesson?",
+    answer: "You can reschedule any lesson free of charge up to 24 hours before the scheduled start time. To do so, please go to your student dashboard, find the upcoming booking, and select the option to cancel it. Then, you can book a new slot that works better for you.",
   },
   {
     question: "What is the cancellation policy?",
-    answer: "You can cancel or reschedule your lesson up to 24 hours before the scheduled start time for a full refund or credit. Cancellations made within 24 hours are not eligible for a refund.",
+    answer: "We offer free cancellation and rescheduling up to 24 hours before your lesson's start time. Cancellations made within the 24-hour window are not eligible for a refund or credit, as that time slot has been reserved for you.",
   },
   {
-    question: "How do you handle time zones and scheduling?",
-    answer: "The booking calendar should automatically display available times in your local time zone. If you need a specific time that isn't listed, please reach out directly. Our hours are flexible!",
+    question: "What happens if I miss my lesson?",
+    answer: "If a student misses a lesson without prior notice, it is considered a completed session, and no refund or reschedule will be offered. We encourage you to cancel or reschedule at least 24 hours in advance if you know you can't make it.",
   },
   {
-    question: "How do group sessions work?",
-    answer: "Group sessions consist of 2-5 students. They are a great way to learn in a collaborative environment and practice conversation with other learners. The cost is lower per student, and it’s a fun, interactive setting.",
+    question: "What happens if the tutor misses a lesson?",
+    answer: "In the rare event the tutor has to cancel a lesson due to an emergency, you will be notified immediately. You will be offered a full credit to reschedule the lesson at your convenience or a full refund for that session, whichever you prefer.",
+  },
+
+  // Packages & Subscriptions
+  {
+    question: "What are the packages or subscription models available?",
+    answer: "We offer packages of lessons (e.g., 5 or 10 lessons) at a discounted rate compared to buying them individually. We are also planning to introduce a subscription model in the future for regular, ongoing lessons. You can see all current options on the 'Packages' page.",
   },
   {
-    question: "Is the platform safe?",
-    answer: "Yes, your privacy and safety are a top priority. All payments are handled through a secure processor, and your personal information is kept confidential.",
+    question: "Do lesson packages expire?",
+    answer: "Yes, to ensure you stay on track with your learning, our standard lesson packages are valid for 6 months from the date of purchase. This gives you plenty of flexibility to schedule your lessons.",
+  },
+  {
+    question: "I already purchased classes. How do I switch to a subscription plan?",
+    answer: "Currently, we offer lesson packages. Once our subscription plan is launched, we will provide clear instructions on how existing students can transition. Please contact us for assistance when the time comes.",
+  },
+  {
+    question: "How do I cancel a subscription plan?",
+    answer: "Once subscriptions are available, you will be able to manage your plan, including pausing or cancelling, directly from your student dashboard. Cancellation will be effective at the end of your current billing cycle.",
+  },
+  
+  // Lessons & Platform
+  {
+    question: "Do you offer specialized lessons for kids?",
+    answer: "Yes! We love teaching young learners. Our lessons for children are designed to be fun, engaging, and interactive, using games and age-appropriate materials to make learning Amharic an exciting adventure. Please mention your child's age when booking.",
+  },
+  {
+    question: "What device is recommended for the best experience?",
+    answer: "For the best learning experience, we recommend using a computer or a tablet with a stable internet connection. This allows you to see the lesson materials and the tutor clearly. A smartphone can work, but a larger screen is ideal.",
+  },
+  
+  // About ABYLANG
+  {
+    question: "What is the meaning of ABYLANG?",
+    answer: "ABYLANG stands for 'Abyssinian Language'. 'ABY' is also a nod to the Abay River (the Blue Nile), which originates in Ethiopia, symbolizing the deep cultural roots and source of the language. It represents our mission to connect you to the heart of Ethiopian heritage.",
   },
   {
     question: "How can I contact the tutor directly?",
