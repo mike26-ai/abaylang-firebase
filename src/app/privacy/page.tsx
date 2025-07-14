@@ -57,8 +57,7 @@ export default function PrivacyPolicyPage() {
           <p>We may update this privacy policy from time to time. The updated version will be indicated by an updated "Revised" date and the updated version will be effective as soon as it is accessible.</p>
 
           <h2>8. How Can You Contact Us About This Policy?</h2>
-          <p>If you have questions or comments about this policy, you may email us at {contactEmail} or by post to:</p>
-          <p>[Your Business Address, if applicable, or state "Online Service"]</p>
+          <p>If you have questions or comments about this policy, you may email us at {contactEmail}.</p>
           
         </CardContent>
       </Card>
