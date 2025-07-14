@@ -19,7 +19,7 @@ export function Logo({ className = "" }: LogoProps) {
       {/* 
         This is a clean, handcrafted SVG for React.
         It uses `currentColor` for the fill, allowing CSS to control its color.
-        The `fillRule` is correctly cased as `fillRule`.
+        The fillRule is correctly cased as `fillRule`.
       */}
       <svg
         className="logo-svg"
