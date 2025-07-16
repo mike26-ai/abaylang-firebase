@@ -88,35 +88,52 @@ export default function BookLessonPage() {
   const initialType = searchParams.get('type');
 
   const lessonTypes = [
+    // Individual
     {
-      value: "quick", label: "Quick Practice", duration: 30, price: 25, description: "Conversation practice and pronunciation",
-      features: ["Conversation practice", "Pronunciation correction", "Quick grammar review", "Session recording (upon request)"], type: "individual",
+      value: "free-trial", label: "Free Trial", duration: 30, price: 0, description: "One-time only trial to meet the tutor",
+      features: ["Meet the tutor", "Experience teaching style", "Discuss learning goals"], type: "individual",
     },
     {
-      value: "comprehensive", label: "Comprehensive Lesson", duration: 60, price: 45, description: "Structured lesson with cultural context",
-      features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials", "Progress tracking (basic)", "Session recording (upon request)"], type: "individual",
+      value: "quick-practice", label: "Quick Practice", duration: 30, price: 7, description: "Perfect for conversation practice",
+      features: ["Conversation practice", "Pronunciation correction", "Quick grammar review"], type: "individual",
     },
     {
-      value: "cultural", label: "Cultural Immersion", duration: 90, price: 65, description: "Deep dive into Ethiopian culture and heritage",
-      features: ["Traditional stories & proverbs", "Cultural customs & etiquette", "Family conversation prep", "Regional dialects introduction", "Cultural materials included"], type: "individual",
+      value: "comprehensive-lesson", label: "Comprehensive Lesson", duration: 60, price: 15, description: "Structured learning session",
+      features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials"], type: "individual",
+    },
+    // Group
+    {
+      value: "quick-group-conversation", label: "Quick Group Conversation", duration: 30, price: 5, description: "Practice with fellow learners",
+      features: ["Small group setting (2-5)", "Focused conversation", "Peer learning experience"], type: "group",
     },
     {
-      value: "group-conversation", label: "Group Conversation", duration: 60, price: 20, description: "Practice with fellow learners in a supportive environment",
-      features: ["Small group setting (4-6)", "Conversation practice", "Peer learning experience", "Cultural discussions"], type: "group",
+      value: "immersive-conversation-practice", label: "Immersive Conversation Practice", duration: 60, price: 10, description: "Deeper conversation and cultural insights",
+      features: ["Extended conversation time", "In-depth cultural topics", "Collaborative learning"], type: "group",
+    },
+    // Packages
+    {
+      value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: "10 x 30-min", price: 50, originalPrice: 70, totalLessons: 10, unitDuration: 30,
+      description: "10 conversation practice sessions",
+      features: ["10 lessons, 30 mins each", "Just $5 per lesson", "Focus on speaking fluency", "Flexible scheduling"], type: "package",
     },
     {
-      value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: "10x 30min", price: 220, originalPrice: 250, totalLessons: 10, unitDuration: 30,
-      description: "10 conversation practice sessions with 12% savings",
-      features: ["10 x 30-minute lessons", "Conversation practice focus", "12% discount", "Flexible scheduling", "Priority booking access"], type: "package",
+      value: "learning-intensive", label: "Learning Intensive", duration: "10 x 60-min", price: 100, originalPrice: 150, totalLessons: 10, unitDuration: 60,
+      description: "Accelerate your structured learning",
+      features: ["10 lessons, 60 mins each", "Just $10 per lesson", "Comprehensive curriculum", "Priority booking"], type: "package",
+    },
+     {
+      value: "starter-bundle", label: "Starter Bundle", duration: "5 x 30-min", price: 25, originalPrice: 35, totalLessons: 5, unitDuration: 30,
+      description: "Start practicing conversation regularly",
+      features: ["5 lessons, 30 mins each", "Great value to get started", "Build conversational confidence"], type: "package",
     },
     {
-      value: "learning-intensive", label: "Learning Intensive Package", duration: "8x 60min", price: 304, originalPrice: 360, totalLessons: 8, unitDuration: 60,
-      description: "8 comprehensive lessons with 15% savings",
-      features: ["8 x 60-minute lessons", "Structured lesson plans", "15% discount", "Valid for 4 months", "Progress reviews"], type: "package",
+      value: "foundation-pack", label: "Foundation Pack", duration: "5 x 60-min", price: 60, originalPrice: 75, totalLessons: 5, unitDuration: 60,
+      description: "Build a solid foundation",
+      features: ["5 lessons, 60 mins each", "Perfect for beginners", "Covers core concepts"], type: "package",
     },
   ];
 
-  const [selectedType, setSelectedType] = useState(initialType && lessonTypes.some(l => l.value === initialType) ? initialType : "comprehensive");
+  const [selectedType, setSelectedType] = useState(initialType && lessonTypes.some(l => l.value === initialType) ? initialType : "comprehensive-lesson");
   const [selectedDate, setSelectedDateState] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [learningGoals, setLearningGoals] = useState("");
@@ -255,7 +272,7 @@ export default function BookLessonPage() {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
             <ArrowLeft className="w-5 h-5" />
-            <span>Back to LissanHub</span>
+            <span>Back to ABYLANG</span>
           </Link>
           <Logo />
         </div>
@@ -283,7 +300,7 @@ export default function BookLessonPage() {
                   <div className="space-y-6">
                     {["individual", "group", "package"].map(lessonGroupType => (
                        <div key={lessonGroupType}>
-                        <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">{lessonGroupType} Lessons</h3>
+                        <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">{lessonGroupType === 'individual' ? 'Individual' : lessonGroupType} Lessons</h3>
                         <div className="space-y-4">
                             {lessonTypes
                             .filter((lesson) => lesson.type === lessonGroupType)
@@ -302,11 +319,12 @@ export default function BookLessonPage() {
                                         <div className="mb-2 sm:mb-0">
                                         <div className="font-semibold text-lg text-foreground flex items-center gap-2">
                                             {lesson.label}
+                                            {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
                                             {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
                                             {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group</Badge>}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
-                                            {lesson.type === "package" ? `${lesson.duration}` : `${lesson.duration} minutes`} • {lesson.description}
+                                            {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
                                         </div>
                                         </div>
                                         <div className="text-right">
@@ -316,30 +334,19 @@ export default function BookLessonPage() {
                                         )}
                                         </div>
                                     </div>
-                                    <div className="grid md:grid-cols-2 gap-2 mt-3 text-sm">
+                                    <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
                                         {lesson.features.slice(0, 2).map((feature, index) => (
                                         <li key={index} className="flex items-center gap-2">
                                             <Check className="w-4 h-4 text-primary flex-shrink-0" />
                                             <span className="text-muted-foreground">{feature}</span>
                                         </li>
                                         ))}
-                                    </div>
+                                    </ul>
                                     </div>
                                 </Label>
                                 </div>
                             ))}
                         </div>
-                        {lessonGroupType === 'package' && (
-                             <div className="mt-4 p-4 bg-accent/70 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                <Package className="w-5 h-5 text-primary" />
-                                <span className="font-semibold text-accent-foreground">More Packages Available</span>
-                                </div>
-                                <Button asChild variant="outline" size="sm" className="border-primary/30 hover:bg-primary/10">
-                                  <Link href="/packages">View All Packages</Link>
-                                </Button>
-                            </div>
-                        )}
                        </div>
                     ))}
                   </div>
@@ -498,7 +505,7 @@ export default function BookLessonPage() {
                         <span className="text-muted-foreground">Selected:</span>
                         <span className="font-medium text-right text-foreground">{selectedLessonDetails.label}</span>
                       </div>
-                      {selectedLessonDetails.type !== 'package' && typeof selectedLessonDetails.duration === 'number' && (
+                      {typeof selectedLessonDetails.duration === 'number' && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Duration:</span>
                           <span className="font-medium text-foreground">{selectedLessonDetails.duration} minutes</span>
