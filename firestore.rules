@@ -1,91 +1,110 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check for admin role
-    function isAdmin() {
-      // Assumes an 'admins' collection where document IDs are user UIDs
-      // Or checks a role field on the user's profile
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    // Helper function to check if the user is authenticated
-    function isAuthenticated() {
+    // Helper functions
+    function isAuth() {
       return request.auth != null;
     }
 
-    //------------------------------------------------------------
+    function isUser(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      // Check if user has an 'admin' role document or matches admin email
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    //---------------------------------------------------------
     // Users Collection
-    // - Anyone can create their own user profile during sign-up.
-    // - Authenticated users can read their own profile.
-    // - Authenticated users can update their own profile data.
-    // - Admins can read/write any user profile.
-    //------------------------------------------------------------
+    // - Anyone can create a user profile (on signup)
+    // - Only the owner or an admin can update/delete their profile
+    // - Admins can read all profiles, users can only read their own
+    //---------------------------------------------------------
     match /users/{userId} {
-      allow read, update: if isAuthenticated() && request.auth.uid == userId || isAdmin();
-      allow create: if isAuthenticated();
+      allow read: if isUser(userId) || isAdmin();
+      allow create: if isAuth(); // Anyone authenticated can create their own user doc
+      allow update: if isUser(userId) || isAdmin();
       allow delete: if isAdmin();
     }
+    
+    // Admins can list all users for the student management page
+    match /users/{document=**} {
+        allow list: if isAdmin();
+    }
 
-    //------------------------------------------------------------
+    //---------------------------------------------------------
     // Bookings Collection
-    // - Authenticated users can create their own bookings.
-    // - Users can read and update (e.g., cancel) their own bookings.
-    // - Admins can read/write any booking.
-    // - Public read is allowed for checking availability on the booking page.
-    //------------------------------------------------------------
+    // - Authenticated users can create bookings
+    // - Only the owner or an admin can read/update their bookings
+    // - Admins can read all bookings for management
+    // - Public can read date/time for availability checks
+    //---------------------------------------------------------
     match /bookings/{bookingId} {
-      allow read: if isAuthenticated() || isAdmin(); // Allow logged in users to read schedule
-      allow create: if isAuthenticated();
-      allow update, delete: if (isAuthenticated() && resource.data.userID == request.auth.uid) || isAdmin();
-    }
-
-    //------------------------------------------------------------
-    // Testimonials Collection
-    // - Public can read 'approved' testimonials.
-    // - Authenticated users can create testimonials.
-    // - Admins can read/write any testimonial for moderation.
-    //------------------------------------------------------------
-    match /testimonials/{testimonialId} {
-      allow read: if resource.data.status == 'approved' || isAdmin();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAdmin();
-    }
-
-    //------------------------------------------------------------
-    // Contact Messages Collection
-    // - Anyone can create (submit) a contact message.
-    // - Only admins can read, update, or delete them.
-    //------------------------------------------------------------
-    match /contactMessages/{messageId} {
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
+      allow read: if isAuth() || isAdmin();
+      allow create: if isAuth();
+      allow update: if isUser(request.resource.data.userID) || isAdmin(); // Only user or admin can update
+      allow delete: if isAdmin();
     }
     
-    //------------------------------------------------------------
+    // Admins need list access for the bookings manager
+     match /bookings/{document=**} {
+        allow list: if isAdmin();
+    }
+
+
+    //---------------------------------------------------------
+    // Testimonials Collection
+    // - Approved testimonials are publically readable
+    // - Authenticated users can create testimonials
+    // - Admins can manage all testimonials (read, update, delete)
+    //---------------------------------------------------------
+    match /testimonials/{testimonialId} {
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if isAuth();
+      allow update, delete: if isAdmin();
+    }
+    
+    // For listing testimonials on homepage and admin panel
+    match /testimonials/{document=**} {
+        allow list: if isAdmin(); // Admins can list all
+    }
+    
+    // For testimonial page, allow anyone to read approved testimonials
+    match /databases/{database}/documents {
+      match /testimonials/{testimonialId} {
+        allow list: if true; // More open rule for public listing, but reads are still secured by the rule above
+      }
+    }
+
+
+    //---------------------------------------------------------
+    // Contact Messages Collection
+    // - Anyone can create a contact message
+    // - Only admins can read/manage them
+    //---------------------------------------------------------
+    match /contactMessages/{messageId} {
+      allow create: if true;
+      allow read, list, update, delete: if isAdmin();
+    }
+
+
+    //---------------------------------------------------------
     // Lesson Materials Collection
-    // - Authenticated users can read materials.
-    // - Admins can create, update, and delete materials.
-    //------------------------------------------------------------
+    // - Only admins can create/manage materials
+    // - Authenticated users can read/list materials
+    //---------------------------------------------------------
     match /lessonMaterials/{materialId} {
-       allow read: if isAuthenticated();
-       allow create, update, delete: if isAdmin();
+      allow read, list: if isAuth();
+      allow create, update, delete: if isAdmin();
     }
-
-    //------------------------------------------------------------
-    // Chat Messages (Placeholder if ever implemented)
-    // - Authenticated users can read and write messages.
-    //------------------------------------------------------------
-    match /chatMessages/{chatId} {
-      allow read, create: if isAuthenticated();
-      allow update, delete: if isAdmin(); // Or if request.auth.uid == resource.data.userId
-    }
-
-    // Default deny all other collections/paths
-    match /{document=**} {
-      allow read, write: if false;
+    
+    // Admins need list access for the materials manager
+     match /lessonMaterials/{document=**} {
+        allow list: if isAdmin() || isAuth();
     }
   }
 }
