@@ -43,9 +43,7 @@ export default function RootLayout({
     <html lang="en" className={`${lato.variable} ${lora.variable}`}>
       <body>
         <FirebaseProvider>
-          <ConditionalLayoutWrapper>
-            {children}
-          </ConditionalLayoutWrapper>
+          <ConditionalLayoutWrapper>{children}</ConditionalLayoutWrapper>
           <Toaster />
         </FirebaseProvider>
       </body>
