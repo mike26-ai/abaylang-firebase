@@ -2,109 +2,77 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions
-    function isAuth() {
-      return request.auth != null;
-    }
-
-    function isUser(uid) {
-      return isAuth() && request.auth.uid == uid;
-    }
-
+  
+    // Helper function to check for admin role
     function isAdmin() {
-      // Check if user has an 'admin' role document or matches admin email
       return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    //---------------------------------------------------------
+    // Helper function to check if a user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
     // Users Collection
-    // - Anyone can create a user profile (on signup)
-    // - Only the owner or an admin can update/delete their profile
-    // - Admins can read all profiles, users can only read their own
-    //---------------------------------------------------------
+    // - Authenticated users can create their own profile.
+    // - Users can only read/update their own profile.
+    // - Admins can read/write any user profile.
     match /users/{userId} {
-      allow read: if isUser(userId) || isAdmin();
-      allow create: if isAuth(); // Anyone authenticated can create their own user doc
-      allow update: if isUser(userId) || isAdmin();
-      allow delete: if isAdmin();
-    }
-    
-    // Admins can list all users for the student management page
-    match /users/{document=**} {
-        allow list: if isAdmin();
+      allow create: if isSignedIn();
+      allow read, update: if request.auth.uid == userId || isAdmin();
+      allow list, delete: if isAdmin();
     }
 
-    //---------------------------------------------------------
     // Bookings Collection
-    // - Authenticated users can create bookings
-    // - Only the owner or an admin can read/update their bookings
-    // - Admins can read all bookings for management
-    // - Public can read date/time for availability checks
-    //---------------------------------------------------------
+    // - Authenticated users can create their own bookings.
+    // - Users can only read their own bookings.
+    // - Admins can read/write any booking.
     match /bookings/{bookingId} {
-      allow read: if isAuth() || isAdmin();
-      allow create: if isAuth();
-      allow update: if isUser(request.resource.data.userID) || isAdmin(); // Only user or admin can update
-      allow delete: if isAdmin();
-    }
-    
-    // Admins need list access for the bookings manager
-     match /bookings/{document=**} {
-        allow list: if isAdmin();
+      allow create: if isSignedIn();
+      allow read, update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userID == resource.data.userID || isAdmin();
+      allow list, delete: if isAdmin();
     }
 
-
-    //---------------------------------------------------------
     // Testimonials Collection
-    // - Approved testimonials are publically readable
-    // - Authenticated users can create testimonials
-    // - Admins can manage all testimonials (read, update, delete)
-    //---------------------------------------------------------
+    // - Any user can read APPROVED testimonials (for public display).
+    // - Authenticated users can create testimonials.
+    // - Admins can manage all testimonials.
     match /testimonials/{testimonialId} {
-      allow read: if resource.data.status == 'approved' || isAdmin();
-      allow create: if isAuth();
+      allow create: if isSignedIn();
+      allow read: if resource.data.status == 'approved' || 
+                    (request.auth.uid != null && (request.auth.uid == resource.data.userId || isAdmin()));
+      allow list: if isAdmin();
       allow update, delete: if isAdmin();
     }
-    
-    // For listing testimonials on homepage and admin panel
-    match /testimonials/{document=**} {
-        allow list: if isAdmin(); // Admins can list all
-    }
-    
-    // For testimonial page, allow anyone to read approved testimonials
-    match /databases/{database}/documents {
-      match /testimonials/{testimonialId} {
-        allow list: if true; // More open rule for public listing, but reads are still secured by the rule above
-      }
-    }
 
-
-    //---------------------------------------------------------
     // Contact Messages Collection
-    // - Anyone can create a contact message
-    // - Only admins can read/manage them
-    //---------------------------------------------------------
+    // - Anyone can create (submit the contact form).
+    // - Only admins can read/manage messages.
     match /contactMessages/{messageId} {
       allow create: if true;
       allow read, list, update, delete: if isAdmin();
     }
-
-
-    //---------------------------------------------------------
-    // Lesson Materials Collection
-    // - Only admins can create/manage materials
-    // - Authenticated users can read/list materials
-    //---------------------------------------------------------
-    match /lessonMaterials/{materialId} {
-      allow read, list: if isAuth();
-      allow create, update, delete: if isAdmin();
-    }
     
-    // Admins need list access for the materials manager
-     match /lessonMaterials/{document=**} {
-        allow list: if isAdmin() || isAuth();
+    // Lesson Materials Collection
+    // - Only admins can create/manage materials.
+    // - Authenticated users can read/list materials.
+    match /lessonMaterials/{materialId} {
+      allow create, update, delete: if isAdmin();
+      allow read, list: if isSignedIn() || isAdmin();
+    }
+
+    // Chat Messages Collection
+    // - Authenticated users can read and create messages.
+    // - No one can update/delete messages for chat history integrity.
+    match /chatMessages/{chatMessageId} {
+      allow create, read, list: if isSignedIn();
+      allow update, delete: if false; // Messages are immutable
+    }
+
+    // Fallback security: deny all other access
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
