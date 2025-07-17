@@ -1,97 +1,68 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions
+  
+    // Helper function to check for admin role
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      // An admin must be a logged-in user whose 'role' field in their user document is 'admin'.
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    //-------------------------------------------------
-    // Users Collection
-    //-------------------------------------------------
+    // Rules for the 'users' collection
     match /users/{userId} {
-      // Allow users to read their own profile
-      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      
-      // Allow users to create their own profile upon signup
-      allow create: if request.auth != null && request.auth.uid == userId;
-
-      // Allow users to update their own profile, but not change their role
-      allow update: if request.auth != null && request.auth.uid == userId
-                      && request.resource.data.role == resource.data.role;
-
-      // Allow admins to manage any user profile
-      allow list, write: if isAdmin();
+      // Admins can read/write any user profile.
+      // A user can read/write their own profile.
+      allow read, write: if isAdmin() || request.auth.uid == userId;
     }
 
-    //-------------------------------------------------
-    // Bookings Collection
-    //-------------------------------------------------
+    // Rules for the 'bookings' collection
     match /bookings/{bookingId} {
-      // Allow users to create bookings for themselves
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userID;
+      // Admins can perform any action on any booking.
+      allow read, write, delete: if isAdmin();
       
-      // Allow users to read their own bookings
-      allow read: if request.auth != null && request.auth.uid == resource.data.userID;
+      // Logged-in users can create their own bookings.
+      allow create: if request.auth.uid == request.resource.data.userID;
       
-      // Allow users to update (e.g., cancel) their own bookings
-      allow update: if request.auth != null && request.auth.uid == resource.data.userID;
-      
-      // Admins can manage all bookings
-      allow list, write: if isAdmin();
-      
-      // Allow public read for fetching booked slots on a specific date for the booking calendar
-      // This is a more open rule, but necessary for the calendar to check availability.
-      // It is limited to only reading documents, not listing the whole collection.
-      allow get: if true;
+      // A user can read or update (e.g., cancel) their own booking.
+      allow read, update: if request.auth.uid == resource.data.userID;
     }
 
-    //-------------------------------------------------
-    // Testimonials Collection
-    //-------------------------------------------------
-    match /testimonials/{testimonialId} {
-      // Allow any authenticated user to create a testimonial
-      allow create: if request.auth != null;
+    // Rules for the 'contactMessages' collection
+    match /contactMessages/{messageId} {
+      // Only admins can read or modify contact messages for security.
+      allow read, write: if isAdmin();
+      
+      // Anyone can create (send) a contact message.
+      allow create: if true;
+    }
 
-      // Allow public read for testimonials that are approved
+    // Rules for the 'testimonials' collection
+    match /testimonials/{testimonialId} {
+      // Admins can perform any action on any testimonial.
+      allow read, write, delete: if isAdmin();
+      
+      // Any user can read testimonials that have been 'approved'.
+      // This is crucial for the public-facing testimonials page.
       allow read: if resource.data.status == 'approved';
       
-      // Admins can manage all testimonials
-      allow write, list: if isAdmin();
-      
-      // Explicitly allow the query for approved testimonials on the public page
-      allow list: if request.query.get("status") == "approved";
+      // Logged-in users can create testimonials.
+      allow create: if request.auth.uid == request.resource.data.userId;
     }
 
-    //-------------------------------------------------
-    // Contact Messages Collection
-    //-------------------------------------------------
-    match /contactMessages/{messageId} {
-      // Anyone can send a message
-      allow create: if true;
-      
-      // Only admins can read or manage messages
-      allow read, write, list: if isAdmin();
-    }
-    
-    //-------------------------------------------------
-    // Chat Messages Collection
-    //-------------------------------------------------
-    match /chatMessages/{chatMessageId} {
-       // Only authenticated users can read or write chat messages
-       allow read, write: if request.auth != null;
-    }
-
-    //-------------------------------------------------
-    // Lesson Materials Collection
-    //-------------------------------------------------
+    // Rules for the 'lessonMaterials' collection
     match /lessonMaterials/{materialId} {
-        // Students can read all materials, Admins can manage them
-        allow read: if request.auth != null;
-        allow write, list: if isAdmin();
+      // Only admins can create, update, or delete lesson materials.
+      allow write: if isAdmin();
+
+      // Any authenticated user (student or admin) can read the materials.
+      allow read: if request.auth != null;
     }
 
+    // Default deny: By default, no access is allowed to any other collection.
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
