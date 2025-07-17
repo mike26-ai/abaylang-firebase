@@ -102,7 +102,7 @@ export default function StudentDashboardPage() {
       const bookingsCol = collection(db, "bookings");
       const q = query(
         bookingsCol,
-        where("userID", "==", user.uid), // Changed from userId to userID
+        where("userID", "==", user.uid), // Corrected: was userId, is now userID
         orderBy("createdAt", "desc")
       );
       const querySnapshot = await getDocs(q);
@@ -707,3 +707,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
