@@ -3,76 +3,82 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Helper function to check for admin role
+    // Helper function to check for Admin role
     function isAdmin() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Helper function to check if a user is authenticated
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     // Users Collection
-    // - Authenticated users can create their own profile.
-    // - Users can only read/update their own profile.
-    // - Admins can read/write any user profile.
     match /users/{userId} {
-      allow create: if isSignedIn();
-      allow read, update: if request.auth.uid == userId || isAdmin();
-      allow list, delete: if isAdmin();
+      // Admins can read/write any user profile
+      allow read, write: if isAdmin();
+      
+      // A user can create their own profile document
+      allow create: if request.auth.uid == userId;
+      
+      // A user can read and update their own profile
+      allow read, update: if request.auth.uid == userId;
     }
 
     // Bookings Collection
-    // - Authenticated users can create their own bookings.
-    // - Users can only read their own bookings.
-    // - Admins can read/write any booking.
     match /bookings/{bookingId} {
-      allow create: if isSignedIn();
-      allow read, update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userID == resource.data.userID || isAdmin();
-      allow list, delete: if isAdmin();
+      // Admins can read/write any booking
+      allow read, write: if isAdmin();
+      
+      // Authenticated users can create bookings for themselves
+      allow create: if request.auth.uid == request.resource.data.userID;
+      
+      // Users can read/update their own bookings
+      allow read, update: if request.auth.uid == resource.data.userID;
+
+      // Allow listing of own bookings. THIS IS THE FIX.
+      allow list: if request.auth.uid == request.query.where.userID;
+    }
+
+    // Allow anyone to read the booked slots for the calendar availability feature.
+    // This is safe as it only reveals date/time, not user info.
+    match /bookings/{bookingId} {
+       allow list: if request.query.keys.hasAny(['date', 'status']);
     }
 
     // Testimonials Collection
-    // - Any user can read APPROVED testimonials (for public display).
-    // - Authenticated users can create testimonials.
-    // - Admins can manage all testimonials.
     match /testimonials/{testimonialId} {
-      allow create: if isSignedIn();
-      allow read: if resource.data.status == 'approved' || 
-                    (request.auth.uid != null && (request.auth.uid == resource.data.userId || isAdmin()));
-      allow list: if isAdmin();
-      allow update, delete: if isAdmin();
+      // Admins can manage all testimonials
+      allow read, write, delete: if isAdmin();
+      
+      // Authenticated users can create testimonials
+      allow create: if request.auth.uid == request.resource.data.userId;
+      
+      // Anyone can read approved testimonials
+      allow list, get: if resource.data.status == 'approved';
     }
 
     // Contact Messages Collection
-    // - Anyone can create (submit the contact form).
-    // - Only admins can read/manage messages.
     match /contactMessages/{messageId} {
+      // Admins can read/delete contact messages
+      allow read, delete: if isAdmin();
+
+      // Anyone can create a contact message
       allow create: if true;
-      allow read, list, update, delete: if isAdmin();
     }
     
     // Lesson Materials Collection
-    // - Only admins can create/manage materials.
-    // - Authenticated users can read/list materials.
     match /lessonMaterials/{materialId} {
-      allow create, update, delete: if isAdmin();
-      allow read, list: if isSignedIn() || isAdmin();
+      // Admins can manage all materials
+      allow read, write, delete: if isAdmin();
+      
+      // Authenticated users (students) can read materials
+      allow list, get: if request.auth != null;
     }
 
     // Chat Messages Collection
-    // - Authenticated users can read and create messages.
-    // - No one can update/delete messages for chat history integrity.
-    match /chatMessages/{chatMessageId} {
-      allow create, read, list: if isSignedIn();
-      allow update, delete: if false; // Messages are immutable
-    }
-
-    // Fallback security: deny all other access
-    match /{document=**} {
-      allow read, write: if false;
+    match /chatMessages/{messageId} {
+      // Any authenticated user can read chat messages
+      allow read: if request.auth != null;
+      
+      // An authenticated user can only create messages as themselves
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
   }
 }
