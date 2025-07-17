@@ -52,7 +52,7 @@ export function LoginForm() {
         description: "Welcome back!",
       });
       // Redirect based on user role (email)
-      if (values.email === ADMIN_EMAIL) {
+      if (values.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
         router.push("/admin/dashboard");
       } else {
         router.push("/profile");
@@ -105,12 +105,21 @@ export function LoginForm() {
           {isLoading ? <Spinner size="sm" className="mr-2" /> : null}
           Log In
         </Button>
-        <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="font-medium text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
+        <div className="text-center text-sm text-muted-foreground">
+          <p>
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="font-medium text-primary hover:underline">
+              Sign up
+            </Link>
+          </p>
+          <p className="mt-2 text-xs">
+            Admin? If it's your first time, please{' '}
+            <Link href="/register" className="text-primary hover:underline">
+              Sign up
+            </Link>
+            {' '}using the admin email.
+          </p>
+        </div>
       </form>
     </Form>
   );
