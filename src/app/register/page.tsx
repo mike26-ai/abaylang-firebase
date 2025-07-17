@@ -19,6 +19,7 @@ import { auth, db } from "@/lib/firebase"; // auth is imported here
 import type { UserProfile } from "@/lib/types";
 import { Logo } from "@/components/layout/logo";
 import { Spinner } from "@/components/ui/spinner";
+import { ADMIN_EMAIL } from "@/config/site";
 
 // Placeholder values to check against
 const PLACEHOLDER_API_KEY = "YOUR_API_KEY";
@@ -103,12 +104,15 @@ export default function RegisterPage() {
         // Update Firebase Auth profile
         await updateProfile(user, { displayName: `${formData.firstName} ${formData.lastName}` });
 
-        // Create user document in Firestore
+        // ** FIX: Determine role based on email **
+        const userRole = formData.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? "admin" : "student";
+
+        // Create user document in Firestore with the correct role
         const userProfileForFirestore: UserProfile = {
           uid: user.uid,
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
-          role: "student", // Default role
+          role: userRole, // Use the determined role
           createdAt: Timestamp.now(),
           photoURL: user.photoURL || null,
           country: formData.country,
@@ -356,5 +360,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-
-    
