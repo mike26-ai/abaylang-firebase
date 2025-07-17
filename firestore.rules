@@ -2,83 +2,96 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check for Admin role
+
+    // Helper functions
     function isAdmin() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    //-------------------------------------------------
     // Users Collection
+    //-------------------------------------------------
     match /users/{userId} {
-      // Admins can read/write any user profile
-      allow read, write: if isAdmin();
+      // Allow users to read their own profile
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
       
-      // A user can create their own profile document
-      allow create: if request.auth.uid == userId;
-      
-      // A user can read and update their own profile
-      allow read, update: if request.auth.uid == userId;
+      // Allow users to create their own profile upon signup
+      allow create: if request.auth != null && request.auth.uid == userId;
+
+      // Allow users to update their own profile, but not change their role
+      allow update: if request.auth != null && request.auth.uid == userId
+                      && request.resource.data.role == resource.data.role;
+
+      // Allow admins to manage any user profile
+      allow list, write: if isAdmin();
     }
 
+    //-------------------------------------------------
     // Bookings Collection
+    //-------------------------------------------------
     match /bookings/{bookingId} {
-      // Admins can read/write any booking
-      allow read, write: if isAdmin();
+      // Allow users to create bookings for themselves
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userID;
       
-      // Authenticated users can create bookings for themselves
-      allow create: if request.auth.uid == request.resource.data.userID;
+      // Allow users to read their own bookings
+      allow read: if request.auth != null && request.auth.uid == resource.data.userID;
       
-      // Users can read/update their own bookings
-      allow read, update: if request.auth.uid == resource.data.userID;
-
-      // Allow listing of own bookings. THIS IS THE FIX.
-      allow list: if request.auth.uid == request.query.where.userID;
+      // Allow users to update (e.g., cancel) their own bookings
+      allow update: if request.auth != null && request.auth.uid == resource.data.userID;
+      
+      // Admins can manage all bookings
+      allow list, write: if isAdmin();
+      
+      // Allow public read for fetching booked slots on a specific date for the booking calendar
+      // This is a more open rule, but necessary for the calendar to check availability.
+      // It is limited to only reading documents, not listing the whole collection.
+      allow get: if true;
     }
 
-    // Allow anyone to read the booked slots for the calendar availability feature.
-    // This is safe as it only reveals date/time, not user info.
-    match /bookings/{bookingId} {
-       allow list: if request.query.keys.hasAny(['date', 'status']);
-    }
-
+    //-------------------------------------------------
     // Testimonials Collection
+    //-------------------------------------------------
     match /testimonials/{testimonialId} {
+      // Allow any authenticated user to create a testimonial
+      allow create: if request.auth != null;
+
+      // Allow public read for testimonials that are approved
+      allow read: if resource.data.status == 'approved';
+      
       // Admins can manage all testimonials
-      allow read, write, delete: if isAdmin();
+      allow write, list: if isAdmin();
       
-      // Authenticated users can create testimonials
-      allow create: if request.auth.uid == request.resource.data.userId;
-      
-      // Anyone can read approved testimonials
-      allow list, get: if resource.data.status == 'approved';
+      // Explicitly allow the query for approved testimonials on the public page
+      allow list: if request.query.get("status") == "approved";
     }
 
+    //-------------------------------------------------
     // Contact Messages Collection
+    //-------------------------------------------------
     match /contactMessages/{messageId} {
-      // Admins can read/delete contact messages
-      allow read, delete: if isAdmin();
-
-      // Anyone can create a contact message
+      // Anyone can send a message
       allow create: if true;
+      
+      // Only admins can read or manage messages
+      allow read, write, list: if isAdmin();
     }
     
-    // Lesson Materials Collection
-    match /lessonMaterials/{materialId} {
-      // Admins can manage all materials
-      allow read, write, delete: if isAdmin();
-      
-      // Authenticated users (students) can read materials
-      allow list, get: if request.auth != null;
+    //-------------------------------------------------
+    // Chat Messages Collection
+    //-------------------------------------------------
+    match /chatMessages/{chatMessageId} {
+       // Only authenticated users can read or write chat messages
+       allow read, write: if request.auth != null;
     }
 
-    // Chat Messages Collection
-    match /chatMessages/{messageId} {
-      // Any authenticated user can read chat messages
-      allow read: if request.auth != null;
-      
-      // An authenticated user can only create messages as themselves
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    //-------------------------------------------------
+    // Lesson Materials Collection
+    //-------------------------------------------------
+    match /lessonMaterials/{materialId} {
+        // Students can read all materials, Admins can manage them
+        allow read: if request.auth != null;
+        allow write, list: if isAdmin();
     }
+
   }
 }
