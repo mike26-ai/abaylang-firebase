@@ -218,7 +218,7 @@ export default function BookLessonPage() {
     
     setIsProcessing(true);
     try {
-      const bookingData: Omit<BookingType, 'id' | 'createdAt'> = {
+      const bookingData: Omit<BookingType, 'id' | 'createdAt' | 'learningGoals'> & { learningGoals?: string } = {
         userID: user.uid,
         userName: user.displayName || "User",
         userEmail: user.email || "",
@@ -226,12 +226,15 @@ export default function BookLessonPage() {
         time: selectedTime || "N/A_PACKAGE", 
         duration: typeof selectedLessonDetails.unitDuration === 'number' ? selectedLessonDetails.unitDuration : (typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : 60),
         lessonType: selectedLessonDetails.label,
-        price: selectedLessonDetails.price, // Price is informational for MVP
-        status: "confirmed", // MVP: Confirm directly. No payment step.
+        price: selectedLessonDetails.price,
+        status: "confirmed",
         tutorId: "MahderNegashMamo",
         tutorName: tutorInfo.name,
-        learningGoals: learningGoals || undefined,
       };
+
+      if (learningGoals.trim()) {
+        bookingData.learningGoals = learningGoals.trim();
+      }
 
       await addDoc(collection(db, "bookings"), {
         ...bookingData,
