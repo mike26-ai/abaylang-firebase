@@ -35,7 +35,7 @@ runConfig:
 # https://firebase.google.com/docs/app-hosting/configure#environment-variables
 env:
   - variable: NEXT_PUBLIC_ADMIN_EMAIL
-    value: "admin@abylang.example.com" # Admin email for the site
+    value: "mahdernmamo@gmail.com" # Admin email for the site
 #  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
 #    secret: FIREBASE_API_KEY # Example for secrets from Secret Manager
 #  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN

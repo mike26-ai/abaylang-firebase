@@ -77,6 +77,6 @@ export const tutorInfo = {
 
 // [UPDATED] - Default admin email updated for new brand.
 // Ensure this email is set in your environment variables for admin checks.
-export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@abylang.example.com";
+export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "mahdernmamo@gmail.com";
 
 export const contactEmail = "mahdernmamo@gmail.com";
