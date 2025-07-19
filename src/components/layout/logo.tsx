@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -8,52 +9,51 @@ interface LogoProps {
   className?: string;
 }
 
-// Recreated the logo as a custom SVG based on the provided image.
+// A more faithful SVG recreation of the provided logo image.
 export function Logo({ className }: LogoProps) {
   return (
     <Link
       href="/"
-      className={cn("flex items-center space-x-2 text-foreground group", className)}
+      className={cn(
+        "flex flex-col items-center text-foreground group",
+        className
+      )}
     >
-      <div className="w-auto h-10"> {/* Container to control size */}
+      <div className="w-auto h-12">
+        {" "}
+        {/* Adjusted height for better proportion */}
         <svg
-          viewBox="0 0 110 250"
+          viewBox="0 0 100 150" // Adjusted viewBox for a more vertical obelisk
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           className="h-full w-auto"
           aria-label={`${siteConfig.name} logo`}
         >
-          {/* Main Stele/Obelisk Shape */}
+          {/* Main Obelisk/Stele Shape */}
           <path
-            d="M55 0C85.3757 0 110 24.6243 110 55V60C110 62.7614 107.761 65 105 65H90C84.4772 65 80 69.4772 80 75V240H30V75C30 69.4772 25.5228 65 20 65H5C2.23858 65 0 62.7614 0 60V55C0 24.6243 24.6243 0 55 0Z"
-            fill="#36454F" // Matches --foreground color
+            d="M35 135V15C35 10 40 5 50 5C60 5 65 10 65 15V135H35Z"
+            className="fill-foreground"
           />
-
-          {/* Perforations at the top */}
-          <circle cx="55" cy="35" r="5" fill="#FDF6E3" />
-          <circle cx="35" cy="45" r="4" fill="#FDF6E3" />
-          <circle cx="75" cy="45" r="4" fill="#FDF6E3" />
-          <circle cx="55" cy="55" r="3" fill="#FDF6E3" />
-          
-          {/* Ge'ez Script Character 'ሀ' (hä) */}
+          {/* Rounded Top of the Obelisk */}
           <path
-            d="M42 120C42 114.477 46.4772 110 52 110H68C73.5228 110 78 114.477 78 120V150C78 152.761 75.7614 155 73 155H65C62.2386 155 60 157.239 60 160V180H50V160C50 157.239 47.7614 155 45 155H37C34.2386 155 32 152.761 32 150V130C32 124.477 36.4772 120 42 120Z"
-            fill="#FDF6E3" // Matches --background color for contrast
+            d="M35 15C35 25 40 30 50 30C60 30 65 25 65 15C65 5 60 0 50 0C40 0 35 5 35 15Z"
+            className="fill-foreground"
           />
-
-          {/* ABYLANG Text */}
-          <text
-            x="55"
-            y="280"
-            fontFamily="Lora, serif"
-            fontSize="30"
-            fill="#CC7722" // Matches --primary color
-            textAnchor="middle"
-          >
-            ABYLANG
-          </text>
+          {/* Ge'ez Script Character 'ሀ' (hä) - white on the obelisk */}
+          <path
+            d="M45 70C45 67.2386 47.2386 65 50 65H58C60.7614 65 63 67.2386 63 70V80C63 81.1046 62.1046 82 61 82H57C55.8954 82 55 82.8954 55 84V90H53V84C53 82.8954 52.1046 82 51 82H47C45.8954 82 45 81.1046 45 80V70Z"
+            className="fill-background"
+          />
+          {/* Decorative lines */}
+          <rect x="42" y="40" width="16" height="3" rx="1.5" className="fill-background" />
+          <rect x="42" y="50" width="16" height="3" rx="1.5" className="fill-background" />
+          <rect x="42" y="100" width="16" height="3" rx="1.5" className="fill-background" />
+          <rect x="42" y="110" width="16" height="3" rx="1.5" className="fill-background" />
         </svg>
       </div>
+      <span className="text-xl font-bold tracking-tighter text-primary group-hover:text-primary/90 -mt-2">
+        {siteConfig.name}
+      </span>
     </Link>
   );
 }
