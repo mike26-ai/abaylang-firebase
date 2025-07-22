@@ -13,16 +13,16 @@ interface LogoProps {
 // A functional icon representing the core service of Abylang: language dialogue.
 export function Logo({ className }: LogoProps) {
   return (
-    <Link href="/" className={cn("flex flex-col items-center group", className)}>
+    <Link href="/" className={cn("flex items-center group", className)}>
         <div className="flex items-center gap-2">
          <svg
             className="w-auto h-12" // Adjusted height for navbar
             viewBox="0 0 100 100"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            aria-label={`${siteConfig.name} Icon`}
+            aria-label={`${siteConfig.name} Logo Icon`}
         >
-            <title>{siteConfig.name} Logo Icon</title>
+            <title>{`${siteConfig.name} Logo Icon`}</title>
             {/* Main speech bubble shape */}
             <path
                 d="M10 10 H90 V70 H30 L10 90 V70 H10 V10 Z"
