@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -5,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Newspaper, BookText } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'More from LissanHub',
-  description: 'Discover more resources, news, and blog posts from LissanHub.',
+  title: 'More from ABYLANG',
+  description: 'Discover more resources, news, and blog posts from ABYLANG.',
 };
 
 export default function MorePage() {
@@ -17,7 +18,7 @@ export default function MorePage() {
           Explore More
         </h1>
         <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Discover more news, updates, and learning resources from LissanHub.
+          Discover more news, updates, and learning resources from ABYLANG.
         </p>
       </header>
       <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
@@ -28,7 +29,7 @@ export default function MorePage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-6">
-              Stay updated with the latest announcements, new features, and developments from the LissanHub community.
+              Stay updated with the latest announcements, new features, and developments from the ABYLANG community.
             </p>
             <Button asChild className="w-full">
               <Link href="/news">View News</Link>

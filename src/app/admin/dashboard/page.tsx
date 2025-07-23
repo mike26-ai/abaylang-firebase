@@ -183,7 +183,7 @@ export default function AdminDashboardPage() {
         <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1">Admin Dashboard</h1>
-            <p className="text-lg text-muted-foreground">Overview of LissanHub activities.</p>
+            <p className="text-lg text-muted-foreground">Overview of ABYLANG activities.</p>
           </div>
            <Link href="/" className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary mt-2 sm:mt-0">
               <BookOpenText className="h-5 w-5" />
@@ -425,7 +425,7 @@ export default function AdminDashboardPage() {
             <Card className="shadow-xl">
               <CardHeader>
                 <CardTitle>Recently Joined Students</CardTitle>
-                <CardDescription>New members of the LissanHub community.</CardDescription>
+                <CardDescription>New members of the ABYLANG community.</CardDescription>
               </CardHeader>
               <CardContent>
                 {recentStudents.length === 0 ? <p className="text-muted-foreground">No recent students.</p> : (

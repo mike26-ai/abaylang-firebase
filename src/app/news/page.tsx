@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { Newspaper } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'News & Updates - LissanHub',
-  description: 'Stay updated with the latest news and announcements from LissanHub.',
+  title: 'News & Updates - ABYLANG',
+  description: 'Stay updated with the latest news and announcements from ABYLANG.',
 };
 
 export default function NewsPage() {
@@ -19,7 +19,7 @@ export default function NewsPage() {
                 News & Updates
             </h1>
             <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
-                This section is coming soon! Stay tuned for the latest news, announcements, and developments from LissanHub.
+                This section is coming soon! Stay tuned for the latest news, announcements, and developments from ABYLANG.
             </p>
         </header>
         <div className="text-center">

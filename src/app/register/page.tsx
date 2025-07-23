@@ -122,7 +122,7 @@ export default function RegisterPage() {
       }
 
       // Using alert for now, but ideally a toast notification
-      alert("Registration Successful! Your account has been created. Welcome to LissanHub!");
+      alert("Registration Successful! Your account has been created. Welcome to ABYLANG!");
       router.push("/profile"); 
     } catch (err: any) {
       console.error("Registration error:", err);
@@ -170,12 +170,12 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6 text-muted-foreground hover:text-primary">
             <ArrowLeft className="w-4 h-4" />
-            Back to LissanHub
+            Back to ABYLANG
           </Link>
           <div className="flex justify-center mb-4">
             <Logo />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Join LissanHub</h1>
+          <h1 className="text-2xl font-bold text-foreground">Join ABYLANG</h1>
           <p className="text-muted-foreground">Start your journey to learn Amharic</p>
         </div>
 

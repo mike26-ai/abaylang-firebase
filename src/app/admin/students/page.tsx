@@ -24,7 +24,7 @@ export default function AdminStudentsPage() {
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle>All Students</CardTitle>
-          <CardDescription>A list of all users registered on LissanHub.</CardDescription>
+          <CardDescription>A list of all users registered on ABYLANG.</CardDescription>
         </CardHeader>
         <CardContent>
           <StudentsManager />

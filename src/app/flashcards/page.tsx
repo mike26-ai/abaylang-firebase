@@ -8,7 +8,7 @@ import flashcardsData from '@/data/flashcards.json';
 // For this MVP, we will assume static metadata is acceptable.
 
 // export const metadata: Metadata = { // Cannot be used in client component this way
-//   title: 'Amharic Flashcards - LissanHub',
+//   title: 'Amharic Flashcards - ABYLANG',
 //   description: 'Practice common Amharic words and phrases with our flashcards.',
 // };
 

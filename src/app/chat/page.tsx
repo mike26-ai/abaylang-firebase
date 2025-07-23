@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { MessageSquare } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Chat Room - LissanHub',
-  description: 'Join the conversation in the LissanHub community chat room.',
+  title: 'Chat Room - ABYLANG',
+  description: 'Join the conversation in the ABYLANG community chat room.',
 };
 
 export default function ChatPage() {

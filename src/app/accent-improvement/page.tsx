@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: 'Accent Improvement Helper - LissanHub',
+  title: 'Accent Improvement Helper - ABYLANG',
   description: 'AI-powered suggestions to improve your Amharic accent and pronunciation.',
 };
 
@@ -18,7 +18,7 @@ export default function AccentImprovementPage() {
           AI Accent Helper
         </h1>
         <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
-          This advanced AI feature is currently under development and will be available in a future version of LissanHub. Stay tuned for personalized accent and pronunciation improvement tools!
+          This advanced AI feature is currently under development and will be available in a future version of ABYLANG. Stay tuned for personalized accent and pronunciation improvement tools!
         </p>
       </header>
     </div>

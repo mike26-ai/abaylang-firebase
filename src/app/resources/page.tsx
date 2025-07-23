@@ -68,7 +68,7 @@ export default function ResourcesPage() {
         <div className="mt-16 text-center">
             <h2 className="text-2xl font-semibold text-foreground mb-3">More Tools Coming Soon!</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-                We are continuously working on adding more resources like interactive quizzes, AI-powered practice tools, and advanced learning paths to enhance your LissanHub experience.
+                We are continuously working on adding more resources like interactive quizzes, AI-powered practice tools, and advanced learning paths to enhance your ABYLANG experience.
             </p>
         </div>
 

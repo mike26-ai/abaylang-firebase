@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Contact Us',
-  description: 'Get in touch with LissanHub for any inquiries or support.',
+  description: 'Get in touch with ABYLANG for any inquiries or support.',
 };
 
 export default function ContactPage() {
@@ -40,8 +40,8 @@ export default function ContactPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-3">
                 <Mail className="h-6 w-6 text-primary" />
-                <a href="mailto:info@lissanhub.example.com" className="text-muted-foreground hover:text-primary">
-                  info@lissanhub.example.com
+                <a href="mailto:info@abylang.example.com" className="text-muted-foreground hover:text-primary">
+                  info@abylang.example.com
                 </a>
               </div>
               <div className="flex items-center space-x-3">

@@ -339,7 +339,7 @@ export default function StudentDashboardPage() {
   if (authLoading || (!userProfileData && isLoadingProfile && !user)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Spinner size="lg" /> <p className="ml-3 text-muted-foreground">Loading LissanHub Dashboard...</p>
+        <Spinner size="lg" /> <p className="ml-3 text-muted-foreground">Loading ABYLANG Dashboard...</p>
       </div>
     );
   }
@@ -347,7 +347,7 @@ export default function StudentDashboardPage() {
   if (!user && !authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <p className="text-muted-foreground">Please log in to view your LissanHub dashboard.</p>
+        <p className="text-muted-foreground">Please log in to view your ABYLANG dashboard.</p>
         <Button asChild className="mt-4">
           <Link href="/login">Log In</Link>
         </Button>
@@ -450,7 +450,7 @@ export default function StudentDashboardPage() {
                       <Calendar className="w-16 h-16 text-primary/70 mx-auto mb-4" />
                       <h3 className="text-2xl font-semibold text-foreground mb-2">No Upcoming Lessons</h3>
                       <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                        Ready to continue your LissanHub journey? Book your next lesson.
+                        Ready to continue your ABYLANG journey? Book your next lesson.
                       </p>
                       <Button asChild>
                         <Link href="/bookings">
