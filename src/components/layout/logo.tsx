@@ -20,9 +20,9 @@ export function Logo({ className }: LogoProps) {
             viewBox="0 0 100 100"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            aria-label={`${siteConfig.name} Logo Icon`}
+            aria-label={`${siteConfig.name} Logo`}
         >
-            <title>{`${siteConfig.name} Logo Icon`}</title>
+            <title>{siteConfig.name}</title>
             {/* Main speech bubble shape */}
             <path
                 d="M10 10 H90 V70 H30 L10 90 V70 H10 V10 Z"
