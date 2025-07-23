@@ -2,7 +2,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -20,6 +20,7 @@ import type { UserProfile } from "@/lib/types";
 import { Logo } from "@/components/layout/logo";
 import { Spinner } from "@/components/ui/spinner";
 import { ADMIN_EMAIL } from "@/config/site";
+import ReCAPTCHA from "react-google-recaptcha";
 
 // Placeholder values to check against
 const PLACEHOLDER_API_KEY = "YOUR_API_KEY";
@@ -43,6 +44,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -55,6 +57,20 @@ export default function RegisterPage() {
     e.preventDefault()
     setIsLoading(true)
     setError("")
+
+    const recaptchaToken = recaptchaRef.current?.getValue();
+    if (!recaptchaToken) {
+      setError("Please complete the reCAPTCHA verification.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+      setError("ReCAPTCHA is not configured. Please set NEXT_PUBLIC_RECAPTCHA_SITE_KEY.");
+      setIsLoading(false);
+      return;
+    }
+
 
     // Explicitly check if the Firebase config being used by the auth object contains placeholders
     if (
@@ -120,9 +136,7 @@ export default function RegisterPage() {
         };
         await setDoc(doc(db, "users", user.uid), userProfileForFirestore);
       }
-
-      // Using alert for now, but ideally a toast notification
-      alert("Registration Successful! Your account has been created. Welcome to ABYLANG!");
+      
       router.push("/profile"); 
     } catch (err: any) {
       console.error("Registration error:", err);
@@ -161,6 +175,7 @@ export default function RegisterPage() {
       setError(friendlyMessage);
     } finally {
       setIsLoading(false)
+      recaptchaRef.current?.reset();
     }
   }
 
@@ -322,13 +337,13 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-start space-x-2">
                 <Checkbox
                   id="terms"
                   checked={agreeToTerms}
                   onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
                 />
-                <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground">
+                <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground leading-snug">
                   I agree to the{" "}
                   <Link href="/terms" className="text-primary hover:underline">
                     Terms of Service
@@ -338,6 +353,13 @@ export default function RegisterPage() {
                     Privacy Policy
                   </Link>
                 </Label>
+              </div>
+
+              <div className="flex justify-center">
+                 <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "YOUR_SITE_KEY_HERE"}
+                 />
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
@@ -360,3 +382,5 @@ export default function RegisterPage() {
     </div>
   )
 }
+
+    
