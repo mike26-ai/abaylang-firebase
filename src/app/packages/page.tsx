@@ -56,10 +56,10 @@ export default function PackagesPage() {
       name: "Quick Group Conversation",
       duration: "30 minutes",
       price: 7,
-      maxStudents: "2-5 students",
+      maxStudents: "4-6 students",
       description: "Practice with fellow learners in a supportive environment",
       features: [
-        "Small group setting",
+        "Small group setting (4-6)",
         "Focused conversation practice",
         "Peer learning experience",
         "Themed discussions",
@@ -69,7 +69,7 @@ export default function PackagesPage() {
         name: "Immersive Conversation Practice",
         duration: "60 minutes",
         price: 12,
-        maxStudents: "2-5 students",
+        maxStudents: "4-6 students",
         description: "An extended session for deeper conversation and cultural insights",
         features: [
           "Extended conversation time",
@@ -219,7 +219,7 @@ export default function PackagesPage() {
         <div className="mb-16">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-foreground mb-2">Group Sessions</h2>
-            <p className="text-muted-foreground">Learn with fellow students in small groups (2-5 people)</p>
+            <p className="text-muted-foreground">Learn with fellow students in small groups (4-6 people)</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -331,7 +331,7 @@ export default function PackagesPage() {
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">How do group sessions work?</h4>
                   <p className="text-sm text-muted-foreground">
-                    Group sessions have 2-5 students of similar levels, focusing on conversation practice and cultural
+                    Group sessions have 4-6 students of similar levels, focusing on conversation practice and cultural
                     discussions.
                   </p>
                 </div>
