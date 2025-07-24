@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,11 +33,9 @@ export default function ResourcesPage() {
             <CardContent className="text-center py-8">
               <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground mb-4">
-                Your tutor will upload materials relevant to your lessons. Find them in your student dashboard.
+                Lesson materials will be provided directly by the tutor for now.
               </p>
-              <Button variant="outline" asChild>
-                <Link href="/profile#materials">Go to My Materials</Link>
-              </Button>
+              
             </CardContent>
           </Card>
 

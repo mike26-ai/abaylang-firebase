@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -14,7 +13,6 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Manage Testimonials": Award,
   "View Inquiries": MessageSquareText,
   "Manage Students": Users,
-  "Manage Materials": LibraryBig,
 };
 
 

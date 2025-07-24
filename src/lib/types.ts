@@ -1,4 +1,3 @@
-
 import type { Timestamp } from "firebase/firestore";
 
 export interface Booking {
@@ -128,18 +127,4 @@ export interface HomeworkSubmissionType {
   status: "submitted" | "graded" | "late_submission";
   feedback?: string;
   grade?: string;
-}
-
-export interface LessonMaterial {
-  id: string; // Firestore document ID
-  title: string;
-  type: "document" | "video" | "audio" | "interactive";
-  category: string;
-  level: "beginner" | "intermediate" | "advanced";
-  description: string;
-  downloadUrl: string; // URL to the material in Firebase Storage
-  fileName?: string;
-  fileSize?: string; // e.g., "2.4 MB"
-  duration?: string; // e.g., "15:24" for video/audio
-  createdAt: Timestamp; // For dateCreated and sorting
 }

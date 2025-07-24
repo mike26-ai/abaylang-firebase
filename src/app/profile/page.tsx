@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
@@ -41,7 +40,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { updateProfile as updateFirebaseUserProfile } from "firebase/auth";
-import type { Booking as BookingType, UserProfile, LessonMaterial } from "@/lib/types";
+import type { Booking as BookingType, UserProfile } from "@/lib/types";
 import { format, isPast, parse } from "date-fns";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
@@ -79,8 +78,6 @@ export default function StudentDashboardPage() {
     country: "",
     amharicLevel: "",
   });
-  const [lessonMaterials, setLessonMaterials] = useState<LessonMaterial[]>([]);
-  const [isLoadingMaterials, setIsLoadingMaterials] = useState(true);
 
 
   const [feedbackModal, setFeedbackModal] = useState<{
@@ -185,24 +182,6 @@ export default function StudentDashboardPage() {
       setIsLoadingProfile(false);
     }
   };
-  
-  const fetchLessonMaterials = async () => {
-    if (!user) return; 
-    setIsLoadingMaterials(true);
-    try {
-        const materialsCol = collection(db, "lessonMaterials");
-        // For MVP, fetch all materials. Later, could filter by student level or associated courses.
-        const q = query(materialsCol, orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        const fetchedMaterials = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LessonMaterial));
-        setLessonMaterials(fetchedMaterials);
-    } catch (error) {
-        console.error("Error fetching lesson materials:", error);
-        toast({ title: "Error", description: "Could not fetch lesson materials.", variant: "destructive" });
-    } finally {
-        setIsLoadingMaterials(false);
-    }
-  };
 
 
   useEffect(() => {
@@ -210,12 +189,10 @@ export default function StudentDashboardPage() {
     if (!user) {
       setIsLoadingBookings(false);
       setIsLoadingProfile(false);
-      setIsLoadingMaterials(false);
       return;
     }
     fetchUserProfile();
     fetchBookings();
-    fetchLessonMaterials();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]); 
 
@@ -355,7 +332,7 @@ export default function StudentDashboardPage() {
     );
   }
   
-  const isLoadingAny = isLoadingBookings || isLoadingProfile || isLoadingMaterials;
+  const isLoadingAny = isLoadingBookings || isLoadingProfile;
 
 
   return (
@@ -433,11 +410,10 @@ export default function StudentDashboardPage() {
 
             <Tabs defaultValue="upcoming" className="space-y-6"> 
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4">
+                <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-2 sm:grid-cols-3">
                   <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
                   <TabsTrigger value="history">History</TabsTrigger>
                   <TabsTrigger value="profile">My Profile</TabsTrigger>
-                  <TabsTrigger value="materials" id="materials">Materials</TabsTrigger>
                 </TabsList>
               </div>
               
@@ -654,42 +630,6 @@ export default function StudentDashboardPage() {
                 ) : (
                     <p className="text-muted-foreground">Could not load profile information.</p>
                 )}
-              </TabsContent>
-              <TabsContent value="materials">
-                <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="text-xl flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-primary" /> Lesson Materials
-                        </CardTitle>
-                        <CardDescription>
-                            Access learning materials uploaded by your tutor.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoadingMaterials ? (
-                             <div className="flex justify-center items-center h-40"><Spinner /></div>
-                        ) : lessonMaterials.length === 0 ? (
-                            <p className="text-muted-foreground text-center py-8">No lesson materials available yet. Your tutor will upload them here.</p>
-                        ) : (
-                            <ul className="space-y-3">
-                                {lessonMaterials.map(material => (
-                                    <li key={material.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <FileText className="w-5 h-5 text-primary" />
-                                            <div>
-                                                <h4 className="font-medium text-foreground">{material.title}</h4>
-                                                <p className="text-xs text-muted-foreground">{material.category} - {material.level}</p>
-                                            </div>
-                                        </div>
-                                        <Button variant="outline" size="sm" asChild>
-                                            <a href={material.downloadUrl} target="_blank" rel="noopener noreferrer">Download</a>
-                                        </Button>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </CardContent>
-                </Card>
               </TabsContent>
             </Tabs>
           </>

@@ -1,4 +1,3 @@
-
 import type React from "react";
 import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, Users, FileText, BookOpen, Package, HelpCircle, MessageSquare } from "lucide-react";
 
@@ -44,7 +43,6 @@ export const siteConfig = {
     { title: "Admin Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { title: "Manage Bookings", href: "/admin/bookings", icon: CalendarCheck },
     { title: "Manage Students", href: "/admin/students", icon: Users },
-    { title: "Manage Materials", href: "/admin/materials", icon: FileText },
     { title: "Manage Testimonials", href: "/admin/testimonials", icon: Star },
     { title: "View Inquiries", href: "/admin/inquiries", icon: MessageSquare },
   ] satisfies NavItem[],
