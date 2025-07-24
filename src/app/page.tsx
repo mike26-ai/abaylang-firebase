@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo, siteConfig } from "@/config/site"
 import Image from "next/image"
 import type { Testimonial as TestimonialType } from "@/lib/types"; // For fetching testimonials
+import { FooterLogo } from "@/components/layout/footer-logo"
 
 export default function HomePage() {
   const { toast } = useToast();
@@ -413,7 +414,7 @@ export default function HomePage() {
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2 group">
-              <Logo className="footer-logo" />
+              <FooterLogo />
               <p className="text-muted-foreground mt-4 mb-4 max-w-md">
                 {siteConfig.description}
               </p>
@@ -445,3 +446,5 @@ export default function HomePage() {
     </div>
   )
 }
+
+    
