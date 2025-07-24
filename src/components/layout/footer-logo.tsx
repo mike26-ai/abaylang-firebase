@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -10,68 +9,62 @@ export function FooterLogo() {
   return (
     <Link href="/" className="group inline-block">
       <div className="flex items-center justify-center gap-4 text-background">
-        <span className="text-xl font-semibold tracking-wider uppercase">
-          LANG
-        </span>
+        {/* 
+          Abylang Final Logo - Monogram (Footer Adaptation)
+          Description: A clean vector recreation of the geometric 'A' monogram,
+          styled to use theme colors for consistency across the site.
+          The internal styles are adapted to use the footer's background color for contrast.
+        */}
         <svg
-          width="80"
-          height="80"
-          viewBox="0 0 100 100"
+          width="180"
+          height="120"
+          viewBox="0 0 600 500"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          aria-label={`${siteConfig.name} Tree Logo`}
+          aria-label={`${siteConfig.name} Footer Logo`}
+          className="h-14 w-auto" // Control size here
         >
           <title>{`${siteConfig.name} Footer Logo`}</title>
           <style>
             {`
-              .tree-path { 
-                stroke: hsl(var(--background)); 
-                stroke-width: 2.5;
-                fill: none;
+              .abylang-logo-lines-footer {
+                stroke: hsl(var(--background)); /* Uses footer text color */
+                stroke-width: 10;
+                stroke-linecap: round;
+                stroke-linejoin: round;
               }
-              .tree-leaves {
-                fill: hsl(var(--background));
+              .abylang-logo-text-footer {
+                fill: hsl(var(--background)); /* Uses footer text color */
+                font-family: var(--font-lora), serif;
+                font-size: 60px;
+                font-weight: 700;
+                letter-spacing: 12px;
+                text-anchor: middle;
               }
             `}
           </style>
-          {/* Outer Circle */}
-          <circle cx="50" cy="50" r="48" className="tree-path" />
 
-          {/* Simplified Tree Structure */}
-          {/* Trunk */}
-          <path d="M 50 85 V 50" className="tree-path" strokeWidth="4" />
-          
-          {/* Roots */}
-          <path d="M 50 85 C 40 95, 30 95, 20 85" className="tree-path" />
-          <path d="M 50 85 C 60 95, 70 95, 80 85" className="tree-path" />
-          <path d="M 50 85 C 45 90, 40 90, 30 80" className="tree-path" />
-          <path d="M 50 85 C 55 90, 60 90, 70 80" className="tree-path" />
-
-          {/* Branches */}
-          <path d="M 50 50 C 40 40, 30 40, 25 25" className="tree-path" />
-          <path d="M 50 50 C 60 40, 70 40, 75 25" className="tree-path" />
-          <path d="M 50 50 C 45 45, 40 45, 35 20" className="tree-path" />
-          <path d="M 50 50 C 55 45, 60 45, 65 20" className="tree-path" />
-          <path d="M 50 50 C 50 35, 60 30, 70 20" className="tree-path" />
-          <path d="M 50 50 C 50 35, 40 30, 30 20" className="tree-path" />
-          
-          {/* Simplified Leaves as Circles */}
-          <g className="tree-leaves">
-            <circle cx="25" cy="25" r="3" />
-            <circle cx="75" cy="25" r="3" />
-            <circle cx="35" cy="20" r="3" />
-            <circle cx="65" cy="20" r="3" />
-            <circle cx="70" cy="20" r="3" />
-            <circle cx="30" cy="20" r="3" />
-            <circle cx="50" cy="15" r="3" />
-            <circle cx="40" cy="30" r="3" />
-            <circle cx="60" cy="30" r="3" />
+          {/* The Monogram Group */}
+          <g className="abylang-logo-lines-footer">
+            {/* Main 'A' Frame */}
+            <polyline points="120,320 300,50 480,320" />
+            {/* Horizontal Crossbar */}
+            <line x1="150" y1="190" x2="450" y2="190" />
+            {/* Inner Stele/Gateway Structure */}
+            <line x1="300" y1="50" x2="300" y2="150" />
+            <line x1="250" y1="190" x2="250" y2="320" />
+            <line x1="300" y1="150" x2="300" y2="320" />
+            <line x1="350" y1="190" x2="350" y2="320" />
+            {/* Bottom Steps (Asymmetrical) */}
+            <line x1="135" y1="285" x2="165" y2="285" />
+            <line x1="125" y1="310" x2="155" y2="310" />
+            <line x1="435" y1="285" x2="465" y2="285" />
+            <line x1="445" y1="310" x2="475" y2="310" />
           </g>
+          
+          {/* The Wordmark */}
+          <text className="abylang-logo-text-footer" x="300" y="420">ABYLANG</text>
         </svg>
-
-        <span className="text-xl font-semibold tracking-wider uppercase">
-          ABY
-        </span>
       </div>
     </Link>
   );
