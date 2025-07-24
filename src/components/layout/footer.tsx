@@ -1,7 +1,6 @@
 
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
-import { BookOpenText } from "lucide-react";
 import { FooterLogo } from "./footer-logo";
 
 export function Footer() {
