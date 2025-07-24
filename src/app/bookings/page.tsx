@@ -94,20 +94,20 @@ export default function BookLessonPage() {
       features: ["Meet the tutor", "Experience teaching style", "Discuss learning goals"], type: "individual",
     },
     {
-      value: "quick-practice", label: "Quick Practice", duration: 30, price: 7, description: "Perfect for conversation practice",
+      value: "quick-practice", label: "Quick Practice", duration: 30, price: 9, description: "Perfect for conversation practice",
       features: ["Conversation practice", "Pronunciation correction", "Quick grammar review"], type: "individual",
     },
     {
-      value: "comprehensive-lesson", label: "Comprehensive Lesson", duration: 60, price: 15, description: "Structured learning session",
+      value: "comprehensive-lesson", label: "Comprehensive Lesson", duration: 60, price: 16, description: "Structured learning session",
       features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials"], type: "individual",
     },
     // Group
     {
-      value: "quick-group-conversation", label: "Quick Group Conversation", duration: 30, price: 5, description: "Practice with fellow learners",
+      value: "quick-group-conversation", label: "Quick Group Conversation", duration: 30, price: 7, description: "Practice with fellow learners",
       features: ["Small group setting (2-5)", "Focused conversation", "Peer learning experience"], type: "group",
     },
     {
-      value: "immersive-conversation-practice", label: "Immersive Conversation Practice", duration: 60, price: 10, description: "Deeper conversation and cultural insights",
+      value: "immersive-conversation-practice", label: "Immersive Conversation Practice", duration: 60, price: 12, description: "Deeper conversation and cultural insights",
       features: ["Extended conversation time", "In-depth cultural topics", "Collaborative learning"], type: "group",
     },
     // Packages

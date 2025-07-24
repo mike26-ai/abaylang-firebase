@@ -26,7 +26,7 @@ export default function PackagesPage() {
     {
       name: "Quick Practice",
       duration: "30 minutes",
-      price: 7,
+      price: 9,
       description: "Perfect for conversation practice and quick reviews",
       features: [
         "Conversation practice",
@@ -39,7 +39,7 @@ export default function PackagesPage() {
     {
       name: "Comprehensive Lesson",
       duration: "60 minutes",
-      price: 15,
+      price: 16,
       description: "Our most popular lesson format for structured learning",
       features: [
         "Structured lesson plan",
@@ -55,7 +55,7 @@ export default function PackagesPage() {
     {
       name: "Quick Group Conversation",
       duration: "30 minutes",
-      price: 5,
+      price: 7,
       maxStudents: "2-5 students",
       description: "Practice with fellow learners in a supportive environment",
       features: [
@@ -68,7 +68,7 @@ export default function PackagesPage() {
     {
         name: "Immersive Conversation Practice",
         duration: "60 minutes",
-        price: 10,
+        price: 12,
         maxStudents: "2-5 students",
         description: "An extended session for deeper conversation and cultural insights",
         features: [
@@ -340,7 +340,7 @@ export default function PackagesPage() {
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">Can I cancel or reschedule?</h4>
                   <p className="text-sm text-muted-foreground">
-                    Yes, you can cancel or reschedule up to 24 hours before your lesson without any penalty.
+                    Yes, you can cancel or reschedule up to 12 hours before your lesson without any penalty.
                   </p>
                 </div>
                 <div>
