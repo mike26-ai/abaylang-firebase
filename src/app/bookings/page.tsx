@@ -579,7 +579,7 @@ export default function BookLessonPage() {
                   </Button>
                 </div>
                 <div className="text-xs text-muted-foreground space-y-1 text-center">
-                  <p>• Free cancellation up to 24 hours before.</p>
+                  <p>• Free cancellation up to 12 hours before.</p>
                   <p>• You'll receive a confirmation and lesson link via email.</p>
                 </div>
               </CardContent>

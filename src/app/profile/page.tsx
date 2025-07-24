@@ -492,7 +492,7 @@ export default function StudentDashboardPage() {
                                   <AlertDialogTitle>Cancel Lesson?</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to cancel your lesson on {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}?
-                                    (Please check our 24-hour cancellation policy).
+                                    (Please check our 12-hour cancellation policy).
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -707,5 +707,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    

@@ -31,15 +31,15 @@ const faqData = [
   },
   {
     question: "How do I reschedule a lesson?",
-    answer: "You can reschedule any lesson free of charge up to 24 hours before the scheduled start time. To do so, please go to your student dashboard, find the upcoming booking, and select the option to cancel it. Then, you can book a new slot that works better for you.",
+    answer: "You can reschedule any lesson free of charge up to 12 hours before the scheduled start time. To do so, please go to your student dashboard, find the upcoming booking, and select the option to cancel it. Then, you can book a new slot that works better for you.",
   },
   {
     question: "What is the cancellation policy?",
-    answer: "We offer free cancellation and rescheduling up to 24 hours before your lesson's start time. Cancellations made within the 24-hour window are not eligible for a refund or credit, as that time slot has been reserved for you.",
+    answer: "We offer free cancellation and rescheduling up to 12 hours before your lesson's start time. Cancellations made within the 12-hour window are not eligible for a refund or credit, as that time slot has been reserved for you.",
   },
   {
     question: "What happens if I miss my lesson?",
-    answer: "If a student misses a lesson without prior notice, it is considered a completed session, and no refund or reschedule will be offered. We encourage you to cancel or reschedule at least 24 hours in advance if you know you can't make it.",
+    answer: "If a student misses a lesson without prior notice, it is considered a completed session, and no refund or reschedule will be offered. We encourage you to cancel or reschedule at least 12 hours in advance if you know you can't make it.",
   },
   {
     question: "What happens if the tutor misses a lesson?",
