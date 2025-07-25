@@ -128,3 +128,15 @@ export interface HomeworkSubmissionType {
   feedback?: string;
   grade?: string;
 }
+
+export interface LessonMaterial {
+  id: string;
+  title: string;
+  description: string;
+  fileUrl: string; // URL to the file in Firebase Storage
+  fileName: string;
+  fileType: string; // e.g., 'application/pdf', 'audio/mpeg'
+  createdAt: Timestamp;
+  uploaderId: string; // Admin's UID
+  // Could add categories, levels, etc.
+}

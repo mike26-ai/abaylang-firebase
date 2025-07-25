@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users } from "lucide-react"
+import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
@@ -227,7 +227,7 @@ export default function BookLessonPage() {
         duration: typeof selectedLessonDetails.unitDuration === 'number' ? selectedLessonDetails.unitDuration : (typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : 60),
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: "confirmed",
+        status: "pending", // Changed to pending until payment is confirmed
         tutorId: "MahderNegashMamo",
         tutorName: tutorInfo.name,
       };
@@ -242,8 +242,9 @@ export default function BookLessonPage() {
       });
 
       toast({
-        title: "Lesson Booked Successfully!",
-        description: `Your ${selectedLessonDetails.label} ${selectedDate && selectedTime ? `on ${format(selectedDate, 'PPP')} at ${selectedTime}`: (selectedDate ? `package starting around ${format(selectedDate, 'PPP')}` : `package purchased`)} is confirmed.`,
+        title: "Booking Request Sent!",
+        description: `Your request for ${selectedLessonDetails.label} has been received. You will receive a secure payment link via email to confirm your spot.`,
+        duration: 8000
       });
       
       if(selectedDate) {
@@ -324,7 +325,7 @@ export default function BookLessonPage() {
                                             {lesson.label}
                                             {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
                                             {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group (4-6 people)</Badge>}
+                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group ({lesson.minStudents}-{lesson.maxStudents} people)</Badge>}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
                                             {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
@@ -560,27 +561,26 @@ export default function BookLessonPage() {
                       <span className="text-foreground">Total:</span>
                       <span className="text-primary">${selectedLessonDetails.price}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground text-center mt-1">(Payment not required for MVP)</p>
+                    <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">
+                      <ShieldCheck className="w-3 h-3 inline-block mr-1"/>
+                      You&apos;ll receive a secure payment link via email after booking.
+                    </p>
                   </div>
                 )}
 
-                <div className="space-y-3">
-                  <Badge variant="secondary" className="w-full justify-center py-2 bg-accent text-accent-foreground">
-                    <Check className="w-4 h-4 mr-2 text-primary" />
-                    Secure Booking
-                  </Badge>
+                <div className="space-y-3 pt-2">
                   <Button
                     className="w-full"
                     onClick={handleBooking}
                     disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !learningGoals) } 
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
-                    {isProcessing ? "Processing..." : `Confirm Booking - $${selectedLessonDetails?.price || 0}`}
+                    {isProcessing ? "Sending Request..." : `Request Booking - $${selectedLessonDetails?.price || 0}`}
                   </Button>
                 </div>
                 <div className="text-xs text-muted-foreground space-y-1 text-center">
                   <p>• Free cancellation up to 12 hours before.</p>
-                  <p>• You'll receive a confirmation and lesson link via email.</p>
+                  <p>• Your spot is confirmed upon payment of the invoice.</p>
                 </div>
               </CardContent>
             </Card>
