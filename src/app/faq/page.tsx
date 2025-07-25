@@ -19,31 +19,27 @@ const faqData = [
     question: "What happens after my free trial?",
     answer: "The trial is a no-obligation session. If you enjoyed it and wish to continue, you can purchase single lessons or a package. If you decide it's not the right fit, there's absolutely no pressure to continue.",
   },
-  {
-    question: "What if I'm not satisfied with the trial?",
-    answer: "Our goal is to ensure you have a great experience. The trial is designed to prevent this, but if you're not satisfied, we'd appreciate your feedback. There is no cost for the trial, so you lose nothing by trying it out.",
-  },
   
   // Booking, Rescheduling & Cancellations
   {
     question: "How does the booking process work?",
-    answer: "Our booking system is based on the tutor's live availability. Simply select an open time slot on the calendar, and your lesson is confirmed instantly. You'll receive an email confirmation with the lesson link right away—no need to wait for manual acceptance.",
+    answer: "Simply choose a lesson or package, select an available date and time from the calendar, and submit your booking request. You will then receive a secure invoice via email to confirm your spot. Your lesson is officially confirmed once the payment is complete.",
+  },
+  {
+    question: "What is your cancellation and refund policy?",
+    answer: "We have a simple and fair policy. You can receive a **full refund** or **reschedule for free** as long as you cancel at least **12 hours before** your scheduled lesson time. Cancellations made within the 12-hour window before a lesson are not eligible for a refund, as that time has been reserved for you.",
   },
   {
     question: "How do I reschedule a lesson?",
-    answer: "You can reschedule any lesson free of charge up to 12 hours before the scheduled start time. To do so, please go to your student dashboard, find the upcoming booking, and select the option to cancel it. Then, you can book a new slot that works better for you.",
-  },
-  {
-    question: "What is the cancellation policy?",
-    answer: "We offer free cancellation and rescheduling up to 12 hours before your lesson's start time. Cancellations made within the 12-hour window are not eligible for a refund or credit, as that time slot has been reserved for you.",
+    answer: "To reschedule, please cancel your existing booking at least 12 hours in advance via your student dashboard or by contacting us. You will receive a credit or refund, which you can then use to book a new time slot that works for you.",
   },
   {
     question: "What happens if I miss my lesson?",
-    answer: "If a student misses a lesson without prior notice, it is considered a completed session, and no refund or reschedule will be offered. We encourage you to cancel or reschedule at least 12 hours in advance if you know you can't make it.",
+    answer: "If a student misses a lesson without providing at least 12 hours notice, it is considered a completed session and no refund will be offered. We strongly encourage you to reschedule in advance if you know you cannot make it.",
   },
   {
     question: "What happens if the tutor misses a lesson?",
-    answer: "In the rare event the tutor has to cancel a lesson due to an emergency, you will be notified immediately. You will be offered a full credit to reschedule the lesson at your convenience or a full refund for that session, whichever you prefer.",
+    answer: "In the very rare event the tutor has to cancel a lesson due to an emergency, you will be notified immediately. You will be offered the choice of a full refund for that session or a free credit to reschedule at your convenience.",
   },
 
   // Packages & Subscriptions
@@ -54,14 +50,6 @@ const faqData = [
   {
     question: "Do lesson packages expire?",
     answer: "Yes, to ensure you stay on track with your learning, our standard lesson packages are valid for 6 months from the date of purchase. This gives you plenty of flexibility to schedule your lessons.",
-  },
-  {
-    question: "I already purchased classes. How do I switch to a subscription plan?",
-    answer: "Currently, we offer lesson packages. Once our subscription plan is launched, we will provide clear instructions on how existing students can transition. Please contact us for assistance when the time comes.",
-  },
-  {
-    question: "How do I cancel a subscription plan?",
-    answer: "Once subscriptions are available, you will be able to manage your plan, including pausing or cancelling, directly from your student dashboard. Cancellation will be effective at the end of your current billing cycle.",
   },
   
   // Lessons & Platform
