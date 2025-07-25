@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -48,7 +49,7 @@ export function Logo({ className }: LogoProps) {
           `}
         </style>
 
-        {/* The Monogram Group */}
+        {/* The Monogram Group - THIS PART WILL BE REPLACED */}
         <g className="abylang-logo-lines">
           {/* Main 'A' Frame */}
           <polyline points="120,320 300,50 480,320" />
@@ -66,8 +67,10 @@ export function Logo({ className }: LogoProps) {
           <line x1="445" y1="310" x2="475" y2="310" />
         </g>
         
-        {/* The Wordmark */}
-        <text className="abylang-logo-text" x="300" y="420">ABYLANG</text>
+        {/* The Wordmark Group - THIS PART WILL BE REPLACED */}
+        <g className="abylang-logo-text">
+            <text x="300" y="420">ABYLANG</text>
+        </g>
       </svg>
     </Link>
   );
