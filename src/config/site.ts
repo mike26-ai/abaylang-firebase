@@ -18,7 +18,7 @@ export type NavItem = {
 export const siteConfig = {
   name: "ABYLANG",
   description: "Connect to Ethiopian language and culture with Mahder Negash Mamo, a seasoned Amharic tutor offering live online lessons and cultural immersion through ABYLANG.",
-  url: "https://abylang.example.com", // [UPDATED] - Domain updated for new brand
+  url: "https://abylang.com", // [UPDATED] - Domain updated for new brand
   mainNav: [
     { title: "Home", href: "/" },
     { title: "About Tutor", href: "/tutor-profile", icon: Users },
