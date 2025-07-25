@@ -5,17 +5,10 @@ import Link from "next/link";
 import { siteConfig } from "@/config/site";
 import type React from "react";
 
-// A functional icon representing the core service of Abylang.
 export function FooterLogo() {
   return (
     <Link href="/" className="group inline-block">
       <div className="flex items-center justify-center gap-4 text-background">
-        {/* 
-          Abylang Final Logo - Monogram (Footer Adaptation)
-          Description: A clean vector recreation of the geometric 'A' monogram,
-          styled to use theme colors for consistency across the site.
-          The internal styles are adapted to use the footer's background color for contrast.
-        */}
         <svg
           width="180"
           height="120"
@@ -23,7 +16,7 @@ export function FooterLogo() {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           aria-label={`${siteConfig.name} Footer Logo`}
-          className="h-14 w-auto" // Control size here
+          className="h-14 w-auto"
         >
           <title>{`${siteConfig.name} Footer Logo`}</title>
           <style>
@@ -49,31 +42,22 @@ export function FooterLogo() {
               }
             `}
           </style>
-
+          
           <g className="abylang-logo-footer">
-            {/* The Monogram Group - THIS PART WILL BE REPLACED */}
-            <g className="abylang-logo-lines">
-                {/* Main 'A' Frame */}
-                <polyline points="120,320 300,50 480,320" />
-                {/* Horizontal Crossbar */}
-                <line x1="150" y1="190" x2="450" y2="190" />
-                {/* Inner Stele/Gateway Structure */}
-                <line x1="300" y1="50" x2="300" y2="150" />
-                <line x1="250" y1="190" x2="250" y2="320" />
-                <line x1="300" y1="150" x2="300" y2="320" />
-                <line x1="350" y1="190" x2="350" y2="320" />
-                {/* Bottom Steps (Asymmetrical) */}
-                <line x1="135" y1="285" x2="165" y2="285" />
-                <line x1="125" y1="310" x2="155" y2="310" />
-                <line x1="435" y1="285" x2="465" y2="285" />
-                <line x1="445" y1="310" x2="475" y2="310" />
-            </g>
-            
-            {/* The Wordmark Group - THIS PART WILL BE REPLACED */}
-            <g className="abylang-logo-text">
-                <text x="300" y="420">ABYLANG</text>
-            </g>
+              {/* New logo provided by user */}
+              <g class="abylang-logo-lines">
+                  {/* Salt shaker body + decorative holes */}
+                  <path d="..." />
+                  <circle cx="..." cy="..." r="..." />
+                  
+                  {/* Ge’ez letter — vectorized */}
+                  <path d="M123.4 56.7 C89.0 12.3 ..." />
+              </g>
+              <g class="abylang-logo-text">
+                  <text x="300" y="480">ABYLANG</text>
+              </g>
           </g>
+
         </svg>
       </div>
     </Link>
