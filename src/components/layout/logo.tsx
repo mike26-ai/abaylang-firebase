@@ -30,6 +30,7 @@ export function Logo({ className }: LogoProps) {
               stroke-width: 10;
               stroke-linecap: round;
               stroke-linejoin: round;
+              fill: none;
             }
             .abylang-logo-text {
               fill: hsl(var(--primary));
@@ -42,14 +43,10 @@ export function Logo({ className }: LogoProps) {
           `}
         </style>
         
-        {/* New logo provided by user */}
         <g className="abylang-logo-lines">
-            {/* Salt shaker body + decorative holes */}
-            <path d="..." />
-            <circle cx="..." cy="..." r="..." />
-            
-            {/* Ge’ez letter — vectorized */}
-            <path d="M123.4 56.7 C89.0 12.3 ..." />
+            {/* Original Placeholder Graphic */}
+            <path d="M150 380 L300 100 L450 380" />
+            <line x1="225" y1="240" x2="375" y2="240" />
         </g>
         <g className="abylang-logo-text">
             <text x="300" y="480">ABYLANG</text>
