@@ -43,7 +43,7 @@ export function Logo({ className }: LogoProps) {
         </style>
         
         {/* New logo provided by user */}
-        <g class="abylang-logo-lines">
+        <g className="abylang-logo-lines">
             {/* Salt shaker body + decorative holes */}
             <path d="..." />
             <circle cx="..." cy="..." r="..." />
@@ -51,7 +51,7 @@ export function Logo({ className }: LogoProps) {
             {/* Ge’ez letter — vectorized */}
             <path d="M123.4 56.7 C89.0 12.3 ..." />
         </g>
-        <g class="abylang-logo-text">
+        <g className="abylang-logo-text">
             <text x="300" y="480">ABYLANG</text>
         </g>
 
