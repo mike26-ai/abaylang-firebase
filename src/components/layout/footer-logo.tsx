@@ -25,6 +25,13 @@ export function FooterLogo() {
               .abylang-logo-footer .abylang-logo-text {
                 fill: hsl(var(--background));
               }
+               .abylang-logo-footer .abylang-logo-lines {
+                stroke: hsl(var(--background));
+                stroke-width: 40px;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                fill: none;
+              }
               .abylang-logo-footer .abylang-logo-text {
                 font-family: var(--font-lora), serif;
                 font-size: 60px;
@@ -37,14 +44,9 @@ export function FooterLogo() {
           
           <g className="abylang-logo-footer">
               <g className="abylang-logo-lines">
-                  {/* Reverted to simple 'A' logo */}
+                  {/* Stylized Letter 'A' */}
                   <path 
                     d="M336.5,125 C366.5,125 390,155 390,195 C390,255 355,295 310,315 C295,322 280,325 268,325 C240,325 210,305 210,270 C210,240 235,225 260,225 C280,225 295,235 300,250 M260,225 C255,200 240,170 215,160 M336.5,125 C336.5,95 320,80 300,80 C280,80 265,95 265,125" 
-                    stroke="hsl(var(--background))" 
-                    strokeWidth="40" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    fill="none"
                   />
               </g>
               <g className="abylang-logo-text">
