@@ -25,34 +25,37 @@ export function Logo({ className }: LogoProps) {
         <title>{`${siteConfig.name} Logo`}</title>
         <style>
           {`
-            .abylang-logo-lines {
-              stroke: hsl(var(--foreground));
-              stroke-width: 40px;
-              stroke-linecap: round;
-              stroke-linejoin: round;
-              fill: none;
+            .abylang-logo-base {
+              fill: hsl(var(--foreground));
+            }
+            .abylang-logo-accent {
+              fill: hsl(var(--primary));
             }
             .abylang-logo-text {
-              fill: hsl(var(--primary));
+              fill: hsl(var(--foreground));
               font-family: var(--font-lora), serif;
-              font-size: 60px;
+              font-size: 80px;
               font-weight: 700;
-              letter-spacing: 12px;
+              letter-spacing: 2px;
               text-anchor: middle;
             }
           `}
         </style>
         
         <g>
-            {/* The simple, stylized 'A' logo */}
-            <g className="abylang-logo-lines">
-                 <path 
-                    d="M336.5,125 C366.5,125 390,155 390,195 C390,255 355,295 310,315 C295,322 280,325 268,325 C240,325 210,305 210,270 C210,240 235,225 260,225 C280,225 295,235 300,250 M260,225 C255,200 240,170 215,160 M336.5,125 C336.5,95 320,80 300,80 C280,80 265,95 265,125" 
-                 />
-            </g>
+          {/* Main 'A' shape and text */}
+          <g className="abylang-logo-base">
+            <path d="M300 24L100 400H150L190 280H410L450 400H500L300 24ZM210 240L300 80L390 240H210Z" />
+            <path d="M280 44.5L270 24H330L320 44.5C315 54.5 300 60 300 60C300 60 285 54.5 280 44.5Z" />
             <g className="abylang-logo-text">
-                <text x="300" y="480">ABYLANG</text>
+              <text x="300" y="485">ABYLANG</text>
             </g>
+          </g>
+
+          {/* River Accent */}
+          <g className="abylang-logo-accent">
+            <path d="M410.799 240H210C240.399 265.5 242.399 297 274.799 320C307.199 343 361.2 327.5 385.2 301C409.2 274.5 410.799 240 410.799 240Z"/>
+          </g>
         </g>
       </svg>
     </Link>
