@@ -43,8 +43,8 @@ export function FooterLogo() {
           </style>
           
           <g className="abylang-logo-footer">
+              {/* The simple, stylized 'A' logo */}
               <g className="abylang-logo-lines">
-                  {/* Stylized Letter 'A' */}
                   <path 
                     d="M336.5,125 C366.5,125 390,155 390,195 C390,255 355,295 310,315 C295,322 280,325 268,325 C240,325 210,305 210,270 C210,240 235,225 260,225 C280,225 295,235 300,250 M260,225 C255,200 240,170 215,160 M336.5,125 C336.5,95 320,80 300,80 C280,80 265,95 265,125" 
                   />
