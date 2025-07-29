@@ -1,6 +1,9 @@
 
 "use client";
 
+// This component is no longer needed as the main Logo component is used in the footer.
+// Deleting or leaving this file is an option. For now, we will leave it but it is unused.
+
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
 import type React from "react";

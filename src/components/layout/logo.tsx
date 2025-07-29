@@ -2,7 +2,6 @@
 "use client";
 
 import Link from "next/link";
-import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import type React from "react";
 
@@ -13,54 +12,39 @@ interface LogoProps {
 export function Logo({ className }: LogoProps) {
   return (
     <Link href="/" className={cn("flex items-center group", className)}>
+      {/* Per user instruction, this is the exact SVG for the logo */}
       <svg
-        width="180"
-        height="120"
-        viewBox="0 0 512 512"
-        fill="none"
+        viewBox="0 0 180 50"
         xmlns="http://www.w3.org/2000/svg"
-        aria-label={`${siteConfig.name} Logo`}
-        className="h-14 w-auto"
+        className="h-10 w-auto" // Preserves aspect ratio with fixed height
+        aria-label="ABYLANG Logo"
       >
-        <title>{`${siteConfig.name} Logo`}</title>
-        <style>
-          {`
-            .abylang-logo-base {
-              fill: hsl(var(--foreground));
-              stroke: hsl(var(--foreground));
-            }
-            .abylang-logo-accent {
-              fill: hsl(var(--primary));
-            }
-            .abylang-logo-text {
-              fill: hsl(var(--primary));
-              font-family: var(--font-lora), serif;
-              font-size: 80px;
-              font-weight: 700;
-              letter-spacing: 2px;
-              text-anchor: middle;
-            }
-          `}
-        </style>
-        
-        <g>
-          {/* Main 'A' shape and Ge'ez-like lines */}
-          <g className="abylang-logo-base">
-            <path d="M180,450 L256,60 L332,450 L296,450 L256,200 L216,450 Z" />
-            <line x1="256" y1="200" x2="256" y2="320" strokeWidth="12" strokeLinecap="round" />
-            <line x1="246" y1="240" x2="266" y2="240" strokeWidth="12" strokeLinecap="round" />
-          </g>
-          
-          {/* River Accent */}
-          <g className="abylang-logo-accent">
-            <path d="M160,370 C200,330 300,330 352,370 C300,410 200,410 160,370 Z" />
-          </g>
-
-          {/* Text */}
-          <g className="abylang-logo-text">
-             <text x="256" y="500" textAnchor="middle">ABYLANG</text>
-          </g>
+        <g id="logo-mark" transform="translate(15, 0) scale(0.45)">
+          <path
+            fill="#1A374D"
+            d="M42.4,95 L20,95 L44.2,4.8 C45.3,2.2 47.5,1 50,1 C52.5,1 54.7,2.2 55.8,4.8 L80,95 L57.6,95 L53.5,84.4 L46.5,84.4 L42.4,95 Z M50,17.5 L40.5,41 L59.5,41 L50,17.5 Z"
+          ></path>
+          <path
+            fill="#2E4A62"
+            d="M50,12 L43,35 L57,35 L50,12 Z M49,45 L47,80 L53,80 L51,45 L49,45 Z"
+          ></path>
+          <path
+            fill="#1D6BAE"
+            d="M23,70 C35,55 60,50 80,62 L77,80 C60,65 40,70 27,85 L23,70 Z"
+          ></path>
         </g>
+        <text
+          x="112"
+          y="32"
+          fontFamily="sans-serif"
+          fontSize="20"
+          fontWeight="bold"
+          fill="#1A374D"
+          textAnchor="middle"
+          letterSpacing="1"
+        >
+          ABYLANG
+        </text>
       </svg>
     </Link>
   );
