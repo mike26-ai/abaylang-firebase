@@ -18,18 +18,29 @@ export function FooterLogo({ className }: LogoProps) {
         className="h-10 w-auto"
         aria-label="ABYLANG Logo"
       >
+        {/* The symbol part of the logo will use a bright, high-contrast color (Parchment White) */}
         <g id="logo-mark" transform="translate(15, 0) scale(0.45)">
-          <path fill="#FDF6E3" d="M42.4,95 L20,95 L44.2,4.8 C45.3,2.2 47.5,1 50,1 C52.5,1 54.7,2.2 55.8,4.8 L80,95 L57.6,95 L53.5,84.4 L46.5,84.4 L42.4,95 Z M50,17.5 L40.5,41 L59.5,41 L50,17.5 Z"></path>
-          <path fill="#FDF6E3" d="M50,12 L43,35 L57,35 L50,12 Z M49,45 L47,80 L53,80 L51,45 L49,45 Z"></path>
-          <path fill="#FDF6E3" d="M23,70 C35,55 60,50 80,62 L77,80 C60,65 40,70 27,85 L23,70 Z"></path>
+          <path
+            fill="#FDF6E3" // Parchment White
+            d="M42.4,95 L20,95 L44.2,4.8 C45.3,2.2 47.5,1 50,1 C52.5,1 54.7,2.2 55.8,4.8 L80,95 L57.6,95 L53.5,84.4 L46.5,84.4 L42.4,95 Z M50,17.5 L40.5,41 L59.5,41 L50,17.5 Z"
+          ></path>
+          <path
+            fill="#FDF6E3" // Parchment White
+            d="M50,12 L43,35 L57,35 L50,12 Z M49,45 L47,80 L53,80 L51,45 L49,45 Z"
+          ></path>
+          <path
+            fill="#FDF6E3" // Parchment White
+            d="M23,70 C35,55 60,50 80,62 L77,80 C60,65 40,70 27,85 L23,70 Z"
+          ></path>
         </g>
+        {/* The text part will use a vibrant Ochre for brand identity */}
         <text
           x="112"
           y="32"
           fontFamily="sans-serif"
           fontSize="20"
           fontWeight="bold"
-          fill="#FDF6E3"
+          fill="#E9A23B" // A vibrant, light Ochre for high contrast on dark backgrounds
           textAnchor="middle"
           letterSpacing="1"
         >
