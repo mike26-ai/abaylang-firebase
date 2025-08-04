@@ -66,7 +66,7 @@ async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
   const refDate = new Date();
-  for (let h = 9; h < 18; h++) { // Generate times from 09:00 to 17:30
+  for (let h = 0; h < 24; h++) { // Generate times for all 24 hours
     times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'HH:mm'));
     times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'HH:mm'));
   }
@@ -176,10 +176,7 @@ export default function BookLessonPage() {
           continue;
       }
       const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
-      const dayEndHour = 18; 
-      if (potentialEndTime.getHours() > dayEndHour || (potentialEndTime.getHours() === dayEndHour && potentialEndTime.getMinutes() > 0)) {
-          continue; 
-      }
+      
       let isSlotBooked = false;
       for (const bookedRange of dailyBookedRanges) {
         if (potentialStartTime < bookedRange.endTimeDate && potentialEndTime > bookedRange.startTimeDate) {
