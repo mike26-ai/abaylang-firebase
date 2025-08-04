@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
@@ -302,12 +303,12 @@ export default function StudentDashboardPage() {
   };
 
   const upcomingBookings = bookings.filter(
-    (b) => b.status === "confirmed" && !isPast(parse(b.date + ' ' + (b.time || "00:00 AM"), 'yyyy-MM-dd hh:mm a', new Date()))
-  ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00 AM")).getTime() - new Date(b.date + ' ' + (b.time || "00:00 AM")).getTime());
+    (b) => b.status === "confirmed" && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
+  ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime());
 
   const pastBookings = bookings.filter(
-    (b) => b.status === "completed" || b.status === "cancelled" || (b.status === "confirmed" && isPast(parse(b.date + ' ' + (b.time || "00:00 AM"), 'yyyy-MM-dd hh:mm a', new Date())))
-  ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00 AM")).getTime() - new Date(a.date + ' ' + (a.time || "00:00 AM")).getTime());
+    (b) => b.status === "completed" || b.status === "cancelled" || (b.status === "confirmed" && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
+  ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00")).getTime() - new Date(a.date + ' ' + (a.time || "00:00")).getTime());
   
   const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
   const totalHours = bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 60), 0) / 60;

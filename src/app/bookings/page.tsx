@@ -44,7 +44,7 @@ async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
       const data = doc.data() as BookingType;
       if (data.time && data.duration) {
         const slotDate = startOfDay(date); 
-        const parsedStartTime = parse(data.time, 'hh:mm a', slotDate);
+        const parsedStartTime = parse(data.time, 'HH:mm', slotDate);
         if (!isNaN(parsedStartTime.getTime())) {
             bookedSlots.push({
                 startTimeValue: data.time,
@@ -65,16 +65,11 @@ async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
 
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
-  const refDate = new Date(); 
-  for (let h = 9; h < 12; h++) { 
-    times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'hh:mm a'));
-    times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'hh:mm a'));
+  const refDate = new Date();
+  for (let h = 9; h < 18; h++) { // Generate times from 09:00 to 17:30
+    times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'HH:mm'));
+    times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'HH:mm'));
   }
-  for (let h = 14; h < 17; h++) { 
-    times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'hh:mm a'));
-    times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'hh:mm a'));
-  }
-  times.push(format(new Date(refDate.setHours(17, 0, 0, 0)), 'hh:mm a')); 
   return times;
 };
 
@@ -175,7 +170,7 @@ export default function BookLessonPage() {
     const slotDate = startOfDay(selectedDate); 
 
     for (const startTimeString of baseStartTimes) {
-      const potentialStartTime = parse(startTimeString, 'hh:mm a', slotDate);
+      const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
       if (isNaN(potentialStartTime.getTime())) {
           console.warn(`Could not parse base start time: ${startTimeString}`);
           continue;
@@ -193,7 +188,7 @@ export default function BookLessonPage() {
         }
       }
       slots.push({
-        display: `${format(potentialStartTime, 'p')} - ${format(potentialEndTime, 'p')}`,
+        display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
         value: startTimeString,
         isDisabled: isSlotBooked,
       });
@@ -549,7 +544,7 @@ export default function BookLessonPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
                       <span className="font-medium text-foreground">
-                        {`${format(parse(selectedTime, 'hh:mm a', selectedDate || new Date()), 'p')} - ${format(addMinutes(parse(selectedTime, 'hh:mm a', selectedDate || new Date()), selectedLessonDetails?.duration as number), 'p')}`}
+                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), selectedLessonDetails?.duration as number), 'HH:mm')}`}
                       </span>
                     </div>
                   )}
