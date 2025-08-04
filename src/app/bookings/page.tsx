@@ -219,7 +219,7 @@ export default function BookLessonPage() {
         duration: typeof selectedLessonDetails.unitDuration === 'number' ? selectedLessonDetails.unitDuration : (typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : 60),
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: "pending", // Changed to pending until payment is confirmed
+        status: "pending", // Status is pending until payment is confirmed by admin
         tutorId: "MahderNegashMamo",
         tutorName: tutorInfo.name,
       };
@@ -235,8 +235,8 @@ export default function BookLessonPage() {
 
       toast({
         title: "Booking Request Sent!",
-        description: `Your request for ${selectedLessonDetails.label} has been received. You will receive a secure payment link via email to confirm your spot.`,
-        duration: 8000
+        description: `Your spot is held. Please send payment (e.g., via PayPal/Zelle to ${tutorInfo.name}) to confirm. Your booking will appear as 'confirmed' on your dashboard once payment is received.`,
+        duration: 15000 // Increase duration to ensure user sees it
       });
       
       if(selectedDate) {
@@ -555,7 +555,7 @@ export default function BookLessonPage() {
                     </div>
                     <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">
                       <ShieldCheck className="w-3 h-3 inline-block mr-1"/>
-                      You&apos;ll receive a secure payment link via email after booking.
+                      Your spot is held once booked; please send payment to confirm.
                     </p>
                   </div>
                 )}
@@ -572,7 +572,7 @@ export default function BookLessonPage() {
                 </div>
                 <div className="text-xs text-muted-foreground space-y-1 text-center">
                   <p>• Free cancellation up to 12 hours before.</p>
-                  <p>• Your spot is confirmed upon payment of the invoice.</p>
+                  <p>• Your spot is confirmed upon payment.</p>
                 </div>
               </CardContent>
             </Card>
@@ -582,3 +582,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
