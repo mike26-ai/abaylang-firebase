@@ -3,66 +3,57 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check for admin role
+
+    // Helper function to check if a user is an admin
     function isAdmin() {
-      // An admin must be a logged-in user whose 'role' field in their user document is 'admin'.
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Rules for the 'users' collection
+    // Helper function to check if a user is the owner of a document
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Users Collection
     match /users/{userId} {
-      // Admins can read/write any user profile.
-      // A user can read/write their own profile.
-      allow read, write: if isAdmin() || request.auth.uid == userId;
+      // Admins can read/write any user profile
+      // A user can read/update their own profile
+      allow read, update: if isAdmin() || isOwner(userId);
+      // Anyone can create a user profile (for registration)
+      allow create: if request.auth != null;
     }
 
-    // Rules for the 'bookings' collection
+    // Bookings Collection
     match /bookings/{bookingId} {
-      // Admins can perform any action on any booking.
-      allow read, write, delete: if isAdmin();
-      
-      // Logged-in users can create their own bookings.
-      allow create: if request.auth.uid == request.resource.data.userID;
-      
-      // A user can read or update (e.g., cancel) their own booking.
-      allow read, update: if request.auth.uid == resource.data.userID;
+      // Admins can read/write any booking
+      // A user can read their own bookings
+      allow read: if isAdmin() || isOwner(resource.data.userID);
+      // An authenticated user can create a booking for themselves
+      allow create: if request.auth != null && request.resource.data.userID == request.auth.uid;
+      // Admins can update any booking
+      // A user can update their own booking (e.g., to cancel it)
+      allow update: if isAdmin() || isOwner(resource.data.userID);
+      // Only admins can delete bookings
+      allow delete: if isAdmin();
     }
 
-    // Rules for the 'contactMessages' collection
-    match /contactMessages/{messageId} {
-      // Only admins can read or modify contact messages for security.
-      allow read, write: if isAdmin();
-      
-      // Anyone can create (send) a contact message.
-      allow create: if true;
-    }
-
-    // Rules for the 'testimonials' collection
+    // Testimonials Collection
     match /testimonials/{testimonialId} {
-      // Admins can perform any action on any testimonial.
-      allow read, write, delete: if isAdmin();
-      
-      // Any user can read testimonials that have been 'approved'.
-      // This is crucial for the public-facing testimonials page.
-      allow read: if resource.data.status == 'approved';
-      
-      // Logged-in users can create testimonials.
-      allow create: if request.auth.uid == request.resource.data.userId;
+      // Anyone can read approved testimonials
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      // Any authenticated user can create a testimonial
+      allow create: if request.auth != null;
+      // Only admins can update (approve/reject) or delete testimonials
+      allow update, delete: if isAdmin();
     }
 
-    // Rules for the 'lessonMaterials' collection
-    match /lessonMaterials/{materialId} {
-      // Only admins can create, update, or delete lesson materials.
-      allow write: if isAdmin();
-
-      // Any authenticated user (student or admin) can read the materials.
-      allow read: if request.auth != null;
-    }
-
-    // Default deny: By default, no access is allowed to any other collection.
-    match /{document=**} {
-      allow read, write: if false;
+    // Contact Messages Collection
+    match /contactMessages/{messageId} {
+      // Anyone can create a contact message
+      allow create: if true;
+      // Only admins can read, update, or delete contact messages
+      allow read, update, delete: if isAdmin();
     }
   }
 }
