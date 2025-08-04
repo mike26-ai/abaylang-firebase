@@ -13,6 +13,9 @@ import { auth, db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "../ui/spinner";
+// TODO: When implementing file uploads, import the server action.
+// import { uploadImage } from "@/app/actions/uploadActions";
+
 
 export function UserProfileDetails() {
   const { user, loading } = useAuth();
@@ -20,6 +23,9 @@ export function UserProfileDetails() {
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [isSaving, setIsSaving] = useState(false);
+
+  // TODO: Add state and handlers for file input to manage profile picture uploads.
+  // const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
   if (loading) {
     return (
@@ -51,17 +57,39 @@ export function UserProfileDetails() {
     if (!auth.currentUser) return;
     setIsSaving(true);
     try {
+      
+      // TODO: Logic to upload a new profile picture if one has been selected.
+      // let imageUrl = user.photoURL;
+      // if (profileImageFile) {
+      //   const formData = new FormData();
+      //   formData.append('file', profileImageFile);
+      //   const result = await uploadImage(formData);
+      //   if (result.success && result.url) {
+      //     imageUrl = result.url;
+      //   } else {
+      //     throw new Error(result.error || "Image upload failed.");
+      //   }
+      // }
+
       // Update Firebase Auth profile
-      await updateProfile(auth.currentUser, { displayName });
+      await updateProfile(auth.currentUser, { 
+        displayName,
+        // photoURL: imageUrl,
+      });
+
       // Update Firestore document
       const userDocRef = doc(db, "users", user.uid);
-      await updateDoc(userDocRef, { name: displayName });
+      await updateDoc(userDocRef, { 
+        name: displayName,
+        // photoURL: imageUrl,
+      });
       
       toast({ title: "Profile Updated", description: "Your changes have been saved." });
       setIsEditing(false);
-    } catch (error) {
+      // setProfileImageFile(null); // Clear file selection
+    } catch (error: any) {
       console.error("Error updating profile:", error);
-      toast({ title: "Update Failed", description: "Could not update profile.", variant: "destructive" });
+      toast({ title: "Update Failed", description: error.message || "Could not update profile.", variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -98,6 +126,19 @@ export function UserProfileDetails() {
                 className="mt-1"
               />
             </div>
+             {/* TODO: Add a file input for changing the profile picture */}
+            {/*
+            <div>
+              <Label htmlFor="profilePicture">Profile Picture</Label>
+              <Input 
+                id="profilePicture" 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => setProfileImageFile(e.target.files ? e.target.files[0] : null)}
+                className="mt-1"
+              />
+            </div>
+            */}
             <div className="flex space-x-2">
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <Spinner size="sm" className="mr-2"/> : null}
