@@ -2,7 +2,7 @@
 
 ## Core Features:
 
-- Tutor Profile: Display tutor profile (Mahir Abas Mustefa) including bio, image, intro video, teaching style, and a testimonial section, drawing inspiration from Preply and italki's effective profile layouts.
+- Tutor Profile: Display tutor profile (Mahder Negash Mamo) including bio, image, intro video, teaching style, and a testimonial section.
 - Contact Form: Allow students to submit a contact form with fields for name, email, and message, designed for optimal user experience based on competitor analysis.
 - Booking calendar: Provide an interactive and visually appealing booking calendar for users to book lessons, incorporating the best features from existing platforms for availability display, booking, and cancellation of classes.
 - Accent Improvement: Employ generative AI as a tool to provide personalized suggestions for accent and pronunciation improvements after lessons, enhancing the learning experience.
