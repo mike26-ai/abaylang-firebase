@@ -219,7 +219,7 @@ export default function BookLessonPage() {
         duration: typeof selectedLessonDetails.unitDuration === 'number' ? selectedLessonDetails.unitDuration : (typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : 60),
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: "pending", // Status is pending until payment is confirmed by admin
+        status: "pending", 
         tutorId: "MahderNegashMamo",
         tutorName: tutorInfo.name,
       };
@@ -228,26 +228,21 @@ export default function BookLessonPage() {
         bookingData.learningGoals = learningGoals.trim();
       }
 
-      await addDoc(collection(db, "bookings"), {
+      const docRef = await addDoc(collection(db, "bookings"), {
         ...bookingData,
         createdAt: serverTimestamp(),
       });
-
-      toast({
-        title: "Booking Request Sent!",
-        description: `Your spot is held. Please send payment (e.g., via PayPal/Zelle to ${tutorInfo.name}) to confirm. Your booking will appear as 'confirmed' on your dashboard once payment is received.`,
-        duration: 15000 // Increase duration to ensure user sees it
-      });
       
-      if(selectedDate) {
-        setIsFetchingSlots(true);
-        getBookedSlotsData(selectedDate).then(ranges => {
-            setDailyBookedRanges(ranges);
-            setIsFetchingSlots(false);
-        });
-      }
-      setSelectedTime(undefined); 
-      setLearningGoals("");
+      // Redirect to a success page with booking details in query params
+      const queryParams = new URLSearchParams({
+        id: docRef.id,
+        lessonType: bookingData.lessonType,
+        date: bookingData.date,
+        time: bookingData.time,
+        price: bookingData.price.toString(),
+      });
+      router.push(`/bookings/success?${queryParams.toString()}`);
+
     } catch (error: any) {
       console.error("Booking error:", error);
       let description = "Could not complete your booking. Please try again.";
@@ -255,8 +250,7 @@ export default function BookLessonPage() {
           description = "Booking failed due to a permissions issue. Please ensure you are logged in and that Firestore security rules allow this action for authenticated users.";
       }
       toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
-    } finally {
-      setIsProcessing(false);
+       setIsProcessing(false);
     }
   };
 
@@ -582,5 +576,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
