@@ -68,7 +68,7 @@ export const tutorInfo = {
   ],
   languages: ["Amharic", "English"],
   experience: "5+ years",
-  imageUrl: "/tutor/mahder-profile.jpg", // NOTE: Replace this path with the actual image file path.
+  imageUrl: "https://placehold.co/400x400.png",
   dataAiHint: "tutor portrait",
   videoUrl: "https://www.youtube.com/embed/your_video_id_here", // NOTE: Replace with actual video if available.
 };
