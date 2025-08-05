@@ -12,28 +12,40 @@ export function FooterLogo({ className }: LogoProps) {
   return (
     <Link href="/" className={cn("flex items-center group", className)}>
       {/* This is the adapted SVG for the footer, with inverted colors for dark background */}
-      <svg
-        viewBox="0 0 100 130" // Defines the canvas for the SVG
-        className="h-10 w-auto" // Control the display size with Tailwind CSS
+       <svg
+        viewBox="0 0 140 140"
+        className={cn("h-12 w-auto", className)}
         aria-label="Abylang Logo"
       >
-        {/* Obelisk Shape with Cutouts - Color changed to light for contrast */}
+        <defs>
+          <clipPath id="footerRiverClip">
+            <path d="M65,0 L35,115 H55 L85,0 H65 Z" />
+          </clipPath>
+        </defs>
+        
+        {/* Main 'A' shape - Light color for dark background */}
         <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          fill="#FDF6E3" // Parchment White for high contrast on dark footer
-          d="M38.5,5.1 C39.5,2.3 42.5,0 45.6,0 L54.4,0 C57.5,0 60.5,2.3 61.5,5.1 L75,45 L75,115 L25,115 L25,45 L38.5,5.1 Z M45,20 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z M55,20 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z M45,30 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z M55,30 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z M43,85 C43,93 49,97 53,97 C57,97 60,94 60,91 C60,88 56,86 53,86 L53,73 C58,73 63,70 63,65 C63,60 58,58 53,58 C48,58 43,60 43,65 C43,70 48,73 53,73 L53,83 C51,83 46,83 46,85 L43,85 Z"
+          d="M70,5 L10,115 H30 L50,60 H90 L110,115 H130 L70,5 Z"
+          fill="#FDF6E3" // Parchment White
         />
-
-        {/* The word "ABYLANG" below the obelisk - Using a brighter amber for visibility */}
+        
+        {/* River Shape (Blue Nile) */}
+        <g clipPath="url(#footerRiverClip)">
+          <path
+            d="M-10,50 Q20,80 50,80 T110,70 L110,90 Q80,100 50,100 T-10,70 Z"
+            fill="#63B3ED" // Lighter blue for better visibility
+          />
+        </g>
+        
+        {/* The word "ABYLANG" */}
         <text
-          x="50" // Center the text horizontally
-          y="128" // Position the text below the obelisk
+          x="70"
+          y="135"
           fontFamily="sans-serif"
-          fontSize="14"
+          fontSize="18"
           fontWeight="bold"
-          fill="#E9A23B" // Brighter amber color for the text
-          textAnchor="middle" // This ensures the text is perfectly centered
+          fill="#E9A23B" // Brighter amber color
+          textAnchor="middle"
         >
           ABYLANG
         </text>
