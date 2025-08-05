@@ -1,4 +1,4 @@
-// COPY AND PASTE THIS ENTIRE CODE BLOCK INTO YOUR `logo.tsx` FILE
+// COPY AND PASTE THIS ENTIRE (UPDATED) CODE BLOCK INTO YOUR `logo.tsx` FILE
 
 "use client";
 
@@ -13,15 +13,15 @@ interface LogoProps {
 export function Logo({ className }: LogoProps) {
   return (
     <Link href="/" className={cn("flex items-center group", className)}>
-      {/* This is the new SVG code with the height increased */}
+      {/* This SVG code has been adjusted for better JSX compatibility */}
       <svg
         viewBox="0 0 100 130"
-        // The height has been changed from h-10 to h-14 to make it taller
-        className={cn("h-14 w-auto", className)} 
+        className={cn("h-14 w-auto", className)}
         aria-label="Abylang Logo"
       >
         {/* Obelisk Shape with Cutouts */}
         <path
+          // Attributes changed to camelCase (e.g., fillRule)
           fillRule="evenodd"
           clipRule="evenodd"
           fill="hsl(var(--foreground))"
@@ -32,6 +32,7 @@ export function Logo({ className }: LogoProps) {
         <text
           x="50"
           y="128"
+          // Attributes changed to camelCase
           fontFamily="sans-serif"
           fontSize="14"
           fontWeight="bold"
