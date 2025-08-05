@@ -1,3 +1,5 @@
+// COPY AND PASTE THIS ENTIRE CODE BLOCK INTO YOUR `logo.tsx` FILE
+
 "use client";
 
 import Link from "next/link";
