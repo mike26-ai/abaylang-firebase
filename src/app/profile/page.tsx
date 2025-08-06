@@ -95,13 +95,18 @@ export default function StudentDashboardPage() {
   });
 
   const fetchBookings = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoadingBookings(false);
+      return;
+    }
     setIsLoadingBookings(true);
     try {
       const bookingsCol = collection(db, "bookings");
+      // This is the secure query that aligns with Firestore rules.
+      // It only fetches documents where the 'userID' field matches the logged-in user's UID.
       const q = query(
         bookingsCol,
-        where("userID", "==", user.uid), // Corrected: was userId, is now userID
+        where("userID", "==", user.uid),
         orderBy("createdAt", "desc")
       );
       const querySnapshot = await getDocs(q);
@@ -110,6 +115,7 @@ export default function StudentDashboardPage() {
         return { ...data, id: doc.id, hasReview: false, duration: data.duration || 60 };
       });
 
+      // Check for existing reviews
       const testimonialsCol = collection(db, "testimonials");
       const tesimonialsQuery = query(testimonialsCol, where("userId", "==", user.uid), where("lessonId", "!=", null));
       const testimonialsSnapshot = await getDocs(tesimonialsQuery);
@@ -122,12 +128,10 @@ export default function StudentDashboardPage() {
       setBookings(fetchedBookings);
 
     } catch (error: any) {
-      console.error("Error fetching bookings:", error);
-      let description = "Could not load your bookings. Please try again later.";
-      if (error.code === 'failed-precondition') {
-        description = "Could not load bookings. This often means a required database index is missing (for the bookings collection: userID ASC, createdAt DESC). Please check the browser console for a link to create it, or check your Firestore indexes.";
-      } else if (error.code === 'permission-denied') {
-        description = "Could not load bookings due to a permission issue. Please check your Firestore security rules for the 'bookings' collection.";
+      console.error("Firestore Error: Could not fetch bookings.", error);
+      let description = "An error occurred while fetching your bookings. Please try again later.";
+      if (error.code === 'permission-denied') {
+          description = "A permission issue occurred while fetching your bookings. This is unexpected; please contact support if this persists.";
       }
       toast({
         title: "Error Fetching Bookings",
