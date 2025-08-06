@@ -39,10 +39,10 @@ export default function ReviewsPage() {
       setIsLoading(true);
       try {
         const testimonialsCol = collection(db, "testimonials");
+        // FIX: Query only for status and order later in code to avoid composite index requirement
         const q = query(
           testimonialsCol,
-          where("status", "==", "approved"),
-          orderBy("createdAt", "desc")
+          where("status", "==", "approved")
         );
         const querySnapshot = await getDocs(q);
         const fetchedTestimonials = querySnapshot.docs.map((doc) => {
@@ -69,7 +69,7 @@ export default function ReviewsPage() {
         console.error("Error fetching testimonials:", error);
         let description = "Could not fetch reviews.";
         if (error.code === 'failed-precondition') {
-            description = "Could not fetch reviews. This often means a required database index is missing (e.g., for testimonials: status ASC, createdAt DESC). Please check the browser console for a link to create it, or check Firestore indexes.";
+            description = "Could not fetch reviews. This often means a required database index is missing. Please check the browser console for a link to create it, or check Firestore indexes.";
         } else if (error.code === 'permission-denied') {
             description = "Could not fetch reviews due to a permission issue. Please check Firestore security rules for 'testimonials'.";
         }
@@ -100,9 +100,10 @@ export default function ReviewsPage() {
   const sortedReviews = [...filteredReviews].sort((a, b) => {
     switch (sortBy) {
       case "newest":
-        return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
+        // Fallback to 0 if createdAt is missing to prevent crashes
+        return (b.createdAt?.toDate()?.getTime() || 0) - (a.createdAt?.toDate()?.getTime() || 0);
       case "oldest":
-        return new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime()
+        return (a.createdAt?.toDate()?.getTime() || 0) - (b.createdAt?.toDate()?.getTime() || 0);
       case "highest":
         return b.rating - a.rating
       case "lowest":
@@ -110,7 +111,7 @@ export default function ReviewsPage() {
       case "helpful":
         return (b.helpful || 0) - (a.helpful || 0)
       default:
-        return 0
+         return (b.createdAt?.toDate()?.getTime() || 0) - (a.createdAt?.toDate()?.getTime() || 0);
     }
   })
 

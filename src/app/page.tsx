@@ -31,20 +31,29 @@ export default function HomePage() {
       setIsLoadingTestimonials(true);
       try {
         const testimonialsCol = collection(db, "testimonials");
+        // FIX: Query for status, but order in code to avoid needing a composite index
         const q = query(
           testimonialsCol,
           where("status", "==", "approved"),
-          orderBy("createdAt", "desc"),
-          limit(3)
+          limit(10) // Fetch a few recent ones to sort
         );
         const querySnapshot = await getDocs(q);
         const fetchedTestimonials = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TestimonialType));
-        setTestimonials(fetchedTestimonials);
+        
+        // Sort by date in the client-side code
+        fetchedTestimonials.sort((a, b) => {
+            const dateA = a.createdAt?.toDate()?.getTime() || 0;
+            const dateB = b.createdAt?.toDate()?.getTime() || 0;
+            return dateB - dateA;
+        });
+
+        setTestimonials(fetchedTestimonials.slice(0, 3)); // Take the top 3 after sorting
+
       } catch (error: any) {
         console.error("Error fetching testimonials for homepage:", error);
         let description = "Could not load recent testimonials.";
         if (error.code === 'failed-precondition') {
-            description = "Could not load testimonials. This often means a required database index is missing (e.g., for testimonials: status ASC, createdAt DESC). Please check the browser console for a link to create it, or check Firestore indexes.";
+            description = "Could not load testimonials. This often means a required database index is missing. Please check the browser console for a link to create it, or check Firestore indexes.";
         } else if (error.code === 'permission-denied') {
             description = "Could not load testimonials due to a permission issue. Please check Firestore security rules for 'testimonials'.";
         }
