@@ -193,66 +193,71 @@ export default function BookLessonPage() {
     return slots;
   }, [selectedDate, selectedLessonDetails, dailyBookedRanges]);
 
-  const handleBooking = async () => {
-    if (!user) {
-      toast({ title: "Login Required", description: "Please log in to book a lesson.", variant: "destructive" });
-      router.push('/login?redirect=/bookings');
-      return;
-    }
-    if (!selectedLessonDetails) {
-        toast({ title: "Selection Incomplete", description: "Please select a lesson type.", variant: "destructive" });
-        return;
-    }
-    if (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) {
-      toast({ title: "Selection Incomplete", description: "Please select date and time for your lesson.", variant: "destructive" });
-      return;
-    }
-    
-    setIsProcessing(true);
-    try {
-      const bookingData: Omit<BookingType, 'id' | 'createdAt' | 'learningGoals'> & { learningGoals?: string } = {
-        userID: user.uid,
-        userName: user.displayName || "User",
-        userEmail: user.email || "",
-        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "N/A_PACKAGE", 
-        time: selectedTime || "N/A_PACKAGE", 
-        duration: typeof selectedLessonDetails.unitDuration === 'number' ? selectedLessonDetails.unitDuration : (typeof selectedLessonDetails.duration === 'number' ? selectedLessonDetails.duration : 60),
-        lessonType: selectedLessonDetails.label,
-        price: selectedLessonDetails.price,
-        status: "pending", 
-        tutorId: "MahderNegashMamo",
-        tutorName: tutorInfo.name,
-      };
+const handleBooking = async () => {
+  if (!user) {
+    toast({ title: "Login Required", description: "Please log in to book a lesson.", variant: "destructive" });
+    router.push('/login?redirect=/bookings');
+    return;
+  }
 
-      if (learningGoals.trim()) {
-        bookingData.learningGoals = learningGoals.trim();
-      }
+  if (!selectedLessonDetails) {
+    toast({ title: "Selection Incomplete", description: "Please select a lesson type.", variant: "destructive" });
+    return;
+  }
+  if (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) {
+    toast({ title: "Selection Incomplete", description: "Please select a date and time for your lesson.", variant: "destructive" });
+    return;
+  }
 
-      const docRef = await addDoc(collection(db, "bookings"), {
-        ...bookingData,
-        createdAt: serverTimestamp(),
-      });
-      
-      // Redirect to a success page with booking details in query params
-      const queryParams = new URLSearchParams({
-        id: docRef.id,
-        lessonType: bookingData.lessonType,
-        date: bookingData.date,
-        time: bookingData.time,
-        price: bookingData.price.toString(),
-      });
-      router.push(`/bookings/success?${queryParams.toString()}`);
+  setIsProcessing(true);
 
-    } catch (error: any) {
-      console.error("Booking error:", error);
-      let description = "Could not complete your booking. Please try again.";
-      if (error.code === 'permission-denied') {
-          description = "Booking failed due to a permissions issue. Please ensure you are logged in and that Firestore security rules allow this action for authenticated users.";
-      }
-      toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
-       setIsProcessing(false);
+  try {
+    const unitDuration = typeof selectedLessonDetails.unitDuration === 'number' 
+        ? selectedLessonDetails.unitDuration 
+        : typeof selectedLessonDetails.duration === 'number' 
+        ? selectedLessonDetails.duration
+        : 60; // Default to 60 if somehow not available
+
+    const bookingData = {
+      date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
+      time: selectedTime || 'N/A_PACKAGE',
+      duration: unitDuration,
+      lessonType: selectedLessonDetails.label,
+      price: selectedLessonDetails.price,
+      status: 'pending' as const,
+      tutorId: "MahderNegashNano",
+      tutorName: "Mahder Negash",
+      userID: user.uid, // Corrected field name to userID (uppercase D)
+      userName: user.displayName || "User",
+      userEmail: user.email || "No Email",
+      ...(learningGoals.trim() && { learningGoals: learningGoals.trim() })
+    };
+
+    const docRef = await addDoc(collection(db, "bookings"), {
+      ...bookingData,
+      createdAt: serverTimestamp(),
+    });
+
+    const queryParams = new URLSearchParams({
+      id: docRef.id,
+      lessonType: bookingData.lessonType,
+      date: bookingData.date,
+      time: bookingData.time,
+      price: bookingData.price.toString(),
+    });
+    router.push(`/bookings/success?${queryParams.toString()}`);
+
+  } catch (error: any) {
+    console.error("Booking error:", error);
+    let description = "Could not complete your booking. Please try again.";
+    if (error.code === 'permission-denied') {
+      description = "Booking failed due to a permissions issue. Please ensure you are logged in and that your profile is up to date.";
     }
-  };
+    toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   const isPackageSelected = selectedLessonDetails?.type === 'package';
 
@@ -576,5 +581,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
