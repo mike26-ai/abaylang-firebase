@@ -227,7 +227,7 @@ const handleBooking = async () => {
       status: 'pending' as const,
       tutorId: "MahderNegashNano",
       tutorName: "Mahder Negash",
-      userID: user.uid, // Corrected field name to userID (uppercase D)
+      userID: user.uid, // CORRECTED: Was 'userId', now 'userID' to match rules
       userName: user.displayName || "User",
       userEmail: user.email || "No Email",
       ...(learningGoals.trim() && { learningGoals: learningGoals.trim() })

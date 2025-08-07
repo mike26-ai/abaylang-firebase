@@ -94,56 +94,57 @@ export default function StudentDashboardPage() {
     lessonDate: "",
   });
 
-  const fetchBookings = async () => {
-    if (!user) {
-      setIsLoadingBookings(false);
-      return;
+const fetchBookings = async () => {
+  if (!user) {
+    setIsLoadingBookings(false);
+    return;
+  }
+  setIsLoadingBookings(true);
+  try {
+    const bookingsCol = collection(db, "bookings");
+    
+    // CORRECTED: Query by 'userID' (uppercase D) to match security rules and data structure.
+    const q = query(
+      bookingsCol,
+      where("userID", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
+
+    const querySnapshot = await getDocs(q);
+    let fetchedBookings = querySnapshot.docs.map((doc) => {
+      const data = doc.data() as BookingType;
+      // Provide a default for duration if it's missing
+      return { ...data, id: doc.id, hasReview: false, duration: data.duration || 60 };
+    });
+
+    // Check for existing reviews
+    const testimonialsCol = collection(db, "testimonials");
+    const tesimonialsQuery = query(testimonialsCol, where("userId", "==", user.uid), where("lessonId", "!=", null));
+    const testimonialsSnapshot = await getDocs(tesimonialsQuery);
+    const reviewedLessonIds = new Set(testimonialsSnapshot.docs.map(d => d.data().lessonId));
+
+    fetchedBookings = fetchedBookings.map(b => ({
+      ...b,
+      hasReview: reviewedLessonIds.has(b.id)
+    }));
+    setBookings(fetchedBookings);
+
+  } catch (error: any) {
+    console.error("Firestore Error: Could not fetch bookings.", error);
+    let description = "An error occurred while fetching your bookings. Please try again later.";
+    if (error.code === 'permission-denied') {
+        description = "A permission issue occurred while fetching your bookings. This is unexpected; please contact support if this persists.";
     }
-    setIsLoadingBookings(true);
-    try {
-      const bookingsCol = collection(db, "bookings");
-      // This is the secure query that aligns with Firestore rules.
-      // It only fetches documents where the 'userID' field matches the logged-in user's UID.
-      const q = query(
-        bookingsCol,
-        where("userID", "==", user.uid),
-        orderBy("createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      let fetchedBookings = querySnapshot.docs.map((doc) => {
-        const data = doc.data() as BookingType;
-        return { ...data, id: doc.id, hasReview: false, duration: data.duration || 60 };
-      });
-
-      // Check for existing reviews
-      const testimonialsCol = collection(db, "testimonials");
-      const tesimonialsQuery = query(testimonialsCol, where("userId", "==", user.uid), where("lessonId", "!=", null));
-      const testimonialsSnapshot = await getDocs(tesimonialsQuery);
-      const reviewedLessonIds = new Set(testimonialsSnapshot.docs.map(d => d.data().lessonId));
-
-      fetchedBookings = fetchedBookings.map(b => ({
-        ...b,
-        hasReview: reviewedLessonIds.has(b.id)
-      }));
-      setBookings(fetchedBookings);
-
-    } catch (error: any) {
-      console.error("Firestore Error: Could not fetch bookings.", error);
-      let description = "An error occurred while fetching your bookings. Please try again later.";
-      if (error.code === 'permission-denied') {
-          description = "A permission issue occurred while fetching your bookings. This is unexpected; please contact support if this persists.";
-      }
-      toast({
-        title: "Error Fetching Bookings",
-        description: description,
-        variant: "destructive",
-        duration: 9000,
-      });
-    } finally {
-      setIsLoadingBookings(false);
-    }
-  };
-  
+    toast({
+      title: "Error Fetching Bookings",
+      description: description,
+      variant: "destructive",
+      duration: 9000,
+    });
+  } finally {
+    setIsLoadingBookings(false);
+  }
+};
   const fetchUserProfile = async () => {
     if (!user) return;
     setIsLoadingProfile(true);

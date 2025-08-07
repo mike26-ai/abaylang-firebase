@@ -59,9 +59,10 @@ export function LoginForm() {
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      const errorMessage = error.code === 'auth/invalid-credential' 
-        ? "Invalid email or password. Please try again."
-        : "An error occurred during login. Please try again.";
+      let errorMessage = "An unknown error occurred. Please try again.";
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+          errorMessage = "Invalid email or password. Please try again.";
+      }
       toast({
         title: "Login Failed",
         description: errorMessage,
