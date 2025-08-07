@@ -2,7 +2,7 @@ import type { Timestamp } from "firebase/firestore";
 
 export interface Booking {
   id: string;
-  userID: string; // Changed from userId to userID
+  userId: string; // This must be lowercase 'd' to match security rules
   userName: string;
   userEmail: string;
   date: string; // YYYY-MM-DD format

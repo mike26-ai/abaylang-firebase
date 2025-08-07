@@ -2,7 +2,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -20,7 +20,6 @@ import type { UserProfile } from "@/lib/types";
 import { Logo } from "@/components/layout/logo";
 import { Spinner } from "@/components/ui/spinner";
 import { ADMIN_EMAIL } from "@/config/site";
-import ReCAPTCHA from "react-google-recaptcha";
 
 // Placeholder values to check against
 const PLACEHOLDER_API_KEY = "YOUR_API_KEY";
@@ -44,7 +43,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
-  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -57,20 +55,6 @@ export default function RegisterPage() {
     e.preventDefault()
     setIsLoading(true)
     setError("")
-
-    const recaptchaToken = recaptchaRef.current?.getValue();
-    if (!recaptchaToken) {
-      setError("Please complete the reCAPTCHA verification.");
-      setIsLoading(false);
-      return;
-    }
-
-    if (!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
-      setError("ReCAPTCHA is not configured. Please set NEXT_PUBLIC_RECAPTCHA_SITE_KEY.");
-      setIsLoading(false);
-      return;
-    }
-
 
     // Explicitly check if the Firebase config being used by the auth object contains placeholders
     if (
@@ -175,7 +159,6 @@ export default function RegisterPage() {
       setError(friendlyMessage);
     } finally {
       setIsLoading(false)
-      recaptchaRef.current?.reset();
     }
   }
 
@@ -355,13 +338,6 @@ export default function RegisterPage() {
                 </Label>
               </div>
 
-              <div className="flex justify-center">
-                 <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "YOUR_SITE_KEY_HERE"}
-                 />
-              </div>
-
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Spinner size="sm" className="mr-2" /> : null}
                 {isLoading ? "Creating Account..." : "Create Account"}
@@ -382,5 +358,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-
-    
