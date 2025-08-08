@@ -60,8 +60,9 @@ export function LoginForm() {
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = "An unknown error occurred. Please try again.";
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-          errorMessage = "Invalid email or password. Please try again.";
+      // This single check handles user-not-found and wrong-password securely.
+      if (error.code === 'auth/invalid-credential') {
+          errorMessage = "Invalid email or password. Please check your credentials and try again.";
       }
       toast({
         title: "Login Failed",
