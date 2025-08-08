@@ -7,7 +7,7 @@ import type { PropsWithChildren} from 'react';
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { ADMIN_EMAIL } from "@/config/site";
-import { useRouter } from 'next/navigation'; // Changed from next/navigation
+import { useRouter } from 'next/navigation';
 
 type UserType = FirebaseUser & { isAdmin?: boolean };
 
@@ -29,7 +29,8 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        const isAdminUser = firebaseUser.email === ADMIN_EMAIL;
+        // Correctly check against the imported ADMIN_EMAIL constant
+        const isAdminUser = firebaseUser.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
         setUser({ ...firebaseUser, isAdmin: isAdminUser });
         setIsAdmin(isAdminUser);
       } else {
