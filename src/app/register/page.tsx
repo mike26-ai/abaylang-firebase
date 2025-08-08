@@ -21,12 +21,6 @@ import { Logo } from "@/components/layout/logo";
 import { Spinner } from "@/components/ui/spinner";
 import { ADMIN_EMAIL } from "@/config/site";
 
-// Placeholder values to check against
-const PLACEHOLDER_API_KEY = "YOUR_API_KEY";
-const PLACEHOLDER_AUTH_DOMAIN = "YOUR_AUTH_DOMAIN";
-const PLACEHOLDER_PROJECT_ID = "YOUR_PROJECT_ID";
-
-
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -55,20 +49,6 @@ export default function RegisterPage() {
     e.preventDefault()
     setIsLoading(true)
     setError("")
-
-    // Explicitly check if the Firebase config being used by the auth object contains placeholders
-    if (
-      auth.app.options.apiKey === PLACEHOLDER_API_KEY ||
-      auth.app.options.authDomain === PLACEHOLDER_AUTH_DOMAIN ||
-      auth.app.options.projectId === PLACEHOLDER_PROJECT_ID ||
-      !auth.app.options.apiKey // Also check if apiKey is missing/empty
-    ) {
-      setError(
-        "Firebase is not configured correctly. Please ensure your actual Firebase project API key, Auth Domain, and Project ID are correctly set in your environment variables (e.g., .env file or Firebase Studio settings) and that the application has been restarted to pick them up."
-      );
-      setIsLoading(false);
-      return;
-    }
 
     if (!formData.country) {
       setError("Please select your country.");
@@ -104,7 +84,7 @@ export default function RegisterPage() {
         // Update Firebase Auth profile
         await updateProfile(user, { displayName: `${formData.firstName} ${formData.lastName}` });
 
-        // ** FIX: Determine role based on email **
+        // ** Determine role based on email **
         const userRole = formData.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? "admin" : "student";
 
         // Create user document in Firestore with the correct role
@@ -140,7 +120,6 @@ export default function RegisterPage() {
           case 'auth/operation-not-allowed':
             friendlyMessage = "Email/password accounts are not enabled. Please contact support.";
             break;
-          // Firebase SDK specific errors if config is bad, which our above check tries to pre-empt
           case 'auth/invalid-api-key':
             friendlyMessage = "Firebase API Key is invalid. This indicates an issue with your Firebase project setup or environment variables.";
             break;
@@ -358,3 +337,5 @@ export default function RegisterPage() {
     </div>
   )
 }
+
+    
