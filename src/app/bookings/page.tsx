@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -227,7 +226,8 @@ const handleBooking = async () => {
       status: 'pending' as const,
       tutorId: "MahderNegashNano",
       tutorName: "Mahder Negash",
-      userID: user.uid, // CORRECTED: Was 'userId', now 'userID' to match rules
+      // *** THE ONLY CHANGE IS HERE: Corrected 'userID' to 'userId' ***
+      userId: user.uid,
       userName: user.displayName || "User",
       userEmail: user.email || "No Email",
       ...(learningGoals.trim() && { learningGoals: learningGoals.trim() })

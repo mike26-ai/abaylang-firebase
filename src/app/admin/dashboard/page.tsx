@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -101,25 +102,42 @@ export default function AdminDashboardPage() {
       try {
         const today = format(startOfDay(new Date()), "yyyy-MM-dd");
 
-        const upcomingBookingsQuery = query(
-          collection(db, "bookings"),
-          where("date", ">=", today),
-          where("status", "==", "confirmed")
-        );
-        const upcomingBookingsSnapshot = await getCountFromServer(upcomingBookingsQuery);
-
+        // --- OPTIMIZATION: Run queries in parallel ---
+        const upcomingBookingsQuery = query(collection(db, "bookings"), where("date", ">=", today), where("status", "==", "confirmed"));
         const pendingTestimonialsQuery = query(collection(db, "testimonials"), where("status", "==", "pending"));
-        const pendingTestimonialsSnapshot = await getCountFromServer(pendingTestimonialsQuery);
-        
-        const latestPendingTestimonialsQuery = query(pendingTestimonialsQuery, orderBy("createdAt", "desc"), limit(5));
-        const latestPendingTestimonialsDocs = await getDocs(latestPendingTestimonialsQuery);
-        setPendingTestimonials(latestPendingTestimonialsDocs.docs.map(d => ({ id: d.id, ...d.data() } as Testimonial)));
-
         const newInquiriesQuery = query(collection(db, "contactMessages"), where("read", "==", false));
-        const newInquiriesSnapshot = await getCountFromServer(newInquiriesQuery);
-
         const totalStudentsQuery = query(collection(db, "users"), where("role", "==", "student"));
-        const totalStudentsSnapshot = await getCountFromServer(totalStudentsQuery);
+        const recentBookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(5));
+        const recentMessagesQuery = query(collection(db, "contactMessages"), orderBy("createdAt", "desc"), limit(5));
+        const recentStudentsQuery = query(collection(db, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5));
+        const latestPendingTestimonialsQuery = query(pendingTestimonialsQuery, orderBy("createdAt", "desc"), limit(5));
+        
+        const [
+          upcomingBookingsSnapshot,
+          pendingTestimonialsSnapshot,
+          newInquiriesSnapshot,
+          totalStudentsSnapshot,
+          recentBookingsDocs,
+          recentMessagesDocs,
+          recentStudentsDocs,
+          latestPendingTestimonialsDocs,
+        ] = await Promise.all([
+          getCountFromServer(upcomingBookingsQuery),
+          getCountFromServer(pendingTestimonialsQuery),
+          getCountFromServer(newInquiriesQuery),
+          getCountFromServer(totalStudentsQuery),
+          getDocs(recentBookingsQuery),
+          getDocs(recentMessagesQuery),
+          getDocs(recentStudentsQuery),
+          getDocs(latestPendingTestimonialsQuery)
+        ]);
+        // --- END OPTIMIZATION ---
+
+
+        setPendingTestimonials(latestPendingTestimonialsDocs.docs.map(d => ({ id: d.id, ...d.data() } as Testimonial)));
+        setRecentBookings(recentBookingsDocs.docs.map(d => ({ id: d.id, ...d.data() } as Booking)));
+        setRecentMessages(recentMessagesDocs.docs.map(d => ({ id: d.id, ...d.data() } as ContactMessage)));
+        setRecentStudents(recentStudentsDocs.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile)));
         
         // Placeholder for revenue and average rating calculation
         // For revenue: sum prices of 'completed' bookings
@@ -133,16 +151,6 @@ export default function AdminDashboardPage() {
           totalRevenue: 1250, // Placeholder
           averageRating: 4.9, // Placeholder
         });
-
-        const recentBookingsDocs = await getDocs(query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(5)));
-        setRecentBookings(recentBookingsDocs.docs.map(d => ({ id: d.id, ...d.data() } as Booking)));
-        
-        const recentMessagesDocs = await getDocs(query(collection(db, "contactMessages"), orderBy("createdAt", "desc"), limit(5)));
-        setRecentMessages(recentMessagesDocs.docs.map(d => ({ id: d.id, ...d.data() } as ContactMessage)));
-
-        const recentStudentsDocs = await getDocs(query(collection(db, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5)));
-        setRecentStudents(recentStudentsDocs.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile)));
-
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -463,3 +471,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
