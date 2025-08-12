@@ -119,7 +119,6 @@ export default function StudentDashboardPage() {
       }));
 
       // Now, for each COMPLETED booking, check if a review exists.
-      // This is more efficient than fetching all testimonials at once.
       const reviewChecks = fetchedBookings.map(async (booking) => {
         if (booking.status === 'completed') {
           const testimonialsCol = collection(db, "testimonials");
@@ -142,7 +141,7 @@ export default function StudentDashboardPage() {
       console.error("CRITICAL ERROR fetching data in dashboard:", error);
       toast({
         title: "Error Loading Dashboard",
-        description: "A permission error occurred. If this persists, please contact support.",
+        description: "Could not load booking information. Please check your connection.",
         variant: "destructive",
         duration: 9000,
       });
@@ -272,7 +271,7 @@ export default function StudentDashboardPage() {
     }
     try {
         await addDoc(collection(db, "testimonials"), {
-            userId: user.uid, // Correctly using userId
+            userId: user.uid,
             name: userProfileData.name, 
             userEmail: userProfileData.email,
             lessonId: feedbackData.lessonId,
