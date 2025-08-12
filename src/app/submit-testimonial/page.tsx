@@ -14,21 +14,29 @@ import { submitTestimonialAction } from "@/app/actions/testimonialActions";
 
 
 export default function SubmitTestimonialPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
 
   useEffect(() => {
-    // If auth is done loading and there's no user, redirect to login.
-    if (!loading && !user) {
-      // We pass a 'redirect' query parameter so the login page knows where to send the user back to.
-      router.push("/login?callbackUrl=/submit-testimonial");
+    // If auth is done loading...
+    if (!loading) {
+      // and there's no user, redirect to login with a callback.
+      if (!user) {
+        router.push("/login?callbackUrl=/submit-testimonial");
+      }
+      // or if the user is an admin, redirect them to their dashboard.
+      else if (isAdmin) {
+        router.push("/admin/dashboard");
+      }
+      // The user is logged in and is a student, so they can stay.
     }
-  }, [user, loading, router]);
+  }, [user, loading, isAdmin, router]);
 
   // Show a loading spinner while the authentication state is being checked.
-  if (loading || !user) {
+  // Also covers the brief moment before a non-student user is redirected.
+  if (loading || !user || isAdmin) {
     return (
       <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
         <Spinner size="lg" />
@@ -36,7 +44,7 @@ export default function SubmitTestimonialPage() {
     );
   }
 
-  // Once the user is confirmed, show the form.
+  // Once the user is confirmed to be a student, show the form.
   return (
     <div className="container mx-auto max-w-2xl py-12">
       <Card className="shadow-lg">
@@ -87,7 +95,7 @@ export default function SubmitTestimonialPage() {
               />
             </div>
             
-            <Button type="submit" size="lg" className="w-full">
+            <Button type="submit" size="lg" className="w-full" disabled={rating === 0}>
               Submit Testimonial
             </Button>
           </form>
