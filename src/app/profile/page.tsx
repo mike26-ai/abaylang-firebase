@@ -40,6 +40,7 @@ import {
   setDoc,
   Timestamp,
   getDoc,
+  limit,
 } from "firebase/firestore";
 import { updateProfile as updateFirebaseUserProfile } from "firebase/auth";
 import type { Booking as BookingType, UserProfile } from "@/lib/types";
@@ -101,9 +102,6 @@ export default function StudentDashboardPage() {
     setIsLoadingBookings(true);
     try {
       const bookingsCol = collection(db, "bookings");
-      
-      // --- STANDARDIZED FIX ---
-      // The query now consistently uses "userId" for the bookings collection.
       const q = query(
         bookingsCol,
         where("userId", "==", user.uid),
@@ -111,22 +109,32 @@ export default function StudentDashboardPage() {
       );
   
       const querySnapshot = await getDocs(q);
-      let fetchedBookings = querySnapshot.docs.map((doc) => {
-        const data = doc.data() as BookingType;
-        return { ...data, id: doc.id, hasReview: false, duration: data.duration || 60 };
-      });
-  
-      // This query already correctly uses "userId". No changes needed here.
-      const testimonialsCol = collection(db, "testimonials");
-      const tesimonialsQuery = query(testimonialsCol, where("userId", "==", user.uid), where("lessonId", "!=", null));
-      const testimonialsSnapshot = await getDocs(tesimonialsQuery);
-      const reviewedLessonIds = new Set(testimonialsSnapshot.docs.map(d => d.data().lessonId));
-  
-      fetchedBookings = fetchedBookings.map(b => ({
-        ...b,
-        hasReview: reviewedLessonIds.has(b.id)
+      const fetchedBookings = querySnapshot.docs.map((doc) => ({
+          ...(doc.data() as BookingType),
+          id: doc.id,
+          hasReview: false, // Default to false
+          duration: doc.data().duration || 60
       }));
-      setBookings(fetchedBookings);
+
+      // Now, for each COMPLETED booking, check if a review exists.
+      // This is more efficient than fetching all testimonials at once.
+      const reviewChecks = fetchedBookings.map(async (booking) => {
+        if (booking.status === 'completed') {
+          const testimonialsCol = collection(db, "testimonials");
+          const reviewQuery = query(
+              testimonialsCol, 
+              where("userId", "==", user.uid), 
+              where("lessonId", "==", booking.id),
+              limit(1)
+          );
+          const reviewSnapshot = await getDocs(reviewQuery);
+          return { ...booking, hasReview: !reviewSnapshot.empty };
+        }
+        return booking;
+      });
+
+      const bookingsWithReviewStatus = await Promise.all(reviewChecks);
+      setBookings(bookingsWithReviewStatus);
   
     } catch (error: any) {
       console.error("CRITICAL ERROR fetching data in dashboard:", error);
@@ -653,3 +661,6 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+
+    
