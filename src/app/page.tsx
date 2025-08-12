@@ -321,7 +321,7 @@ export default function HomePage() {
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-accent text-accent-foreground">Student Success</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">What Students Say</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">What Our Students Say</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Real stories from learners who've connected with the culture
             </p>
@@ -352,7 +352,11 @@ export default function HomePage() {
             ) : (
                 <p className="text-center text-muted-foreground">No approved testimonials yet. Check back soon!</p>
             )}
-          <div className="text-center mt-12">
+          <div className="text-center mt-12 space-y-4">
+             <Button size="lg" asChild>
+                <Link href="/submit-testimonial">Share Your Experience</Link>
+             </Button>
+             <br/>
             <Button variant="outline" className="border-primary/30 hover:bg-accent text-foreground" asChild>
                 <Link href="/testimonials">Read More Reviews</Link>
             </Button>
