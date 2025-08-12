@@ -23,7 +23,7 @@ export default function SubmitTestimonialPage() {
     // If auth is done loading and there's no user, redirect to login.
     if (!loading && !user) {
       // We pass a 'redirect' query parameter so the login page knows where to send the user back to.
-      router.push("/login?redirect=/submit-testimonial");
+      router.push("/login?callbackUrl=/submit-testimonial");
     }
   }, [user, loading, router]);
 

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
@@ -33,6 +33,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -51,12 +53,16 @@ export function LoginForm() {
         title: "Login Successful",
         description: "Welcome back!",
       });
-      // Redirect based on user role (email)
-      if (values.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+
+      // Redirect logic
+      if (callbackUrl) {
+        router.push(callbackUrl);
+      } else if (values.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
         router.push("/admin/dashboard");
       } else {
         router.push("/profile");
       }
+      
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = "An unknown error occurred. Please try again.";
