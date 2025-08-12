@@ -17,7 +17,7 @@ export async function submitTestimonialAction(formData: FormData) {
   const rating = parseInt(ratingStr, 10);
 
   // 1. Initialize the Firebase Admin SDK and get the user
-  const app = await initAdmin();
+  const app = initAdmin();
   const auth = getAuth(app);
   const db = getFirestore(app);
 
