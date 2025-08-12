@@ -11,9 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star, Send, CheckCircle } from "lucide-react";
-import { Spinner } from "./ui/spinner"; // Added Spinner import
+import { Spinner } from "./ui/spinner";
 
 interface LessonFeedbackModalProps {
   lessonId: string;
@@ -21,7 +21,13 @@ interface LessonFeedbackModalProps {
   lessonDate: string;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (feedback: any) => void; // The actual submission logic (including Firestore) is in the parent
+  onSubmit: (feedback: {
+    lessonId: string;
+    rating: number;
+    feedbackText: string;
+    specificRatings: Record<string, number>;
+    date: string;
+  }) => Promise<any>;
 }
 
 export default function LessonFeedbackModal({
@@ -45,11 +51,30 @@ export default function LessonFeedbackModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Reset state when the modal is closed or the lessonId changes
+  useEffect(() => {
+    if (!isOpen) {
+      // Use a timeout to avoid visual state change before modal closes
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setRating(0);
+        setFeedback("");
+        setSpecificFeedback({
+          teachingQuality: 0,
+          materialClarity: 0,
+          culturalInsights: 0,
+          pacing: 0,
+          engagement: 0,
+        });
+      }, 300);
+    }
+  }, [isOpen]);
+
   const handleStarClick = (starRating: number) => {
     setRating(starRating);
   };
 
-  const handleSpecificRating = (category: string, value: number) => {
+  const handleSpecificRating = (category: keyof typeof specificFeedback, value: number) => {
     setSpecificFeedback((prev) => ({
       ...prev,
       [category]: value,
@@ -58,62 +83,31 @@ export default function LessonFeedbackModal({
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-
     const feedbackData = {
       lessonId,
       rating,
-      feedbackText: feedback, // Changed key to avoid conflict if 'feedback' is a general object
-      specificRatings: specificFeedback, // Changed key to match parent
+      feedbackText: feedback,
+      specificRatings: specificFeedback,
       date: new Date().toISOString(),
     };
-
-    // Simulate API call (actual submission is handled by parent via onSubmit prop)
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    onSubmit(feedbackData); // This will call the function passed from StudentDashboardPage
-    setIsSubmitted(true);
-    setIsSubmitting(false);
-
-    // Auto close after 2 seconds
-    setTimeout(() => {
-      onClose(); // This will trigger the parent to close the modal
-      // Reset state after successful submission AND closing
-      setIsSubmitted(false);
-      setRating(0);
-      setFeedback("");
-      setSpecificFeedback({
-        teachingQuality: 0,
-        materialClarity: 0,
-        culturalInsights: 0,
-        pacing: 0,
-        engagement: 0,
-      });
-    }, 2000);
-  };
-
-  // When the modal is closed externally (e.g., by clicking outside or pressing Esc),
-  // and it wasn't through the successful submission flow, we should also reset.
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      if (!isSubmitted) { // Only reset if not already reset by successful submission
-        setRating(0);
-        setFeedback("");
-        setSpecificFeedback({
-            teachingQuality: 0,
-            materialClarity: 0,
-            culturalInsights: 0,
-            pacing: 0,
-            engagement: 0,
-        });
-      }
-      onClose(); // Ensure parent's onClose is always called
+    
+    try {
+      await onSubmit(feedbackData);
+      setIsSubmitted(true);
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    } catch (error) {
+       // Error toast is handled by parent component
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
 
   if (isSubmitted) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="max-w-md">
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
@@ -128,21 +122,20 @@ export default function LessonFeedbackModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
-            <Star className="w-5 h-5 text-yellow-400" /> {/* Themed color */}
+            <Star className="w-5 h-5 text-yellow-400" />
             Rate Your Lesson Experience
           </DialogTitle>
           <DialogDescription>
             Help us improve by sharing your feedback about your {lessonType} lesson on{" "}
-            {new Date(lessonDate).toLocaleDateString()}.
+            {format(new Date(lessonDate), "PPP")}.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Overall Rating */}
           <div className="space-y-3">
             <Label className="text-base font-medium text-foreground">Overall Rating</Label>
             <div className="flex items-center gap-2">
@@ -176,18 +169,11 @@ export default function LessonFeedbackModal({
             </div>
           </div>
 
-          {/* Specific Feedback Categories */}
           <div className="space-y-4">
             <Label className="text-base font-medium text-foreground">Rate Specific Aspects</Label>
-            {[
-              { key: "teachingQuality", label: "Teaching Quality" },
-              { key: "materialClarity", label: "Material Clarity" },
-              { key: "culturalInsights", label: "Cultural Insights" },
-              { key: "pacing", label: "Lesson Pacing" },
-              { key: "engagement", label: "Engagement Level" },
-            ].map(({ key, label }) => (
+            {(Object.keys(specificFeedback) as Array<keyof typeof specificFeedback>).map((key) => (
               <div key={key} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                <span className="text-sm font-medium text-foreground">{label}</span>
+                <span className="text-sm font-medium text-foreground capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -198,7 +184,7 @@ export default function LessonFeedbackModal({
                     >
                       <Star
                         className={`w-4 h-4 ${
-                          star <= specificFeedback[key as keyof typeof specificFeedback]
+                          star <= specificFeedback[key]
                             ? "fill-yellow-400 text-yellow-400"
                             : "text-muted-foreground/30"
                         }`}
@@ -210,7 +196,6 @@ export default function LessonFeedbackModal({
             ))}
           </div>
 
-          {/* Written Feedback */}
           <div className="space-y-2">
             <Label htmlFor="feedback" className="text-base font-medium text-foreground">
               Additional Comments
@@ -225,7 +210,6 @@ export default function LessonFeedbackModal({
             />
           </div>
 
-          {/* Submit Button */}
           <div className="flex gap-3 pt-4">
             <Button variant="outline" onClick={onClose} className="flex-1">
               Cancel
@@ -233,7 +217,7 @@ export default function LessonFeedbackModal({
             <Button
               onClick={handleSubmit}
               disabled={rating === 0 || isSubmitting}
-              className="flex-1" // Primary button will use default theme
+              className="flex-1"
             >
               {isSubmitting ? (
                 <Spinner size="sm" className="mr-2" />
@@ -248,3 +232,10 @@ export default function LessonFeedbackModal({
     </Dialog>
   );
 }
+
+function format(date: Date, formatString: string) {
+    // Basic formatter to avoid dependency if date-fns is not universally available here
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric'});
+}
+
+    

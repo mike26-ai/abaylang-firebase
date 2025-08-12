@@ -41,6 +41,8 @@ import {
   Timestamp,
   getDoc,
   limit,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { updateProfile as updateFirebaseUserProfile } from "firebase/auth";
 import type { Booking as BookingType, UserProfile } from "@/lib/types";
@@ -104,7 +106,7 @@ export default function StudentDashboardPage() {
       const bookingsCol = collection(db, "bookings");
       const q = query(
         bookingsCol,
-        where("userId", "==", user.uid),
+        where("userID", "==", user.uid),
         orderBy("createdAt", "desc")
       );
   
@@ -661,6 +663,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
 
     
