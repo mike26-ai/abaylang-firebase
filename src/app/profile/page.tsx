@@ -106,7 +106,7 @@ export default function StudentDashboardPage() {
       const bookingsCol = collection(db, "bookings");
       const q = query(
         bookingsCol,
-        where("userID", "==", user.uid),
+        where("userId", "==", user.uid),
         orderBy("createdAt", "desc")
       );
   
