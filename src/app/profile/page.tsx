@@ -272,7 +272,7 @@ export default function StudentDashboardPage() {
     }
     try {
         await addDoc(collection(db, "testimonials"), {
-            userId: user.uid,
+            userId: user.uid, // Correctly using userId
             name: userProfileData.name, 
             userEmail: userProfileData.email,
             lessonId: feedbackData.lessonId,
