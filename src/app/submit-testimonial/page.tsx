@@ -10,22 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-
-// This is a server action that will be called when the form is submitted.
-// It will run on the server, not in the browser.
-async function submitTestimonialAction(formData: FormData) {
-  'use server';
-
-  const rating = formData.get("rating");
-  const comment = formData.get("comment");
-
-  console.log("--- New Testimonial Submission ---");
-  console.log("Rating:", rating);
-  console.log("Comment:", comment);
-  console.log("---------------------------------");
-  
-  // In the next step, we will add the logic here to save the data to Firestore.
-}
+import { submitTestimonialAction } from "@/app/actions/testimonialActions";
 
 
 export default function SubmitTestimonialPage() {
