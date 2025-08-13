@@ -192,10 +192,6 @@ export default function AdminDashboardPage() {
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1">Admin Dashboard</h1>
             <p className="text-lg text-muted-foreground">Overview of ABYLANG activities.</p>
           </div>
-           <Link href="/" className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary mt-2 sm:mt-0">
-              <BookOpenText className="h-5 w-5" />
-              <span>View Site</span>
-          </Link>
         </header>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -471,5 +467,7 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
 
     
