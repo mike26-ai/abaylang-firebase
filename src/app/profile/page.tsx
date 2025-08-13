@@ -419,6 +419,12 @@ export default function StudentDashboardPage() {
                             Book New Lesson
                         </Link>
                     </Button>
+                    <Button asChild variant="outline" className="w-full mt-2">
+                      <Link href="/submit-testimonial">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Write a Testimonial
+                      </Link>
+                    </Button>
                 </CardContent>
               </Card>
             </div>
