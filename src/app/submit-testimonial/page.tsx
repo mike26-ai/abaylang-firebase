@@ -28,7 +28,7 @@ export default function SubmitTestimonialPage() {
       }
       // or if the user is an admin, redirect them to their dashboard.
       else if (isAdmin) {
-        router.push("/admin/dashboard");
+        router.push("/admin");
       }
       // The user is logged in and is a student, so they can stay.
     }
