@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,6 +24,7 @@ import {
   Star,
   FileText,
   CheckCircle,
+  Megaphone,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -323,6 +324,13 @@ export default function StudentDashboardPage() {
   const confirmedUpcomingCount = upcomingBookings.filter(b => b.status === 'confirmed').length;
   const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
   const totalHours = bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 60), 0) / 60;
+  
+  const mostRecentLessonToReview = useMemo(() => {
+    return bookings
+      .filter(b => b.status === 'completed' && !b.hasReview)
+      .sort((a, b) => parse(b.date, 'yyyy-MM-dd', new Date()).getTime() - parse(a.date, 'yyyy-MM-dd', new Date()).getTime())
+      [0];
+  }, [bookings]);
 
 
   if (authLoading || (!userProfileData && isLoadingProfile && !user)) {
@@ -377,6 +385,26 @@ export default function StudentDashboardPage() {
             <div className="flex justify-center items-center h-40"><Spinner size="lg" /> <p className="ml-3 text-muted-foreground">Loading dashboard data...</p></div>
         ) : (
           <>
+            {mostRecentLessonToReview && (
+              <Card className="shadow-lg mb-8 bg-gradient-to-r from-primary/10 to-accent/50 border-primary/20">
+                <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <Megaphone className="w-8 h-8 text-primary" />
+                    <div>
+                      <h3 className="font-semibold text-lg text-foreground">Review Your Last Lesson</h3>
+                      <p className="text-sm text-muted-foreground">
+                        How was your '{mostRecentLessonToReview.lessonType}' on {format(parse(mostRecentLessonToReview.date, 'yyyy-MM-dd', new Date()), "PPP")}?
+                      </p>
+                    </div>
+                  </div>
+                  <Button onClick={() => handleRateLesson(mostRecentLessonToReview)}>
+                    <Star className="w-4 h-4 mr-2" />
+                    Leave Feedback
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <Card className="shadow-lg">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
