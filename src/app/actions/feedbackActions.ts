@@ -2,9 +2,10 @@
 'use server';
 
 import { addDoc, collection, serverTimestamp, doc, updateDoc } from "firebase/firestore";
+import { getFirestore } from "firebase-admin/firestore";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/firebase"; 
+import { initAdmin } from "@/lib/firebase-admin"; // Import the admin app initializer
 
 // This Server Action receives the form data and the user's ID.
 // It runs on the server, so it has trusted access to the database.
@@ -21,17 +22,21 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
   }
 
   try {
-    // 1. Save the feedback to the internalFeedback collection
-    await addDoc(collection(db, "internalFeedback"), {
+    // Initialize the Admin SDK to get privileged database access
+    const adminApp = initAdmin();
+    const db = getFirestore(adminApp);
+
+    // 1. Save the feedback to the internalFeedback collection using the Admin SDK
+    await db.collection("internalFeedback").add({
       userId: userId,
       rating: rating,
       comment: comment,
       createdAt: serverTimestamp(),
     });
 
-    // 2. Update the user's profile to permanently disable the prompt
-    const userDocRef = doc(db, "users", userId);
-    await updateDoc(userDocRef, {
+    // 2. Update the user's profile to permanently disable the prompt using the Admin SDK
+    const userDocRef = db.collection("users").doc(userId);
+    await userDocRef.update({
       showFirstLessonFeedbackPrompt: false,
       hasSubmittedFirstLessonFeedback: true,
     });
