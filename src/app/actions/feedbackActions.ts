@@ -36,6 +36,7 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
 
     // 2. Update the user's profile to permanently disable the prompt using the Admin SDK
     const userDocRef = db.collection("users").doc(userId);
+    // **FIXED**: The object now ONLY contains the two fields permitted by the security rule.
     await userDocRef.update({
       showFirstLessonFeedbackPrompt: false,
       hasSubmittedFirstLessonFeedback: true,
