@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, orderBy, query, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, updateDoc, doc, deleteDoc, getDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Booking } from "@/lib/types";
+import type { Booking, UserProfile } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,9 +50,47 @@ export function BookingsManager() {
     fetchBookings();
   }, []);
 
-  const updateBookingStatus = async (bookingId: string, status: Booking['status']) => {
+  const triggerFirstLessonFeedbackPrompt = async (userId: string) => {
     try {
-      const bookingDocRef = doc(db, "bookings", bookingId);
+      const userDocRef = doc(db, "users", userId);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data() as UserProfile;
+        
+        // Only trigger if they have NOT submitted feedback before.
+        if (!userData.hasSubmittedFirstLessonFeedback) {
+          // Check if this is their first completed lesson.
+          const bookingsQuery = query(
+            collection(db, "bookings"),
+            where("userId", "==", userId),
+            where("status", "==", "completed")
+          );
+          const completedBookingsSnap = await getDocs(bookingsQuery);
+          
+          // The update to completed is about to happen, so if there are 0 completed, this is the first.
+          if (completedBookingsSnap.size === 0) {
+              await updateDoc(userDocRef, {
+                showFirstLessonFeedbackPrompt: true,
+              });
+              toast({ title: "Feedback Prompt Sent", description: `Prompt enabled for ${userData.name}.` });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error triggering first lesson feedback prompt:", error);
+      // Fail silently to not block the admin's main action
+    }
+  };
+
+  const updateBookingStatus = async (booking: Booking, status: Booking['status']) => {
+    try {
+      // If moving to 'completed', check if we need to trigger the feedback prompt
+      if (status === 'completed' && booking.status !== 'completed') {
+        await triggerFirstLessonFeedbackPrompt(booking.userId);
+      }
+      
+      const bookingDocRef = doc(db, "bookings", booking.id);
       await updateDoc(bookingDocRef, { status });
       toast({ title: "Success", description: `Booking status updated to ${status}.` });
       fetchBookings(); // Refresh list
@@ -121,13 +159,13 @@ export function BookingsManager() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, "confirmed")} disabled={booking.status === 'confirmed'}>
+                      <DropdownMenuItem onClick={() => updateBookingStatus(booking, "confirmed")} disabled={booking.status === 'confirmed'}>
                         <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Mark as Confirmed
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, "completed")} disabled={booking.status === 'completed'}>
+                      <DropdownMenuItem onClick={() => updateBookingStatus(booking, "completed")} disabled={booking.status === 'completed'}>
                         <CheckCircle className="mr-2 h-4 w-4 text-blue-500" /> Mark as Completed
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, "cancelled")} disabled={booking.status === 'cancelled'}>
+                      <DropdownMenuItem onClick={() => updateBookingStatus(booking, "cancelled")} disabled={booking.status === 'cancelled'}>
                         <XCircle className="mr-2 h-4 w-4 text-red-500" /> Mark as Cancelled
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />

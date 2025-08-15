@@ -67,6 +67,9 @@ export interface UserProfile {
   country?: string;
   amharicLevel?: string;
   photoURL?: string | null;
+  // New fields for one-time feedback system
+  showFirstLessonFeedbackPrompt?: boolean; // Defaults to false
+  hasSubmittedFirstLessonFeedback?: boolean; // Defaults to false
 }
 
 export interface ChatMessage {
