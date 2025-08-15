@@ -97,6 +97,8 @@ export default function RegisterPage() {
           photoURL: user.photoURL || null,
           country: formData.country,
           amharicLevel: formData.amharicLevel,
+          showFirstLessonFeedbackPrompt: false,
+          hasSubmittedFirstLessonFeedback: false,
         };
         await setDoc(doc(db, "users", user.uid), userProfileForFirestore);
       }
@@ -337,5 +339,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-
-    
