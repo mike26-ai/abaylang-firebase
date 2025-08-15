@@ -1,10 +1,9 @@
-
 // File: src/app/feedback/first-lesson/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,17 +11,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
-import { addDoc, collection, serverTimestamp, doc, updateDoc } from "firebase/firestore";
+import { submitFirstLessonFeedbackAction } from "@/app/actions/feedbackActions";
 
 export default function FirstLessonFeedbackPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -31,34 +29,30 @@ export default function FirstLessonFeedbackPage() {
     }
   }, [user, loading, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || rating === 0) return;
-
-    setIsSubmitting(true);
-    try {
-      // 1. Save the feedback to the new collection
-      await addDoc(collection(db, "internalFeedback"), {
-        userId: user.uid,
-        rating: rating,
-        comment: comment,
-        createdAt: serverTimestamp(),
-      });
-
-      // 2. Update the user's profile to disable the prompt
-      const userDocRef = doc(db, "users", user.uid);
-      await updateDoc(userDocRef, {
-        showFirstLessonFeedbackPrompt: false,
-        hasSubmittedFirstLessonFeedback: true,
-      });
-      
+  // Show a toast message on successful redirect
+  useEffect(() => {
+    if (searchParams.get('feedback') === 'success') {
       toast({
         title: "Feedback Submitted!",
         description: "Thank you for helping us improve.",
       });
-      
-      router.push("/profile");
+       // Replace the URL to remove the query parameter
+      router.replace('/profile', { scroll: false });
+    }
+  }, [searchParams, toast, router]);
 
+
+  // This function is now a client-side wrapper for the Server Action.
+  const handleFormAction = async (formData: FormData) => {
+    if (!user) {
+      toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      // Call the server action with the user's ID and form data
+      await submitFirstLessonFeedbackAction(user.uid, formData);
+      // The server action now handles the redirect, so we don't need to do it here.
     } catch (error) {
       console.error("Error submitting first lesson feedback:", error);
       toast({
@@ -66,10 +60,10 @@ export default function FirstLessonFeedbackPage() {
         description: "Could not submit your feedback. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Only set submitting to false on error
     }
   };
+
 
   if (loading || !user) {
     return (
@@ -89,9 +83,10 @@ export default function FirstLessonFeedbackPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form action={handleFormAction} className="space-y-8">
             <div className="space-y-2 text-center">
               <Label htmlFor="rating" className="text-lg">Your Overall Rating</Label>
+              <input type="hidden" name="rating" value={rating} />
               <div className="flex justify-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -119,8 +114,6 @@ export default function FirstLessonFeedbackPage() {
               <Textarea
                 id="comment"
                 name="comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
                 rows={8}
                 placeholder="What went well? What could be better? Any specific feedback for your tutor?"
                 className="resize-none"
