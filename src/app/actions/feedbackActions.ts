@@ -43,7 +43,7 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
     });
 
   } catch (error) {
-    console.error("Error in submitFirstLessonFeedbackAction:", error);
+    console.error("DETAILED SERVER ACTION ERROR:", JSON.stringify(error, null, 2));
     // This will be caught by the client if the form submission fails.
     throw new Error("Could not save your feedback. Please try again later.");
   }
