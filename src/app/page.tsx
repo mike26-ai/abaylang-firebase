@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock, Package } from "lucide-react"
 import Link from "next/link"
-import { Logo } from "@/components/layout/logo"
+import { SiteLogo } from "@/components/layout/SiteLogo"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
@@ -18,7 +18,6 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo, siteConfig } from "@/config/site"
 import Image from "next/image"
 import type { Testimonial as TestimonialType } from "@/lib/types"; // For fetching testimonials
-import { FooterLogo } from "@/components/layout/footer-logo"
 
 export default function HomePage() {
   const { toast } = useToast();
@@ -109,7 +108,7 @@ export default function HomePage() {
       {/* Local Header for this Homepage */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Logo />
+          <SiteLogo />
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/#about" className="text-muted-foreground hover:text-primary transition-colors">
               About
@@ -428,7 +427,7 @@ export default function HomePage() {
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2 group">
-              <FooterLogo />
+              <SiteLogo />
               <p className="text-muted-foreground mt-4 mb-4 max-w-md">
                 {siteConfig.description}
               </p>
@@ -460,3 +459,5 @@ export default function HomePage() {
     </div>
   )
 }
+
+    

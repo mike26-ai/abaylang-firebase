@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { Logo } from "./logo";
+import { SiteLogo } from "./SiteLogo"; // UPDATED IMPORT
 import React from "react";
 
 export function Navbar() {
@@ -33,9 +33,9 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-[#F8F9FA]" style={{ border: '5px solid red' }}>
+    <header className="sticky top-0 z-50 w-full border-b bg-[#F8F9FA]">
       <div className="container flex h-16 items-center justify-between">
-        <Logo />
+        <SiteLogo /> {/* UPDATED USAGE */}
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
@@ -106,7 +106,7 @@ export function Navbar() {
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <SheetClose asChild>
                 <div className="mt-6 mb-4 px-2">
-                  <Logo />
+                  <SiteLogo /> {/* UPDATED USAGE */}
                 </div>
               </SheetClose>
               <nav className="grid gap-2 text-lg font-medium px-2">
