@@ -13,7 +13,7 @@ interface LogoProps {
 
 export function Logo({ className }: LogoProps) {
   return (
-    <Link href="/" className={cn("flex items-center group", className)}>
+    <Link href="/" className={cn("flex items-center group", className)} style={{ border: '5px solid red' }}>
       <Image
         src="/logo.svg"
         alt="ABYLANG Logo"

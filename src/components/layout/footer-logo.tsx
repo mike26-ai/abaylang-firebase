@@ -10,7 +10,7 @@ interface LogoProps {
 
 export function FooterLogo({ className }: LogoProps) {
   return (
-    <Link href="/" className={cn("flex items-center group", className)}>
+    <Link href="/" className={cn("flex items-center group", className)} style={{ border: '5px solid red' }}>
        <div className="flex items-center justify-center h-12 w-12 rounded-md bg-background">
         <svg
           viewBox="0 0 100 100"
