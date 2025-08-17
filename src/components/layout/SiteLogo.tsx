@@ -1,27 +1,12 @@
-// THIS IS THE OFFICIAL, CENTRALIZED LOGO COMPONENT FOR THE ENTIRE SITE.
+// File: src/components/layout/SiteLogo.tsx
+import Link from 'next/link';
+// @ts-ignore - This will work once the SVG is moved and the build process is configured for SVG imports
+import LogoSvg from '@/components/icons/logo.svg'; // Import the SVG as a component
 
-"use client";
-
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import type React from "react";
-import Image from "next/image";
-
-interface SiteLogoProps {
-  className?: string;
-}
-
-export function SiteLogo({ className }: SiteLogoProps) {
+export function SiteLogo() {
   return (
-    <Link href="/" className={cn("flex items-center group", className)}>
-      <Image
-        src="/logo.svg"
-        alt="ABYLANG Logo"
-        width={160}
-        height={45}
-        priority // Ensures the logo loads quickly as it's a critical LCP element.
-        className="h-10 w-auto" // Responsive scaling while maintaining aspect ratio.
-      />
+    <Link href="/" className="flex items-center group">
+      <LogoSvg className="w-40 h-auto text-foreground" />
     </Link>
   );
 }
