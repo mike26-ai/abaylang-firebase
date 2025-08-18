@@ -1,6 +1,6 @@
-<svg width="258" height="80" viewBox="0 0 258 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M76.9999 79.25C76.9999 79.25 102.25 79.25 102.25 40C102.25 0.75 77 0.75 77 0.75L77 40.25L0.249969 40.25L0.249969 79.25L76.9999 79.25Z" fill="#C5A375"/>
-<path d="M102.25 0.75C102.25 0.75 127.5 0.75 127.5 40C127.5 79.25 102.25 79.25 102.25 79.25L102.25 0.75Z" fill="#292D32"/>
-<path d="M127.5 79.25L152.5 79.25L152.5 0.75L127.5 0.75L127.5 40L212.75 40L212.75 0.75L237.75 0.75L237.75 79.25L212.75 79.25L212.75 40.5L127.5 40.5L127.5 79.25Z" fill="#C5A375"/>
-<path d="M237.75 79.25L257.75 79.25V0.75H237.75V79.25Z" fill="#C5A375"/>
+<svg width="150" height="40" viewBox="0 0 150 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M20 30C14.4772 30 10 25.5228 10 20C10 14.4772 14.4772 10 20 10" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+<path d="M20 10C25.5228 10 30 14.4772 30 20C30 25.5228 25.5228 30 20 30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+<path d="M20 10V30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+<text x="40" y="27" font-family="sans-serif" font-size="20" font-weight="bold" fill="currentColor">ABYLANG</text>
 </svg>
