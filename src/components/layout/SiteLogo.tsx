@@ -1,6 +1,6 @@
 // File: src/components/layout/SiteLogo.tsx
 import Link from 'next/link';
-import LogoSvg from '@/components/icons/logo.svg'; // Import the SVG as a component
+import LogoSvg from '@/components/icons/logo.svg'; // Import the SVG as a default export
 
 export function SiteLogo() {
   return (
