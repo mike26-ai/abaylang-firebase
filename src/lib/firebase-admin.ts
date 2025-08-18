@@ -10,8 +10,18 @@ export function initAdmin() {
     return admin.app();
   }
 
+  // --- Start Forensic Logging ---
+  // This will help diagnose if environment variables are loaded correctly.
+  console.log('--- Firebase Admin SDK Initialization ---');
+  console.log(`- FIREBASE_PROJECT_ID loaded: ${!!process.env.FIREBASE_PROJECT_ID}`);
+  console.log(`- FIREBASE_CLIENT_EMAIL loaded: ${!!process.env.FIREBASE_CLIENT_EMAIL}`);
+  // Check if the key is present and seems valid (not just an empty string)
+  const privateKeyValid = !!process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PRIVATE_KEY.includes('-----BEGIN PRIVATE KEY-----');
+  console.log(`- FIREBASE_PRIVATE_KEY seems valid: ${privateKeyValid}`);
+  console.log('------------------------------------');
+  // --- End Forensic Logging ---
+
   // Retrieve service account credentials from environment variables.
-  // In a real production environment, these should be securely stored (e.g., in Google Secret Manager).
   const serviceAccount = {
     projectId: process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -22,9 +32,8 @@ export function initAdmin() {
 
   // Basic validation to ensure credentials are provided.
   if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-    console.error('Firebase Admin SDK credentials are not set in environment variables.');
-    // In a real app, you might want to throw an error or handle this more gracefully.
-    // For now, we'll log the error and initialization will likely fail.
+    console.error('CRITICAL: Firebase Admin SDK credentials are not set correctly in environment variables. The server cannot start.');
+    throw new Error("Firebase Admin SDK credentials are not set. Please check your .env.local file and restart the server.");
   }
 
   // Initialize the Firebase Admin SDK with the credentials.
@@ -32,10 +41,14 @@ export function initAdmin() {
     const app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
+    console.log('Firebase Admin SDK initialized successfully.');
     return app;
-  } catch (error) {
-    console.error("Firebase admin initialization error:", error);
-    // Re-throw the error to be caught by the calling function
-    throw new Error("Could not initialize Firebase Admin SDK. Please check server logs and environment variables.");
+  } catch (error: any) {
+    console.error("CRITICAL: Firebase admin initialization error:", error.message);
+    // Provide a more specific error message if possible
+    if (error.code === 'app/invalid-credential') {
+        throw new Error("Could not initialize Firebase Admin SDK. The provided credentials (likely the private key or client email) are invalid. Please check your .env.local file.");
+    }
+    throw new Error("Could not initialize Firebase Admin SDK. Please check server logs and that your environment variables are correct.");
   }
 }
