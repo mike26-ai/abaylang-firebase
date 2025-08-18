@@ -25,10 +25,10 @@ const nextConfig: NextConfig = {
   webpack(config) {
     // Find the existing rule for images
     const imageRule = config.module.rules.find(
-      (rule) => rule.test && rule.test.test('.svg')
+      (rule) => typeof rule === 'object' && rule.test && rule.test.test('.svg')
     );
     // Exclude SVG from the default image rule
-    if (imageRule) {
+    if (imageRule && typeof imageRule === 'object') {
       imageRule.exclude = /\.svg$/;
     }
 
