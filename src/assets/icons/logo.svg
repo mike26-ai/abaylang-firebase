@@ -1,13 +1,12 @@
-<svg width="150" height="40" viewBox="0 0 150 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g clip-path="url(#clip0_101_2)">
-<circle cx="20" cy="20" r="19" fill="hsl(var(--card))"/>
-<circle cx="20" cy="20" r="18" stroke="hsl(var(--foreground))" stroke-width="2"/>
-<text fill="hsl(var(--primary))" xml:space="preserve" style="white-space: pre" font-family="Lora, serif" font-size="18" font-weight="bold" letter-spacing="0em"><tspan x="10" y="27">AL</tspan></text>
-<text fill="hsl(var(--foreground))" xml:space="preserve" style="white-space: pre" font-family="Lora, serif" font-size="22" font-weight="bold" letter-spacing="0.05em"><tspan x="50" y="28">ABYLANG</tspan></text>
+<svg width="152" height="40" viewBox="0 0 152 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_105_2)">
+<path d="M25.8889 3.03704H14.1111C13.2458 3.03704 12.415 3.38317 11.79 3.9926L3.99259 11.5972C3.38317 12.1866 3.03704 12.9815 3.03704 13.8111V26.1889C3.03704 27.0185 3.38317 27.8134 3.99259 28.4028L11.79 36.0074C12.415 36.6168 13.2458 36.963 14.1111 36.963H25.8889C26.7542 36.963 27.585 36.6168 28.21 36.0074L36.0074 28.4028C36.6168 27.8134 36.963 27.0185 36.963 26.1889V13.8111C36.963 12.9815 36.6168 12.1866 36.0074 11.5972L28.21 3.9926C27.585 3.38317 26.7542 3.03704 25.8889 3.03704Z" fill="#CC7722"/>
+<path d="M11.6667 28.3333L20 11.6667L28.3334 28.3333M25.8334 23.3333H14.1667" stroke="#FDF6E3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="50" y="26" font-family="Lora, serif" font-size="20" font-weight="bold" fill="#36454F">ABYLANG</text>
 </g>
 <defs>
-<clipPath id="clip0_101_2">
-<rect width="150" height="40" fill="white"/>
+<clipPath id="clip0_105_2">
+<rect width="152" height="40" fill="white"/>
 </clipPath>
 </defs>
 </svg>
