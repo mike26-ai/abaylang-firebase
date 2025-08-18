@@ -105,6 +105,12 @@
 }
 
 /* All logo-specific styles have been removed from this file. */
+/* Styling for the footer logo specifically */
+@layer components {
+  .footer-logo svg {
+    color: hsl(var(--background));
+  }
+}
 
 
 /* Subtle animations */
