@@ -1,3 +1,11 @@
 <svg width="150" height="30" viewBox="0 0 150 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<text x="10" y="20" font-family="Arial, sans-serif" font-size="16" fill="currentColor" font-weight="bold">ABYLANG</text>
+<style>
+    .text {
+        font-family: 'Lora', serif;
+        font-size: 24px;
+        font-weight: bold;
+        fill: hsl(var(--foreground));
+    }
+</style>
+<text x="0" y="22" class="text">ABYLANG</text>
 </svg>
