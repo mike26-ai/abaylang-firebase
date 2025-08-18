@@ -1,6 +1,15 @@
-<svg width="150" height="40" viewBox="0 0 150 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M20 30C14.4772 30 10 25.5228 10 20C10 14.4772 14.4772 10 20 10" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-<path d="M20 10C25.5228 10 30 14.4772 30 20C30 25.5228 25.5228 30 20 30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-<path d="M20 10V30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-<text x="40" y="27" font-family="sans-serif" font-size="20" font-weight="bold" fill="currentColor">ABYLANG</text>
+<svg width="154" height="32" viewBox="0 0 154 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_401_2)">
+<path d="M21.6 31.04L16.48 18.08H11.36L6.24 31.04H0.64L11.44 1.28H16.4L27.2 31.04H21.6ZM13.92 6.56L12.48 10.4L11.04 14.24H16.8L15.36 10.4L13.92 6.56Z" fill="hsl(var(--primary))"/>
+<path d="M30.4961 1.28V31.04H35.8561V7.28L42.8161 31.04H47.2961L54.1761 7.28V31.04H59.5361V1.28H52.4161L45.0561 22.88L37.6961 1.28H30.4961Z" fill="hsl(var(--foreground))"/>
+<path d="M72.013 31.04V1.28H90.493V6.56H77.373V12.96H88.413V18.24H77.373V25.76H91.213V31.04H72.013Z" fill="hsl(var(--foreground))"/>
+<path d="M107.019 1.28L96.2192 31.04H101.819L103.659 25.84H114.699L116.539 31.04H122.139L111.339 1.28H107.019ZM109.179 6.48L112.779 16.48L105.579 16.48L109.179 6.48Z" fill="hsl(var(--foreground))"/>
+<path d="M125.869 1.28V31.04H131.229V1.28H125.869Z" fill="hsl(var(--foreground))"/>
+<path d="M136.01 31.04V1.28H153.77V6.56H141.37V12.96H151.69V18.24H141.37V31.04H136.01Z" fill="hsl(var(--foreground))"/>
+</g>
+<defs>
+<clipPath id="clip0_401_2">
+<rect width="154" height="31" fill="white" transform="translate(0 0.5)"/>
+</clipPath>
+</defs>
 </svg>
