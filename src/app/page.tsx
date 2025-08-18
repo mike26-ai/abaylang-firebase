@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo, siteConfig } from "@/config/site"
 import Image from "next/image"
 import type { Testimonial as TestimonialType } from "@/lib/types"; // For fetching testimonials
+import { Logo } from "@/components/layout/logo"
 
 export default function HomePage() {
   const { toast } = useToast();
@@ -107,7 +108,7 @@ export default function HomePage() {
       {/* Local Header for this Homepage */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="w-40 h-auto"></div> {/* Placeholder for logo space */}
+          <Logo />
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/#about" className="text-muted-foreground hover:text-primary transition-colors">
               About
@@ -426,27 +427,29 @@ export default function HomePage() {
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2 group">
-              <div className="w-40 h-auto"></div> {/* Placeholder for logo space */}
+              <div className="footer-logo">
+                <Logo />
+              </div>
               <p className="text-muted-foreground mt-4 mb-4 max-w-md">
                 {siteConfig.description}
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4 text-primary-foreground">Learning</h3>
+              <h3 className="font-semibold mb-4 text-background">Learning</h3>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link href="/bookings" className="hover:text-primary-foreground">Book Lesson</Link></li>
-                <li><Link href="/tutor-profile" className="hover:text-primary-foreground">About Mahder</Link></li>
-                <li><Link href="/testimonials" className="hover:text-primary-foreground">Reviews</Link></li>
-                 <li><Link href="/packages" className="hover:text-primary-foreground">View Packages</Link></li>
+                <li><Link href="/bookings" className="hover:text-background">Book Lesson</Link></li>
+                <li><Link href="/tutor-profile" className="hover:text-background">About Mahder</Link></li>
+                <li><Link href="/testimonials" className="hover:text-background">Reviews</Link></li>
+                 <li><Link href="/packages" className="hover:text-background">View Packages</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4 text-primary-foreground">Support</h3>
+              <h3 className="font-semibold mb-4 text-background">Support</h3>
               <ul className="space-y-2 text-muted-foreground">
-                <li><Link href="/contact" className="hover:text-primary-foreground">Contact</Link></li>
-                <li><Link href="/privacy" className="hover:text-primary-foreground">Privacy</Link></li>
-                <li><Link href="/terms" className="hover:text-primary-foreground">Terms</Link></li>
-                <li><Link href="/faq" className="hover:text-primary-foreground">FAQ</Link></li>
+                <li><Link href="/contact" className="hover:text-background">Contact</Link></li>
+                <li><Link href="/privacy" className="hover:text-background">Privacy</Link></li>
+                <li><Link href="/terms" className="hover:text-background">Terms</Link></li>
+                <li><Link href="/faq" className="hover:text-background">FAQ</Link></li>
               </ul>
             </div>
           </div>

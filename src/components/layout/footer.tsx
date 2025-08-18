@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
+import { Logo } from "./logo";
 
 export function Footer() {
   return (
@@ -8,7 +9,9 @@ export function Footer() {
       <div className="container mx-auto">
         <div className="grid md:grid-cols-4 gap-8">
           <div className="md:col-span-2 group">
-            {/* The Logo component has been removed from here. */}
+            <div className="footer-logo">
+              <Logo />
+            </div>
             <p className="text-muted-foreground mt-4 mb-4 max-w-md">
               {siteConfig.description}
             </p>
