@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -18,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import React from "react";
-import { SiteLogo } from "./SiteLogo";
+import SiteLogo from "./SiteLogo";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -26,8 +25,10 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const navLinks = [
-    { title: "Home", href: "/" },
-    { title: "About", href: "/tutor-profile" },
+    { title: "About Tutor", href: "/tutor-profile" },
+    { title: "Packages", href: "/packages" },
+    { title: "Testimonials", href: "/testimonials" },
+    { title: "Resources", href: "/resources" },
     { title: "Contact", href: "/contact" },
   ];
 

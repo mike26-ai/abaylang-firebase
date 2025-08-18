@@ -1,11 +1,13 @@
 // File: src/components/layout/SiteLogo.tsx
 import Link from 'next/link';
-import LogoSvg from '@/assets/icons/logo.svg'; // Import the SVG as a React Component
+import Logo from '@/assets/icons/logo.svg';
 
-export function SiteLogo() {
+const SiteLogo = () => {
   return (
     <Link href="/" className="flex items-center group">
-      <LogoSvg className="h-10 w-auto text-foreground" />
+      <Logo className="h-8 w-auto text-foreground" />
     </Link>
   );
-}
+};
+
+export default SiteLogo;
