@@ -1,13 +1,15 @@
 
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
+import { SiteLogo } from "./SiteLogo";
 
 export function Footer() {
   return (
     <footer className="border-t bg-foreground text-background py-12 px-4">
       <div className="container mx-auto">
         <div className="grid md:grid-cols-4 gap-8">
-          <div className="md:col-span-2 group">
+          <div className="md:col-span-2 group footer-logo">
+            <SiteLogo />
             <p className="text-muted-foreground mt-4 mb-4 max-w-md">
               {siteConfig.description}
             </p>
