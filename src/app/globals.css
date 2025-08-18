@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -103,15 +104,7 @@
   }
 }
 
-/* Styling for the footer logo specifically */
-@layer components {
-  .footer-logo {
-    color: hsl(var(--background));
-  }
-  .footer-logo .text-primary {
-    color: hsl(var(--background));
-  }
-}
+/* All logo-specific styles have been removed from this file. */
 
 
 /* Subtle animations */
