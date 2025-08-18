@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard } from "lucide-react";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "../ui/spinner";
@@ -143,8 +143,15 @@ export function BookingsManager() {
               <TableCell>{format(new Date(booking.date), 'PPP')}</TableCell>
               <TableCell>{booking.time}</TableCell>
               <TableCell>
-                <Badge variant={booking.status === "confirmed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"}>
-                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                 <Badge
+                  variant={
+                    booking.status === "confirmed" ? "default" 
+                    : booking.status === "cancelled" || booking.status === 'completed' ? "destructive" 
+                    : "secondary"
+                  }
+                   className={booking.status === 'awaiting-payment' ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}
+                >
+                  {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </Badge>
               </TableCell>
               <TableCell>{format(booking.createdAt.toDate(), 'PP pp')}</TableCell>
@@ -159,9 +166,11 @@ export function BookingsManager() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => updateBookingStatus(booking, "confirmed")} disabled={booking.status === 'confirmed'}>
-                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Mark as Confirmed
-                      </DropdownMenuItem>
+                      {booking.status === 'awaiting-payment' && (
+                         <DropdownMenuItem onClick={() => updateBookingStatus(booking, "confirmed")}>
+                            <CreditCard className="mr-2 h-4 w-4 text-green-500" /> Confirm Payment
+                         </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => updateBookingStatus(booking, "completed")} disabled={booking.status === 'completed'}>
                         <CheckCircle className="mr-2 h-4 w-4 text-blue-500" /> Mark as Completed
                       </DropdownMenuItem>

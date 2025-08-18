@@ -317,14 +317,15 @@ export default function StudentDashboardPage() {
   };
 
   const upcomingBookings = bookings.filter(
-    (b) => (b.status === "confirmed" || b.status === "pending") && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
+    (b) => (b.status === "confirmed" || b.status === "awaiting-payment") && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
   ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime());
 
   const pastBookings = bookings.filter(
-    (b) => b.status === "completed" || b.status === "cancelled" || ((b.status === "confirmed" || b.status === "pending") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
+    (b) => b.status === "completed" || b.status === "cancelled" || ((b.status === "confirmed" || b.status === "awaiting-payment") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
   ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00")).getTime() - new Date(a.date + ' ' + (a.time || "00:00")).getTime());
   
   const confirmedUpcomingCount = upcomingBookings.filter(b => b.status === 'confirmed').length;
+  const awaitingPaymentCount = upcomingBookings.filter(b => b.status === 'awaiting-payment').length;
   const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
   const totalHours = bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 60), 0) / 60;
   
@@ -438,7 +439,7 @@ export default function StudentDashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{confirmedUpcomingCount}</div>
-                   <p className="text-xs text-muted-foreground">{upcomingBookings.length - confirmedUpcomingCount} pending confirmation</p>
+                   <p className="text-xs text-muted-foreground">{awaitingPaymentCount} awaiting payment</p>
                 </CardContent>
               </Card>
               <Card className="shadow-lg">
@@ -527,8 +528,8 @@ export default function StudentDashboardPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
-                            <Badge variant={booking.status === "confirmed" ? "default" : "secondary"} className={booking.status === "pending" ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}>
-                              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                            <Badge variant={booking.status === "confirmed" ? "default" : "secondary"} className={booking.status === "awaiting-payment" ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}>
+                               {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -584,8 +585,8 @@ export default function StudentDashboardPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
-                            <Badge variant={booking.status === "completed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"} className={booking.status === "completed" ? "" : "opacity-70"}>
-                              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                             <Badge variant={booking.status === "completed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"} className={booking.status === 'awaiting-payment' ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}>
+                               {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
                             {booking.status === 'completed' && (
                               booking.hasReview ? (

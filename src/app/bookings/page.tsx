@@ -225,7 +225,7 @@ const handleBooking = async () => {
       duration: unitDuration,
       lessonType: selectedLessonDetails.label,
       price: selectedLessonDetails.price,
-      status: 'pending' as const,
+      status: 'awaiting-payment' as const, // <-- UPDATED STATUS
       tutorId: "MahderNegashNano",
       tutorName: "Mahder Negash",
       userId: user.uid,
@@ -245,6 +245,7 @@ const handleBooking = async () => {
       date: bookingData.date,
       time: bookingData.time,
       price: bookingData.price.toString(),
+      email: user.email || '',
     });
     router.push(`/bookings/success?${queryParams.toString()}`);
 
