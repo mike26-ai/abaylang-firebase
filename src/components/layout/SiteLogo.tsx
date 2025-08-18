@@ -5,7 +5,7 @@ import Logo from '@/assets/icons/logo.svg';
 const SiteLogo = () => {
   return (
     <Link href="/" className="flex items-center group">
-      <Logo className="h-8 w-auto text-foreground" />
+      <Logo className="w-40 h-auto text-foreground" />
     </Link>
   );
 };
