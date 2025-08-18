@@ -14,6 +14,7 @@ const firebaseConfig: FirebaseOptions = {
 
 // CRITICAL VALIDATION: Checks if the environment variables are loaded.
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  // This error will be thrown during server-side rendering or build, making it clear what's wrong.
   throw new Error(
     "Firebase config is not set. Make sure you have a .env.local file with your Firebase credentials."
   );

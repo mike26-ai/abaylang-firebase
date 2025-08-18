@@ -17,7 +17,6 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo, siteConfig } from "@/config/site"
 import Image from "next/image"
 import type { Testimonial as TestimonialType } from "@/lib/types"; // For fetching testimonials
-import { Logo } from "@/components/layout/logo"
 
 export default function HomePage() {
   const { toast } = useToast();
@@ -108,7 +107,7 @@ export default function HomePage() {
       {/* Local Header for this Homepage */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Logo />
+          <Link href="/" className="font-bold text-xl">{siteConfig.name}</Link>
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/#about" className="text-muted-foreground hover:text-primary transition-colors">
               About
@@ -427,9 +426,6 @@ export default function HomePage() {
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2 group">
-              <div className="footer-logo">
-                <Logo />
-              </div>
               <p className="text-muted-foreground mt-4 mb-4 max-w-md">
                 {siteConfig.description}
               </p>
