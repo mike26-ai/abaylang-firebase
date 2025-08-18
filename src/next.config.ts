@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
     ],
   },
   webpack(config) {
-    // Find the existing rule for images
+    // Find the existing rule that handles images
     const imageRule = config.module.rules.find(
       (rule) => typeof rule === 'object' && rule.test && rule.test.test('.svg')
     );
