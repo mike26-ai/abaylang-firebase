@@ -1,11 +1,22 @@
-<svg width="150" height="30" viewBox="0 0 150 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<style>
-    .text {
-        font-family: 'Lora', serif;
-        font-size: 24px;
-        font-weight: bold;
-        fill: hsl(var(--foreground));
-    }
-</style>
-<text x="0" y="22" class="text">ABYLANG</text>
+<svg width="150" height="40" viewBox="0 0 150 40" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="logoTitle">
+    <title id="logoTitle">ABYLANG Logo</title>
+    <style>
+        .abylang-text {
+            font-family: 'Lora', serif;
+            font-size: 24px;
+            font-weight: 700;
+            fill: currentColor;
+        }
+        .abylang-icon-path {
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+    <g>
+        <path class="abylang-icon-path" d="M10 5 L10 35 L28 35 M19 5 L19 35"/>
+        <path class="abylang-icon-path" d="M10 5 C 2 5, 2 35, 10 35"/>
+        <text x="40" y="28" class="abylang-text">ABYLANG</text>
+    </g>
 </svg>

@@ -5,7 +5,7 @@ import LogoSvg from '@/assets/icons/logo.svg'; // Import the SVG as a React Comp
 export function SiteLogo() {
   return (
     <Link href="/" className="flex items-center group">
-      <LogoSvg className="w-40 h-auto text-foreground" />
+      <LogoSvg className="h-10 w-auto text-foreground" />
     </Link>
   );
 }

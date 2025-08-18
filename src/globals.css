@@ -106,10 +106,7 @@
 
 /* Styling for the footer logo specifically */
 @layer components {
-  .footer-logo {
-    color: hsl(var(--background));
-  }
-  .footer-logo .text-primary {
+  .footer-logo svg {
     color: hsl(var(--background));
   }
 }
