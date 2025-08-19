@@ -1,11 +1,5 @@
-<svg width="200" height="50" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    .text {
-      font-family: Arial, sans-serif;
-      font-size: 30px;
-      font-weight: bold;
-      fill: currentColor;
-    }
-  </style>
-  <text x="10" y="35" class="text">ABYLANG</text>
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+<text fill="black" xml:space="preserve" style="white-space: pre" font-family="Lora" font-size="24" font-weight="bold" letter-spacing="0.05em"><tspan x="60" y="38.5">ABYLANG</tspan></text>
+<path d="M45.826 48L34.688 27.28L23.55 48H18.67L31.81 22.12V12H37.566V22.12L50.706 48H45.826Z" fill="#CC7722"/>
+<path d="M22.016 48L15.446 36.36L8.876 48H3.6L15.446 27.4L10.366 18.48L0 18.48V12H13.8L18.88 20.88L26.68 12H32.436V18.48H22.016V27.4L33.986 48H28.7L22.016 36.24V48H22.016Z" fill="#CC7722"/>
 </svg>
