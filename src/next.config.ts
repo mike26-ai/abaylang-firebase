@@ -8,10 +8,10 @@ config();
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
-    ignoreBuildErrors: false, // Changed for production
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: false, // Changed for production
+    ignoreDuringBuilds: false,
   },
   images: {
     remotePatterns: [
