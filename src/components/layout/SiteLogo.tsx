@@ -1,6 +1,7 @@
 // File: src/components/layout/SiteLogo.tsx
+
 import Link from 'next/link';
-import Logo from '@/assets/icons/logo.svg';
+import Logo from '@/components/icons/Logo';
 
 const SiteLogo = () => {
   return (
