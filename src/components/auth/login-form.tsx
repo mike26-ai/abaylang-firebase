@@ -1,3 +1,4 @@
+// File Path: src/components/auth/login-form.tsx
 
 "use client";
 
@@ -22,6 +23,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { ADMIN_EMAIL } from "@/config/site";
+
+// DIAGNOSTIC PROBE #2: This will print the API key to your BROWSER'S DEVELOPER CONSOLE.
+console.log("BROWSER LOG (Client-side): API Key is", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),

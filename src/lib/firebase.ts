@@ -1,3 +1,4 @@
+// File Path: src/lib/firebase.ts
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth } from "firebase/auth";
@@ -12,15 +13,12 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// CRITICAL VALIDATION: Checks if the environment variables are loaded.
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  // This error will be thrown during server-side rendering or build, making it clear what's wrong.
   throw new Error(
-    "Firebase config is not set. Make sure you have a .env.local file with your Firebase credentials."
+    "Firebase config is not set. Make sure you have a .env.local file with your Firebase credentials in the project root."
   );
 }
 
-// Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
