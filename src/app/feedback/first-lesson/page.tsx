@@ -12,9 +12,7 @@ import { Star } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 import { submitFirstLessonFeedbackAction } from "@/app/actions/feedbackActions";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { revalidatePath } from "next/cache";
+
 
 export default function FirstLessonFeedbackPage() {
   const { user, loading } = useAuth();
@@ -32,7 +30,9 @@ export default function FirstLessonFeedbackPage() {
     }
   }, [user, loading, router]);
 
-  // This function is now a client-side wrapper for the Server Action.
+
+  // This is a client-side wrapper for the Server Action.
+  // It handles the form submission state and potential errors.
   const handleFormAction = async (formData: FormData) => {
     if (!user) {
       toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
@@ -40,24 +40,10 @@ export default function FirstLessonFeedbackPage() {
     }
     setIsSubmitting(true);
     try {
-      // Step 1: Call the server action to save the private feedback.
-      const result = await submitFirstLessonFeedbackAction(user.uid, formData);
-
-      // Step 2: If feedback is saved, update the user profile from the client.
-      // This is allowed by the security rules.
-      if (result.success) {
-        const userDocRef = doc(db, "users", user.uid);
-        await updateDoc(userDocRef, {
-          showFirstLessonFeedbackPrompt: false,
-          hasSubmittedFirstLessonFeedback: true,
-        });
-
-        // Step 3: Redirect on success.
-        router.push("/profile?feedback=success");
-      } else {
-        throw new Error("Server action did not report success.");
-      }
-
+      // The server action will handle the database write and the redirect on success.
+      await submitFirstLessonFeedbackAction(user.uid, formData);
+      // If the action throws an error, it will be caught below.
+      // If it succeeds, the redirect will happen and this component will unmount.
     } catch (error) {
       console.error("Error submitting first lesson feedback:", error);
       toast({
