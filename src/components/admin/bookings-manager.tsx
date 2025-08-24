@@ -140,13 +140,14 @@ export function BookingsManager() {
             <TableRow key={booking.id}>
               <TableCell className="font-medium">{booking.userName}</TableCell>
               <TableCell>{booking.userEmail}</TableCell>
-              <TableCell>{format(new Date(booking.date), 'PPP')}</TableCell>
-              <TableCell>{booking.time}</TableCell>
+              <TableCell>{booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'Package'}</TableCell>
+              <TableCell>{booking.time !== 'N/A_PACKAGE' ? booking.time : 'N/A'}</TableCell>
               <TableCell>
                  <Badge
                   variant={
                     booking.status === "confirmed" ? "default" 
-                    : booking.status === "cancelled" || booking.status === 'completed' ? "destructive" 
+                    : booking.status === "completed" ? "secondary"
+                    : booking.status === "cancelled" ? "destructive" 
                     : "secondary"
                   }
                    className={booking.status === 'awaiting-payment' ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}
@@ -189,7 +190,7 @@ export function BookingsManager() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the booking for {booking.userName} on {format(new Date(booking.date), 'PPP')} at {booking.time}.
+                        This action cannot be undone. This will permanently delete the booking for {booking.userName} on {booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'a package'} at {booking.time}.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
