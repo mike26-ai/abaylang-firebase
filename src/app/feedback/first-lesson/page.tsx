@@ -12,6 +12,8 @@ import { Star } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 import { submitFirstLessonFeedbackAction } from "@/app/actions/feedbackActions";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 export default function FirstLessonFeedbackPage() {
@@ -32,7 +34,7 @@ export default function FirstLessonFeedbackPage() {
 
 
   // This is a client-side wrapper for the Server Action.
-  // It handles the form submission state and potential errors.
+  // It handles the form submission state, client-side updates, and potential errors.
   const handleFormAction = async (formData: FormData) => {
     if (!user) {
       toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
@@ -40,18 +42,32 @@ export default function FirstLessonFeedbackPage() {
     }
     setIsSubmitting(true);
     try {
-      // The server action will handle the database write and the redirect on success.
-      await submitFirstLessonFeedbackAction(user.uid, formData);
-      // If the action throws an error, it will be caught below.
-      // If it succeeds, the redirect will happen and this component will unmount.
-    } catch (error) {
+      // 1. Call the server action to save the private feedback
+      const result = await submitFirstLessonFeedbackAction(user.uid, formData);
+
+      if (!result.success) {
+        throw new Error(result.error || "An unknown error occurred on the server.");
+      }
+
+      // 2. On success, perform the client-side update to the user's own profile
+      // This is allowed by the security rules because the user is the owner.
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, {
+        showFirstLessonFeedbackPrompt: false,
+        hasSubmittedFirstLessonFeedback: true,
+      });
+
+      // 3. Finally, redirect the user to their profile page with a success query param.
+      router.push('/profile?feedback=success');
+
+    } catch (error: any) {
       console.error("Error submitting first lesson feedback:", error);
       toast({
         title: "Submission Failed",
-        description: "Could not submit your feedback. Please try again.",
+        description: error.message || "Could not submit your feedback. Please try again.",
         variant: "destructive",
       });
-      setIsSubmitting(false); // Only set submitting to false on error
+      setIsSubmitting(false);
     }
   };
 
