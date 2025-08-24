@@ -1,14 +1,13 @@
 // File: src/app/actions/feedbackActions.ts
 'use server';
 
-import { addDoc, collection, serverTimestamp, doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getFirestore } from "firebase-admin/firestore";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { initAdmin } from "@/lib/firebase-admin"; // Import the admin app initializer
 
 // This Server Action receives the form data and the user's ID.
-// It runs on the server, so it has trusted access to the database.
+// It now ONLY handles submitting the private feedback.
+// The user profile update will be handled on the client-side to comply with security rules.
 export async function submitFirstLessonFeedbackAction(userId: string, formData: FormData) {
   const ratingStr = formData.get("rating") as string;
   const comment = formData.get("comment") as string;
@@ -16,8 +15,6 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
 
   // Basic validation on the server
   if (!userId || !rating || rating < 1 || rating > 5) {
-    // In a real app, you might return an error object.
-    // For now, we'll throw an error which can be caught client-side if needed.
     throw new Error("Invalid user ID or rating provided.");
   }
 
@@ -34,13 +31,10 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
       createdAt: serverTimestamp(),
     });
 
-    // 2. Update the user's profile to permanently disable the prompt using the Admin SDK
-    const userDocRef = db.collection("users").doc(userId);
-    // **FIXED**: The object now ONLY contains the two fields permitted by the security rule.
-    await userDocRef.update({
-      showFirstLessonFeedbackPrompt: false,
-      hasSubmittedFirstLessonFeedback: true,
-    });
+    // The user profile update logic has been removed from here.
+    // It will now be triggered on the client after this action succeeds.
+
+    return { success: true };
 
   } catch (error) {
     console.error("DETAILED SERVER ACTION ERROR:", JSON.stringify(error, null, 2));
@@ -48,7 +42,5 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
     throw new Error("Could not save your feedback. Please try again later.");
   }
 
-  // 3. Revalidate the user's profile page cache and redirect them
-  revalidatePath("/profile");
-  redirect("/profile?feedback=success"); // Redirect with a query param to show success
+  // The redirect logic is also moved to the client.
 }

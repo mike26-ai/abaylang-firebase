@@ -12,6 +12,9 @@ import { Star } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 import { submitFirstLessonFeedbackAction } from "@/app/actions/feedbackActions";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { revalidatePath } from "next/cache";
 
 export default function FirstLessonFeedbackPage() {
   const { user, loading } = useAuth();
@@ -29,6 +32,43 @@ export default function FirstLessonFeedbackPage() {
     }
   }, [user, loading, router]);
 
+  // This function is now a client-side wrapper for the Server Action.
+  const handleFormAction = async (formData: FormData) => {
+    if (!user) {
+      toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      // Step 1: Call the server action to save the private feedback.
+      const result = await submitFirstLessonFeedbackAction(user.uid, formData);
+
+      // Step 2: If feedback is saved, update the user profile from the client.
+      // This is allowed by the security rules.
+      if (result.success) {
+        const userDocRef = doc(db, "users", user.uid);
+        await updateDoc(userDocRef, {
+          showFirstLessonFeedbackPrompt: false,
+          hasSubmittedFirstLessonFeedback: true,
+        });
+
+        // Step 3: Redirect on success.
+        router.push("/profile?feedback=success");
+      } else {
+        throw new Error("Server action did not report success.");
+      }
+
+    } catch (error) {
+      console.error("Error submitting first lesson feedback:", error);
+      toast({
+        title: "Submission Failed",
+        description: "Could not submit your feedback. Please try again.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false); // Only set submitting to false on error
+    }
+  };
+
   // Show a toast message on successful redirect
   useEffect(() => {
     if (searchParams.get('feedback') === 'success') {
@@ -40,29 +80,6 @@ export default function FirstLessonFeedbackPage() {
       router.replace('/profile', { scroll: false });
     }
   }, [searchParams, toast, router]);
-
-
-  // This function is now a client-side wrapper for the Server Action.
-  const handleFormAction = async (formData: FormData) => {
-    if (!user) {
-      toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      // Call the server action with the user's ID and form data
-      await submitFirstLessonFeedbackAction(user.uid, formData);
-      // The server action now handles the redirect, so we don't need to do it here.
-    } catch (error) {
-      console.error("Error submitting first lesson feedback:", error);
-      toast({
-        title: "Submission Failed",
-        description: "Could not submit your feedback. Please try again.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false); // Only set submitting to false on error
-    }
-  };
 
 
   if (loading || !user) {
