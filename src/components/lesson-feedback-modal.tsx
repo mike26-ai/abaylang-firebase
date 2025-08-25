@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { Star, Send, CheckCircle } from "lucide-react";
 import { Spinner } from "./ui/spinner";
-import { format as formatDate } from "date-fns";
+import { format as formatDate, parseISO } from "date-fns";
 
 interface LessonFeedbackModalProps {
   lessonId: string;
@@ -104,6 +104,11 @@ export default function LessonFeedbackModal({
         setIsSubmitting(false);
     }
   };
+  
+  // FIX: Create a valid Date object that works across browsers.
+  // The 'T00:00:00' part ensures the date is parsed in the local timezone, avoiding UTC conversion issues.
+  const parsedDate = new Date(`${lessonDate}T00:00:00`);
+  const formattedLessonDate = !isNaN(parsedDate.getTime()) ? formatDate(parsedDate, "PPP") : "a recent lesson";
 
 
   if (isSubmitted) {
@@ -132,7 +137,7 @@ export default function LessonFeedbackModal({
           </DialogTitle>
           <DialogDescription>
             Help us improve by sharing your feedback about your {lessonType} lesson on{" "}
-            {formatDate(new Date(lessonDate), "PPP")}.
+            {formattedLessonDate}.
           </DialogDescription>
         </DialogHeader>
 
