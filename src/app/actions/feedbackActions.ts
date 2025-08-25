@@ -3,10 +3,15 @@
 
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getFirestore } from "firebase-admin/firestore";
-import { initAdmin } from "@/lib/firebase-admin"; // Import the admin app initializer
+import { initAdmin } from "@/lib/firebase-admin";
 
-// This Server Action receives the form data and attempts to save it.
-// It NO LONGER handles user profile updates or redirects. It just saves the feedback.
+/**
+ * Server Action to save private first-lesson feedback.
+ * This action ONLY saves the feedback to a secure collection and does not perform any other operations.
+ * @param userId - The ID of the user submitting feedback.
+ * @param formData - The form data containing the rating and comment.
+ * @returns An object indicating success or failure.
+ */
 export async function submitFirstLessonFeedbackAction(userId: string, formData: FormData): Promise<{ success: boolean; error?: string }> {
   const ratingStr = formData.get("rating") as string;
   const comment = formData.get("comment") as string;
@@ -14,6 +19,7 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
 
   // Basic validation on the server
   if (!userId || !rating || rating < 1 || rating > 5) {
+    console.error("submitFirstLessonFeedbackAction validation failed:", { userId, ratingStr });
     return { success: false, error: "Invalid user ID or rating provided." };
   }
 
@@ -22,21 +28,21 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
     const adminApp = initAdmin();
     const db = getFirestore(adminApp);
 
-    // 2. Save feedback to internal collection
+    // 2. Save feedback to the secure internal collection
     await db.collection("internalFeedback").add({
       userId: userId,
       rating: rating,
       comment: comment,
+      type: "first-lesson", // Clarify the type of feedback
       createdAt: serverTimestamp(),
     });
 
-    // 3. Return a success message to the client. The client will handle the profile update.
+    // 3. Return a definitive success message.
     return { success: true };
 
   } catch (error) {
-    // This detailed log will appear on the SERVER console
-    console.error("DETAILED SERVER ACTION ERROR (feedbackActions):", JSON.stringify(error, null, 2));
+    console.error("Error in submitFirstLessonFeedbackAction:", JSON.stringify(error, null, 2));
     // Return a generic error message to the client.
-    return { success: false, error: "Could not save your feedback. Please try again later." };
+    return { success: false, error: "Could not save your feedback due to a server error." };
   }
 }

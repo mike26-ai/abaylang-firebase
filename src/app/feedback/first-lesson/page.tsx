@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,11 +15,9 @@ import { submitFirstLessonFeedbackAction } from "@/app/actions/feedbackActions";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-
 export default function FirstLessonFeedbackPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   
   const [rating, setRating] = useState(0);
@@ -32,7 +30,6 @@ export default function FirstLessonFeedbackPage() {
     }
   }, [user, loading, router]);
 
-
   // This is a client-side wrapper for the Server Action.
   // It handles the form submission state, client-side updates, and potential errors.
   const handleFormAction = async (formData: FormData) => {
@@ -40,26 +37,37 @@ export default function FirstLessonFeedbackPage() {
       toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
       return;
     }
+    if (rating === 0) {
+      toast({ title: "Incomplete", description: "Please select a rating.", variant: "destructive" });
+      return;
+    }
     setIsSubmitting(true);
+
     try {
-      // 1. Call the server action to save the private feedback
+      // Step 1: Call the server action to save the private feedback and WAIT for its response.
       const result = await submitFirstLessonFeedbackAction(user.uid, formData);
 
+      // Check if the server action was successful.
       if (!result.success) {
+        // If the server action failed, throw an error to be caught by the catch block.
         throw new Error(result.error || "An unknown error occurred on the server.");
       }
 
-      // 2. On success, perform the client-side update to the user's own profile
-      // This is allowed by the security rules because the user is the owner.
+      // Step 2: On server success, perform the client-side update to the user's own profile.
+      // This is allowed by security rules because the user is the owner.
       const userDocRef = doc(db, "users", user.uid);
       await updateDoc(userDocRef, {
         showFirstLessonFeedbackPrompt: false,
         hasSubmittedFirstLessonFeedback: true,
       });
 
-      // 3. Finally, redirect the user to their profile page with a success query param.
-      router.push('/profile?feedback=success');
-
+      // Step 3: Finally, redirect the user to their profile page with a success toast.
+      toast({
+        title: "Feedback Submitted!",
+        description: "Thank you for helping us improve.",
+      });
+      router.push('/profile');
+      
     } catch (error: any) {
       console.error("Error submitting first lesson feedback:", error);
       toast({
@@ -67,22 +75,10 @@ export default function FirstLessonFeedbackPage() {
         description: error.message || "Could not submit your feedback. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };
-
-  // Show a toast message on successful redirect
-  useEffect(() => {
-    if (searchParams.get('feedback') === 'success') {
-      toast({
-        title: "Feedback Submitted!",
-        description: "Thank you for helping us improve.",
-      });
-       // Replace the URL to remove the query parameter
-      router.replace('/profile', { scroll: false });
-    }
-  }, [searchParams, toast, router]);
-
 
   if (loading || !user) {
     return (
@@ -139,7 +135,7 @@ export default function FirstLessonFeedbackPage() {
               />
             </div>
             
-            <Button type="submit" size="lg" className="w-full" disabled={rating === 0 || isSubmitting}>
+            <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? <Spinner size="sm" className="mr-2"/> : null}
               {isSubmitting ? "Submitting..." : "Submit Private Feedback"}
             </Button>
