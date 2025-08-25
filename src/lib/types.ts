@@ -19,6 +19,7 @@ export interface Booking {
   price?: number;
   learningGoals?: string;
   hasReview?: boolean; // Added for student dashboard
+  cancellationReason?: string; // For reschedule/cancellation data
 }
 
 export interface Testimonial {
