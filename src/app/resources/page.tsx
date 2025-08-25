@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BookOpen, Library, ExternalLink } from "lucide-react";
+import { BookOpen, Library, ExternalLink, Mic } from "lucide-react";
 
 export default function ResourcesPage() {
   return (
@@ -20,7 +20,7 @@ export default function ResourcesPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-md mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           <Card className="shadow-xl hover-lift">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
@@ -38,6 +38,27 @@ export default function ResourcesPage() {
                 <Link href="/flashcards">
                   <ExternalLink className="w-4 h-4 mr-2" />
                   Go to Flashcards
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+           <Card className="shadow-xl hover-lift">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Mic className="w-6 h-6 text-primary" />
+                AI Accent Helper
+              </CardTitle>
+              <CardDescription>Get instant feedback on your pronunciation from our AI tutor.</CardDescription>
+            </CardHeader>
+            <CardContent className="text-center py-8">
+              <Mic className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-6">
+                Record yourself and let our AI analyze your accent and guide you.
+              </p>
+              <Button asChild>
+                <Link href="/accent-improvement">
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Practice Now
                 </Link>
               </Button>
             </CardContent>
