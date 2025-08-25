@@ -225,7 +225,7 @@ const handleBooking = async () => {
       duration: unitDuration,
       lessonType: selectedLessonDetails.label,
       price: selectedLessonDetails.price,
-      status: 'awaiting-payment' as const, // <-- UPDATED STATUS
+      status: 'awaiting-payment' as const,
       tutorId: "MahderNegashNano",
       tutorName: "Mahder Negash",
       userId: user.uid,
