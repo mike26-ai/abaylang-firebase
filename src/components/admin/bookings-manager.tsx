@@ -22,7 +22,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export function BookingsManager() {
@@ -150,7 +149,7 @@ export function BookingsManager() {
                     : booking.status === "cancelled" ? "destructive" 
                     : "secondary"
                   }
-                   className={booking.status === 'awaiting-payment' ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}
+                   className={booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}
                 >
                   {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </Badge>
@@ -169,7 +168,7 @@ export function BookingsManager() {
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       {booking.status === 'awaiting-payment' && (
                          <DropdownMenuItem onClick={() => updateBookingStatus(booking, "confirmed")}>
-                            <CreditCard className="mr-2 h-4 w-4 text-green-500" /> Confirm Payment
+                            <CreditCard className="mr-2 h-4 w-4 text-primary" /> Confirm Payment
                          </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => updateBookingStatus(booking, "completed")} disabled={booking.status === 'completed'}>
