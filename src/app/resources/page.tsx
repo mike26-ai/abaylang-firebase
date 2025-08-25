@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BookOpen, FileText, Library, ExternalLink, ListChecks } from "lucide-react";
+import { BookOpen, Sparkles, Library, ExternalLink } from "lucide-react";
 
 export default function ResourcesPage() {
   return (
@@ -21,25 +21,6 @@ export default function ResourcesPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          <Card className="shadow-xl hover-lift">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <FileText className="w-6 h-6 text-primary" />
-                Lesson Materials
-              </CardTitle>
-              <CardDescription>
-                Access PDF documents, audio, or video links shared by your tutor.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center py-8">
-              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">
-                Lesson materials will be provided directly by the tutor for now.
-              </p>
-              
-            </CardContent>
-          </Card>
-
           <Card className="shadow-xl hover-lift">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
@@ -61,12 +42,35 @@ export default function ResourcesPage() {
               </Button>
             </CardContent>
           </Card>
+
+          <Card className="shadow-xl hover-lift">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Sparkles className="w-6 h-6 text-primary" />
+                AI Accent Helper
+              </CardTitle>
+              <CardDescription>
+                Get personalized feedback on your Amharic pronunciation.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center py-8">
+               <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-6">
+                This AI-powered feature is currently under development.
+              </p>
+              <Button asChild>
+                <Link href="/accent-improvement">
+                  Learn More
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
         
         <div className="mt-16 text-center">
             <h2 className="text-2xl font-semibold text-foreground mb-3">More Tools Coming Soon!</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-                We are continuously working on adding more resources like interactive quizzes, AI-powered practice tools, and advanced learning paths to enhance your ABYLANG experience.
+                We are continuously working on adding more resources like interactive quizzes and advanced learning paths to enhance your ABYLANG experience.
             </p>
         </div>
 
