@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Volume2, RotateCw } from "lucide-react"; // Added RotateCw for flip
+import { Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FlashcardData {
@@ -28,7 +28,7 @@ export default function StaticFlashcardViewer({ cards }: StaticFlashcardViewerPr
 
   const playAudio = (text: string) => {
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUttext(text);
       const voices = window.speechSynthesis.getVoices();
       // Try to find Amharic voice, may not be available on all systems
       const amharicVoice = voices.find(voice => voice.lang.toLowerCase().startsWith('am'));
@@ -50,21 +50,20 @@ export default function StaticFlashcardViewer({ cards }: StaticFlashcardViewerPr
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 [perspective:1000px]">
       {cards.map((card) => (
         <div
           key={card.id}
           className={cn(
-            "relative h-64 w-full cursor-pointer rounded-xl shadow-lg perspective-1000",
-            "transform-style-preserve-3d transition-transform duration-700 ease-in-out",
-             flippedStates[card.id] ? "rotate-y-180" : ""
+            "relative h-64 w-full cursor-pointer transition-transform duration-700 [transform-style:preserve-3d]",
+            flippedStates[card.id] ? "[transform:rotateY(180deg)]" : ""
           )}
           onClick={() => handleFlip(card.id)}
         >
           {/* Front of Card (Amharic) */}
           <Card
             className={cn(
-              "absolute inset-0 backface-hidden flex flex-col items-center justify-center p-4 border-2 border-primary/30 bg-card"
+              "absolute inset-0 [backface-visibility:hidden] flex flex-col items-center justify-center p-4 border-2 border-primary/30 bg-card"
             )}
           >
             <CardContent className="text-center space-y-2">
@@ -88,7 +87,7 @@ export default function StaticFlashcardViewer({ cards }: StaticFlashcardViewerPr
           {/* Back of Card (English) */}
           <Card
             className={cn(
-              "absolute inset-0 backface-hidden rotate-y-180 flex flex-col items-center justify-center p-4 border-2 border-accent/80 bg-accent"
+              "absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-4 border-2 border-accent/80 bg-accent"
             )}
           >
             <CardContent className="text-center space-y-3">
