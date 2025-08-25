@@ -93,7 +93,7 @@ export function InquiriesViewer() {
                   {inquiry.read ? "Read" : "Unread"}
                 </Badge>
               </TableCell>
-              <TableCell>{format(inquiry.createdAt.toDate(), 'PP pp')}</TableCell>
+              <TableCell>{inquiry.createdAt ? format(inquiry.createdAt.toDate(), 'PP pp') : 'N/A'}</TableCell>
               <TableCell className="text-right">
                 <Dialog>
                   <DialogTrigger asChild>
@@ -113,7 +113,7 @@ export function InquiriesViewer() {
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Inquiry from: {selectedInquiry.name}</DialogTitle>
-              <DialogDescription>Email: {selectedInquiry.email} | Received: {format(selectedInquiry.createdAt.toDate(), 'PPP p')}</DialogDescription>
+              <DialogDescription>Email: {selectedInquiry.email} | Received: {selectedInquiry.createdAt ? format(selectedInquiry.createdAt.toDate(), 'PPP p') : 'N/A'}</DialogDescription>
             </DialogHeader>
             <div className="py-4 prose prose-sm max-w-none whitespace-pre-wrap break-words">
               {selectedInquiry.message}
