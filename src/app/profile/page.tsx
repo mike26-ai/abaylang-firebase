@@ -62,6 +62,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Logo } from "@/components/layout/logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -828,3 +829,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
