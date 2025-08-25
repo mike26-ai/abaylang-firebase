@@ -1,5 +1,4 @@
 // File: src/lib/firebase-admin.ts
-
 import admin from 'firebase-admin';
 
 // This function initializes the Firebase Admin SDK.
