@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -7,14 +8,13 @@ import { Progress } from "@/components/ui/progress"
 import { ChevronLeft, ChevronRight, RotateCw, Volume2, Check, X, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export interface Flashcard { // Added export here
+export interface Flashcard {
   id: string
   amharic: string
   english: string
   pronunciation: string
   example?: string
   category: string
-  difficulty: "beginner" | "intermediate" | "advanced"
 }
 
 interface FlashcardPracticeProps {
@@ -32,10 +32,12 @@ export function FlashcardPractice({ cards, onComplete }: FlashcardPracticeProps)
   const [isCompleted, setIsCompleted] = useState(false)
   const [shuffledCards, setShuffledCards] = useState<Flashcard[]>([])
 
-  // Shuffle cards on component mount
+  // Shuffle cards on component mount or when cards prop changes
   useEffect(() => {
-    setShuffledCards([...cards].sort(() => Math.random() - 0.5))
-  }, [cards])
+    handleRestart();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cards]);
+
 
   const currentCard = shuffledCards[currentIndex]
   const progress = shuffledCards.length > 0 ? ((currentIndex + 1) / shuffledCards.length) * 100 : 0
@@ -85,10 +87,9 @@ export function FlashcardPractice({ cards, onComplete }: FlashcardPracticeProps)
     setIsCompleted(false)
   }
 
-  const playAudio = () => {
-    // In a real implementation, this would play audio of the word pronunciation
+  const playAudio = (text: string) => {
     if ('speechSynthesis' in window && currentCard) {
-      const utterance = new SpeechSynthesisUtterance(currentCard.amharic);
+      const utterance = new SpeechSynthesisUtterance(text);
       const voices = window.speechSynthesis.getVoices();
       const amharicVoice = voices.find(voice => voice.lang.toLowerCase().startsWith('am'));
       if (amharicVoice) {
@@ -98,7 +99,7 @@ export function FlashcardPractice({ cards, onComplete }: FlashcardPracticeProps)
       }
       window.speechSynthesis.speak(utterance);
     } else {
-      console.log("Playing audio for:", currentCard?.amharic)
+      console.log("Audio playback not supported for:", text)
     }
   }
 
@@ -113,9 +114,6 @@ export function FlashcardPractice({ cards, onComplete }: FlashcardPracticeProps)
   }
   
   if (!currentCard && !isCompleted && shuffledCards.length > 0) {
-     // This can happen if shuffledCards is empty initially then populated
-     // Or if there's a brief moment currentIndex is out of sync.
-     // Could show a loader or a message. For now, simple message or null.
     return (
         <Card className="shadow-lg border-border">
             <CardContent className="p-6 text-center">
@@ -152,10 +150,6 @@ export function FlashcardPractice({ cards, onComplete }: FlashcardPracticeProps)
                 <RotateCw className="w-4 h-4 mr-2" />
                 Practice Again
               </Button>
-              <Button variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                More Sets (Soon)
-              </Button>
             </div>
           </div>
         </CardContent>
@@ -179,19 +173,13 @@ export function FlashcardPractice({ cards, onComplete }: FlashcardPracticeProps)
         </div>
 
         <div
-          className={cn("relative min-h-[250px] cursor-pointer perspective-1000 transform-style-preserve-3d")}
+          className="relative min-h-[250px] cursor-pointer [perspective:1000px]"
           onClick={handleFlip}
         >
-          {/* Front of the card */}
           <div
             className={cn(
-              "absolute inset-0 backface-hidden transition-all duration-500 ease-in-out rounded-xl p-6 flex flex-col items-center justify-center border",
-              !flipped ? "rotate-y-0 opacity-100" : "rotate-y-180 opacity-0",
-              currentCard.difficulty === "beginner"
-                ? "bg-primary/10 border-primary/20"
-                : currentCard.difficulty === "intermediate"
-                  ? "bg-secondary/10 border-secondary/20"
-                  : "bg-accent border-border",
+              "absolute inset-0 [backface-visibility:hidden] transition-transform duration-500 [transform-style:preserve-3d] rounded-xl p-6 flex flex-col items-center justify-center border bg-card",
+              !flipped ? "[transform:rotateY(0deg)]" : "[transform:rotateY(180deg)]"
             )}
           >
             <div className="absolute top-3 left-3">
@@ -204,7 +192,7 @@ export function FlashcardPractice({ cards, onComplete }: FlashcardPracticeProps)
                 className="h-8 w-8"
                 onClick={(e) => {
                   e.stopPropagation()
-                  playAudio()
+                  playAudio(currentCard.amharic)
                 }}
               >
                 <Volume2 className="h-4 w-4 text-muted-foreground hover:text-foreground" />
@@ -218,11 +206,10 @@ export function FlashcardPractice({ cards, onComplete }: FlashcardPracticeProps)
             </div>
           </div>
 
-          {/* Back of the card */}
           <div
             className={cn(
-              "absolute inset-0 backface-hidden transition-all duration-500 ease-in-out rounded-xl p-6 flex flex-col items-center justify-center bg-card border border-border",
-              flipped ? "rotate-y-0 opacity-100" : "-rotate-y-180 opacity-0",
+              "absolute inset-0 [backface-visibility:hidden] transition-transform duration-500 [transform-style:preserve-3d] rounded-xl p-6 flex flex-col items-center justify-center bg-accent border border-border",
+              flipped ? "[transform:rotateY(0deg)]" : "[transform:rotateY(-180deg)]"
             )}
           >
             <div className="text-center">

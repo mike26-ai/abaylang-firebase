@@ -1,16 +1,10 @@
 
 "use client";
 
-import { Layers } from 'lucide-react'; // Changed from CardStackIcon
-import StaticFlashcardViewer from '@/components/flashcards/static-flashcard-viewer';
+import { Layers } from 'lucide-react';
 import flashcardsData from '@/data/flashcards.json';
-// Note: Metadata should be defined statically or handled differently for client components if dynamic.
-// For this MVP, we will assume static metadata is acceptable.
-
-// export const metadata: Metadata = { // Cannot be used in client component this way
-//   title: 'Amharic Flashcards - ABYLANG',
-//   description: 'Practice common Amharic words and phrases with our flashcards.',
-// };
+import { FlashcardPractice } from '@/components/flashcards/FlashcardPractice';
+import StaticFlashcardViewer from '@/components/flashcards/static-flashcard-viewer';
 
 export default function FlashcardsPage() {
   return (
@@ -23,14 +17,20 @@ export default function FlashcardsPage() {
           Amharic Flashcards
         </h1>
         <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Practice common Amharic words and phrases. Click on a card to flip it! These are beginner-level flashcards for now.
+          Use the interactive practice mode to test your knowledge, or browse all cards below.
         </p>
       </header>
 
       <div className="max-w-4xl mx-auto">
-        <StaticFlashcardViewer cards={flashcardsData.beginner} />
+        <h2 className="text-2xl font-bold text-center mb-6">Practice Mode</h2>
+        <FlashcardPractice cards={flashcardsData.beginner} />
       </div>
       
+      <div className="mt-16">
+        <h2 className="text-2xl font-bold text-center mb-6">Browse All Beginner Cards</h2>
+        <StaticFlashcardViewer cards={flashcardsData.beginner} />
+      </div>
+
       <div className="mt-12 text-center">
         <p className="text-muted-foreground">
           More flashcard sets for different levels and categories are coming soon!
