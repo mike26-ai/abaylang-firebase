@@ -30,6 +30,7 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
       createdAt: serverTimestamp(),
     });
 
+    // 3. Return a success message to the client. The client will handle the profile update.
     return { success: true };
 
   } catch (error) {
