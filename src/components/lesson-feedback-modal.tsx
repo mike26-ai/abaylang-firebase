@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { Star, Send, CheckCircle } from "lucide-react";
 import { Spinner } from "./ui/spinner";
+import { format as formatDate } from "date-fns";
 
 interface LessonFeedbackModalProps {
   lessonId: string;
@@ -131,7 +132,7 @@ export default function LessonFeedbackModal({
           </DialogTitle>
           <DialogDescription>
             Help us improve by sharing your feedback about your {lessonType} lesson on{" "}
-            {format(new Date(lessonDate), "PPP")}.
+            {formatDate(new Date(lessonDate), "PPP")}.
           </DialogDescription>
         </DialogHeader>
 
@@ -232,10 +233,3 @@ export default function LessonFeedbackModal({
     </Dialog>
   );
 }
-
-function format(date: Date, formatString: string) {
-    // Basic formatter to avoid dependency if date-fns is not universally available here
-    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric'});
-}
-
-    
