@@ -301,7 +301,7 @@ export default function AdminDashboardPage() {
                           <div className="text-xs text-muted-foreground">{booking.userEmail}</div>
                         </TableCell>
                         <TableCell>
-                          {format(new Date(booking.date), "PP")} at {booking.time}
+                          {booking.date !== 'N/A_PACKAGE' ? `${format(new Date(booking.date), "PP")} at ${booking.time}` : 'Package'}
                         </TableCell>
                         <TableCell>{booking.lessonType || `${booking.duration} min`}</TableCell>
                         <TableCell>
@@ -448,7 +448,7 @@ export default function AdminDashboardPage() {
                         <TableCell>{student.email}</TableCell>
                         <TableCell>{student.createdAt ? format(student.createdAt.toDate(), "PP") : "N/A"}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{student.amharicLevel || "N/A"}</Badge>
+                          <Badge variant="outline">{student.amharicLevel?.replace(/-/g, " ") || "N/A"}</Badge>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -456,8 +456,7 @@ export default function AdminDashboardPage() {
                 </Table>
                 )}
                  <div className="mt-4 text-right">
-                    {/* For now, no dedicated "all students" management page beyond profiles, so disable or link to a future page */}
-                    <Button variant="outline" disabled>View All Students (Coming Soon)</Button>
+                    <Button variant="outline" asChild><Link href="/admin/students">View All Students</Link></Button>
                 </div>
               </CardContent>
             </Card>
@@ -467,7 +466,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
-
-    

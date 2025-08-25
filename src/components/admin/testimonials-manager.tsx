@@ -24,8 +24,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-// TODO: When implementing file uploads, import the server action.
-// import { uploadImage } from "@/app/actions/uploadActions";
 
 export function TestimonialsManager() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -75,22 +73,6 @@ export function TestimonialsManager() {
       toast({ title: "Error", description: "Could not delete testimonial.", variant: "destructive" });
     }
   };
-  
-  // TODO: Implement the file upload logic when a user submits a testimonial with an image.
-  // const handleTestimonialImageUpload = async (file: File) => {
-  //   const formData = new FormData();
-  //   formData.append('file', file);
-  //
-  //   const result = await uploadImage(formData);
-  //
-  //   if (result.success && result.url) {
-  //     return result.url;
-  //   } else {
-  //     toast({ title: "Upload Failed", description: result.error, variant: "destructive" });
-  //     return null;
-  //   }
-  // };
-
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Spinner size="lg"/></div>;
@@ -130,11 +112,12 @@ export function TestimonialsManager() {
                     : testimonial.status === "pending" ? "secondary" 
                     : "destructive"
                   }
+                   className={testimonial.status === 'pending' ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}
                 >
                   {testimonial.status.charAt(0).toUpperCase() + testimonial.status.slice(1)}
                 </Badge>
               </TableCell>
-              <TableCell>{format(testimonial.createdAt.toDate(), 'PP pp')}</TableCell>
+              <TableCell>{testimonial.createdAt ? format(testimonial.createdAt.toDate(), 'PP pp') : 'N/A'}</TableCell>
               <TableCell className="text-right">
                 <AlertDialog>
                   <DropdownMenu>
