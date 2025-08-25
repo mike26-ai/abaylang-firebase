@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -29,6 +30,7 @@ export function Navbar() {
     { title: "Packages", href: "/packages" },
     { title: "Testimonials", href: "/testimonials" },
     { title: "Resources", href: "/resources" },
+    { title: "Chat", href: "/chat" },
     { title: "Contact", href: "/contact" },
   ];
 
