@@ -68,6 +68,7 @@ import { Logo } from "@/components/layout/logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Textarea } from "@/components/ui/textarea";
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -89,10 +90,11 @@ export default function StudentDashboardPage() {
     amharicLevel: "",
   });
 
-  // State for the new reschedule dialog
+  // State for the reschedule dialog
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<BookingType | null>(null);
   const [rescheduleReason, setRescheduleReason] = useState("");
+  const [otherRescheduleReason, setOtherRescheduleReason] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
 
 
@@ -328,18 +330,21 @@ export default function StudentDashboardPage() {
   const openRescheduleDialog = (booking: BookingType) => {
     setSelectedBookingForReschedule(booking);
     setRescheduleReason("");
+    setOtherRescheduleReason("");
     setRescheduleDialogOpen(true);
   };
 
   const handleConfirmReschedule = async () => {
     if (!selectedBookingForReschedule || !rescheduleReason) return;
+    if (rescheduleReason === 'Other' && !otherRescheduleReason.trim()) return;
     
     setIsRescheduling(true);
     try {
+      const finalReason = rescheduleReason === 'Other' ? `Other: ${otherRescheduleReason.trim()}` : rescheduleReason;
       const bookingDocRef = doc(db, "bookings", selectedBookingForReschedule.id);
       await updateDoc(bookingDocRef, { 
         status: "cancelled",
-        cancellationReason: `Rescheduled: ${rescheduleReason}`,
+        cancellationReason: `Rescheduled: ${finalReason}`,
       });
       toast({ 
         title: "Lesson Cancelled", 
@@ -798,26 +803,39 @@ export default function StudentDashboardPage() {
               This action will cancel your current lesson. You will then be redirected to the booking page to choose a new time. Please select a reason for rescheduling.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
-              <Label htmlFor="reschedule-reason" className="mb-2 block">Reason for Rescheduling</Label>
-              <Select value={rescheduleReason} onValueChange={setRescheduleReason}>
-                  <SelectTrigger id="reschedule-reason">
-                      <SelectValue placeholder="Select a reason..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="Scheduling Conflict">Scheduling Conflict</SelectItem>
-                      <SelectItem value="Found a Better Time">Found a Better Time</SelectItem>
-                      <SelectItem value="Technical Issues">Technical Issues</SelectItem>
-                      <SelectItem value="Personal Reasons">Personal Reasons</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-              </Select>
+          <div className="py-4 space-y-4">
+              <div>
+                <Label htmlFor="reschedule-reason" className="mb-2 block">Reason for Rescheduling</Label>
+                <Select value={rescheduleReason} onValueChange={setRescheduleReason}>
+                    <SelectTrigger id="reschedule-reason">
+                        <SelectValue placeholder="Select a reason..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Scheduling Conflict">Scheduling Conflict</SelectItem>
+                        <SelectItem value="Found a Better Time">Found a Better Time</SelectItem>
+                        <SelectItem value="Technical Issues">Technical Issues</SelectItem>
+                        <SelectItem value="Personal Reasons">Personal Reasons</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                </Select>
+              </div>
+              {rescheduleReason === 'Other' && (
+                <div>
+                    <Label htmlFor="other-reason" className="mb-2 block">Please specify your reason</Label>
+                    <Textarea 
+                        id="other-reason"
+                        value={otherRescheduleReason}
+                        onChange={(e) => setOtherRescheduleReason(e.target.value)}
+                        placeholder="Please provide a brief reason for rescheduling..."
+                    />
+                </div>
+              )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Go Back</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmReschedule}
-              disabled={!rescheduleReason || isRescheduling}
+              disabled={!rescheduleReason || (rescheduleReason === 'Other' && !otherRescheduleReason.trim()) || isRescheduling}
               className="bg-primary hover:bg-primary/90"
             >
               {isRescheduling && <Spinner size="sm" className="mr-2" />}
@@ -829,5 +847,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    
