@@ -26,6 +26,7 @@ import {
   CheckCircle,
   Megaphone,
   RefreshCw,
+  LineChart,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -62,17 +63,50 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Logo } from "@/components/layout/logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
+import { ProgressCharts } from "@/components/progress/progress-charts";
+import type { ProgressData } from "@/components/progress/progress-charts";
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
 }
+
+// Mock Data for Progress Charts
+const mockSkillsData: ProgressData = {
+  labels: ["Grammar", "Vocab", "Listening", "Speaking", "Reading"],
+  datasets: [
+    {
+      label: "Proficiency",
+      data: [75, 85, 70, 90, 60], // Percentages
+    },
+  ],
+};
+
+const mockVocabularyData: ProgressData = {
+  labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  datasets: [
+    {
+      label: "Words Learned",
+      data: [20, 35, 55, 70, 95, 120],
+    },
+  ],
+};
+
+const mockLessonData: ProgressData = {
+  labels: ["Completed", "Upcoming", "Cancelled"],
+  datasets: [
+    {
+      label: "Lessons",
+      data: [24, 4, 2],
+    },
+  ],
+};
+
 
 export default function StudentDashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -541,9 +575,10 @@ export default function StudentDashboardPage() {
 
             <Tabs defaultValue="upcoming" className="space-y-6"> 
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-2 sm:grid-cols-3">
+                <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4">
                   <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
                   <TabsTrigger value="history">History</TabsTrigger>
+                  <TabsTrigger value="progress">My Progress</TabsTrigger>
                   <TabsTrigger value="profile">My Profile</TabsTrigger>
                 </TabsList>
               </div>
@@ -679,6 +714,14 @@ export default function StudentDashboardPage() {
                     </Card>
                   ))
                 )}
+              </TabsContent>
+
+              <TabsContent value="progress">
+                <ProgressCharts
+                  skillsData={mockSkillsData}
+                  vocabularyData={mockVocabularyData}
+                  lessonData={mockLessonData}
+                />
               </TabsContent>
               
               <TabsContent value="profile">

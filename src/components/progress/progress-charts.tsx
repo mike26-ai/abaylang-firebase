@@ -1,11 +1,13 @@
+
 "use client"
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { ChartTooltip, ChartTooltipContent, ChartStyle, ChartContainer, ChartConfig } from '@/components/ui/chart'; // Assuming ChartConfig is needed or defined in ui/chart
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { ChartTooltip, ChartTooltipContent, ChartContainer } from '@/components/ui/chart';
+import type { ChartConfig } from "@/components/ui/chart";
 
 interface ProgressDataItem {
   name: string; // For XAxis dataKey
@@ -36,16 +38,14 @@ export function ProgressCharts({ skillsData, vocabularyData, lessonData }: Progr
   const skillsChartData: ProgressDataItem[] = skillsData.labels.map((label, index) => ({
     name: label,
     value: skillsData.datasets[0]?.data[index] || 0,
-    // Use a color from your theme, or derive from skillsData.datasets[0].backgroundColor
-    // For simplicity, using a theme variable directly if available, or a fixed color.
-    // Example: fill: 'hsl(var(--chart-1))'
-    fill: `hsl(var(--chart-${(index % 5) + 1}))` // Cycle through chart colors
+    fill: `var(--color-${label.toLowerCase()})`
   }));
 
-  const skillsChartConfig = skillsData.labels.reduce((acc, label, index) => {
-    acc[label] = {
+  const skillsChartConfig = skillsData.labels.reduce((acc, label) => {
+    const key = label.toLowerCase();
+    acc[key] = {
       label: label,
-      color: `hsl(var(--chart-${(index % 5) + 1}))`,
+      color: `hsl(var(--chart-${Object.keys(acc).length + 1}))`,
     };
     return acc;
   }, {} as ChartConfig);
@@ -56,7 +56,7 @@ export function ProgressCharts({ skillsData, vocabularyData, lessonData }: Progr
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div>
           <CardTitle>Learning Progress</CardTitle>
-          <CardDescription>Track your improvement over time</CardDescription>
+          <CardDescription>Track your improvement over time (using sample data)</CardDescription>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>
           <SelectTrigger className="w-[180px]">
@@ -91,8 +91,8 @@ export function ProgressCharts({ skillsData, vocabularyData, lessonData }: Progr
                     content={<ChartTooltipContent indicator="dot" hideLabel />}
                   />
                   <Bar dataKey="value" radius={4}>
-                    {skillsChartData.map((entry, index) => (
-                        <div key={`cell-${index}`} style={{ backgroundColor: entry.fill }} /> // Recharts needs Cells for individual bar colors if not using a single fill on <Bar>
+                    {skillsChartData.map((entry) => (
+                        <Cell key={`cell-${entry.name}`} fill={entry.fill} />
                     ))}
                   </Bar>
                 </BarChart>
