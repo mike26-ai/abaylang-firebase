@@ -1,7 +1,7 @@
 {
-  "name": "ABYLANG - Amharic Learning Platform",
+  "name": "ABYLANG",
   "short_name": "ABYLANG",
-  "description": "Learn Amharic with Mahder Negash Mamo, a native tutor.",
+  "description": "Learn Amharic with a Native Tutor",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FDF6E3",
