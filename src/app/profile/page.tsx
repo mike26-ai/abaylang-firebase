@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, FormEvent, useMemo } from "react";
@@ -26,6 +25,7 @@ import {
   FileText,
   CheckCircle,
   Megaphone,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -48,7 +48,7 @@ import {
 } from "firebase/firestore";
 import { updateProfile as updateFirebaseUserProfile } from "firebase/auth";
 import type { Booking as BookingType, UserProfile } from "@/lib/types";
-import { format, isPast, parse } from "date-fns";
+import { format, isPast, parse, differenceInHours } from "date-fns";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,6 +66,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Logo } from "@/components/layout/logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRouter } from "next/navigation";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -74,6 +76,7 @@ interface DashboardBooking extends BookingType {
 export default function StudentDashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [bookings, setBookings] = useState<DashboardBooking[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
   const [userProfileData, setUserProfileData] = useState<UserProfile | null>(null);
@@ -316,6 +319,33 @@ export default function StudentDashboardPage() {
     }
   };
 
+  const handleReschedule = async (bookingId: string) => {
+    try {
+      const bookingDocRef = doc(db, "bookings", bookingId);
+      await updateDoc(bookingDocRef, { status: "cancelled" });
+      toast({ 
+        title: "Lesson Cancelled", 
+        description: "Please choose a new time for your lesson.",
+      });
+      // Refresh local state immediately for better UX
+      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled" as "cancelled"} : b));
+      router.push('/bookings');
+    } catch (error) {
+      console.error("Error during reschedule (cancellation step):", error);
+      toast({ 
+        title: "Reschedule Failed", 
+        description: "Could not cancel your current lesson. Please try again.", 
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const isRescheduleAllowed = (booking: BookingType) => {
+    if (booking.date === 'N/A_PACKAGE') return false; // Can't reschedule a package placeholder
+    const lessonDateTime = parse(`${booking.date} ${booking.time}`, 'yyyy-MM-dd HH:mm', new Date());
+    return differenceInHours(lessonDateTime, new Date()) >= 12;
+  };
+
   const upcomingBookings = bookings.filter(
     (b) => (b.status === "confirmed" || b.status === "awaiting-payment") && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
   ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime());
@@ -528,14 +558,32 @@ export default function StudentDashboardPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
-                            <Badge variant={booking.status === "confirmed" ? "default" : "secondary"} className={booking.status === "awaiting-payment" ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}>
+                            <Badge variant={booking.status === "confirmed" ? "default" : "secondary"} className={booking.status === "awaiting-payment" ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}>
                                {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
+
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  {/* This div is necessary for the tooltip to work on a disabled button */}
+                                  <div>
+                                    <Button variant="outline" size="sm" className="text-xs" onClick={() => handleReschedule(booking.id)} disabled={!isRescheduleAllowed(booking)}>
+                                      <RefreshCw className="mr-1 h-3 w-3" /> Reschedule
+                                    </Button>
+                                  </div>
+                                </TooltipTrigger>
+                                {!isRescheduleAllowed(booking) && (
+                                  <TooltipContent>
+                                    <p>Cannot reschedule within 12 hours of the lesson.</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
+
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs">
-                                  <XCircle className="mr-1 h-3 w-3 md:hidden" />
-                                  <span className="hidden md:inline">Cancel</span>
+                                  <XCircle className="mr-1 h-3 w-3" /> Cancel
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
@@ -585,7 +633,7 @@ export default function StudentDashboardPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
-                             <Badge variant={booking.status === "completed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"} className={booking.status === 'awaiting-payment' ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}>
+                             <Badge variant={booking.status === "completed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"} className={booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}>
                                {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
                             {booking.status === 'completed' && (
@@ -722,3 +770,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
