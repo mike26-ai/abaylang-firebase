@@ -917,7 +917,7 @@ export default function StudentDashboardPage() {
                 </div>
                 <div className="p-3 bg-muted/50 rounded-md">
                     <p className="font-medium text-foreground">WhatsApp:</p>
-                    <p className="text-muted-foreground">+2519176968</p>
+                    <p className="text-muted-foreground">+251991176968</p>
                 </div>
             </div>
             
@@ -931,7 +931,7 @@ export default function StudentDashboardPage() {
              <div className="flex items-start gap-2 pt-2">
                 <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                    **Step 3:** Once we verify your payment, the status in your dashboard will change to "Confirmed" and your Zoom link will appear. This usually takes a few business hours.
+                    **Step 3:** Once we verify your payment, the status in your dashboard will change to "Confirmed" and your Zoom link will appear. This usually takes up to 12 business hours. For more details, please read our <Link href="/faq#payment-policy" className="underline font-semibold hover:text-primary/80">Booking & Payment Policy</Link>.
                 </p>
              </div>
           </div>

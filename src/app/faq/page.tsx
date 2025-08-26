@@ -1,4 +1,3 @@
-
 // File: src/app/faq/page.tsx
 
 import {
