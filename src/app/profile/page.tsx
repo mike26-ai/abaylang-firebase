@@ -54,7 +54,7 @@ import {
 } from "firebase/firestore";
 import { updateProfile as updateFirebaseUserProfile } from "firebase/auth";
 import type { Booking as BookingType, UserProfile } from "@/lib/types";
-import { format, isPast, parse, differenceInHours, differenceInMinutes, addMinutes } from "date-fns";
+import { format, isPast, parse, differenceInHours } from "date-fns";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,6 +76,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { contactEmail } from "@/config/site";
+import { JoinLessonButton } from "@/components/bookings/join-lesson-button";
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -395,17 +396,6 @@ export default function StudentDashboardPage() {
     return differenceInHours(lessonDateTime, new Date()) >= 12;
   };
 
-  const isJoinButtonActive = (booking: BookingType) => {
-    if (!booking.date || !booking.time || !booking.duration) return false;
-    const now = new Date();
-    const lessonStart = parse(`${booking.date} ${booking.time}`, 'yyyy-MM-dd HH:mm', new Date());
-    const lessonEnd = addMinutes(lessonStart, booking.duration);
-    
-    // Active from 15 mins before start until the end of the lesson
-    return differenceInMinutes(lessonStart, now) <= 15 && now < lessonEnd;
-  };
-
-
   const upcomingBookings = bookings.filter(
     (b) => (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
   ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime());
@@ -647,24 +637,7 @@ export default function StudentDashboardPage() {
                                     <Send className="mr-2 h-4 w-4" /> I Have Sent Payment
                                 </Button>
                             ) : booking.status === 'confirmed' && booking.zoomLink ? (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div>
-                                        <Button size="sm" asChild disabled={!isJoinButtonActive(booking)}>
-                                          <a href={booking.zoomLink} target="_blank" rel="noopener noreferrer">
-                                            <Video className="mr-2 h-4 w-4" /> Join Lesson
-                                          </a>
-                                        </Button>
-                                      </div>
-                                    </TooltipTrigger>
-                                    {!isJoinButtonActive(booking) && (
-                                      <TooltipContent>
-                                        <p>Button will be active 15 minutes before the lesson.</p>
-                                      </TooltipContent>
-                                    )}
-                                  </Tooltip>
-                                </TooltipProvider>
+                                <JoinLessonButton booking={booking} />
                             ) : booking.status === 'confirmed' && !booking.zoomLink ? (
                                 <p className="text-xs text-muted-foreground text-right">Zoom link will appear here soon.</p>
                             ) : (
