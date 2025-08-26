@@ -30,6 +30,7 @@ import {
   Upload,
   Info,
   Copy,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -53,7 +54,7 @@ import {
 } from "firebase/firestore";
 import { updateProfile as updateFirebaseUserProfile } from "firebase/auth";
 import type { Booking as BookingType, UserProfile } from "@/lib/types";
-import { format, isPast, parse, differenceInHours } from "date-fns";
+import { format, isPast, parse, differenceInHours, differenceInMinutes, addMinutes } from "date-fns";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,14 +98,12 @@ export default function StudentDashboardPage() {
     amharicLevel: "",
   });
 
-  // State for the reschedule dialog
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<BookingType | null>(null);
   const [rescheduleReason, setRescheduleReason] = useState("");
   const [otherRescheduleReason, setOtherRescheduleReason] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
   
-  // State for the NEW simple payment confirmation dialog
   const [paymentConfirmationDialog, setPaymentConfirmationDialog] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<string | null>(null);
 
@@ -142,7 +141,6 @@ export default function StudentDashboardPage() {
           duration: doc.data().duration || 60
       }));
 
-      // Now, for each COMPLETED booking, check if a review exists.
       const reviewChecks = fetchedBookings.map(async (booking) => {
         if (booking.status === 'completed') {
           const testimonialsCol = collection(db, "testimonials");
@@ -190,7 +188,6 @@ export default function StudentDashboardPage() {
           amharicLevel: profile.amharicLevel || "beginner",
         });
       } else {
-        // Create a basic profile if it doesn't exist
         const basicProfile: UserProfile = {
           uid: user.uid,
           email: user.email || "",
@@ -377,7 +374,6 @@ export default function StudentDashboardPage() {
         title: "Lesson Cancelled", 
         description: "Please choose a new time for your lesson.",
       });
-      // Refresh local state immediately for better UX
       setBookings(prev => prev.map(b => b.id === selectedBookingForReschedule.id ? {...b, status: newStatus} : b));
       setRescheduleDialogOpen(false);
       router.push('/bookings');
@@ -394,16 +390,26 @@ export default function StudentDashboardPage() {
   };
 
   const isRescheduleAllowed = (booking: BookingType) => {
-    if (booking.date === 'N/A_PACKAGE') return false; // Can't reschedule a package placeholder
+    if (booking.date === 'N/A_PACKAGE') return false;
     const lessonDateTime = parse(`${booking.date} ${booking.time}`, 'yyyy-MM-dd HH:mm', new Date());
     return differenceInHours(lessonDateTime, new Date()) >= 12;
   };
+
+  const isJoinButtonActive = (booking: BookingType) => {
+    if (!booking.date || !booking.time || !booking.duration) return false;
+    const now = new Date();
+    const lessonStart = parse(`${booking.date} ${booking.time}`, 'yyyy-MM-dd HH:mm', new Date());
+    const lessonEnd = addMinutes(lessonStart, booking.duration);
+    
+    // Active from 15 mins before start until the end of the lesson
+    return differenceInMinutes(lessonStart, now) <= 15 && now < lessonEnd;
+  };
+
 
   const upcomingBookings = bookings.filter(
     (b) => (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
   ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime());
   
-
   const pastBookings = bookings.filter(
     (b) => b.status === "completed" || b.status === "cancelled" || ((b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
   ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00")).getTime() - new Date(a.date + ' ' + (a.time || "00:00")).getTime());
@@ -422,7 +428,7 @@ export default function StudentDashboardPage() {
 
   const copyToClipboard = (textToCopy: string) => {
     navigator.clipboard.writeText(textToCopy);
-    toast({ title: "Copied!", description: "Reference ID copied to clipboard." });
+    toast({ title: "Copied!", description: "Booking ID copied to clipboard." });
   };
 
 
@@ -616,7 +622,7 @@ export default function StudentDashboardPage() {
                               <p className="text-sm text-primary">{booking.duration || 60} minutes with {booking.tutorName}</p>
                             </div>
                           </div>
-                          <div className="flex flex-col items-end gap-2 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto">
+                          <div className="flex flex-col items-start md:items-end gap-2 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto">
                              <Badge
                                 variant={
                                 booking.status === "confirmed" ? "default" 
@@ -640,6 +646,25 @@ export default function StudentDashboardPage() {
                                 }}>
                                     <Send className="mr-2 h-4 w-4" /> I Have Sent Payment
                                 </Button>
+                            ) : booking.status === 'confirmed' && booking.zoomLink ? (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div>
+                                        <Button size="sm" asChild disabled={!isJoinButtonActive(booking)}>
+                                          <a href={booking.zoomLink} target="_blank" rel="noopener noreferrer">
+                                            <Video className="mr-2 h-4 w-4" /> Join Lesson
+                                          </a>
+                                        </Button>
+                                      </div>
+                                    </TooltipTrigger>
+                                    {!isJoinButtonActive(booking) && (
+                                      <TooltipContent>
+                                        <p>Button will be active 15 minutes before the lesson.</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
                             ) : (
                               <div className="flex items-center gap-2">
                                 <TooltipProvider>
@@ -856,43 +881,45 @@ export default function StudentDashboardPage() {
               setSelectedBookingForPayment(null);
           }
       }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>Send Payment Confirmation</AlertDialogTitle>
+            <AlertDialogTitle>Complete Your Booking</AlertDialogTitle>
             <AlertDialogDescription>
-              To confirm your booking, please send your payment receipt to the admin directly.
+              Follow these steps to confirm your lesson. Your spot is held temporarily.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4 space-y-4">
+          <div className="py-2 space-y-4 text-sm">
             <div className="space-y-2">
-                <Label htmlFor="payment-note">1. Copy Your Unique Booking ID</Label>
+                <Label className="font-semibold text-foreground">Step 1: Copy Your Unique Booking ID</Label>
+                <p className="text-xs text-muted-foreground">This ID is essential for us to identify your payment quickly.</p>
                 <div className="relative">
                     <Input 
                         id="payment-note"
                         readOnly
                         value={`Booking ID: ${selectedBookingForPayment}`}
+                        className="pr-10 bg-muted/50"
                     />
                     <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => copyToClipboard(`Booking ID: ${selectedBookingForPayment}`)} disabled={!selectedBookingForPayment}>
                         <Copy className="h-4 w-4" />
                     </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">Click the copy icon and paste this ID into your message.</p>
             </div>
             <div className="space-y-2">
-                 <Label>2. Send Your Proof of Payment</Label>
+                 <Label className="font-semibold text-foreground">Step 2: Send Proof of Payment</Label>
+                 <p className="text-xs text-muted-foreground">Send a screenshot of your receipt to one of the contacts below. **Please paste your Booking ID in the message.**</p>
                 <div className="p-3 bg-muted/50 rounded-md">
-                    <p className="font-semibold text-foreground">Email:</p>
-                    <a href={`mailto:${contactEmail}`} className="text-sm text-primary underline">{contactEmail}</a>
+                    <p className="font-medium text-foreground">Email:</p>
+                    <a href={`mailto:${contactEmail}`} className="text-primary underline">{contactEmail}</a>
                 </div>
                 <div className="p-3 bg-muted/50 rounded-md">
-                    <p className="font-semibold text-foreground">WhatsApp:</p>
-                    <p className="text-sm text-muted-foreground">[Your WhatsApp Number Here]</p>
+                    <p className="font-medium text-foreground">WhatsApp:</p>
+                    <p className="text-muted-foreground">+2519176968</p>
                 </div>
             </div>
              <div className="flex items-start gap-2 pt-2">
                 <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                    Please include your copied Booking ID and registered email (<strong className="text-foreground">{user?.email}</strong>) in your message for faster confirmation.
+                    **Step 3:** Once we verify your payment, the status in your dashboard will change to "Confirmed" and your Zoom link will appear. This usually takes a few business hours.
                 </p>
              </div>
           </div>
@@ -904,7 +931,6 @@ export default function StudentDashboardPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reschedule Confirmation Dialog */}
       <AlertDialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -957,5 +983,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    

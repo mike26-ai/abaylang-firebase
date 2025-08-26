@@ -21,6 +21,7 @@ export interface Booking {
   hasReview?: boolean; // Added for student dashboard
   cancellationReason?: string; // For reschedule/cancellation data
   paymentNote?: string; // Note from student (e.g., transaction ID)
+  zoomLink?: string; // NEW: For the lesson's Zoom link
 }
 
 export interface Testimonial {
