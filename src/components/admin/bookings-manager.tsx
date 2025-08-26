@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard } from "lucide-react";
+import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, ExternalLink } from "lucide-react";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "../ui/spinner";
@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import Link from "next/link";
 
 export function BookingsManager() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -137,7 +138,18 @@ export function BookingsManager() {
         <TableBody>
           {bookings.map((booking) => (
             <TableRow key={booking.id}>
-              <TableCell className="font-medium">{booking.userName}</TableCell>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2">
+                  {booking.userName}
+                  {booking.paymentProofUrl && (
+                     <Button asChild variant="ghost" size="icon" className="h-6 w-6">
+                        <Link href={booking.paymentProofUrl} target="_blank" rel="noopener noreferrer">
+                           <ExternalLink className="h-4 w-4 text-primary" />
+                        </Link>
+                     </Button>
+                  )}
+                </div>
+              </TableCell>
               <TableCell>{booking.userEmail}</TableCell>
               <TableCell>{booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'Package'}</TableCell>
               <TableCell>{booking.time !== 'N/A_PACKAGE' ? booking.time : 'N/A'}</TableCell>
@@ -149,7 +161,11 @@ export function BookingsManager() {
                     : booking.status === "cancelled" ? "destructive" 
                     : "secondary"
                   }
-                   className={booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}
+                   className={
+                     booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" 
+                     : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
+                     : ""
+                    }
                 >
                   {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </Badge>
@@ -166,7 +182,7 @@ export function BookingsManager() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      {booking.status === 'awaiting-payment' && (
+                      {(booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation') && (
                          <DropdownMenuItem onClick={() => updateBookingStatus(booking, "confirmed")}>
                             <CreditCard className="mr-2 h-4 w-4 text-primary" /> Confirm Payment
                          </DropdownMenuItem>
@@ -189,7 +205,7 @@ export function BookingsManager() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the booking for {booking.userName} on {booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'a package'} at {booking.time}.
+                        This action cannot be undone. This will permanently delete the booking for {booking.userName} on {booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'a package'}.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

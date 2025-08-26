@@ -27,6 +27,7 @@ import {
   Megaphone,
   RefreshCw,
   Send,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -69,6 +70,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { confirmPaymentSentAction } from "@/app/actions/bookingActions";
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -97,6 +100,14 @@ export default function StudentDashboardPage() {
   const [rescheduleReason, setRescheduleReason] = useState("");
   const [otherRescheduleReason, setOtherRescheduleReason] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
+  
+  // State for payment confirmation dialog
+  const [paymentDialog, setPaymentDialog] = useState<{ isOpen: boolean; bookingId: string | null; isSubmitting: boolean; file: File | null }>({
+    isOpen: false,
+    bookingId: null,
+    isSubmitting: false,
+    file: null,
+  });
 
 
   const [feedbackModal, setFeedbackModal] = useState<{
@@ -367,15 +378,31 @@ export default function StudentDashboardPage() {
     }
   };
 
-  const handlePaymentSent = async (bookingId: string) => {
+  const handleConfirmPaymentSent = async () => {
+    if (!paymentDialog.bookingId) return;
+  
+    setPaymentDialog(prev => ({ ...prev, isSubmitting: true }));
+  
+    const formData = new FormData();
+    formData.append('bookingId', paymentDialog.bookingId);
+    if (paymentDialog.file) {
+      formData.append('file', paymentDialog.file);
+    }
+  
     try {
-      const bookingDocRef = doc(db, "bookings", bookingId);
-      await updateDoc(bookingDocRef, { status: "payment-pending-confirmation" });
-      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "payment-pending-confirmation" as "payment-pending-confirmation"} : b));
-      toast({ title: "Payment Marked as Sent", description: "Thank you! We will confirm your booking shortly." });
-    } catch (error) {
-      console.error("Error marking payment as sent:", error);
-      toast({ title: "Update Failed", description: "Could not mark payment as sent. Please try again.", variant: "destructive" });
+      const result = await confirmPaymentSentAction(formData);
+  
+      if (result.success) {
+        setBookings(prev => prev.map(b => (b.id === paymentDialog.bookingId ? { ...b, status: "payment-pending-confirmation" } : b)));
+        toast({ title: "Payment Marked as Sent", description: "Thank you! We will confirm your booking shortly." });
+        setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, file: null });
+      } else {
+        throw new Error(result.error || "An unknown error occurred.");
+      }
+    } catch (error: any) {
+      console.error("Error in handleConfirmPaymentSent:", error);
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+      setPaymentDialog(prev => ({ ...prev, isSubmitting: false }));
     }
   };
 
@@ -616,7 +643,7 @@ export default function StudentDashboardPage() {
                             </Badge>
 
                             {booking.status === 'awaiting-payment' ? (
-                                <Button size="sm" onClick={() => handlePaymentSent(booking.id)}>
+                                <Button size="sm" onClick={() => setPaymentDialog({ isOpen: true, bookingId: booking.id, isSubmitting: false, file: null })}>
                                     <Send className="mr-2 h-4 w-4" /> I Have Sent Payment
                                 </Button>
                             ) : (
@@ -828,6 +855,34 @@ export default function StudentDashboardPage() {
         onClose={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
         onSubmit={handleFeedbackSubmit}
       />
+
+      <Dialog open={paymentDialog.isOpen} onOpenChange={(isOpen) => !isOpen && setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, file: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Payment Sent</DialogTitle>
+            <DialogDescription>
+              Please confirm that you have sent the payment for this lesson. You can optionally upload a receipt screenshot to speed up confirmation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Label htmlFor="payment-proof">Payment Receipt (Optional)</Label>
+            <Input 
+              id="payment-proof" 
+              type="file" 
+              accept="image/*"
+              onChange={(e) => setPaymentDialog(prev => ({ ...prev, file: e.target.files ? e.target.files[0] : null }))}
+            />
+            {paymentDialog.file && <p className="text-sm text-muted-foreground">File selected: {paymentDialog.file.name}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, file: null })}>Cancel</Button>
+            <Button onClick={handleConfirmPaymentSent} disabled={paymentDialog.isSubmitting}>
+              {paymentDialog.isSubmitting && <Spinner size="sm" className="mr-2" />}
+              Confirm & {paymentDialog.file ? 'Upload' : 'Submit'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reschedule Confirmation Dialog */}
       <AlertDialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
