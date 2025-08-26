@@ -1,13 +1,13 @@
 // File: src/app/actions/feedbackActions.ts
 'use server';
 
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, FieldValue, arrayUnion } from "firebase/firestore";
 import { getFirestore } from "firebase-admin/firestore";
 import { initAdmin } from "@/lib/firebase-admin";
 
 /**
  * Server Action to save private first-lesson feedback.
- * This action ONLY saves the feedback to a secure collection and does not perform any other operations.
+ * This action uses the Admin SDK for privileged database access.
  * @param userId - The ID of the user submitting feedback.
  * @param formData - The form data containing the rating and comment.
  * @returns An object indicating success or failure.
@@ -17,32 +17,78 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
   const comment = formData.get("comment") as string;
   const rating = parseInt(ratingStr, 10);
 
-  // Basic validation on the server
   if (!userId || !rating || rating < 1 || rating > 5) {
-    console.error("submitFirstLessonFeedbackAction validation failed:", { userId, ratingStr });
     return { success: false, error: "Invalid user ID or rating provided." };
   }
 
   try {
-    // 1. Initialize the Admin SDK to get privileged database access
     const adminApp = initAdmin();
     const db = getFirestore(adminApp);
 
-    // 2. Save feedback to the secure internal collection
     await db.collection("internalFeedback").add({
       userId: userId,
       rating: rating,
       comment: comment,
-      type: "first-lesson", // Clarify the type of feedback
+      type: "first-lesson",
       createdAt: serverTimestamp(),
     });
 
-    // 3. Return a definitive success message.
     return { success: true };
 
   } catch (error) {
     console.error("Error in submitFirstLessonFeedbackAction:", JSON.stringify(error, null, 2));
-    // Return a generic error message to the client.
     return { success: false, error: "Could not save your feedback due to a server error." };
+  }
+}
+
+
+/**
+ * Server Action for a student to confirm they have sent payment for a booking.
+ * This runs in a privileged admin context to bypass client-side security rules.
+ * @param bookingId - The ID of the booking being confirmed.
+ * @param paymentNote - An optional note from the student about the payment.
+ * @returns An object indicating success or failure.
+ */
+export async function submitPaymentConfirmationAction(
+  bookingId: string,
+  paymentNote: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!bookingId) {
+    return { success: false, error: "Booking ID is missing." };
+  }
+
+  try {
+    const adminApp = initAdmin();
+    const db = getFirestore(adminApp);
+    
+    const bookingDocRef = db.collection("bookings").doc(bookingId);
+    
+    const newStatus = "payment-pending-confirmation";
+
+    // Prepare the data to update in Firestore.
+    // The type assertion helps TypeScript understand the structure.
+    const updateData: { status: string; paymentNote?: string; statusHistory: FieldValue } = {
+      status: newStatus,
+      statusHistory: arrayUnion({
+        status: newStatus,
+        changedAt: serverTimestamp(),
+        changedBy: 'student'
+      })
+    };
+
+    // Only add the paymentNote if the user provided one.
+    if (paymentNote.trim()) {
+      updateData.paymentNote = paymentNote.trim();
+    }
+
+    await bookingDocRef.update(updateData);
+
+    // Return a definitive success message.
+    return { success: true };
+
+  } catch (error) {
+    console.error("Error in submitPaymentConfirmationAction:", error);
+    // Return a generic error to the client.
+    return { success: false, error: "A server error occurred while confirming your payment." };
   }
 }

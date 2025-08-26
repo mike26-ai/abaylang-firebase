@@ -72,7 +72,7 @@ import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { confirmPaymentSentAction } from "@/app/actions/bookingActions";
+import { submitPaymentConfirmationAction } from "@/app/actions/feedbackActions"; // UPDATED IMPORT
 import { contactEmail } from "@/config/site";
 
 interface DashboardBooking extends BookingType {
@@ -402,12 +402,15 @@ export default function StudentDashboardPage() {
   };
 
   const handleConfirmPaymentSent = async () => {
-    if (!paymentDialog.bookingId) return;
+    if (!paymentDialog.bookingId || !user) return;
   
     setPaymentDialog(prev => ({ ...prev, isSubmitting: true }));
   
     try {
-      const result = await confirmPaymentSentAction(paymentDialog.bookingId, paymentDialog.paymentNote);
+      const result = await submitPaymentConfirmationAction(
+        paymentDialog.bookingId,
+        paymentDialog.paymentNote
+      );
   
       if (result.success) {
         setBookings(prev => prev.map(b => (b.id === paymentDialog.bookingId ? { ...b, status: "payment-pending-confirmation" } : b)));
