@@ -20,7 +20,7 @@ export interface Booking {
   learningGoals?: string;
   hasReview?: boolean; // Added for student dashboard
   cancellationReason?: string; // For reschedule/cancellation data
-  paymentProofUrl?: string; // URL to the uploaded payment receipt
+  paymentNote?: string; // Note from student (e.g., transaction ID)
 }
 
 export interface Testimonial {

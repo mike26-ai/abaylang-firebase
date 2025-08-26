@@ -73,6 +73,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { confirmPaymentSentAction } from "@/app/actions/bookingActions";
+import { contactEmail } from "@/config/site";
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -103,11 +104,16 @@ export default function StudentDashboardPage() {
   const [isRescheduling, setIsRescheduling] = useState(false);
   
   // State for payment confirmation dialog
-  const [paymentDialog, setPaymentDialog] = useState<{ isOpen: boolean; bookingId: string | null; isSubmitting: boolean; file: File | null }>({
+  const [paymentDialog, setPaymentDialog] = useState<{
+    isOpen: boolean;
+    bookingId: string | null;
+    isSubmitting: boolean;
+    paymentNote: string;
+  }>({
     isOpen: false,
     bookingId: null,
     isSubmitting: false,
-    file: null,
+    paymentNote: "",
   });
 
 
@@ -400,19 +406,13 @@ export default function StudentDashboardPage() {
   
     setPaymentDialog(prev => ({ ...prev, isSubmitting: true }));
   
-    const formData = new FormData();
-    formData.append('bookingId', paymentDialog.bookingId);
-    if (paymentDialog.file) {
-      formData.append('file', paymentDialog.file);
-    }
-  
     try {
-      const result = await confirmPaymentSentAction(formData);
+      const result = await confirmPaymentSentAction(paymentDialog.bookingId, paymentDialog.paymentNote);
   
       if (result.success) {
         setBookings(prev => prev.map(b => (b.id === paymentDialog.bookingId ? { ...b, status: "payment-pending-confirmation" } : b)));
         toast({ title: "Payment Marked as Sent", description: "Thank you! We will confirm your booking shortly." });
-        setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, file: null });
+        setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, paymentNote: "" });
       } else {
         throw new Error(result.error || "An unknown error occurred.");
       }
@@ -660,7 +660,7 @@ export default function StudentDashboardPage() {
                             </Badge>
 
                             {booking.status === 'awaiting-payment' ? (
-                                <Button size="sm" onClick={() => setPaymentDialog({ isOpen: true, bookingId: booking.id, isSubmitting: false, file: null })}>
+                                <Button size="sm" onClick={() => setPaymentDialog({ isOpen: true, bookingId: booking.id, isSubmitting: false, paymentNote: "" })}>
                                     <Send className="mr-2 h-4 w-4" /> I Have Sent Payment
                                 </Button>
                             ) : (
@@ -873,29 +873,31 @@ export default function StudentDashboardPage() {
         onSubmit={handleFeedbackSubmit}
       />
 
-      <Dialog open={paymentDialog.isOpen} onOpenChange={(isOpen) => !isOpen && setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, file: null })}>
+      <Dialog open={paymentDialog.isOpen} onOpenChange={(isOpen) => !isOpen && setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, paymentNote: "" })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Payment Sent</DialogTitle>
             <DialogDescription>
-              Please confirm that you have sent the payment for this lesson. You can optionally upload a receipt screenshot to speed up confirmation.
+              To help us confirm your booking faster, please provide a reference like the transaction ID or the name/email you paid with.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <Label htmlFor="payment-proof">Payment Receipt (Optional)</Label>
-            <Input 
-              id="payment-proof" 
-              type="file" 
-              accept="image/*"
-              onChange={(e) => setPaymentDialog(prev => ({ ...prev, file: e.target.files ? e.target.files[0] : null }))}
+            <Label htmlFor="payment-note">Payment Note (Optional)</Label>
+            <Textarea 
+              id="payment-note"
+              placeholder="e.g., PayPal Transaction ID: 12345XYZ, or paid from 'jane.doe@email.com'"
+              value={paymentDialog.paymentNote}
+              onChange={(e) => setPaymentDialog(prev => ({ ...prev, paymentNote: e.target.value }))}
             />
-            {paymentDialog.file && <p className="text-sm text-muted-foreground">File selected: {paymentDialog.file.name}</p>}
+            <p className="text-xs text-muted-foreground">
+              For extra assurance, you can also send a screenshot of your receipt to <strong className="text-foreground">{contactEmail}</strong> or WhatsApp at [Your Number Here].
+            </p>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, file: null })}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, paymentNote: "" })}>Cancel</Button>
             <Button onClick={handleConfirmPaymentSent} disabled={paymentDialog.isSubmitting}>
               {paymentDialog.isSubmitting && <Spinner size="sm" className="mr-2" />}
-              Confirm & {paymentDialog.file ? 'Upload' : 'Submit'}
+              Confirm Payment Sent
             </Button>
           </DialogFooter>
         </DialogContent>

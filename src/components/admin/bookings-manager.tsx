@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, ExternalLink } from "lucide-react";
+import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, MessageCircle } from "lucide-react";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "../ui/spinner";
@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import Link from "next/link";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function BookingsManager() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -149,12 +149,17 @@ export function BookingsManager() {
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
                   {booking.userName}
-                  {booking.paymentProofUrl && (
-                     <Button asChild variant="ghost" size="icon" className="h-6 w-6">
-                        <Link href={booking.paymentProofUrl} target="_blank" rel="noopener noreferrer">
-                           <ExternalLink className="h-4 w-4 text-primary" />
-                        </Link>
-                     </Button>
+                  {booking.paymentNote && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <MessageCircle className="h-4 w-4 text-primary cursor-pointer" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{booking.paymentNote}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
               </TableCell>
