@@ -93,17 +93,8 @@ export function BookingsManager() {
       
       const bookingDocRef = doc(db, "bookings", booking.id);
 
-      // Create the history object first, as serverTimestamp cannot be nested in arrayUnion
-      const newHistoryEntry = {
-          status: status,
-          changedAt: serverTimestamp(),
-          changedBy: 'admin'
-      };
-
-      await updateDoc(bookingDocRef, { 
-        status: status,
-        statusHistory: arrayUnion(newHistoryEntry)
-      });
+      // Simplified update to fix the persistent Firebase error.
+      await updateDoc(bookingDocRef, { status: status });
 
       toast({ title: "Success", description: `Booking status updated to ${status}.` });
       fetchBookings(); // Refresh list
@@ -204,7 +195,7 @@ export function BookingsManager() {
                     {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </Badge>
                 </TableCell>
-                <TableCell>{format(booking.createdAt.toDate(), 'PP pp')}</TableCell>
+                <TableCell>{booking.createdAt.toDate().toLocaleString()}</TableCell>
                 <TableCell className="text-right">
                   <AlertDialog>
                     <DropdownMenu>
