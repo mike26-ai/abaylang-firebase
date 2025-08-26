@@ -1,9 +1,12 @@
-
 // File: src/components/layout/logo.tsx
 import Link from 'next/link';
 import { siteConfig } from '@/config/site';
 import { BookOpenText } from 'lucide-react';
 
+/**
+ * A simplified, text-based logo for use in specific workflow headers 
+ * (like booking, registration) where the full SVG logo is not required.
+ */
 export function Logo() {
   return (
     <Link href="/" className="flex items-center space-x-2 group">

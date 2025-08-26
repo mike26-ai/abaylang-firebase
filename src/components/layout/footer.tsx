@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
-import SiteLogo from "./SiteLogo";
+import { SiteLogo } from "./SiteLogo";
 
 export function Footer() {
   return (

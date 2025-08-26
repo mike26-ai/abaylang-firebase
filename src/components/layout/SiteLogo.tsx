@@ -1,14 +1,15 @@
 // File: src/components/layout/SiteLogo.tsx
-
 import Link from 'next/link';
-import Logo from '@/components/icons/Logo';
+import LogoSvg from '@/assets/icons/logo.svg'; 
 
-const SiteLogo = () => {
+/**
+ * The primary, official SVG logo component for the application.
+ * Used in the main navbar, footer, and admin sidebar.
+ */
+export function SiteLogo() {
   return (
     <Link href="/" className="flex items-center group" aria-label="Back to homepage">
-      <Logo className="h-10 w-auto" />
+      <LogoSvg className="h-10 w-auto text-foreground" />
     </Link>
   );
-};
-
-export default SiteLogo;
+}

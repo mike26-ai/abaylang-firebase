@@ -9,6 +9,7 @@ import { LayoutDashboard, CalendarDays, MessageSquareText, Award, BookOpenText, 
 import type { NavItem } from "@/config/site";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { SiteLogo } from "../layout/SiteLogo";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Admin Dashboard": LayoutDashboard, // Key used in siteConfig
@@ -31,10 +32,9 @@ export function AdminSidebar() {
   return (
     <aside className="w-64 border-r bg-sidebar text-sidebar-foreground p-4 space-y-6 hidden md:flex flex-col">
       <div>
-        <Link href="/admin/dashboard" className="flex items-center space-x-2 pb-6 border-b border-sidebar-border">
-          <BookOpenText className="h-7 w-7 text-sidebar-primary" />
-          <span className="font-bold text-xl">{siteConfig.name}</span>
-        </Link>
+        <div className="pb-6 border-b border-sidebar-border">
+          <SiteLogo />
+        </div>
         
         <nav className="space-y-2 mt-6">
           {siteConfig.adminNav.map((item) => {
