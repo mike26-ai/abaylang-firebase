@@ -29,6 +29,7 @@ import {
   Send,
   Upload,
   Info,
+  Copy,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -105,6 +106,7 @@ export default function StudentDashboardPage() {
   
   // State for NEW simple payment confirmation dialog
   const [paymentConfirmationDialog, setPaymentConfirmationDialog] = useState(false);
+  const [paymentNoteInput, setPaymentNoteInput] = useState("");
 
 
   const [feedbackModal, setFeedbackModal] = useState<{
@@ -417,6 +419,11 @@ export default function StudentDashboardPage() {
       .sort((a, b) => parse(b.date, 'yyyy-MM-dd', new Date()).getTime() - parse(a.date, 'yyyy-MM-dd', new Date()).getTime())
       [0];
   }, [bookings]);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(paymentNoteInput);
+    toast({ title: "Copied!", description: "Payment note copied to clipboard." });
+  };
 
 
   if (authLoading || (!userProfileData && isLoadingProfile && !user)) {
@@ -840,27 +847,50 @@ export default function StudentDashboardPage() {
         onSubmit={handleFeedbackSubmit}
       />
 
-      <AlertDialog open={paymentConfirmationDialog} onOpenChange={setPaymentConfirmationDialog}>
+      <AlertDialog open={paymentConfirmationDialog} onOpenChange={(isOpen) => {
+          if (!isOpen) {
+              setPaymentConfirmationDialog(false);
+              setPaymentNoteInput(""); // Reset note when dialog closes
+          }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Next Steps for Confirmation</AlertDialogTitle>
+            <AlertDialogTitle>Send Payment Confirmation</AlertDialogTitle>
             <AlertDialogDescription>
-              To finalize your booking, please send your payment receipt to the admin directly. Your booking will be confirmed within 12 business hours after we receive proof of payment.
+              To confirm your booking, please send your payment receipt to the admin directly.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4 space-y-3">
-            <div className="p-3 bg-muted/50 rounded-md">
-                <p className="font-semibold text-foreground">Email:</p>
-                <a href={`mailto:${contactEmail}`} className="text-sm text-primary underline">{contactEmail}</a>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="payment-note">1. Add a Payment Note (Optional but Recommended)</Label>
+                <div className="relative">
+                    <Input 
+                        id="payment-note"
+                        value={paymentNoteInput}
+                        onChange={(e) => setPaymentNoteInput(e.target.value)}
+                        placeholder="e.g., Transaction ID, your PayPal name"
+                    />
+                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={copyToClipboard} disabled={!paymentNoteInput}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Enter a reference, then copy it to include in your message.</p>
             </div>
-            <div className="p-3 bg-muted/50 rounded-md">
-                <p className="font-semibold text-foreground">WhatsApp:</p>
-                <p className="text-sm text-muted-foreground">[Your WhatsApp Number Here]</p>
+            <div className="space-y-2">
+                 <Label>2. Send Your Proof of Payment</Label>
+                <div className="p-3 bg-muted/50 rounded-md">
+                    <p className="font-semibold text-foreground">Email:</p>
+                    <a href={`mailto:${contactEmail}`} className="text-sm text-primary underline">{contactEmail}</a>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-md">
+                    <p className="font-semibold text-foreground">WhatsApp:</p>
+                    <p className="text-sm text-muted-foreground">[Your WhatsApp Number Here]</p>
+                </div>
             </div>
              <div className="flex items-start gap-2 pt-2">
                 <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                    For faster confirmation, please include your registration email (<strong className="text-foreground">{user?.email}</strong>) in your message.
+                    Please include your payment note and registered email (<strong className="text-foreground">{user?.email}</strong>) in your message for faster confirmation.
                 </p>
              </div>
           </div>
@@ -925,5 +955,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    
