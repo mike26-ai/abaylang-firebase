@@ -92,14 +92,19 @@ export function BookingsManager() {
       }
       
       const bookingDocRef = doc(db, "bookings", booking.id);
+
+      // Create the history object first, as serverTimestamp cannot be nested in arrayUnion
+      const newHistoryEntry = {
+          status: status,
+          changedAt: serverTimestamp(),
+          changedBy: 'admin'
+      };
+
       await updateDoc(bookingDocRef, { 
         status: status,
-        statusHistory: arrayUnion({
-            status: status,
-            changedAt: serverTimestamp(),
-            changedBy: 'admin'
-        })
+        statusHistory: arrayUnion(newHistoryEntry)
       });
+
       toast({ title: "Success", description: `Booking status updated to ${status}.` });
       fetchBookings(); // Refresh list
     } catch (error) {
