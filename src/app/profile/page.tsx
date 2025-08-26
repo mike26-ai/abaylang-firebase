@@ -104,9 +104,9 @@ export default function StudentDashboardPage() {
   const [otherRescheduleReason, setOtherRescheduleReason] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
   
-  // State for NEW simple payment confirmation dialog
+  // State for the NEW simple payment confirmation dialog
   const [paymentConfirmationDialog, setPaymentConfirmationDialog] = useState(false);
-  const [paymentNoteInput, setPaymentNoteInput] = useState("");
+  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<string | null>(null);
 
 
   const [feedbackModal, setFeedbackModal] = useState<{
@@ -420,9 +420,9 @@ export default function StudentDashboardPage() {
       [0];
   }, [bookings]);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(paymentNoteInput);
-    toast({ title: "Copied!", description: "Payment note copied to clipboard." });
+  const copyToClipboard = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy);
+    toast({ title: "Copied!", description: "Reference ID copied to clipboard." });
   };
 
 
@@ -634,7 +634,10 @@ export default function StudentDashboardPage() {
                             </Badge>
 
                             {booking.status === 'awaiting-payment' ? (
-                                <Button size="sm" onClick={() => setPaymentConfirmationDialog(true)}>
+                                <Button size="sm" onClick={() => {
+                                  setSelectedBookingForPayment(booking.id);
+                                  setPaymentConfirmationDialog(true);
+                                }}>
                                     <Send className="mr-2 h-4 w-4" /> I Have Sent Payment
                                 </Button>
                             ) : (
@@ -850,7 +853,7 @@ export default function StudentDashboardPage() {
       <AlertDialog open={paymentConfirmationDialog} onOpenChange={(isOpen) => {
           if (!isOpen) {
               setPaymentConfirmationDialog(false);
-              setPaymentNoteInput(""); // Reset note when dialog closes
+              setSelectedBookingForPayment(null);
           }
       }}>
         <AlertDialogContent>
@@ -862,19 +865,18 @@ export default function StudentDashboardPage() {
           </AlertDialogHeader>
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="payment-note">1. Add a Payment Note (Optional but Recommended)</Label>
+                <Label htmlFor="payment-note">1. Copy Your Unique Booking ID</Label>
                 <div className="relative">
                     <Input 
                         id="payment-note"
-                        value={paymentNoteInput}
-                        onChange={(e) => setPaymentNoteInput(e.target.value)}
-                        placeholder="e.g., Transaction ID, your PayPal name"
+                        readOnly
+                        value={`Booking ID: ${selectedBookingForPayment}`}
                     />
-                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={copyToClipboard} disabled={!paymentNoteInput}>
+                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => copyToClipboard(`Booking ID: ${selectedBookingForPayment}`)} disabled={!selectedBookingForPayment}>
                         <Copy className="h-4 w-4" />
                     </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">Enter a reference, then copy it to include in your message.</p>
+                <p className="text-xs text-muted-foreground">Click the copy icon and paste this ID into your message.</p>
             </div>
             <div className="space-y-2">
                  <Label>2. Send Your Proof of Payment</Label>
@@ -890,7 +892,7 @@ export default function StudentDashboardPage() {
              <div className="flex items-start gap-2 pt-2">
                 <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                    Please include your payment note and registered email (<strong className="text-foreground">{user?.email}</strong>) in your message for faster confirmation.
+                    Please include your copied Booking ID and registered email (<strong className="text-foreground">{user?.email}</strong>) in your message for faster confirmation.
                 </p>
              </div>
           </div>
@@ -955,3 +957,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
