@@ -665,6 +665,8 @@ export default function StudentDashboardPage() {
                                     )}
                                   </Tooltip>
                                 </TooltipProvider>
+                            ) : booking.status === 'confirmed' && !booking.zoomLink ? (
+                                <p className="text-xs text-muted-foreground text-right">Zoom link will appear here soon.</p>
                             ) : (
                               <div className="flex items-center gap-2">
                                 <TooltipProvider>
@@ -883,15 +885,16 @@ export default function StudentDashboardPage() {
       }}>
         <AlertDialogContent className="sm:max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>Complete Your Booking</AlertDialogTitle>
+            <AlertDialogTitle>Action Required to Confirm Your Lesson</AlertDialogTitle>
             <AlertDialogDescription>
-              Follow these steps to confirm your lesson. Your spot is held temporarily.
+              Your spot is held temporarily. Follow these steps to finalize your booking.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-2 space-y-4 text-sm">
+            
             <div className="space-y-2">
                 <Label className="font-semibold text-foreground">Step 1: Copy Your Unique Booking ID</Label>
-                <p className="text-xs text-muted-foreground">This ID is essential for us to identify your payment quickly.</p>
+                <p className="text-xs text-muted-foreground">This is essential for us to identify your payment.</p>
                 <div className="relative">
                     <Input 
                         id="payment-note"
@@ -904,9 +907,10 @@ export default function StudentDashboardPage() {
                     </Button>
                 </div>
             </div>
+
             <div className="space-y-2">
                  <Label className="font-semibold text-foreground">Step 2: Send Proof of Payment</Label>
-                 <p className="text-xs text-muted-foreground">Send a screenshot of your receipt to one of the contacts below. **Please paste your Booking ID in the message.**</p>
+                 <p className="text-xs text-muted-foreground">Send a screenshot of your receipt to one of the contacts below.</p>
                 <div className="p-3 bg-muted/50 rounded-md">
                     <p className="font-medium text-foreground">Email:</p>
                     <a href={`mailto:${contactEmail}`} className="text-primary underline">{contactEmail}</a>
@@ -916,6 +920,14 @@ export default function StudentDashboardPage() {
                     <p className="text-muted-foreground">+2519176968</p>
                 </div>
             </div>
+            
+            <div className="mt-4 p-3 bg-yellow-400/10 border border-yellow-400/20 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                    <strong className="font-semibold flex items-center justify-center gap-1.5"><Star className="w-4 h-4" /> IMPORTANT:</strong> 
+                    Please include your copied Booking ID and registered email (<strong className="font-bold">{user?.email}</strong>) in your message for faster confirmation.
+                </p>
+            </div>
+
              <div className="flex items-start gap-2 pt-2">
                 <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground">
