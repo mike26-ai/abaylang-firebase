@@ -1,3 +1,4 @@
+
 // File: src/app/actions/feedbackActions.ts
 'use server';
 
@@ -41,54 +42,7 @@ export async function submitFirstLessonFeedbackAction(userId: string, formData: 
   }
 }
 
-
-/**
- * Server Action for a student to confirm they have sent payment for a booking.
- * This runs in a privileged admin context to bypass client-side security rules.
- * @param bookingId - The ID of the booking being confirmed.
- * @param paymentNote - An optional note from the student about the payment.
- * @returns An object indicating success or failure.
- */
-export async function submitPaymentConfirmationAction(
-  bookingId: string,
-  paymentNote: string
-): Promise<{ success: boolean; error?: string }> {
-  if (!bookingId) {
-    return { success: false, error: "Booking ID is missing." };
-  }
-
-  try {
-    const adminApp = initAdmin();
-    const db = getFirestore(adminApp);
-    
-    const bookingDocRef = db.collection("bookings").doc(bookingId);
-    
-    const newStatus = "payment-pending-confirmation";
-
-    // Prepare the data to update in Firestore.
-    // The type assertion helps TypeScript understand the structure.
-    const updateData: { status: string; paymentNote?: string; statusHistory: FieldValue } = {
-      status: newStatus,
-      statusHistory: arrayUnion({
-        status: newStatus,
-        changedAt: new Date(), // FIX: Use new Date() instead of serverTimestamp() inside arrayUnion for Admin SDK
-        changedBy: 'student'
-      })
-    };
-
-    // Only add the paymentNote if the user provided one.
-    if (paymentNote.trim()) {
-      updateData.paymentNote = paymentNote.trim();
-    }
-
-    await bookingDocRef.update(updateData);
-
-    // Return a definitive success message.
-    return { success: true };
-
-  } catch (error) {
-    console.error("Error in submitPaymentConfirmationAction:", error);
-    // Return a generic error to the client.
-    return { success: false, error: "A server error occurred while confirming your payment." };
-  }
-}
+// NOTE: The submitPaymentConfirmationAction has been removed.
+// The new workflow is client-side only to prevent server errors.
+// The user is now instructed via a dialog to contact the admin directly
+// with their proof of payment. This file is kept for the feedback action.

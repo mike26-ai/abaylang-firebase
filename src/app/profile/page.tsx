@@ -28,6 +28,7 @@ import {
   RefreshCw,
   Send,
   Upload,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -72,7 +73,6 @@ import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { submitPaymentConfirmationAction } from "@/app/actions/feedbackActions"; // UPDATED IMPORT
 import { contactEmail } from "@/config/site";
 
 interface DashboardBooking extends BookingType {
@@ -103,18 +103,8 @@ export default function StudentDashboardPage() {
   const [otherRescheduleReason, setOtherRescheduleReason] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
   
-  // State for payment confirmation dialog
-  const [paymentDialog, setPaymentDialog] = useState<{
-    isOpen: boolean;
-    bookingId: string | null;
-    isSubmitting: boolean;
-    paymentNote: string;
-  }>({
-    isOpen: false,
-    bookingId: null,
-    isSubmitting: false,
-    paymentNote: "",
-  });
+  // State for NEW simple payment confirmation dialog
+  const [paymentConfirmationDialog, setPaymentConfirmationDialog] = useState(false);
 
 
   const [feedbackModal, setFeedbackModal] = useState<{
@@ -169,7 +159,7 @@ export default function StudentDashboardPage() {
       const bookingsWithReviewStatus = await Promise.all(reviewChecks);
       setBookings(bookingsWithReviewStatus);
   
-    } catch (error: any) {
+    } catch (error: any) => {
       console.error("CRITICAL ERROR fetching data in dashboard:", error);
       toast({
         title: "Error Loading Dashboard",
@@ -400,32 +390,6 @@ export default function StudentDashboardPage() {
         setIsRescheduling(false);
     }
   };
-
-  const handleConfirmPaymentSent = async () => {
-    if (!paymentDialog.bookingId || !user) return;
-  
-    setPaymentDialog(prev => ({ ...prev, isSubmitting: true }));
-  
-    try {
-      const result = await submitPaymentConfirmationAction(
-        paymentDialog.bookingId,
-        paymentDialog.paymentNote
-      );
-  
-      if (result.success) {
-        setBookings(prev => prev.map(b => (b.id === paymentDialog.bookingId ? { ...b, status: "payment-pending-confirmation" } : b)));
-        toast({ title: "Payment Marked as Sent", description: "Thank you! We will confirm your booking shortly." });
-        setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, paymentNote: "" });
-      } else {
-        throw new Error(result.error || "An unknown error occurred.");
-      }
-    } catch (error: any) {
-      console.error("Error in handleConfirmPaymentSent:", error);
-      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
-      setPaymentDialog(prev => ({ ...prev, isSubmitting: false }));
-    }
-  };
-
 
   const isRescheduleAllowed = (booking: BookingType) => {
     if (booking.date === 'N/A_PACKAGE') return false; // Can't reschedule a package placeholder
@@ -663,7 +627,7 @@ export default function StudentDashboardPage() {
                             </Badge>
 
                             {booking.status === 'awaiting-payment' ? (
-                                <Button size="sm" onClick={() => setPaymentDialog({ isOpen: true, bookingId: booking.id, isSubmitting: false, paymentNote: "" })}>
+                                <Button size="sm" onClick={() => setPaymentConfirmationDialog(true)}>
                                     <Send className="mr-2 h-4 w-4" /> I Have Sent Payment
                                 </Button>
                             ) : (
@@ -876,35 +840,37 @@ export default function StudentDashboardPage() {
         onSubmit={handleFeedbackSubmit}
       />
 
-      <Dialog open={paymentDialog.isOpen} onOpenChange={(isOpen) => !isOpen && setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, paymentNote: "" })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Payment Sent</DialogTitle>
-            <DialogDescription>
-              To help us confirm your booking faster, please provide a reference like the transaction ID or the name/email you paid with.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Label htmlFor="payment-note">Payment Note (Optional)</Label>
-            <Textarea 
-              id="payment-note"
-              placeholder="e.g., PayPal Transaction ID: 12345XYZ, or paid from 'jane.doe@email.com'"
-              value={paymentDialog.paymentNote}
-              onChange={(e) => setPaymentDialog(prev => ({ ...prev, paymentNote: e.target.value }))}
-            />
-            <p className="text-xs text-muted-foreground">
-              For extra assurance, you can also send a screenshot of your receipt to <strong className="text-foreground">{contactEmail}</strong> or WhatsApp at [Your Number Here].
-            </p>
+      <AlertDialog open={paymentConfirmationDialog} onOpenChange={setPaymentConfirmationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Next Steps for Confirmation</AlertDialogTitle>
+            <AlertDialogDescription>
+              To finalize your booking, please send your payment receipt to the admin directly. Your booking will be confirmed within 12 business hours after we receive proof of payment.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-3">
+            <div className="p-3 bg-muted/50 rounded-md">
+                <p className="font-semibold text-foreground">Email:</p>
+                <a href={`mailto:${contactEmail}`} className="text-sm text-primary underline">{contactEmail}</a>
+            </div>
+            <div className="p-3 bg-muted/50 rounded-md">
+                <p className="font-semibold text-foreground">WhatsApp:</p>
+                <p className="text-sm text-muted-foreground">[Your WhatsApp Number Here]</p>
+            </div>
+             <div className="flex items-start gap-2 pt-2">
+                <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                    For faster confirmation, please include your registration email (<strong className="text-foreground">{user?.email}</strong>) in your message.
+                </p>
+             </div>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setPaymentDialog({ isOpen: false, bookingId: null, isSubmitting: false, paymentNote: "" })}>Cancel</Button>
-            <Button onClick={handleConfirmPaymentSent} disabled={paymentDialog.isSubmitting}>
-              {paymentDialog.isSubmitting && <Spinner size="sm" className="mr-2" />}
-              Confirm Payment Sent
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setPaymentConfirmationDialog(false)}>
+              Okay, I Understand
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Reschedule Confirmation Dialog */}
       <AlertDialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
