@@ -22,16 +22,19 @@ export async function confirmPaymentSentAction(formData: FormData): Promise<{ su
   try {
     let paymentProofUrl: string | undefined = undefined;
 
-    // 1. If a file is provided, upload it to Cloudinary
+    // 1. If a file is provided, attempt to upload it to Cloudinary
     if (file && file.size > 0) {
-      // Create a new FormData for the upload action, as the original might be consumed
+      // Create a new FormData for the upload action
       const uploadFormData = new FormData();
       uploadFormData.append('file', file);
       const uploadResult = await uploadImage(uploadFormData);
+      
+      // The uploadImage action will now gracefully skip if not configured.
+      // We only proceed if it was successful and not skipped.
       if (uploadResult.success && uploadResult.url) {
         paymentProofUrl = uploadResult.url;
-      } else {
-        // If upload fails, return an error to the client
+      } else if (!uploadResult.success) {
+        // If the upload specifically failed (not skipped), return an error.
         return { success: false, error: uploadResult.error || "Failed to upload payment proof." };
       }
     }
