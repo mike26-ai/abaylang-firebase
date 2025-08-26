@@ -35,7 +35,7 @@
 
     --ring: 30 71% 47%; /* #CC7722 */
 
-    --radius: 0rem; /* 0px - remove rounded corners */
+    --radius: 0.5rem; /* 8px - a bit of rounding */
 
     --font-lora: "Lora", serif;
     --font-lato: "Lato", sans-serif;
