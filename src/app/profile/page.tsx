@@ -159,7 +159,7 @@ export default function StudentDashboardPage() {
       const bookingsWithReviewStatus = await Promise.all(reviewChecks);
       setBookings(bookingsWithReviewStatus);
   
-    } catch (error: any) => {
+    } catch (error: any) {
       console.error("CRITICAL ERROR fetching data in dashboard:", error);
       toast({
         title: "Error Loading Dashboard",
