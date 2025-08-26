@@ -1,4 +1,5 @@
 
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Metadata } from 'next';
 import { contactEmail } from "@/config/site";
@@ -44,9 +45,9 @@ export default function TermsOfServicePage() {
           </ul>
           
           <h2>4. Bookings, Payments, and Cancellations</h2>
-          <p>Users can book available lesson slots through the Site. Upon booking, users will receive an invoice via email, which must be paid to confirm the lesson. Prices for lessons and packages are subject to change without notice.</p>
+          <p>Users can book available lesson slots through the Site. Your lesson is held with a status of "Awaiting Payment". To secure your spot, payment must be sent via one of the methods provided. After sending payment, you must confirm this action on your student dashboard. We guarantee to verify and confirm your booking within **12 business hours** of your confirmation. If we fail to do so, you are entitled to a full refund.</p>
           <p><strong>Cancellation and Refund Policy:</strong> You may cancel or reschedule a lesson and receive a full refund or credit, provided the cancellation is made at least **12 hours before** the scheduled lesson start time. Cancellations made within 12 hours of the lesson start time are not eligible for a refund. To cancel, please use the tools provided in your student dashboard or contact us directly.</p>
-          <p>In the rare event that the tutor must cancel a lesson, you will be notified as soon as possible and will be offered a full credit for a future lesson or a full refund for that session.</p>
+          <p>In the rare event that the tutor must cancel a lesson, you will be notified as soon as possible and will be offered the choice of a full credit for a future lesson or a full refund for that session.</p>
 
           <h2>5. Intellectual Property Rights</h2>
           <p>Unless otherwise indicated, the Site is our proprietary property and all source code, databases, functionality, software, website designs, audio, video, text, photographs, and graphics on the Site (collectively, the "Content") and the trademarks, service marks, and logos contained therein (the "Marks") are owned or controlled by us or licensed to us, and are protected by copyright and trademark laws.</p>

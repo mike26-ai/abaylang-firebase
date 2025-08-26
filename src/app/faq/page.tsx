@@ -8,6 +8,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { contactEmail } from "@/config/site"; 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
+
 
 const faqData = [
   // Getting Started & Trials
@@ -22,8 +25,17 @@ const faqData = [
   
   // Booking, Rescheduling & Cancellations
   {
-    question: "How does the booking process work?",
-    answer: "Simply choose a lesson or package, select an available date and time from the calendar, and submit your booking request. You will then receive a secure invoice via email to confirm your spot. Your lesson is officially confirmed once the payment is complete.",
+    id: "payment-policy", // ID for direct linking
+    question: "How does the booking and payment process work?",
+    answer: "Simply choose a lesson, select an available date and time, and submit your booking request. The lesson slot will be held for you with a status of 'Awaiting Payment'. To confirm, send the payment via one of the listed methods. After you have sent the payment, go to your dashboard and click the 'I Have Sent Payment' button. Our team will then verify the payment and confirm your lesson within 12 business hours. Your lesson is officially confirmed once the status changes to 'Confirmed'.",
+  },
+   {
+    question: "How long does it take for my payment to be confirmed?",
+    answer: "We guarantee that your payment will be verified and your lesson status updated to 'Confirmed' within **12 business hours** of you marking the payment as sent. 'Business hours' are typically Monday-Friday, 9am-6pm in our local time zone. Often, confirmations are much faster.",
+  },
+  {
+    question: "What if my payment isn't confirmed in time?",
+    answer: "We stand by our confirmation guarantee. In the unlikely event that your lesson is not confirmed within 12 business hours, you are entitled to a **full and immediate refund**, no questions asked. Please contact us with your payment details to process the refund.",
   },
   {
     question: "What is your cancellation and refund policy?",
@@ -39,7 +51,7 @@ const faqData = [
   },
   {
     question: "What happens if the tutor misses a lesson?",
-    answer: "In the very rare event the tutor has to cancel a lesson due to an emergency, you will be notified immediately. You will be offered the choice of a full refund for that session or a free credit to reschedule at your convenience.",
+    answer: "In the very rare event the tutor has to cancel a confirmed lesson due to an emergency, you will be notified immediately. You will be offered the choice of a **full refund** for that session or a **free credit to reschedule** at your convenience.",
   },
 
   // Packages & Subscriptions
@@ -85,9 +97,17 @@ export default function FAQPage() {
         </p>
       </div>
 
+       <Alert className="mb-8 border-primary/30 bg-primary/5">
+        <Info className="h-4 w-4 text-primary" />
+        <AlertTitle className="font-bold text-primary">Booking & Payment Policies</AlertTitle>
+        <AlertDescription>
+          Please review the updated policies on how payments are confirmed and our cancellation rules. We've designed them to be fair and transparent for everyone.
+        </AlertDescription>
+      </Alert>
+
       <Accordion type="single" collapsible className="w-full">
         {faqData.map((faq, index) => (
-          <AccordionItem key={index} value={`item-${index}`}>
+          <AccordionItem key={index} value={`item-${index}`} id={faq.id}>
             <AccordionTrigger className="text-left text-lg">
               {faq.question}
             </AccordionTrigger>

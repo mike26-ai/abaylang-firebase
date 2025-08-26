@@ -26,6 +26,7 @@ import {
   CheckCircle,
   Megaphone,
   RefreshCw,
+  Send,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -366,6 +367,19 @@ export default function StudentDashboardPage() {
     }
   };
 
+  const handlePaymentSent = async (bookingId: string) => {
+    try {
+      const bookingDocRef = doc(db, "bookings", bookingId);
+      await updateDoc(bookingDocRef, { status: "payment-pending-confirmation" });
+      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "payment-pending-confirmation" as "payment-pending-confirmation"} : b));
+      toast({ title: "Payment Marked as Sent", description: "Thank you! We will confirm your booking shortly." });
+    } catch (error) {
+      console.error("Error marking payment as sent:", error);
+      toast({ title: "Update Failed", description: "Could not mark payment as sent. Please try again.", variant: "destructive" });
+    }
+  };
+
+
   const isRescheduleAllowed = (booking: BookingType) => {
     if (booking.date === 'N/A_PACKAGE') return false; // Can't reschedule a package placeholder
     const lessonDateTime = parse(`${booking.date} ${booking.time}`, 'yyyy-MM-dd HH:mm', new Date());
@@ -373,11 +387,12 @@ export default function StudentDashboardPage() {
   };
 
   const upcomingBookings = bookings.filter(
-    (b) => (b.status === "confirmed" || b.status === "awaiting-payment") && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
+    (b) => (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
   ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime());
+  
 
   const pastBookings = bookings.filter(
-    (b) => b.status === "completed" || b.status === "cancelled" || ((b.status === "confirmed" || b.status === "awaiting-payment") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
+    (b) => b.status === "completed" || b.status === "cancelled" || ((b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
   ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00")).getTime() - new Date(a.date + ' ' + (a.time || "00:00")).getTime());
   
   const confirmedUpcomingCount = upcomingBookings.filter(b => b.status === 'confirmed').length;
@@ -570,8 +585,8 @@ export default function StudentDashboardPage() {
                   upcomingBookings.map((booking) => (
                     <Card key={booking.id} className="shadow-md hover:shadow-lg transition-shadow">
                       <CardContent className="p-4 md:p-6">
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                          <div className="flex items-center gap-3 md:gap-4">
+                        <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                          <div className="flex items-center gap-3 md:gap-4 flex-grow">
                             <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
                                {booking.status === 'confirmed' ? <CheckCircle className="w-6 h-6 text-primary" /> : <Clock className="w-6 h-6 text-yellow-600"/>}
                             </div>
@@ -583,51 +598,70 @@ export default function StudentDashboardPage() {
                               <p className="text-sm text-primary">{booking.duration || 60} minutes with {booking.tutorName}</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
-                            <Badge variant={booking.status === "confirmed" ? "default" : "secondary"} className={booking.status === "awaiting-payment" ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}>
+                          <div className="flex flex-col items-end gap-2 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto">
+                             <Badge
+                                variant={
+                                booking.status === "confirmed" ? "default" 
+                                : booking.status === "awaiting-payment" ? "secondary"
+                                : booking.status === "payment-pending-confirmation" ? "secondary"
+                                : "destructive" 
+                                }
+                                className={
+                                booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30"
+                                : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
+                                : ""
+                                }
+                            >
                                {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
 
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  {/* This div is necessary for the tooltip to work on a disabled button */}
-                                  <div>
-                                    <Button variant="outline" size="sm" className="text-xs" onClick={() => openRescheduleDialog(booking)} disabled={!isRescheduleAllowed(booking)}>
-                                      <RefreshCw className="mr-1 h-3 w-3" /> Reschedule
-                                    </Button>
-                                  </div>
-                                </TooltipTrigger>
-                                {!isRescheduleAllowed(booking) && (
-                                  <TooltipContent>
-                                    <p>Cannot reschedule within 12 hours of the lesson.</p>
-                                  </TooltipContent>
-                                )}
-                              </Tooltip>
-                            </TooltipProvider>
-
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs">
-                                  <XCircle className="mr-1 h-3 w-3" /> Cancel
+                            {booking.status === 'awaiting-payment' ? (
+                                <Button size="sm" onClick={() => handlePaymentSent(booking.id)}>
+                                    <Send className="mr-2 h-4 w-4" /> I Have Sent Payment
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Cancel Lesson?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to cancel your lesson on {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}?
-                                    (Please check our 12-hour cancellation policy).
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Keep Lesson</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleCancelBooking(booking.id)} className="bg-destructive hover:bg-destructive/90">
-                                    Yes, Cancel Lesson
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div>
+                                        <Button variant="outline" size="sm" className="text-xs" onClick={() => openRescheduleDialog(booking)} disabled={!isRescheduleAllowed(booking)}>
+                                          <RefreshCw className="mr-1 h-3 w-3" /> Reschedule
+                                        </Button>
+                                      </div>
+                                    </TooltipTrigger>
+                                    {!isRescheduleAllowed(booking) && (
+                                      <TooltipContent>
+                                        <p>Cannot reschedule within 12 hours of the lesson.</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
+
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs">
+                                      <XCircle className="mr-1 h-3 w-3" /> Cancel
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Cancel Lesson?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to cancel your lesson on {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}?
+                                        (Please check our 12-hour cancellation policy).
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Keep Lesson</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleCancelBooking(booking.id)} className="bg-destructive hover:bg-destructive/90">
+                                        Yes, Cancel Lesson
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -635,6 +669,7 @@ export default function StudentDashboardPage() {
                   ))
                 )}
               </TabsContent>
+
 
               <TabsContent value="history" className="space-y-4">
                 {isLoadingBookings ? (

@@ -6,10 +6,11 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ArrowRight, User, Calendar, Clock, Tag, DollarSign, Wallet, Star } from 'lucide-react';
+import { CheckCircle, ArrowRight, User, Calendar, Clock, Tag, DollarSign, Wallet, Star, Info } from 'lucide-react';
 import { tutorInfo } from '@/config/site';
 import { format, parse } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function BookingSuccessContent() {
   const searchParams = useSearchParams();
@@ -43,7 +44,7 @@ function BookingSuccessContent() {
             <CheckCircle className="w-8 h-8" />
           </div>
           <CardTitle className="text-3xl font-bold text-foreground">Your Slot is Temporarily Held!</CardTitle>
-          <CardDescription className="text-lg text-muted-foreground">Please complete your payment within 12 hours to confirm your booking.</CardDescription>
+          <CardDescription className="text-lg text-muted-foreground">Please complete your payment to confirm your booking.</CardDescription>
         </CardHeader>
         <CardContent className="p-8 space-y-8">
           
@@ -94,6 +95,15 @@ function BookingSuccessContent() {
                 <p className="text-sm text-center text-muted-foreground">You've purchased a package! You can schedule your individual lessons from your dashboard.</p>
             )}
           </div>
+          
+           <Alert className="border-primary/30 bg-primary/5">
+              <Info className="h-4 w-4 text-primary" />
+              <AlertTitle className="font-bold text-primary">Important Policy Information</AlertTitle>
+              <AlertDescription>
+                Your booking will be confirmed within **12 business hours** after we receive your payment. Please read our full <Link href="/faq#payment-policy" className="underline font-semibold hover:text-primary/80">Booking & Payment Policy</Link> for details on confirmation times and our refund guarantee.
+              </AlertDescription>
+            </Alert>
+
 
           <div className="text-center bg-primary/5 p-6 rounded-lg border border-primary/20">
              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -101,7 +111,7 @@ function BookingSuccessContent() {
             </div>
             <h2 className="font-semibold text-xl text-foreground mb-2">Complete Your Booking</h2>
             <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-              To confirm your lesson, please send a payment of <strong>${price}</strong> via your preferred method. Your booking will be marked as "Confirmed" on your dashboard and you will receive a confirmation email as soon as your payment is verified by our team.
+              To confirm your lesson, please send a payment of <strong>${price}</strong> via your preferred method. After sending, please go to your dashboard and mark the payment as sent.
             </p>
             <div className="space-y-3 text-foreground font-medium bg-background border p-4 rounded-md">
                <div>

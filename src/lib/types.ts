@@ -8,7 +8,7 @@ export interface Booking {
   userEmail: string;
   date: string; // YYYY-MM-DD format
   time: string;
-  status: "awaiting-payment" | "confirmed" | "cancelled" | "completed";
+  status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed";
   tutorId: string;
   tutorName: string;
   createdAt: Timestamp;
