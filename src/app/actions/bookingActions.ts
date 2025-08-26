@@ -22,21 +22,22 @@ export async function confirmPaymentSentAction(formData: FormData): Promise<{ su
   try {
     let paymentProofUrl: string | undefined = undefined;
 
-    // 1. If a file is provided, attempt to upload it to Cloudinary
+    // 1. If a file is provided, attempt to upload it
     if (file && file.size > 0) {
-      // Create a new FormData for the upload action
       const uploadFormData = new FormData();
       uploadFormData.append('file', file);
       const uploadResult = await uploadImage(uploadFormData);
       
-      // The uploadImage action will now gracefully skip if not configured.
-      // We only proceed if it was successful and not skipped.
-      if (uploadResult.success && uploadResult.url) {
-        paymentProofUrl = uploadResult.url;
-      } else if (!uploadResult.success) {
-        // If the upload specifically failed (not skipped), return an error.
+      // If the upload specifically failed (not skipped), return an error.
+      if (!uploadResult.success) {
         return { success: false, error: uploadResult.error || "Failed to upload payment proof." };
       }
+      
+      // If the upload was successful and returned a URL, set it.
+      if (uploadResult.url) {
+        paymentProofUrl = uploadResult.url;
+      }
+      // If the upload was skipped (uploadResult.success is true but no url), we just continue.
     }
 
     // 2. Update the booking document in Firestore
@@ -59,6 +60,7 @@ export async function confirmPaymentSentAction(formData: FormData): Promise<{ su
 
     await updateDoc(bookingDocRef, updateData);
 
+    // 3. Return a definitive success message.
     return { success: true };
 
   } catch (error) {
