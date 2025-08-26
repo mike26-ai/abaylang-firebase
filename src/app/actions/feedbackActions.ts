@@ -71,7 +71,7 @@ export async function submitPaymentConfirmationAction(
       status: newStatus,
       statusHistory: arrayUnion({
         status: newStatus,
-        changedAt: serverTimestamp(),
+        changedAt: new Date(), // FIX: Use new Date() instead of serverTimestamp() inside arrayUnion for Admin SDK
         changedBy: 'student'
       })
     };
