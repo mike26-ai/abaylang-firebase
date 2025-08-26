@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, orderBy, query, updateDoc, doc, deleteDoc, getDoc, where } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, updateDoc, doc, deleteDoc, getDoc, where, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Booking, UserProfile } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -48,6 +48,7 @@ export function BookingsManager() {
 
   useEffect(() => {
     fetchBookings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const triggerFirstLessonFeedbackPrompt = async (userId: string) => {
@@ -91,7 +92,14 @@ export function BookingsManager() {
       }
       
       const bookingDocRef = doc(db, "bookings", booking.id);
-      await updateDoc(bookingDocRef, { status });
+      await updateDoc(bookingDocRef, { 
+        status: status,
+        statusHistory: arrayUnion({
+            status: status,
+            changedAt: serverTimestamp(),
+            changedBy: 'admin'
+        })
+      });
       toast({ title: "Success", description: `Booking status updated to ${status}.` });
       fetchBookings(); // Refresh list
     } catch (error) {

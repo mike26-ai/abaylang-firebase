@@ -47,6 +47,7 @@ import {
   limit,
   addDoc,
   serverTimestamp,
+  arrayUnion,
 } from "firebase/firestore";
 import { updateProfile as updateFirebaseUserProfile } from "firebase/auth";
 import type { Booking as BookingType, UserProfile } from "@/lib/types";
@@ -328,10 +329,19 @@ export default function StudentDashboardPage() {
   };
   
   const handleCancelBooking = async (bookingId: string) => {
+    const newStatus = "cancelled";
     try {
       const bookingDocRef = doc(db, "bookings", bookingId);
-      await updateDoc(bookingDocRef, { status: "cancelled" });
-      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "cancelled" as "cancelled"} : b));
+      await updateDoc(bookingDocRef, {
+        status: newStatus,
+        statusHistory: arrayUnion({
+          status: newStatus,
+          changedAt: serverTimestamp(),
+          changedBy: 'student',
+          reason: "Cancelled by student from dashboard"
+        })
+      });
+      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: newStatus} : b));
       toast({ title: "Booking Cancelled", description: "Your lesson has been cancelled." });
     } catch (error) {
       console.error("Error cancelling booking:", error);
@@ -351,19 +361,26 @@ export default function StudentDashboardPage() {
     if (rescheduleReason === 'Other' && !otherRescheduleReason.trim()) return;
     
     setIsRescheduling(true);
+    const newStatus = "cancelled";
     try {
       const finalReason = rescheduleReason === 'Other' ? `Other: ${otherRescheduleReason.trim()}` : rescheduleReason;
       const bookingDocRef = doc(db, "bookings", selectedBookingForReschedule.id);
       await updateDoc(bookingDocRef, { 
-        status: "cancelled",
+        status: newStatus,
         cancellationReason: `Rescheduled: ${finalReason}`,
+        statusHistory: arrayUnion({
+            status: newStatus,
+            changedAt: serverTimestamp(),
+            changedBy: 'student',
+            reason: `Rescheduled: ${finalReason}`
+        })
       });
       toast({ 
         title: "Lesson Cancelled", 
         description: "Please choose a new time for your lesson.",
       });
       // Refresh local state immediately for better UX
-      setBookings(prev => prev.map(b => b.id === selectedBookingForReschedule.id ? {...b, status: "cancelled" as "cancelled"} : b));
+      setBookings(prev => prev.map(b => b.id === selectedBookingForReschedule.id ? {...b, status: newStatus} : b));
       setRescheduleDialogOpen(false);
       router.push('/bookings');
     } catch (error) {

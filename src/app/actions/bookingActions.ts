@@ -1,7 +1,7 @@
 // File: src/app/actions/bookingActions.ts
 'use server';
 
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, FieldValue, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImage } from "./uploadActions";
 
@@ -24,7 +24,10 @@ export async function confirmPaymentSentAction(formData: FormData): Promise<{ su
 
     // 1. If a file is provided, upload it to Cloudinary
     if (file && file.size > 0) {
-      const uploadResult = await uploadImage(formData); // The action expects 'file' key in FormData
+      // Create a new FormData for the upload action, as the original might be consumed
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+      const uploadResult = await uploadImage(uploadFormData);
       if (uploadResult.success && uploadResult.url) {
         paymentProofUrl = uploadResult.url;
       } else {
@@ -36,8 +39,15 @@ export async function confirmPaymentSentAction(formData: FormData): Promise<{ su
     // 2. Update the booking document in Firestore
     const bookingDocRef = doc(db, "bookings", bookingId);
     
-    const updateData: { status: string; paymentProofUrl?: string } = {
-      status: "payment-pending-confirmation"
+    const newStatus = "payment-pending-confirmation";
+
+    const updateData: { status: string; paymentProofUrl?: string; statusHistory: FieldValue } = {
+      status: newStatus,
+      statusHistory: arrayUnion({
+        status: newStatus,
+        changedAt: serverTimestamp(),
+        changedBy: 'student'
+      })
     };
 
     if (paymentProofUrl) {
