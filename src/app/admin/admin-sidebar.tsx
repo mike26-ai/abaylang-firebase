@@ -9,7 +9,7 @@ import { LayoutDashboard, CalendarDays, MessageSquareText, Award, BookOpenText, 
 import type { NavItem } from "@/config/site";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { SiteLogo } from "../layout/SiteLogo";
+import { SiteLogo } from "@/components/layout/SiteLogo";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Admin Dashboard": LayoutDashboard, // Key used in siteConfig
