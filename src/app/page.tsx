@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { Button } from "@/components/ui/button"
@@ -17,6 +16,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo, siteConfig } from "@/config/site"
 import Image from "next/image"
 import type { Testimonial as TestimonialType } from "@/lib/types"; // For fetching testimonials
+import { SiteLogo } from "@/components/layout/SiteLogo"
 
 export default function HomePage() {
   const { toast } = useToast();
@@ -107,18 +107,18 @@ export default function HomePage() {
       {/* Local Header for this Homepage */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="font-bold text-xl">{siteConfig.name}</Link>
+          <SiteLogo />
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/#about" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link href="/#about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               About
             </Link>
-            <Link href="/packages" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link href="/packages" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Packages
             </Link>
-            <Link href="/#testimonials" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link href="/#testimonials" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Reviews
             </Link>
-            <Link href="/#contact" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link href="/#contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Contact
             </Link>
           </nav>
@@ -426,6 +426,9 @@ export default function HomePage() {
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2 group">
+                <div className="footer-logo">
+                    <SiteLogo />
+                </div>
               <p className="text-muted-foreground mt-4 mb-4 max-w-md">
                 {siteConfig.description}
               </p>
