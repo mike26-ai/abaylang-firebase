@@ -21,6 +21,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
   // Add the following to fix the cross-origin request error in dev mode
