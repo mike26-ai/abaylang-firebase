@@ -425,10 +425,10 @@ export default function HomePage() {
       <footer className="bg-foreground text-background py-12 px-4">
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
+            <div className="md:col-span-2 group footer-logo">
+                <SiteLogo />
+            </div>
             <div className="md:col-span-2 group">
-                <div className="footer-logo">
-                    <SiteLogo />
-                </div>
               <p className="text-muted-foreground mt-4 mb-4 max-w-md">
                 {siteConfig.description}
               </p>
