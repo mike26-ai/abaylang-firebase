@@ -105,11 +105,9 @@ export function Navbar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <SheetClose asChild>
-                <div className="mt-6 mb-4 px-2">
-                   <SiteLogo />
-                </div>
-              </SheetClose>
+              <div className="mt-6 mb-4 px-2">
+                 <SiteLogo />
+              </div>
               <nav className="grid gap-2 text-lg font-medium px-2">
                 {navLinks.map(item => (
                    <SheetClose asChild key={item.href}>

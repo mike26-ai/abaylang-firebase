@@ -1,15 +1,18 @@
 // File: src/components/layout/SiteLogo.tsx
 import Link from 'next/link';
-import LogoSvg from '@/assets/icons/logo.svg'; 
+import { siteConfig } from '@/config/site';
 
 /**
- * The primary, official SVG logo component for the application.
- * Used in the main navbar, footer, and admin sidebar.
+ * The single, official text-based logo component for the application.
+ * Displays the site name as a link to the homepage.
+ * Used in the main navbar, footer, admin sidebar, and workflow pages.
  */
 export function SiteLogo() {
   return (
     <Link href="/" className="flex items-center group" aria-label="Back to homepage">
-      <LogoSvg className="h-10 w-auto text-foreground" />
+      <span className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">
+        {siteConfig.name}
+      </span>
     </Link>
   );
 }

@@ -20,7 +20,7 @@ import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse } from 
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
-import { Logo } from "@/components/layout/logo"
+import { SiteLogo } from "@/components/layout/SiteLogo";
 
 interface BookedSlotInfo {
   startTimeValue: string;
@@ -271,7 +271,7 @@ const handleBooking = async () => {
             <ArrowLeft className="w-5 h-5" />
             <span>Back to ABYLANG</span>
           </Link>
-          <Logo />
+          <SiteLogo />
         </div>
       </header>
 

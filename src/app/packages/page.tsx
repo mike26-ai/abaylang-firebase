@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Check, Users, Package, Calendar, Star } from "lucide-react"
 import Link from "next/link"
-import { Logo } from "@/components/layout/logo"
+import { SiteLogo } from "@/components/layout/SiteLogo"
 
 export default function PackagesPage() {
   const individualLessons = [
@@ -151,7 +151,7 @@ export default function PackagesPage() {
             <ArrowLeft className="w-5 h-5" />
             <span>Back to ABYLANG</span>
           </Link>
-          <Logo />
+          <SiteLogo />
         </div>
       </header>
 

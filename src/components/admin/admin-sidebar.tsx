@@ -32,7 +32,7 @@ export function AdminSidebar() {
   return (
     <aside className="w-64 border-r bg-sidebar text-sidebar-foreground p-4 space-y-6 hidden md:flex flex-col">
       <div>
-        <div className="pb-6 border-b border-sidebar-border">
+        <div className="p-4 border-b border-sidebar-border">
           <SiteLogo />
         </div>
         
@@ -73,5 +73,3 @@ export function AdminSidebar() {
     </aside>
   );
 }
-
-    

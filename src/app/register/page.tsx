@@ -18,7 +18,7 @@ import { Timestamp, doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "@/lib/firebase"; // auth is imported here
 import type { UserProfile } from "@/lib/types";
-import { Logo } from "@/components/layout/logo";
+import { SiteLogo } from "@/components/layout/SiteLogo";
 import { Spinner } from "@/components/ui/spinner";
 import { ADMIN_EMAIL } from "@/config/site";
 
@@ -153,7 +153,7 @@ export default function RegisterPage() {
             Back to ABYLANG
           </Link>
           <div className="flex justify-center mb-4">
-            <Logo />
+            <SiteLogo />
           </div>
           <h1 className="text-2xl font-bold text-foreground">Join ABYLANG</h1>
           <p className="text-muted-foreground">Start your journey to learn Amharic</p>

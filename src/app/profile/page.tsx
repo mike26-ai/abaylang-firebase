@@ -69,7 +69,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Logo } from "@/components/layout/logo";
+import { SiteLogo } from "@/components/layout/SiteLogo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -448,7 +448,7 @@ export default function StudentDashboardPage() {
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
       <header className="bg-card border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Logo />
+          <SiteLogo />
           <div className="flex items-center gap-4">
             <Badge variant="secondary" className="bg-accent text-accent-foreground">Student</Badge>
             <span className="text-sm text-muted-foreground hidden sm:inline">Welcome, {userProfileData?.name || user?.displayName}</span>
