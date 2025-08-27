@@ -15,12 +15,6 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-        port: '',
-        pathname: '/**',
-      },
     ],
   },
   // This experimental block is necessary for Firebase Studio to work correctly.

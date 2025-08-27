@@ -3,15 +3,14 @@ import Link from 'next/link';
 
 /**
  * The single, official text-based logo component for the application.
- * Displays "ABYLANG" with "ABY" in bold for a modern, minimalist look.
+ * Displays "ABYLANG" in a simple, clean, and stable format.
  * Used in the main navbar, footer, admin sidebar, and workflow pages.
  */
 export function SiteLogo() {
   return (
     <Link href="/" className="flex items-center group" aria-label="Back to homepage">
-      <span className="text-xl text-foreground group-hover:text-primary transition-colors">
-        <span className="font-bold">ABY</span>
-        <span className="font-normal">LANG</span>
+      <span className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
+        ABYLANG
       </span>
     </Link>
   );
