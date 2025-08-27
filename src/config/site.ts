@@ -69,7 +69,7 @@ export const tutorInfo = {
   ],
   languages: ["Amharic", "English"],
   experience: "5+ years",
-  imageUrl: "https://placehold.co/400x400.png",
+  imageUrl: "https://picsum.photos/400/400",
   dataAiHint: "tutor portrait",
   videoUrl: "https://www.youtube.com/embed/your_video_id_here", // NOTE: Replace with actual video if available.
 };
