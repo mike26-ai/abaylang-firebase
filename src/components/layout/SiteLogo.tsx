@@ -1,23 +1,17 @@
 // File: src/components/layout/SiteLogo.tsx
 import Link from 'next/link';
-import Image from 'next/image';
+import { siteConfig } from '@/config/site';
 
 /**
  * The single, official logo component for the application.
- * Displays the logo from the local /public/images folder.
- * This is the most stable method, avoiding external hosting and configuration issues.
+ * This is a text-only version to ensure stability and prevent image-related errors.
  */
 export function SiteLogo() {
   return (
     <Link href="/" className="flex items-center group" aria-label="Back to homepage">
-      <Image
-        src="/images/logo.png"
-        alt="ABYLANG Logo"
-        width={120}
-        height={40}
-        priority
-        className="h-auto w-auto"
-      />
+      <span className="text-2xl font-bold text-foreground transition-colors group-hover:text-primary">
+        {siteConfig.name}
+      </span>
     </Link>
   );
 }
