@@ -531,7 +531,9 @@ export default function StudentDashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{upcomingLessonsCount}</div>
-                   <p className="text-xs text-muted-foreground">&nbsp;</p>
+                  <p className="text-xs text-muted-foreground">
+                    {upcomingBookings.filter(b => b.status === 'awaiting-payment').length} awaiting payment
+                  </p>
                 </CardContent>
               </Card>
               <Card className="shadow-lg">
@@ -541,7 +543,9 @@ export default function StudentDashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{completedBookingsCount}</div>
-                   <p className="text-xs text-muted-foreground">&nbsp;</p>
+                  <p className="text-xs text-muted-foreground">
+                    {completedBookingsCount} total lessons finished
+                  </p>
                 </CardContent>
               </Card>
               <Card className="shadow-lg">
@@ -551,7 +555,9 @@ export default function StudentDashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{totalHours.toFixed(1)}</div>
-                   <p className="text-xs text-muted-foreground">&nbsp;</p>
+                  <p className="text-xs text-muted-foreground">
+                    Total learning time
+                  </p>
                 </CardContent>
               </Card>
               <Card className="shadow-lg">
@@ -975,3 +981,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
