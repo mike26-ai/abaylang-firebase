@@ -15,8 +15,8 @@ export function SiteLogo() {
         alt="ABYLANG Logo"
         width={120}
         height={40}
-        priority // Ensures the logo loads quickly and prevents hydration errors.
-        className="h-auto w-auto" // Ensures consistent class name
+        priority 
+        className="h-auto w-auto"
       />
     </Link>
   );
