@@ -349,11 +349,7 @@ export default function ReviewsPage() {
               <Link href="/bookings">
                 <Button>Book Your First Lesson</Button>
               </Link>
-              {/* Link to submit testimonial - current page is for viewing. If form is added here, can scroll.
-                  Otherwise, a separate /submit-testimonial page might be needed, or integrate form here.
-                  For now, keeping it as is to point to itself, assuming form might be added later or it's a general CTA.
-              */}
-              <Link href="/profile"> 
+              <Link href="/submit-testimonial">
                 <Button variant="outline">Share Your Experience</Button>
               </Link>
             </div>
