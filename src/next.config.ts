@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'i.ibb.co',
+        hostname: 'res.cloudinary.com',
         port: '',
         pathname: '/**',
       },
@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
   // This experimental block is necessary for Firebase Studio to work correctly.
   experimental: {
     allowedDevOrigins: [
-      'https://*.cluster-ombtxv25tbd6yrjpp3lukp6zhc.cloudworkstations.dev',
+      'https://*.cluster-cluster-ombtxv25tbd6yrjpp3lukp6zhc.cloudworkstations.dev',
     ],
   },
 };
