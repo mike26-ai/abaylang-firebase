@@ -308,6 +308,16 @@ export default function StudentDashboardPage() {
             createdAt: serverTimestamp(),
         });
         
+        // This handles both regular and first-lesson feedback submissions
+        if (userProfileData.showFirstLessonFeedbackPrompt) {
+          const userDocRef = doc(db, "users", user.uid);
+          await updateDoc(userDocRef, {
+            showFirstLessonFeedbackPrompt: false,
+            hasSubmittedFirstLessonFeedback: true,
+          });
+          setUserProfileData(prev => ({ ...prev, showFirstLessonFeedbackPrompt: false, hasSubmittedFirstLessonFeedback: true } as UserProfile));
+        }
+
         setBookings((prev) =>
           prev.map((booking) =>
               booking.id === feedbackData.lessonId
@@ -474,7 +484,7 @@ export default function StudentDashboardPage() {
             <div className="flex justify-center items-center h-40"><Spinner size="lg" /> <p className="ml-3 text-muted-foreground">Loading dashboard data...</p></div>
         ) : (
           <>
-            {userProfileData?.showFirstLessonFeedbackPrompt && (
+            {userProfileData?.showFirstLessonFeedbackPrompt && mostRecentLessonToReview && (
               <Card className="shadow-lg mb-8 bg-gradient-to-r from-blue-500/10 to-accent/50 border-blue-500/20">
                 <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
@@ -482,15 +492,13 @@ export default function StudentDashboardPage() {
                     <div>
                       <h3 className="font-semibold text-lg text-foreground">How was your first lesson?</h3>
                       <p className="text-sm text-muted-foreground">
-                        Your feedback is important to us! Please take a moment to share your experience.
+                        Your feedback is important! Please take a moment to share your experience.
                       </p>
                     </div>
                   </div>
-                  <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                    <Link href="/feedback/first-lesson">
-                      <Star className="w-4 h-4 mr-2" />
-                      Leave Feedback
-                    </Link>
+                  <Button onClick={() => handleRateLesson(mostRecentLessonToReview)} className="bg-blue-600 hover:bg-blue-700">
+                    <Star className="w-4 h-4 mr-2" />
+                    Leave Feedback
                   </Button>
                 </CardContent>
               </Card>
