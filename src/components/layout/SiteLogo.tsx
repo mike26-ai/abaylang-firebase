@@ -1,3 +1,4 @@
+
 // File: src/components/layout/SiteLogo.tsx
 import Link from 'next/link';
 import Image from 'next/image';
@@ -15,7 +16,7 @@ export function SiteLogo() {
         alt="ABYLANG Logo"
         width={120}
         height={40}
-        priority // Ensures the logo loads quickly on all pages
+        priority // Ensures the logo loads quickly and prevents hydration errors.
         className="h-auto" // Maintain aspect ratio
       />
     </Link>
