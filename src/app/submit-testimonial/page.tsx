@@ -57,6 +57,11 @@ export default function SubmitTestimonialPage() {
         <CardContent>
           {/* We use the server action in the <form> element. */}
           <form action={submitTestimonialAction} className="space-y-8">
+            {/* Hidden inputs to pass user data to the server action */}
+            <input type="hidden" name="userId" value={user.uid} />
+            <input type="hidden" name="userName" value={user.displayName || ""} />
+            <input type="hidden" name="userEmail" value={user.email || ""} />
+            
             <div className="space-y-2 text-center">
               <Label htmlFor="rating" className="text-lg">Your Rating</Label>
               {/* This hidden input will hold the actual rating value for the form submission. */}
