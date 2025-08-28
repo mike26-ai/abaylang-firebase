@@ -16,7 +16,7 @@ export function SiteLogo() {
         width={120}
         height={40}
         priority // Ensures the logo loads quickly and prevents hydration errors.
-        className="h-auto" // Maintain aspect ratio
+        className="h-auto w-auto" // Ensures consistent class name
       />
     </Link>
   );
