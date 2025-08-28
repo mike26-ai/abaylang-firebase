@@ -406,18 +406,17 @@ export default function StudentDashboardPage() {
     return differenceInHours(lessonDateTime, new Date()) >= 12;
   };
 
-  const upcomingBookings = bookings.filter(
-    (b) => (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
-  ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime());
+  const upcomingBookings = useMemo(() => bookings.filter(
+    (b) => (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && b.date !== 'N/A_PACKAGE' && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
+  ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime()), [bookings]);
   
-  const pastBookings = bookings.filter(
-    (b) => b.status === "completed" || b.status === "cancelled" || ((b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
-  ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00")).getTime() - new Date(a.date + ' ' + (a.time || "00:00")).getTime());
+  const pastBookings = useMemo(() => bookings.filter(
+    (b) => b.status === "completed" || b.status === "cancelled" || (b.date !== 'N/A_PACKAGE' && (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
+  ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00")).getTime() - new Date(a.date + ' ' + (a.time || "00:00")).getTime()), [bookings]);
   
-  const confirmedUpcomingCount = upcomingBookings.filter(b => b.status === 'confirmed').length;
-  const awaitingPaymentCount = upcomingBookings.filter(b => b.status === 'awaiting-payment').length;
-  const completedBookingsCount = bookings.filter((b) => b.status === "completed").length;
-  const totalHours = bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 60), 0) / 60;
+  const upcomingLessonsCount = useMemo(() => upcomingBookings.filter(b => b.status === 'confirmed' || b.status === 'awaiting-payment' || b.status === 'payment-pending-confirmation').length, [upcomingBookings]);
+  const completedBookingsCount = useMemo(() => bookings.filter((b) => b.status === "completed").length, [bookings]);
+  const totalHours = useMemo(() => bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 60), 0) / 60, [bookings]);
   
   const mostRecentLessonToReview = useMemo(() => {
     return bookings
@@ -531,8 +530,8 @@ export default function StudentDashboardPage() {
                   <Calendar className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{confirmedUpcomingCount}</div>
-                   <p className="text-xs text-muted-foreground">{awaitingPaymentCount} awaiting payment</p>
+                  <div className="text-2xl font-bold">{upcomingLessonsCount}</div>
+                   <p className="text-xs text-muted-foreground">&nbsp;</p>
                 </CardContent>
               </Card>
               <Card className="shadow-lg">
