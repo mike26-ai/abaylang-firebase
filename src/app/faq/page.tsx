@@ -26,15 +26,15 @@ const faqData = [
   {
     id: "payment-policy", // ID for direct linking
     question: "How does the booking and payment process work?",
-    answer: "Simply choose a lesson, select an available date and time, and submit your booking request. The lesson slot will be held for you with a status of 'Awaiting Payment'. To confirm, send the payment via one of the listed methods. After you have sent the payment, go to your dashboard and click the 'I Have Sent Payment' button. Our team will then verify the payment and confirm your lesson within 12 business hours. Your lesson is officially confirmed once the status changes to 'Confirmed'.",
+    answer: "Choose a lesson and time on the booking page. After you submit, the slot is held for you. You will then be shown instructions on how to send payment (e.g., PayPal) and proof of payment (e.g., a screenshot) to confirm your booking. Your lesson is officially confirmed once our team verifies the payment and the status on your dashboard changes to 'Confirmed'.",
   },
    {
     question: "How long does it take for my payment to be confirmed?",
-    answer: "We guarantee that your payment will be verified and your lesson status updated to 'Confirmed' within **12 business hours** of you marking the payment as sent. 'Business hours' are typically Monday-Friday, 9am-6pm in our local time zone. Often, confirmations are much faster.",
+    answer: "We guarantee that your payment will be verified and your lesson status updated to 'Confirmed' within **12 business hours** of you sending us your proof of payment. 'Business hours' are typically Monday-Friday, 9am-6pm in our local time zone. Often, confirmations are much faster.",
   },
   {
     question: "What if my payment isn't confirmed in time?",
-    answer: "We stand by our confirmation guarantee. In the unlikely event that your lesson is not confirmed within 12 business hours, you are entitled to a **full and immediate refund**, no questions asked. Please contact us with your payment details to process the refund.",
+    answer: "We stand by our confirmation guarantee. In the unlikely event that your lesson is not confirmed within 12 business hours of receiving your proof of payment, you are entitled to a **full and immediate refund**, no questions asked. Please contact us with your payment details to process the refund.",
   },
   {
     question: "What is your cancellation and refund policy?",
@@ -42,7 +42,7 @@ const faqData = [
   },
   {
     question: "How do I reschedule a lesson?",
-    answer: "To reschedule, please cancel your existing booking at least 12 hours in advance via your student dashboard or by contacting us. You will receive a credit or refund, which you can then use to book a new time slot that works for you.",
+    answer: "To reschedule, please use the 'Reschedule' option on your student dashboard for the specific lesson. This must be done at least 12 hours in advance. The action will cancel your current booking, allowing you to go to the booking page immediately to select a new time slot.",
   },
   {
     question: "What happens if I miss my lesson?",
