@@ -19,6 +19,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import React from "react";
 import { SiteLogo } from "./SiteLogo";
+import { Separator } from "../ui/separator";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -106,7 +107,7 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <SheetHeader>
-                <SheetTitle className="sr-only">Main Menu</SheetTitle>
+                 <SheetTitle className="sr-only">Main Menu</SheetTitle>
               </SheetHeader>
               <div className="mt-6 mb-4 px-2">
                  <SiteLogo />
@@ -117,6 +118,29 @@ export function Navbar() {
                     <Link href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-muted-foreground hover:text-primary">{item.title}</Link>
                    </SheetClose>
                 ))}
+
+                {/* --- START: ADMIN MOBILE NAVIGATION --- */}
+                {isAdmin && (
+                  <>
+                    <Separator className="my-4" />
+                    <div className="px-2 py-2">
+                        <h3 className="font-semibold text-foreground text-base flex items-center gap-2 mb-2">
+                            <ShieldCheck className="h-5 w-5" />
+                            Admin Panel
+                        </h3>
+                        <div className="grid gap-1">
+                            {siteConfig.adminNav.map(item => (
+                                <SheetClose asChild key={`admin-${item.href}`}>
+                                    <Link href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-muted-foreground hover:text-primary">{item.title}</Link>
+                                </SheetClose>
+                            ))}
+                        </div>
+                    </div>
+                    <Separator className="my-4" />
+                  </>
+                )}
+                {/* --- END: ADMIN MOBILE NAVIGATION --- */}
+
               </nav>
             </SheetContent>
           </Sheet>
