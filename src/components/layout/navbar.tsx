@@ -119,7 +119,6 @@ export function Navbar() {
                    </SheetClose>
                 ))}
 
-                {/* --- START: ADMIN MOBILE NAVIGATION --- */}
                 {isAdmin && (
                   <>
                     <Separator className="my-4" />
@@ -136,11 +135,8 @@ export function Navbar() {
                             ))}
                         </div>
                     </div>
-                    <Separator className="my-4" />
                   </>
                 )}
-                {/* --- END: ADMIN MOBILE NAVIGATION --- */}
-
               </nav>
             </SheetContent>
           </Sheet>
