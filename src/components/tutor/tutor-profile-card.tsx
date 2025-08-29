@@ -7,18 +7,23 @@ import { Check, Video, MessageSquare } from "lucide-react";
 import { tutorInfo } from "@/config/site";
 
 export function TutorProfileCard() {
+  const getInitials = (name: string) => {
+    if (!name) return "";
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
     <Card className="w-full shadow-xl overflow-hidden">
       <div className="md:flex">
-        <div className="md:w-1/3 relative min-h-[250px] md:min-h-full">
-          <Image
-            src={tutorInfo.imageUrl}
-            alt={tutorInfo.name}
-            layout="fill"
-            objectFit="cover"
-            className="rounded-t-lg md:rounded-l-lg md:rounded-t-none"
-            data-ai-hint={tutorInfo.dataAiHint}
-          />
+        <div className="md:w-1/3 relative min-h-[250px] md:min-h-full bg-accent flex items-center justify-center rounded-t-lg md:rounded-l-lg md:rounded-t-none">
+          {/* Placeholder Div with Initials */}
+          <div className="w-32 h-32 bg-primary/10 rounded-full flex items-center justify-center">
+            <span className="text-5xl font-bold text-primary">{getInitials(tutorInfo.name)}</span>
+          </div>
         </div>
         <div className="md:w-2/3">
           <CardHeader className="p-6">
