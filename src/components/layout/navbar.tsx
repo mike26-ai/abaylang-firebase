@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import React from "react";
 import { SiteLogo } from "./SiteLogo";
 import { Separator } from "../ui/separator";
@@ -26,13 +26,22 @@ export function Navbar() {
   const { user, loading, signOut, isAdmin } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
-  const navLinks = [
+  const publicNavLinks = [
     { title: "About Tutor", href: "/tutor-profile" },
     { title: "Packages", href: "/packages" },
     { title: "Testimonials", href: "/testimonials" },
     { title: "Resources", href: "/resources" },
     { title: "Contact", href: "/contact" },
   ];
+
+  // CORRECT LOGIC: Create a single, unified list of links for the mobile menu.
+  const mobileNavLinks = [...publicNavLinks];
+  if (isAdmin) {
+    // Add a separator object and then the admin links to the same array.
+    mobileNavLinks.push({ title: "separator", href: "#" });
+    mobileNavLinks.push(...siteConfig.adminNav);
+  }
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
@@ -41,7 +50,7 @@ export function Navbar() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          {navLinks.map((item) => (
+          {publicNavLinks.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -113,29 +122,26 @@ export function Navbar() {
                  <SiteLogo />
               </div>
               <nav className="grid gap-2 text-lg font-medium px-2">
-                {navLinks.map(item => (
-                   <SheetClose asChild key={item.href}>
-                    <Link href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-muted-foreground hover:text-primary">{item.title}</Link>
-                   </SheetClose>
-                ))}
-
-                {isAdmin && (
-                  <>
-                    <Separator className="my-4" />
-                    <div className="px-2 py-2">
-                        <h3 className="font-semibold text-foreground text-base flex items-center gap-2 mb-2">
+                {mobileNavLinks.map((item) => 
+                  item.title === 'separator' ? (
+                    <div key="admin-separator" className="py-2">
+                      <Separator />
+                       <h3 className="font-semibold text-foreground text-base flex items-center gap-2 mt-4">
                             <ShieldCheck className="h-5 w-5" />
                             Admin Panel
                         </h3>
-                        <div className="grid gap-1">
-                            {siteConfig.adminNav.map(item => (
-                                <SheetClose asChild key={`admin-${item.href}`}>
-                                    <Link href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-lg font-medium text-muted-foreground hover:text-primary">{item.title}</Link>
-                                </SheetClose>
-                            ))}
-                        </div>
                     </div>
-                  </>
+                  ) : (
+                   <SheetClose asChild key={item.href}>
+                    <Link 
+                      href={item.href} 
+                      onClick={() => setIsMobileMenuOpen(false)} 
+                      className="block py-2 text-lg font-medium text-muted-foreground hover:text-primary"
+                    >
+                      {item.title}
+                    </Link>
+                   </SheetClose>
+                  )
                 )}
               </nav>
             </SheetContent>
