@@ -13,11 +13,18 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  throw new Error(
-    "Firebase config is not set. Make sure you have a .env.local file with your Firebase credentials in the project root."
-  );
+// Gracefully handle missing configuration for development
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId || firebaseConfig.apiKey.includes("YOUR_API_KEY")) {
+  console.warn(`
+    ********************************************************************************
+    Firebase environment variables are not set or are using placeholder values.
+    The application will run, but Firebase features will not work correctly.
+    To enable Firebase, please create a .env.local file (if it does not exist)
+    and add your project's credentials.
+    ********************************************************************************
+  `);
 }
+
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
