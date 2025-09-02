@@ -8,7 +8,11 @@ if (!process.env.PADDLE_API_KEY || process.env.PADDLE_API_KEY.includes("YOUR_PAD
     console.error("CRITICAL: PADDLE_API_KEY is not set in the environment variables. The application cannot process payments.");
     // We throw a generic error to the client for security, but log the specific issue on the server.
 }
-const paddle = new Paddle(process.env.PADDLE_API_KEY);
+
+// Trim whitespace and remove potential quotes from the API key to prevent formatting errors.
+const paddleApiKey = (process.env.PADDLE_API_KEY || '').trim().replace(/['"]+/g, '');
+const paddle = new Paddle(paddleApiKey);
+
 
 /**
  * Creates a secure checkout link using the Paddle API.
@@ -75,9 +79,14 @@ export async function createPaddleCheckout(
     // The optional chaining (?.) is a safe way to access nested properties.
     return transaction.checkout?.url;
 
-  } catch (error) {
-    console.error('Error creating Paddle checkout transaction:', error);
-    // In case of an API error, we throw a more specific message to the user.
-    throw new Error('Failed to create payment session. Please check your Paddle API keys and ensure all Price IDs are correct.');
+  } catch (error: any) {
+    // --- IMPROVED ERROR LOGGING ---
+    // Log the specific error from the Paddle SDK for better debugging.
+    console.error('Paddle SDK Error:', error.message);
+    if (error.body) {
+      console.error('Paddle Error Details:', JSON.stringify(error.body, null, 2));
+    }
+    // Throw a more informative error back to the client.
+    throw new Error(`Payment provider error: ${error.message}. Please check your Paddle configuration.`);
   }
 }
