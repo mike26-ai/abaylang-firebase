@@ -8,7 +8,11 @@ if (!process.env.PADDLE_API_KEY || process.env.PADDLE_API_KEY.includes("YOUR_PAD
     console.error("CRITICAL: PADDLE_API_KEY is not set in the environment variables. The application cannot process payments.");
     // We throw a generic error to the client for security, but log the specific issue on the server.
 }
-const paddle = new Paddle(process.env.PADDLE_API_KEY);
+
+// Trim whitespace and remove potential quotes from the API key to prevent formatting errors.
+const paddleApiKey = (process.env.PADDLE_API_KEY || '').trim().replace(/['"]+/g, '');
+const paddle = new Paddle(paddleApiKey);
+
 
 /**
  * Creates a secure checkout link using the Paddle API.
