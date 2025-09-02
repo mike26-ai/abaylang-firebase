@@ -31,9 +31,9 @@ export async function createPaddleCheckout(
   // NOTE: This can be expanded with 'else if' blocks for every other product type (packages, etc.)
 
   // If we couldn't find a matching price ID, we cannot proceed.
-  if (!priceId) {
-    console.error(`Error: No Paddle Price ID found for lesson type: ${lessonType}`);
-    throw new Error('Could not find a matching product for this lesson type.');
+  if (!priceId || priceId === "YOUR_PADDLE_PRICE_ID_HERE") {
+    console.error(`Error: No valid Paddle Price ID found for lesson type: ${lessonType}. Check your .env.local file.`);
+    throw new Error(`The product ID for '${lessonType}' is not configured. Please contact support.`);
   }
 
   try {
@@ -60,7 +60,7 @@ export async function createPaddleCheckout(
 
   } catch (error) {
     console.error('Error creating Paddle checkout transaction:', error);
-    // In case of an API error, we throw a generic message to the user.
-    throw new Error('Failed to create payment session.');
+    // In case of an API error, we throw a more specific message to the user.
+    throw new Error('Failed to create payment session. Please check your Paddle API keys and Price IDs.');
   }
 }

@@ -258,6 +258,7 @@ export default function BookLessonPage() {
         if (checkoutUrl) {
           router.push(checkoutUrl);
         } else {
+          // This case should ideally not be reached if createPaddleCheckout throws an error
           throw new Error("Could not create a payment link.");
         }
       }
@@ -266,6 +267,8 @@ export default function BookLessonPage() {
       let description = "Could not complete your booking. Please try again.";
       if (error.code === 'permission-denied') {
         description = "Booking failed due to a permissions issue. Please ensure you are logged in.";
+      } else {
+        description = error.message; // Use the specific error message from the server action
       }
       toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
       setIsProcessing(false);
@@ -541,6 +544,7 @@ export default function BookLessonPage() {
                         {format(selectedDate, "PPP")}
                       </span>
                     </div>
+
                   )}
                    {selectedDate && isPackageSelected && (
                     <div className="flex justify-between">
