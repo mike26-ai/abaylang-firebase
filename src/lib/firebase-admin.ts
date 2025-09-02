@@ -39,6 +39,8 @@ export function initAdmin() {
   try {
     const app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
+      // Add the databaseURL to ensure the SDK can connect to Firestore.
+      databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`,
     });
     console.log('Firebase Admin SDK initialized successfully.');
     return app;
