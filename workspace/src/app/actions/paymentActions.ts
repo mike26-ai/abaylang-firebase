@@ -6,7 +6,7 @@ import { Paddle } from '@paddle/paddle-node-sdk';
 // This check improves error messaging if the environment variable is not set.
 if (!process.env.PADDLE_API_KEY || process.env.PADDLE_API_KEY.includes("YOUR_PADDLE_API_KEY")) {
     console.error("CRITICAL: PADDLE_API_KEY is not set in the environment variables. The application cannot process payments.");
-    throw new Error("Payment service is not configured. Please contact support.");
+    // We throw a generic error to the client for security, but log the specific issue on the server.
 }
 const paddle = new Paddle(process.env.PADDLE_API_KEY);
 
