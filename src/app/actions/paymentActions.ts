@@ -23,15 +23,28 @@ export async function createPaddleCheckout(
   // Step 1: Determine which Paddle Price ID to use based on the lesson type.
   // We fetch these IDs from environment variables for security and flexibility.
   let priceId: string | undefined;
+
   if (lessonType === 'Quick Practice') {
     priceId = process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_PRICE_ID;
   } else if (lessonType === 'Comprehensive Lesson') {
     priceId = process.env.NEXT_PUBLIC_PADDLE_COMPREHENSIVE_LESSON_PRICE_ID;
+  } else if (lessonType === 'Quick Group Conversation') {
+    priceId = process.env.NEXT_PUBLIC_PADDLE_QUICK_GROUP_CONVERSATION_PRICE_ID;
+  } else if (lessonType === 'Immersive Conversation Practice') {
+    priceId = process.env.NEXT_PUBLIC_PADDLE_IMMERSIVE_CONVERSATION_PRICE_ID;
+  } else if (lessonType === 'Quick Practice Bundle') {
+    priceId = process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_BUNDLE_PRICE_ID;
+  } else if (lessonType === 'Learning Intensive') {
+    priceId = process.env.NEXT_PUBLIC_PADDLE_LEARNING_INTENSIVE_PRICE_ID;
+  } else if (lessonType === 'Starter Bundle') {
+    priceId = process.env.NEXT_PUBLIC_PADDLE_STARTER_BUNDLE_PRICE_ID;
+  } else if (lessonType === 'Foundation Pack') {
+    priceId = process.env.NEXT_PUBLIC_PADDLE_FOUNDATION_PACK_PRICE_ID;
   }
-  // NOTE: This can be expanded with 'else if' blocks for every other product type (packages, etc.)
+  // NOTE: This can be expanded with 'else if' blocks for every other product type.
 
   // If we couldn't find a matching price ID, we cannot proceed.
-  if (!priceId || priceId === "YOUR_PADDLE_PRICE_ID_HERE") {
+  if (!priceId || priceId.includes("YOUR_PADDLE")) {
     console.error(`Error: No valid Paddle Price ID found for lesson type: ${lessonType}. Check your .env.local file.`);
     throw new Error(`The product ID for '${lessonType}' is not configured. Please contact support.`);
   }
@@ -61,6 +74,6 @@ export async function createPaddleCheckout(
   } catch (error) {
     console.error('Error creating Paddle checkout transaction:', error);
     // In case of an API error, we throw a more specific message to the user.
-    throw new Error('Failed to create payment session. Please check your Paddle API keys and Price IDs.');
+    throw new Error('Failed to create payment session. Please check your Paddle API keys and ensure all Price IDs are correct.');
   }
 }
