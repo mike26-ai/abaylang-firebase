@@ -2,8 +2,12 @@
 
 import { Paddle } from '@paddle/paddle-node-sdk';
 
-// Initialize Paddle with the API key from environment variables.
-// The SDK will automatically throw an error if the key is missing.
+// Initialize Paddle. The SDK will throw an error if the key is missing.
+// This check improves error messaging if the environment variable is not set.
+if (!process.env.PADDLE_API_KEY || process.env.PADDLE_API_KEY.includes("YOUR_PADDLE_API_KEY")) {
+    console.error("CRITICAL: PADDLE_API_KEY is not set in the environment variables. The application cannot process payments.");
+    // We throw a generic error to the client for security, but log the specific issue on the server.
+}
 const paddle = new Paddle(process.env.PADDLE_API_KEY);
 
 /**
@@ -71,9 +75,14 @@ export async function createPaddleCheckout(
     // The optional chaining (?.) is a safe way to access nested properties.
     return transaction.checkout?.url;
 
-  } catch (error) {
-    console.error('Error creating Paddle checkout transaction:', error);
-    // In case of an API error, we throw a more specific message to the user.
-    throw new Error('Failed to create payment session. Please check your Paddle API keys and ensure all Price IDs are correct.');
+  } catch (error: any) {
+    // --- IMPROVED ERROR LOGGING ---
+    // Log the specific error from the Paddle SDK for better debugging.
+    console.error('Paddle SDK Error:', error.message);
+    if (error.body) {
+      console.error('Paddle Error Details:', JSON.stringify(error.body, null, 2));
+    }
+    // Throw a more informative error back to the client.
+    throw new Error(`Payment provider error: ${error.message}. Please check your Paddle configuration.`);
   }
 }
