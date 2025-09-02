@@ -20,6 +20,8 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
+import { createPaddleCheckout } from "@/app/actions/paymentActions";
+
 
 interface BookedSlotInfo {
   startTimeValue: string;
@@ -193,72 +195,83 @@ export default function BookLessonPage() {
     return slots;
   }, [selectedDate, selectedLessonDetails, dailyBookedRanges]);
 
-const handleBooking = async () => {
-  if (!user) {
-    toast({ title: "Login Required", description: "Please log in to book a lesson.", variant: "destructive" });
-    router.push('/login?redirect=/bookings');
-    return;
-  }
-
-  if (!selectedLessonDetails) {
-    toast({ title: "Selection Incomplete", description: "Please select a lesson type.", variant: "destructive" });
-    return;
-  }
-  if (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) {
-    toast({ title: "Selection Incomplete", description: "Please select a date and time for your lesson.", variant: "destructive" });
-    return;
-  }
-
-  setIsProcessing(true);
-
-  try {
-    const unitDuration = typeof selectedLessonDetails.unitDuration === 'number' 
-        ? selectedLessonDetails.unitDuration 
-        : typeof selectedLessonDetails.duration === 'number' 
-        ? selectedLessonDetails.duration
-        : 60; // Default to 60 if somehow not available
-
-    const bookingData = {
-      date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
-      time: selectedTime || 'N/A_PACKAGE',
-      duration: unitDuration,
-      lessonType: selectedLessonDetails.label,
-      price: selectedLessonDetails.price,
-      status: 'awaiting-payment' as const,
-      tutorId: "MahderNegashNano",
-      tutorName: "Mahder Negash",
-      userId: user.uid,
-      userName: user.displayName || "User",
-      userEmail: user.email || "No Email",
-      ...(learningGoals.trim() && { learningGoals: learningGoals.trim() })
-    };
-
-    const docRef = await addDoc(collection(db, "bookings"), {
-      ...bookingData,
-      createdAt: serverTimestamp(),
-    });
-
-    const queryParams = new URLSearchParams({
-      id: docRef.id,
-      lessonType: bookingData.lessonType,
-      date: bookingData.date,
-      time: bookingData.time,
-      price: bookingData.price.toString(),
-      email: user.email || '',
-    });
-    router.push(`/bookings/success?${queryParams.toString()}`);
-
-  } catch (error: any) {
-    console.error("Booking error:", error);
-    let description = "Could not complete your booking. Please try again.";
-    if (error.code === 'permission-denied') {
-      description = "Booking failed due to a permissions issue. Please ensure you are logged in and that your profile is up to date.";
+  const handleBooking = async () => {
+    if (!user) {
+      toast({ title: "Login Required", description: "Please log in to book a lesson.", variant: "destructive" });
+      router.push('/login?redirect=/bookings');
+      return;
     }
-    toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
-  } finally {
-    setIsProcessing(false);
-  }
-};
+
+    if (!selectedLessonDetails) {
+      toast({ title: "Selection Incomplete", description: "Please select a lesson type.", variant: "destructive" });
+      return;
+    }
+    if (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) {
+      toast({ title: "Selection Incomplete", description: "Please select a date and time for your lesson.", variant: "destructive" });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const isFreeTrial = selectedLessonDetails.price === 0;
+
+      const unitDuration = typeof selectedLessonDetails.unitDuration === 'number' 
+          ? selectedLessonDetails.unitDuration 
+          : typeof selectedLessonDetails.duration === 'number' 
+          ? selectedLessonDetails.duration
+          : 60; // Default to 60 if somehow not available
+
+      const bookingData = {
+        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
+        time: selectedTime || 'N/A_PACKAGE',
+        duration: unitDuration,
+        lessonType: selectedLessonDetails.label,
+        price: selectedLessonDetails.price,
+        status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
+        tutorId: "MahderNegashNano",
+        tutorName: "Mahder Negash",
+        userId: user.uid,
+        userName: user.displayName || "User",
+        userEmail: user.email || "No Email",
+        ...(learningGoals.trim() && { learningGoals: learningGoals.trim() }),
+        createdAt: serverTimestamp(),
+      };
+      
+      const docRef = await addDoc(collection(db, "bookings"), bookingData);
+
+      if (isFreeTrial) {
+        // For free trials, go to a simple success page directly.
+        const queryParams = new URLSearchParams({
+          lessonType: bookingData.lessonType,
+          date: bookingData.date,
+          time: bookingData.time,
+        });
+        router.push(`/bookings/success?${queryParams.toString()}`);
+      } else {
+        // For paid lessons, proceed to payment.
+        const checkoutUrl = await createPaddleCheckout(
+          bookingData.lessonType,
+          bookingData.userEmail,
+          docRef.id
+        );
+        if (checkoutUrl) {
+          router.push(checkoutUrl);
+        } else {
+          throw new Error("Could not create a payment link.");
+        }
+      }
+    } catch (error: any) {
+      console.error("Booking error:", error);
+      let description = "Could not complete your booking. Please try again.";
+      if (error.code === 'permission-denied') {
+        description = "Booking failed due to a permissions issue. Please ensure you are logged in.";
+      }
+      toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
+      setIsProcessing(false);
+    }
+    // No finally block to set isProcessing to false, because we are redirecting away.
+  };
 
   const isPackageSelected = selectedLessonDetails?.type === 'package';
 
@@ -553,10 +566,12 @@ const handleBooking = async () => {
                       <span className="text-foreground">Total:</span>
                       <span className="text-primary">${selectedLessonDetails.price}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">
-                      <ShieldCheck className="w-3 h-3 inline-block mr-1"/>
-                      Your spot is held once booked; please send payment to confirm.
-                    </p>
+                     {selectedLessonDetails.price > 0 && (
+                        <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">
+                        <ShieldCheck className="w-3 h-3 inline-block mr-1"/>
+                        Your spot is held temporarily. Proceed to secure payment.
+                        </p>
+                    )}
                   </div>
                 )}
 
@@ -567,12 +582,12 @@ const handleBooking = async () => {
                     disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !learningGoals) } 
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
-                    {isProcessing ? "Sending Request..." : `Request Booking - $${selectedLessonDetails?.price || 0}`}
+                    {isProcessing ? "Processing..." : selectedLessonDetails?.price === 0 ? "Confirm Free Trial" : `Proceed to Payment - $${selectedLessonDetails?.price || 0}`}
                   </Button>
                 </div>
                 <div className="text-xs text-muted-foreground space-y-1 text-center">
                   <p>• Free cancellation up to 12 hours before.</p>
-                  <p>• Your spot is confirmed upon payment.</p>
+                  <p>• Your spot is confirmed upon payment for paid lessons.</p>
                 </div>
               </CardContent>
             </Card>
