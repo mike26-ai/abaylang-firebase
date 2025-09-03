@@ -2,6 +2,13 @@
 
 import { Paddle } from '@paddle/paddle-node-sdk';
 
+// NOTE FOR DEVELOPER:
+// If you are seeing a "You aren't permitted to perform this request" error,
+// it means you are likely using a "Read-Only" API key.
+// You MUST generate a key with "Full Access" permissions to create transactions.
+// Find this in your Paddle Dashboard under: Developer Tools > Authentication > New API Key
+// Ensure "Full Access" is selected when generating the key.
+
 // Initialize Paddle. The SDK will throw an error if the key is missing.
 // This check improves error messaging if the environment variable is not set.
 if (!process.env.PADDLE_API_KEY || process.env.PADDLE_API_KEY.includes("YOUR_PADDLE_API_KEY")) {
