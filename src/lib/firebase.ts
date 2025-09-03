@@ -4,6 +4,25 @@ import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/a
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
+// ====================================================================================
+// --- TROUBLESHOOTING GUIDE: "auth/unauthorized-domain" ERROR ---
+// ====================================================================================
+// This error means the domain you are using to run this app is not on Firebase's
+// list of approved domains for authentication.
+//
+// TO FIX THIS:
+// 1. Go to your Firebase Console: https://console.firebase.google.com/
+// 2. Select your project.
+// 3. Go to "Authentication" in the left sidebar.
+// 4. Click on the "Settings" tab.
+// 5. Under "Authorized domains", click the "Add domain" button.
+// 6. Enter the domain from your browser's address bar. For Firebase Studio, this
+//    will be a long URL ending in ".cloudworkstations.dev".
+//    Example: my-project-12345.cluster-abcdef.cloudworkstations.dev
+// 7. Click "Add". The issue should now be resolved.
+// ====================================================================================
+
+
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
