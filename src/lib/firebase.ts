@@ -24,12 +24,13 @@ import { getFirestore } from "firebase/firestore";
 
 
 const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyCGeB4Or3245KH3OdQa563N-r7hSrKMDbI",
+  authDomain: "amharic-connect.firebaseapp.com",
+  projectId: "amharic-connect",
+  storageBucket: "amharic-connect.firebasestorage.app",
+  messagingSenderId: "673154458403",
+  appId: "1:673154458403:web:779145a2ef2d89eef62296",
+  measurementId: "",
 };
 
 // Gracefully handle missing configuration for development
