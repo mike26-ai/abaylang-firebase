@@ -10,11 +10,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, ShieldCheck, UserCheck, Mail, CalendarDays, BookOpen } from "lucide-react";
+import { MoreHorizontal, ShieldCheck, UserCheck, Mail, CalendarDays, BookOpen, User } from "lucide-react";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "../ui/spinner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
 
 export function StudentsManager() {
   const [students, setStudents] = useState<UserProfile[]>([]);
@@ -39,6 +39,7 @@ export function StudentsManager() {
 
   useEffect(() => {
     fetchStudents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   const getInitials = (name: string | null | undefined) => {
@@ -72,41 +73,102 @@ export function StudentsManager() {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Amharic Level</TableHead>
-            <TableHead>Joined On</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {students.map((student) => (
-            <TableRow key={student.uid}>
-              <TableCell>
+    <>
+      {/* Desktop View: Table */}
+      <div className="hidden md:block overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Amharic Level</TableHead>
+              <TableHead>Joined On</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {students.map((student) => (
+              <TableRow key={student.uid}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={student.photoURL || undefined} alt={student.name} data-ai-hint="user avatar" />
+                      <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{student.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell>{student.email}</TableCell>
+                <TableCell>
+                  <Badge variant={student.role === "admin" ? "destructive" : "secondary"}>
+                    {student.role.charAt(0).toUpperCase() + student.role.slice(1)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{student.amharicLevel?.replace(/-/g, " ").split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || "N/A"}</Badge>
+                </TableCell>
+                <TableCell>{format(student.createdAt.toDate(), 'PP')}</TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>User Actions</DropdownMenuLabel>
+                      <DropdownMenuItem disabled>
+                        <Mail className="mr-2 h-4 w-4" /> Send Email (Soon)
+                      </DropdownMenuItem>
+                       <DropdownMenuItem disabled>
+                        <CalendarDays className="mr-2 h-4 w-4" /> View Bookings (Soon)
+                      </DropdownMenuItem>
+                       <DropdownMenuItem disabled>
+                        <BookOpen className="mr-2 h-4 w-4" /> View Progress (Soon)
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Change Role</DropdownMenuLabel>
+                       <DropdownMenuItem 
+                          onClick={() => handleRoleChange(student.uid, "admin")} 
+                          disabled={student.role === 'admin'}
+                          className={student.role === 'admin' ? "" : "cursor-pointer"}
+                       >
+                        <ShieldCheck className="mr-2 h-4 w-4 text-destructive" /> Make Admin
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                          onClick={() => handleRoleChange(student.uid, "student")} 
+                          disabled={student.role === 'student'}
+                          className={student.role === 'student' ? "" : "cursor-pointer"}
+                      >
+                        <UserCheck className="mr-2 h-4 w-4 text-primary" /> Make Student
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mobile View: Cards */}
+      <div className="md:hidden space-y-4">
+        {students.map((student) => (
+          <Card key={student.uid} className="shadow-md">
+            <CardHeader>
+              <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-9 w-9">
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={student.photoURL || undefined} alt={student.name} data-ai-hint="user avatar" />
                     <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
                   </Avatar>
-                  <span className="font-medium">{student.name}</span>
+                  <div>
+                    <CardTitle className="text-lg">{student.name}</CardTitle>
+                    <p className="text-xs text-muted-foreground">{student.email}</p>
+                  </div>
                 </div>
-              </TableCell>
-              <TableCell>{student.email}</TableCell>
-              <TableCell>
-                <Badge variant={student.role === "admin" ? "destructive" : "secondary"}>
-                  {student.role.charAt(0).toUpperCase() + student.role.slice(1)}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline">{student.amharicLevel?.replace(/-/g, " ").split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || "N/A"}</Badge>
-              </TableCell>
-              <TableCell>{format(student.createdAt.toDate(), 'PP')}</TableCell>
-              <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -119,35 +181,35 @@ export function StudentsManager() {
                     <DropdownMenuItem disabled>
                       <Mail className="mr-2 h-4 w-4" /> Send Email (Soon)
                     </DropdownMenuItem>
-                     <DropdownMenuItem disabled>
-                      <CalendarDays className="mr-2 h-4 w-4" /> View Bookings (Soon)
-                    </DropdownMenuItem>
-                     <DropdownMenuItem disabled>
-                      <BookOpen className="mr-2 h-4 w-4" /> View Progress (Soon)
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel>Change Role</DropdownMenuLabel>
-                     <DropdownMenuItem 
-                        onClick={() => handleRoleChange(student.uid, "admin")} 
-                        disabled={student.role === 'admin'}
-                        className={student.role === 'admin' ? "" : "cursor-pointer"}
-                     >
+                    <DropdownMenuItem onClick={() => handleRoleChange(student.uid, "admin")} disabled={student.role === 'admin'}>
                       <ShieldCheck className="mr-2 h-4 w-4 text-destructive" /> Make Admin
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                        onClick={() => handleRoleChange(student.uid, "student")} 
-                        disabled={student.role === 'student'}
-                        className={student.role === 'student' ? "" : "cursor-pointer"}
-                    >
+                    <DropdownMenuItem onClick={() => handleRoleChange(student.uid, "student")} disabled={student.role === 'student'}>
                       <UserCheck className="mr-2 h-4 w-4 text-primary" /> Make Student
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm border-t pt-4">
+              <div className="flex justify-between">
+                <span className="font-medium text-muted-foreground">Role:</span>
+                <Badge variant={student.role === "admin" ? "destructive" : "secondary"}>{student.role}</Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium text-muted-foreground">Level:</span>
+                <Badge variant="outline">{student.amharicLevel?.replace(/-/g, " ") || "N/A"}</Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium text-muted-foreground">Joined:</span>
+                <span>{format(student.createdAt.toDate(), 'PP')}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </>
   );
 }
