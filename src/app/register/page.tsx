@@ -20,6 +20,7 @@ import type { UserProfile } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import { Spinner } from "@/components/ui/spinner";
 import { ADMIN_EMAIL } from "@/config/site";
+import { useAuth } from "@/hooks/use-auth"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -37,6 +38,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+  const { signInWithGoogle } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -44,6 +46,18 @@ export default function RegisterPage() {
       [e.target.name]: e.target.value,
     }))
   }
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithGoogle();
+      // The redirect is handled within the signInWithGoogle function
+    } catch (error) {
+      setError("Could not sign in with Google. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -164,6 +178,20 @@ export default function RegisterPage() {
             <CardDescription>Join thousands of learners worldwide</CardDescription>
           </CardHeader>
           <CardContent>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+              <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 62.3l-66.5 64.9C305.5 99.4 277.2 88 248 88c-73.2 0-132.3 59.2-132.3 132.3s59.2 132.3 132.3 132.3c76.9 0 111.2-51.8 115.4-78.2H248v-65.1h236.1c2.3 12.7 3.9 26.9 3.9 41.4z"></path></svg>
+              Sign up with Google
+            </Button>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Or continue with email
+                </span>
+              </div>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <Alert variant="destructive">

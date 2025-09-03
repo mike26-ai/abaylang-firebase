@@ -2,12 +2,14 @@
 "use client";
 
 import type { User as FirebaseUser } from "firebase/auth";
-import { onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
+import { onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import type { PropsWithChildren} from 'react';
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { ADMIN_EMAIL } from "@/config/site";
 import { useRouter } from 'next/navigation';
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import type { UserProfile } from "@/lib/types";
 
 type UserType = FirebaseUser & { isAdmin?: boolean };
 
@@ -16,6 +18,7 @@ type AuthContextType = {
   loading: boolean;
   isAdmin: boolean;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,9 +57,42 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
       // Handle error appropriately, e.g., show a toast notification
     }
   };
+
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Check if user exists in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        // New user, create a profile in Firestore
+        const userRole = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? "admin" : "student";
+        const newUserProfile: UserProfile = {
+          uid: user.uid,
+          name: user.displayName || "New User",
+          email: user.email || "",
+          role: userRole,
+          createdAt: Timestamp.now(),
+          photoURL: user.photoURL || null,
+          amharicLevel: "not-set", // Default value for new Google sign-ups
+        };
+        await setDoc(userDocRef, newUserProfile);
+      }
+      // For both new and existing users, redirect after sign-in
+      const isAdminUser = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+      router.push(isAdminUser ? "/admin/dashboard" : "/profile");
+    } catch (error) {
+      console.error("Error during Google sign-in:", error);
+      // Handle errors here, e.g., show a toast notification
+    }
+  };
   
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, signOut, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );
