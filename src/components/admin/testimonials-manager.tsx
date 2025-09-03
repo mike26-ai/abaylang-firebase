@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, XCircle, EyeOff, Trash2, Star } from "lucide-react";
+import { MoreHorizontal, CheckCircle, XCircle, EyeOff, Trash2, Star, User } from "lucide-react";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "../ui/spinner";
@@ -22,13 +22,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
 
 export function TestimonialsManager() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [deleteConfirmation, setDeleteConfirmation] = useState<Testimonial | null>(null);
+
 
   const fetchTestimonials = async () => {
     setIsLoading(true);
@@ -48,6 +50,7 @@ export function TestimonialsManager() {
 
   useEffect(() => {
     fetchTestimonials();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateTestimonialStatus = async (testimonialId: string, status: Testimonial['status']) => {
@@ -55,7 +58,7 @@ export function TestimonialsManager() {
       const testimonialDocRef = doc(db, "testimonials", testimonialId);
       await updateDoc(testimonialDocRef, { status });
       toast({ title: "Success", description: `Testimonial status updated to ${status}.` });
-      fetchTestimonials(); // Refresh list
+      fetchTestimonials(); 
     } catch (error) {
       console.error("Error updating testimonial status:", error);
       toast({ title: "Error", description: "Could not update testimonial status.", variant: "destructive" });
@@ -67,7 +70,8 @@ export function TestimonialsManager() {
       const testimonialDocRef = doc(db, "testimonials", testimonialId);
       await deleteDoc(testimonialDocRef);
       toast({ title: "Success", description: "Testimonial deleted." });
-      fetchTestimonials(); // Refresh list
+      setDeleteConfirmation(null);
+      fetchTestimonials(); 
     } catch (error) {
       console.error("Error deleting testimonial:", error);
       toast({ title: "Error", description: "Could not delete testimonial.", variant: "destructive" });
@@ -83,87 +87,138 @@ export function TestimonialsManager() {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Student Name</TableHead>
-            <TableHead>Rating</TableHead>
-            <TableHead>Comment</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Submitted On</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {testimonials.map((testimonial) => (
-            <TableRow key={testimonial.id}>
-              <TableCell className="font-medium">{testimonial.name}</TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  {testimonial.rating} <Star className="ml-1 h-4 w-4 text-yellow-400 fill-yellow-400" />
-                </div>
-              </TableCell>
-              <TableCell className="max-w-xs truncate">{testimonial.comment}</TableCell>
-              <TableCell>
-                <Badge 
-                  variant={
-                    testimonial.status === "approved" ? "default" 
-                    : testimonial.status === "pending" ? "secondary" 
-                    : "destructive"
-                  }
-                   className={testimonial.status === 'pending' ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}
-                >
-                  {testimonial.status.charAt(0).toUpperCase() + testimonial.status.slice(1)}
-                </Badge>
-              </TableCell>
-              <TableCell>{testimonial.createdAt ? format(testimonial.createdAt.toDate(), 'PP pp') : 'N/A'}</TableCell>
-              <TableCell className="text-right">
-                <AlertDialog>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => updateTestimonialStatus(testimonial.id, "approved")} disabled={testimonial.status === 'approved'}>
-                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Approve
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => updateTestimonialStatus(testimonial.id, "pending")} disabled={testimonial.status === 'pending'}>
-                        <EyeOff className="mr-2 h-4 w-4 text-orange-500" /> Mark as Pending
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => updateTestimonialStatus(testimonial.id, "rejected")} disabled={testimonial.status === 'rejected'}>
-                        <XCircle className="mr-2 h-4 w-4 text-red-500" /> Reject
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem className="text-red-600 hover:!text-red-600 focus:!text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the testimonial by {testimonial.name}.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => deleteTestimonial(testimonial.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </TableCell>
+    <>
+      {/* Desktop View: Table */}
+      <div className="hidden md:block overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Student Name</TableHead>
+              <TableHead>Rating</TableHead>
+              <TableHead>Comment</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Submitted On</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
+          </TableHeader>
+          <TableBody>
+            {testimonials.map((testimonial) => (
+              <TableRow key={testimonial.id}>
+                <TableCell className="font-medium">{testimonial.name}</TableCell>
+                <TableCell>
+                  <div className="flex items-center">
+                    {testimonial.rating} <Star className="ml-1 h-4 w-4 text-yellow-400 fill-yellow-400" />
+                  </div>
+                </TableCell>
+                <TableCell className="max-w-xs truncate">{testimonial.comment}</TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={
+                      testimonial.status === "approved" ? "default" 
+                      : testimonial.status === "pending" ? "secondary" 
+                      : "destructive"
+                    }
+                    className={testimonial.status === 'pending' ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}
+                  >
+                    {testimonial.status.charAt(0).toUpperCase() + testimonial.status.slice(1)}
+                  </Badge>
+                </TableCell>
+                <TableCell>{testimonial.createdAt ? format(testimonial.createdAt.toDate(), 'PP pp') : 'N/A'}</TableCell>
+                <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => updateTestimonialStatus(testimonial.id, "approved")} disabled={testimonial.status === 'approved'}>
+                          <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Approve
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateTestimonialStatus(testimonial.id, "pending")} disabled={testimonial.status === 'pending'}>
+                          <EyeOff className="mr-2 h-4 w-4 text-orange-500" /> Mark as Pending
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateTestimonialStatus(testimonial.id, "rejected")} disabled={testimonial.status === 'rejected'}>
+                          <XCircle className="mr-2 h-4 w-4 text-red-500" /> Reject
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-red-600 hover:!text-red-600 focus:!text-red-600" onClick={() => setDeleteConfirmation(testimonial)}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      
+      {/* Mobile View: Cards */}
+      <div className="md:hidden space-y-4">
+          {testimonials.map((testimonial) => (
+              <Card key={testimonial.id} className="shadow-md">
+                  <CardHeader>
+                      <div className="flex justify-between items-start">
+                          <div>
+                              <CardTitle className="text-lg flex items-center gap-2"><User className="w-4 h-4 text-muted-foreground"/> {testimonial.name}</CardTitle>
+                              <p className="text-xs text-muted-foreground mt-1">Submitted: {testimonial.createdAt ? format(testimonial.createdAt.toDate(), 'PP') : 'N/A'}</p>
+                          </div>
+                          <Badge 
+                            variant={
+                              testimonial.status === "approved" ? "default" 
+                              : testimonial.status === "pending" ? "secondary" 
+                              : "destructive"
+                            }
+                            className={testimonial.status === 'pending' ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500" : ""}
+                          >
+                            {testimonial.status.charAt(0).toUpperCase() + testimonial.status.slice(1)}
+                          </Badge>
+                      </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                      <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`w-5 h-5 ${i < testimonial.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`} />
+                          ))}
+                           <span className="text-sm font-bold ml-1">({testimonial.rating})</span>
+                      </div>
+                      <p className="text-muted-foreground text-sm italic">"{testimonial.comment}"</p>
+                  </CardContent>
+                  <CardFooter className="flex flex-col gap-2">
+                       <div className="grid grid-cols-2 gap-2 w-full">
+                           <Button onClick={() => updateTestimonialStatus(testimonial.id, "approved")} disabled={testimonial.status === 'approved'} size="sm">
+                              <CheckCircle className="mr-2 h-4 w-4" /> Approve
+                           </Button>
+                           <Button onClick={() => updateTestimonialStatus(testimonial.id, "rejected")} disabled={testimonial.status === 'rejected'} variant="outline" size="sm">
+                              <XCircle className="mr-2 h-4 w-4" /> Reject
+                           </Button>
+                       </div>
+                       <Button onClick={() => setDeleteConfirmation(testimonial)} variant="destructive" size="sm" className="w-full mt-2">
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </Button>
+                  </CardFooter>
+              </Card>
           ))}
-        </TableBody>
-      </Table>
-    </div>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmation} onOpenChange={(isOpen) => !isOpen && setDeleteConfirmation(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the testimonial by {deleteConfirmation?.name}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteConfirmation && deleteTestimonial(deleteConfirmation.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

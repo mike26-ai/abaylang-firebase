@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, MessageCircle, Link as LinkIcon } from "lucide-react";
+import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, MessageCircle, Link as LinkIcon, Calendar, Clock, User } from "lucide-react";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "../ui/spinner";
@@ -22,18 +22,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
 
 export function BookingsManager() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [zoomLinkData, setZoomLinkData] = useState<{ isOpen: boolean; booking: Booking | null; link: string; isSaving: boolean }>({ isOpen: false, booking: null, link: "", isSaving: false });
+  const [deleteConfirmation, setDeleteConfirmation] = useState<Booking | null>(null);
+
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -93,11 +95,10 @@ export function BookingsManager() {
       
       const bookingDocRef = doc(db, "bookings", booking.id);
 
-      // Simplified update to fix the persistent Firebase error.
       await updateDoc(bookingDocRef, { status: status });
 
       toast({ title: "Success", description: `Booking status updated to ${status}.` });
-      fetchBookings(); // Refresh list
+      fetchBookings(); 
     } catch (error) {
       console.error("Error updating booking status:", error);
       toast({ title: "Error", description: "Could not update booking status.", variant: "destructive" });
@@ -109,7 +110,8 @@ export function BookingsManager() {
       const bookingDocRef = doc(db, "bookings", bookingId);
       await deleteDoc(bookingDocRef);
       toast({ title: "Success", description: "Booking deleted." });
-      fetchBookings(); // Refresh list
+      setDeleteConfirmation(null);
+      fetchBookings(); 
     } catch (error) {
       console.error("Error deleting booking:", error);
       toast({ title: "Error", description: "Could not delete booking.", variant: "destructive" });
@@ -142,7 +144,8 @@ export function BookingsManager() {
 
   return (
     <>
-      <div className="overflow-x-auto">
+      {/* Desktop View: Table */}
+      <div className="hidden md:block overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -197,7 +200,6 @@ export function BookingsManager() {
                 </TableCell>
                 <TableCell>{booking.createdAt.toDate().toLocaleString()}</TableCell>
                 <TableCell className="text-right">
-                  <AlertDialog>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -223,33 +225,85 @@ export function BookingsManager() {
                           <XCircle className="mr-2 h-4 w-4 text-red-500" /> Mark as Cancelled
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem className="text-red-600 hover:!text-red-600 focus:!text-red-600">
+                          <DropdownMenuItem className="text-red-600 hover:!text-red-600 focus:!text-red-600" onClick={() => setDeleteConfirmation(booking)}>
                             <Trash2 className="mr-2 h-4 w-4" /> Delete Booking
                           </DropdownMenuItem>
-                        </AlertDialogTrigger>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete the booking for {booking.userName} on {booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'a package'}.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deleteBooking(booking.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      {/* Mobile View: Cards */}
+      <div className="md:hidden space-y-4">
+        {bookings.map((booking) => (
+          <Card key={booking.id} className="shadow-md">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                  <div>
+                      <CardTitle className="text-lg">{booking.userName}</CardTitle>
+                      <p className="text-xs text-muted-foreground">{booking.userEmail}</p>
+                  </div>
+                  <Badge
+                    variant={
+                      booking.status === "confirmed" ? "default" 
+                      : booking.status === "completed" ? "secondary"
+                      : booking.status === "cancelled" ? "destructive" 
+                      : "secondary"
+                    }
+                    className={
+                      booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" 
+                      : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
+                      : ""
+                      }
+                  >
+                    {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="w-4 h-4" />
+                    <span>{booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'Package'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span>{booking.time !== 'N/A_PACKAGE' ? booking.time : 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <User className="w-4 h-4" />
+                    <span>Booked on {booking.createdAt.toDate().toLocaleDateString()}</span>
+                </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-2">
+                 {(booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation') && (
+                    <Button onClick={() => updateBookingStatus(booking, "confirmed")} className="w-full" size="sm">
+                        <CreditCard className="mr-2 h-4 w-4" /> Confirm Payment
+                    </Button>
+                 )}
+                 <div className="grid grid-cols-2 gap-2 w-full">
+                    <Button onClick={() => updateBookingStatus(booking, "completed")} disabled={booking.status === 'completed'} variant="outline" size="sm">
+                        <CheckCircle className="mr-2 h-4 w-4" /> Completed
+                    </Button>
+                     <Button onClick={() => updateBookingStatus(booking, "cancelled")} disabled={booking.status === 'cancelled'} variant="outline" size="sm">
+                        <XCircle className="mr-2 h-4 w-4" /> Cancelled
+                    </Button>
+                 </div>
+                 <Button onClick={() => setZoomLinkData({ isOpen: true, booking, link: booking.zoomLink || '', isSaving: false })} variant="outline" size="sm" className="w-full">
+                    <LinkIcon className="mr-2 h-4 w-4" /> {booking.zoomLink ? "Edit" : "Add"} Zoom Link
+                </Button>
+                 <Button onClick={() => setDeleteConfirmation(booking)} variant="destructive" size="sm" className="w-full mt-2">
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
       
+      {/* Modals and Dialogs */}
       <Dialog open={zoomLinkData.isOpen} onOpenChange={(isOpen) => !isOpen && setZoomLinkData({ isOpen: false, booking: null, link: "", isSaving: false })}>
         <DialogContent>
           <DialogHeader>
@@ -276,6 +330,26 @@ export function BookingsManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteConfirmation} onOpenChange={(isOpen) => !isOpen && setDeleteConfirmation(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the booking for {deleteConfirmation?.userName} on {deleteConfirmation?.date !== 'N/A_PACKAGE' ? format(new Date(deleteConfirmation?.date || new Date()), 'PPP') : 'a package'}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteConfirmation(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmation && deleteBooking(deleteConfirmation.id)}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Yes, delete booking
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
