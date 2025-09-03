@@ -21,6 +21,7 @@ import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import { createPaddleCheckout } from "@/app/actions/paymentActions";
+import { lessonTypeToPriceIdMap, paddlePriceIds } from "@/config/paddle";
 
 
 interface BookedSlotInfo {
@@ -88,45 +89,45 @@ export default function BookLessonPage() {
     // Individual
     {
       value: "free-trial", label: "Free Trial", duration: 30, price: 0, description: "One-time only trial to meet the tutor",
-      features: ["Meet the tutor", "Experience teaching style", "Discuss learning goals"], type: "individual",
+      features: ["Meet the tutor", "Experience teaching style", "Discuss learning goals"], type: "individual", priceId: paddlePriceIds.freeTrial
     },
     {
       value: "quick-practice", label: "Quick Practice", duration: 30, price: 9, description: "Perfect for conversation practice",
-      features: ["Conversation practice", "Pronunciation correction", "Quick grammar review"], type: "individual",
+      features: ["Conversation practice", "Pronunciation correction", "Quick grammar review"], type: "individual", priceId: paddlePriceIds.quickPractice
     },
     {
       value: "comprehensive-lesson", label: "Comprehensive Lesson", duration: 60, price: 16, description: "Structured learning session",
-      features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials"], type: "individual",
+      features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials"], type: "individual", priceId: paddlePriceIds.comprehensiveLesson
     },
     // Group
     {
       value: "quick-group-conversation", label: "Quick Group Conversation", duration: 30, price: 7, description: "Practice with fellow learners",
-      features: ["Small group setting (4-6)", "Focused conversation", "Peer learning experience"], type: "group", minStudents: 4, maxStudents: 6,
+      features: ["Small group setting (4-6)", "Focused conversation", "Peer learning experience"], type: "group", minStudents: 4, maxStudents: 6, priceId: paddlePriceIds.quickGroupConversation
     },
     {
       value: "immersive-conversation-practice", label: "Immersive Conversation Practice", duration: 60, price: 12, description: "Deeper conversation and cultural insights",
-      features: ["Extended conversation time", "In-depth cultural topics", "Collaborative learning"], type: "group", minStudents: 4, maxStudents: 6,
+      features: ["Extended conversation time", "In-depth cultural topics", "Collaborative learning"], type: "group", minStudents: 4, maxStudents: 6, priceId: paddlePriceIds.immersiveConversationPractice
     },
     // Packages
     {
       value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: "10 x 30-min", price: 50, originalPrice: 70, totalLessons: 10, unitDuration: 30,
       description: "10 conversation practice sessions",
-      features: ["10 lessons, 30 mins each", "Just $5 per lesson", "Focus on speaking fluency", "Flexible scheduling"], type: "package",
+      features: ["10 lessons, 30 mins each", "Just $5 per lesson", "Focus on speaking fluency", "Flexible scheduling"], type: "package", priceId: paddlePriceIds.quickPracticeBundle
     },
     {
       value: "learning-intensive", label: "Learning Intensive", duration: "10 x 60-min", price: 100, originalPrice: 150, totalLessons: 10, unitDuration: 60,
       description: "Accelerate your structured learning",
-      features: ["10 lessons, 60 mins each", "Just $10 per lesson", "Comprehensive curriculum", "Priority booking"], type: "package",
+      features: ["10 lessons, 60 mins each", "Just $10 per lesson", "Comprehensive curriculum", "Priority booking"], type: "package", priceId: paddlePriceIds.learningIntensive
     },
      {
       value: "starter-bundle", label: "Starter Bundle", duration: "5 x 30-min", price: 25, originalPrice: 35, totalLessons: 5, unitDuration: 30,
       description: "Start practicing conversation regularly",
-      features: ["5 lessons, 30 mins each", "Great value to get started", "Build conversational confidence"], type: "package",
+      features: ["5 lessons, 30 mins each", "Great value to get started", "Build conversational confidence"], type: "package", priceId: paddlePriceIds.starterBundle
     },
     {
       value: "foundation-pack", label: "Foundation Pack", duration: "5 x 60-min", price: 60, originalPrice: 75, totalLessons: 5, unitDuration: 60,
       description: "Build a solid foundation",
-      features: ["5 lessons, 60 mins each", "Perfect for beginners", "Covers core concepts"], type: "package",
+      features: ["5 lessons, 60 mins each", "Perfect for beginners", "Covers core concepts"], type: "package", priceId: paddlePriceIds.foundationPack
     },
   ];
 
@@ -250,8 +251,11 @@ export default function BookLessonPage() {
         router.push(`/bookings/success?${queryParams.toString()}`);
       } else {
         // For paid lessons, proceed to payment.
+        if (!selectedLessonDetails.priceId) {
+            throw new Error("This product's Price ID is not configured. Please contact support.");
+        }
         const checkoutUrl = await createPaddleCheckout(
-          bookingData.lessonType,
+          selectedLessonDetails.priceId,
           bookingData.userEmail,
           docRef.id
         );

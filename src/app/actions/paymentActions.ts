@@ -8,7 +8,7 @@ import { Paddle } from '@paddle/paddle-node-sdk';
 // If you are seeing a "You aren't permitted to perform this request" error:
 // 1.  You MUST generate an API key with "Full Access" permissions. A "Read-Only" key will fail.
 // 2.  You MUST use a SANDBOX key with SANDBOX Price IDs. A LIVE key will not work with SANDBOX products (and vice-versa).
-// Find this in your Paddle Dashboard under: Developer Tools > Authentication > New API Key
+// Find this in your Paddle Dashboard under: Developer Tools > Authentication > API keys (NOT Client-side tokens)
 //
 // If you are seeing a "transaction_checkout_not_enabled" error:
 // 1.  This is a PADDLE DASHBOARD configuration issue, NOT a code issue.
@@ -35,44 +35,21 @@ const paddle = new Paddle(paddleApiKey);
 /**
  * Creates a secure checkout link using the Paddle API.
  *
- * @param lessonType - The type of lesson being booked (e.g., 'quick-practice', 'comprehensive-lesson').
+ * @param priceId - The specific Paddle Price ID for the item being purchased.
  * @param userEmail - The email of the customer.
  * @param bookingId - The unique ID of the booking document in Firestore.
  * @returns The URL for the Paddle checkout page.
  */
 export async function createPaddleCheckout(
-  lessonType: string,
+  priceId: string,
   userEmail: string,
   bookingId: string
 ): Promise<string | undefined> {
 
-  // Step 1: Determine which Paddle Price ID to use based on the lesson type.
-  // We fetch these IDs from environment variables for security and flexibility.
-  let priceId: string | undefined;
-
-  if (lessonType === 'Quick Practice') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_PRICE_ID;
-  } else if (lessonType === 'Comprehensive Lesson') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_COMPREHENSIVE_LESSON_PRICE_ID;
-  } else if (lessonType === 'Quick Group Conversation') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_QUICK_GROUP_CONVERSATION_PRICE_ID;
-  } else if (lessonType === 'Immersive Conversation Practice') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_IMMERSIVE_CONVERSATION_PRICE_ID;
-  } else if (lessonType === 'Quick Practice Bundle') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_BUNDLE_PRICE_ID;
-  } else if (lessonType === 'Learning Intensive') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_LEARNING_INTENSIVE_PRICE_ID;
-  } else if (lessonType === 'Starter Bundle') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_STARTER_BUNDLE_PRICE_ID;
-  } else if (lessonType === 'Foundation Pack') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_FOUNDATION_PACK_PRICE_ID;
-  }
-  // NOTE: This can be expanded with 'else if' blocks for every other product type.
-
-  // If we couldn't find a matching price ID, we cannot proceed.
-  if (!priceId || priceId.includes("YOUR_PADDLE")) {
-    console.error(`Error: No valid Paddle Price ID found for lesson type: ${lessonType}. Check your .env.local file.`);
-    throw new Error(`The product ID for '${lessonType}' is not configured. Please contact support.`);
+  // Step 1: Validate the provided priceId to ensure it's not missing or a placeholder.
+  if (!priceId || priceId.includes("YOUR_PADDLE") || priceId.trim() === "") {
+    console.error(`Error: An invalid Paddle Price ID was provided: '${priceId}'. Check the product configuration.`);
+    throw new Error(`The product ID is not configured correctly. Please contact support.`);
   }
 
   try {
@@ -80,7 +57,7 @@ export async function createPaddleCheckout(
     const transaction = await paddle.transactions.create({
       items: [
         {
-          priceId: priceId, // Use the dynamically selected Price ID
+          priceId: priceId, // Use the directly provided Price ID
           quantity: 1,
         },
       ],
