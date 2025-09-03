@@ -22,7 +22,7 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "../ui/card";
 
 export function InquiriesViewer() {
   const [inquiries, setInquiries] = useState<ContactMessage[]>([]);
