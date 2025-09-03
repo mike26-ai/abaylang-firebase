@@ -2,18 +2,29 @@
 
 import { Paddle } from '@paddle/paddle-node-sdk';
 
-// NOTE FOR DEVELOPER:
-// If you are seeing a "You aren't permitted to perform this request" error,
-// it means you are likely using a "Read-Only" API key OR you are mixing environments.
-// 1. You MUST generate a key with "Full Access" permissions.
-// 2. You MUST use a SANDBOX key with SANDBOX Price IDs. A LIVE key will not work with SANDBOX products.
+// ====================================================================================
+// --- TROUBLESHOOTING PADDLE PERMISSION ERRORS ---
+// ====================================================================================
+// If you are seeing a "You aren't permitted to perform this request" error:
+// 1.  You MUST generate an API key with "Full Access" permissions. A "Read-Only" key will fail.
+// 2.  You MUST use a SANDBOX key with SANDBOX Price IDs. A LIVE key will not work with SANDBOX products (and vice-versa).
 // Find this in your Paddle Dashboard under: Developer Tools > Authentication > New API Key
+//
+// If you are seeing a "transaction_checkout_not_enabled" error:
+// 1.  This is a PADDLE DASHBOARD configuration issue, NOT a code issue.
+// 2.  Go to your Paddle Dashboard -> Catalog -> Products.
+// 3.  Click on the product you are trying to sell (e.g., "Comprehensive Lesson").
+// 4.  In the "Prices" section, click the three dots (...) next to the price you are using.
+// 5.  Select "Edit price".
+// 6.  Ensure the "Allow this price to be used with Paddle Checkout" checkbox is CHECKED.
+// 7.  Save the changes. This error will then be resolved.
+// ====================================================================================
+
 
 // Initialize Paddle. The SDK will throw an error if the key is missing.
 // This check improves error messaging if the environment variable is not set.
 if (!process.env.PADDLE_API_KEY || process.env.PADDLE_API_KEY.includes("YOUR_PADDLE_API_KEY")) {
     console.error("CRITICAL: PADDLE_API_KEY is not set in the environment variables. The application cannot process payments.");
-    // We throw a generic error to the client for security, but log the specific issue on the server.
 }
 
 // Trim whitespace and remove potential quotes from the API key to prevent formatting errors.
