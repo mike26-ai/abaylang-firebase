@@ -3,21 +3,25 @@
 import { Paddle } from '@paddle/paddle-node-sdk';
 
 // ====================================================================================
-// --- TROUBLESHOOTING PADDLE PERMISSION ERRORS ---
+// --- TROUBLESHOOTING PADDLE CONFIGURATION ERRORS ---
 // ====================================================================================
 // If you are seeing a "You aren't permitted to perform this request" error:
 // 1.  You MUST generate an API key with "Full Access" permissions. A "Read-Only" key will fail.
 // 2.  You MUST use a SANDBOX key with SANDBOX Price IDs. A LIVE key will not work with SANDBOX products (and vice-versa).
-// Find this in your Paddle Dashboard under: Developer Tools > Authentication > API keys (NOT Client-side tokens)
+// Find this in your Paddle Dashboard under: Developer Tools > Authentication > API keys
 //
 // If you are seeing a "transaction_checkout_not_enabled" error:
 // 1.  This is a PADDLE DASHBOARD configuration issue, NOT a code issue.
 // 2.  Go to your Paddle Dashboard -> Catalog -> Products.
-// 3.  Click on the product you are trying to sell (e.g., "Comprehensive Lesson").
-// 4.  In the "Prices" section, click the three dots (...) next to the price you are using.
-// 5.  Select "Edit price".
-// 6.  Ensure the "Allow this price to be used with Paddle Checkout" checkbox is CHECKED.
-// 7.  Save the changes. This error will then be resolved.
+// 3.  Click on the product you are trying to sell.
+// 4.  In the "Prices" section, click the three dots (...) next to the price you are using and "Edit price".
+// 5.  Ensure the "Allow this price to be used with Paddle Checkout" checkbox is CHECKED.
+//
+// If you are seeing a "Default Payment Link has not yet been defined" error:
+// 1.  This is a PADDLE DASHBOARD configuration issue, NOT a code issue.
+// 2.  Go to your Paddle Sandbox Dashboard -> Checkout -> Checkout settings.
+// 3.  Under "Default payment link", you must either create a new one or set an existing one as default.
+// 4.  This is required by Paddle for API-created checkouts to have a fallback domain.
 // ====================================================================================
 
 
