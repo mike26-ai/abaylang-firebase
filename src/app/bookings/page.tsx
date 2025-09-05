@@ -22,7 +22,8 @@ import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import { createPaddleCheckout } from "@/app/actions/paymentActions";
 import { paddlePriceIds } from "@/config/paddle";
-
+import Script from "next/script";
+import { Paddle, initializePaddle } from '@paddle/paddle-js';
 
 interface BookedSlotInfo {
   startTimeValue: string;
@@ -38,15 +39,15 @@ async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
     const q = query(
       bookingsRef,
       where("date", "==", formattedDate),
-      where("status", "in", ["confirmed", "completed"]) 
+      where("status", "in", ["confirmed", "completed"])
     );
     const querySnapshot = await getDocs(q);
-    
+
     const bookedSlots: BookedSlotInfo[] = [];
     querySnapshot.forEach(doc => {
       const data = doc.data() as BookingType;
       if (data.time && data.duration) {
-        const slotDate = startOfDay(date); 
+        const slotDate = startOfDay(date);
         const parsedStartTime = parse(data.time, 'HH:mm', slotDate);
         if (!isNaN(parsedStartTime.getTime())) {
             bookedSlots.push({
@@ -84,6 +85,21 @@ export default function BookLessonPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialType = searchParams.get('type');
+  
+  const [paddle, setPaddle] = useState<Paddle | undefined>();
+
+  useEffect(() => {
+    // Initialize Paddle.js
+    initializePaddle({
+      environment: 'sandbox', // This MUST be 'sandbox' for testing.
+      token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!, // Your client-side token
+      seller: parseInt(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID!, 10), // Your Seller ID
+    }).then((paddleInstance: Paddle | undefined) => {
+      if (paddleInstance) {
+        setPaddle(paddleInstance);
+      }
+    });
+  }, []);
 
   const lessonTypes = [
     // Individual
@@ -165,12 +181,12 @@ export default function BookLessonPage() {
       setSelectedDateState(date);
     }
   };
-  
+
   const displayTimeSlots = useMemo(() => {
     if (!selectedDate || !selectedLessonDetails || selectedLessonDetails.type === 'package') return [];
     const slots: { display: string; value: string; isDisabled: boolean }[] = [];
-    const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number; 
-    const slotDate = startOfDay(selectedDate); 
+    const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number;
+    const slotDate = startOfDay(selectedDate);
 
     for (const startTimeString of baseStartTimes) {
       const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
@@ -179,7 +195,7 @@ export default function BookLessonPage() {
           continue;
       }
       const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
-      
+
       let isSlotBooked = false;
       for (const bookedRange of dailyBookedRanges) {
         if (potentialStartTime < bookedRange.endTimeDate && potentialEndTime > bookedRange.startTimeDate) {
@@ -211,15 +227,20 @@ export default function BookLessonPage() {
       toast({ title: "Selection Incomplete", description: "Please select a date and time for your lesson.", variant: "destructive" });
       return;
     }
+    
+    if (selectedLessonDetails.price > 0 && !paddle) {
+      toast({ title: "Payment System Loading", description: "The payment system is initializing. Please wait a moment and try again.", variant: "destructive" });
+      return;
+    }
 
     setIsProcessing(true);
 
     try {
       const isFreeTrial = selectedLessonDetails.price === 0;
 
-      const unitDuration = typeof selectedLessonDetails.unitDuration === 'number' 
-          ? selectedLessonDetails.unitDuration 
-          : typeof selectedLessonDetails.duration === 'number' 
+      const unitDuration = typeof selectedLessonDetails.unitDuration === 'number'
+          ? selectedLessonDetails.unitDuration
+          : typeof selectedLessonDetails.duration === 'number'
           ? selectedLessonDetails.duration
           : 60; // Default to 60 if somehow not available
 
@@ -238,7 +259,7 @@ export default function BookLessonPage() {
         ...(learningGoals.trim() && { learningGoals: learningGoals.trim() }),
         createdAt: serverTimestamp(),
       };
-      
+
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
 
       if (isFreeTrial) {
@@ -252,15 +273,22 @@ export default function BookLessonPage() {
         if (!selectedLessonDetails.priceId) {
             throw new Error("This product's Price ID is not configured. Please contact support.");
         }
-        const checkoutUrl = await createPaddleCheckout(
+        // Step 1: Call server action to create a transaction, get back the ID
+        const transactionId = await createPaddleCheckout(
           selectedLessonDetails.priceId,
           bookingData.userEmail,
           docRef.id
         );
-        if (checkoutUrl) {
-          router.push(checkoutUrl);
+
+        if (transactionId && paddle) {
+           // Step 2: Use Paddle.js to open the checkout overlay
+           paddle.Checkout.open({
+              transactionId: transactionId,
+           });
+           // We don't redirect. The overlay handles the rest.
+           // The webhook will update the booking status upon successful payment.
         } else {
-          throw new Error("Could not create a payment link.");
+          throw new Error("Could not create a payment transaction.");
         }
       }
     } catch (error: any) {
@@ -269,10 +297,11 @@ export default function BookLessonPage() {
       if (error.code === 'permission-denied') {
         description = "Booking failed due to a permissions issue. Please ensure you are logged in.";
       } else {
-        description = error.message; 
+        description = error.message;
       }
       toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
-      setIsProcessing(false);
+    } finally {
+        setIsProcessing(false);
     }
   };
 
@@ -280,6 +309,12 @@ export default function BookLessonPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
+      <Script
+        src="https://cdn.paddle.com/paddle/v2/paddle.js"
+        onLoad={() => {
+          console.log("Paddle.js script loaded.");
+        }}
+      />
       <header className="bg-card border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
@@ -416,7 +451,7 @@ export default function BookLessonPage() {
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {displayTimeSlots.map((slot) => (
                             <Button
-                            key={slot.value + slot.display} 
+                            key={slot.value + slot.display}
                             variant={selectedTime === slot.value ? "default" : "outline"}
                             onClick={() => setSelectedTime(slot.value)}
                             disabled={slot.isDisabled}
@@ -433,7 +468,7 @@ export default function BookLessonPage() {
                 )}
               </>
             )}
-            
+
             {isPackageSelected && (
                  <Card className="shadow-lg">
                     <CardHeader>
@@ -583,7 +618,7 @@ export default function BookLessonPage() {
                   <Button
                     className="w-full"
                     onClick={handleBooking}
-                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !learningGoals) } 
+                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !learningGoals) }
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
                     {isProcessing ? "Processing..." : selectedLessonDetails?.price === 0 ? "Confirm Free Trial" : `Proceed to Payment - $${selectedLessonDetails?.price || 0}`}

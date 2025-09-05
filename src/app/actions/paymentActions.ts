@@ -1,6 +1,8 @@
+
 'use server';
 
-import { Paddle } from '@paddle/paddle-node-sdk';
+import { Paddle, initializePaddle } from '@paddle/paddle-node-sdk';
+import type { Environment } from '@paddle/paddle-node-sdk/dist/types/environment';
 
 // ====================================================================================
 // --- TROUBLESHOOTING PADDLE CONFIGURATION ERRORS ---
@@ -12,7 +14,7 @@ import { Paddle } from '@paddle/paddle-node-sdk';
 //
 // If you are seeing a "transaction_checkout_not_enabled" error or a "Page Not Found" on the checkout page:
 // 1.  This is a PADDLE DASHBOARD configuration issue, NOT a code issue.
-// 2.  Go to your Paddle Dashboard -> Catalog -> Products.
+// 2.  Go to your Paddle Sandbox Dashboard -> Catalog -> Products.
 // 3.  Click on the product you are trying to sell.
 // 4.  In the "Prices" section, click the three dots (...) next to the price you are using and "Edit price".
 // 5.  Ensure the "Allow this price to be used with Paddle Checkout" checkbox is CHECKED.
@@ -20,7 +22,7 @@ import { Paddle } from '@paddle/paddle-node-sdk';
 // If you are seeing a "Default Payment Link has not yet been defined" error:
 // 1.  This is a PADDLE DASHBOARD configuration issue, NOT a code issue.
 // 2.  Go to your Paddle Sandbox Dashboard -> Checkout -> Checkout settings.
-// 3.  Under "Default payment link", you must either create a new one or set an existing one as default by entering a valid URL (e.g., https://your-firebase-app.web.app).
+// 3.  Under "Default payment link", you must either create a new one or set an existing one by entering a valid URL (e.g., https://your-firebase-app.web.app).
 // 4.  This is required by Paddle for API-created checkouts to have a fallback domain.
 // ====================================================================================
 
@@ -34,18 +36,21 @@ if (!process.env.PADDLE_API_KEY || process.env.PADDLE_API_KEY.includes("YOUR_PAD
 // Trim whitespace and remove potential quotes from the API key to prevent formatting errors.
 const paddleApiKey = (process.env.PADDLE_API_KEY || '').trim().replace(/['"]+/g, '');
 // Explicitly set the environment to 'sandbox' to match the sandbox API key.
-const paddle = new Paddle(paddleApiKey, { 
-    environment: 'sandbox'
+const paddle = initializePaddle({
+    apiKey: paddleApiKey,
+    environment: 'sandbox' as Environment
 });
 
 
 /**
- * Creates a secure checkout link using the Paddle API.
+ * Creates a secure checkout transaction using the Paddle API.
+ * This action ONLY creates the transaction and returns its ID.
+ * The client-side Paddle.js SDK will use this ID to open the checkout overlay.
  *
  * @param priceId - The specific Paddle Price ID for the item being purchased.
  * @param userEmail - The email of the customer.
  * @param bookingId - The unique ID of the booking document in Firestore.
- * @returns The URL for the Paddle checkout page.
+ * @returns The ID of the created Paddle transaction.
  */
 export async function createPaddleCheckout(
   priceId: string,
@@ -54,8 +59,8 @@ export async function createPaddleCheckout(
 ): Promise<string | undefined> {
 
   // Step 1: Validate the provided priceId to ensure it's not missing or a placeholder.
-  if (!priceId || priceId.includes("YOUR_PADDLE") || priceId.trim() === "" || priceId.includes("pri_01j4")) {
-    const errorMessage = `Error: An invalid or placeholder Paddle Price ID was provided: '${priceId}'. Check the product configuration in your .env file or Paddle dashboard.`;
+  if (!priceId || priceId.includes("YOUR_PADDLE") || priceId.trim() === "" || priceId.includes("price_free_trial")) {
+    const errorMessage = `Error: An invalid or placeholder Paddle Price ID was provided: '${priceId}'. Check the product configuration in your src/config/paddle.ts file or Paddle dashboard.`;
     console.error(errorMessage);
     throw new Error(`The product ID is not configured correctly. Please contact support.`);
   }
@@ -78,10 +83,10 @@ export async function createPaddleCheckout(
       },
     });
 
-    // Step 3: **MANUALLY CONSTRUCT** the sandbox checkout URL to ensure stability.
-    // This bypasses any domain settings in the Paddle dashboard and forces the correct generic checkout.
+    // Step 3: Return ONLY the transaction ID.
+    // The client will use this ID to open the checkout overlay.
     if (transaction.id) {
-        return `https://sandbox-checkout.paddle.com/checkout/transactions/${transaction.id}`;
+        return transaction.id;
     } else {
         throw new Error("Paddle transaction was created but did not return an ID.");
     }
