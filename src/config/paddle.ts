@@ -38,14 +38,5 @@ export const paddlePriceIds = {
 };
 
 // A mapping from the URL query parameter or internal identifier to the Price ID
-export const lessonTypeToPriceIdMap: { [key: string]: string | undefined } = {
-  'free-trial': paddlePriceIds.freeTrial,
-  'quick-practice': paddlePriceIds.quickPractice,
-  'comprehensive-lesson': paddlePriceIds.comprehensiveLesson,
-  'quick-group-conversation': paddlePriceIds.quickGroupConversation,
-  'immersive-conversation-practice': paddlePriceIds.immersiveConversationPractice,
-  'quick-practice-bundle': paddlePriceIds.quickPracticeBundle,
-  'learning-intensive': paddlePriceIds.learningIntensive,
-  'starter-bundle': paddlePriceIds.starterBundle,
-  'foundation-pack': paddlePriceIds.foundationPack,
-};
+// This is intentionally left empty. The booking page will now use the paddlePriceIds object directly.
+export const lessonTypeToPriceIdMap: { [key: string]: string | undefined } = {};

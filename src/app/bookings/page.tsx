@@ -23,7 +23,7 @@ import { SiteLogo } from "@/components/layout/SiteLogo";
 import { createPaddleCheckout } from "@/app/actions/paymentActions";
 import { paddlePriceIds } from "@/config/paddle";
 import Script from "next/script";
-import { Paddle, initializePaddle } from '@paddle/paddle-js';
+import type { Paddle } from '@paddle/paddle-js';
 
 interface BookedSlotInfo {
   startTimeValue: string;
@@ -79,6 +79,12 @@ const generateBaseStartTimes = (): string[] => {
 
 const baseStartTimes = generateBaseStartTimes();
 
+declare global {
+    interface Window {
+        Paddle: any;
+    }
+}
+
 export default function BookLessonPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -89,16 +95,27 @@ export default function BookLessonPage() {
   const [paddle, setPaddle] = useState<Paddle | undefined>();
 
   useEffect(() => {
-    // Initialize Paddle.js
-    initializePaddle({
-      environment: 'sandbox', // This MUST be 'sandbox' for testing.
-      token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!, // Your client-side token
-      seller: parseInt(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID!, 10), // Your Seller ID
-    }).then((paddleInstance: Paddle | undefined) => {
-      if (paddleInstance) {
-        setPaddle(paddleInstance);
-      }
-    });
+    if (window.Paddle) {
+        window.Paddle.Setup({ 
+            seller: parseInt(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID!),
+            eventCallback: function(data: any) {
+                // The data object contains information about the event
+                // E.g. data.event, data.eventData
+                if (data.event === "Checkout.Complete") {
+                    // The checkout has been completed, you can close the dialog if you need to.
+                    // The webhook will handle the backend confirmation.
+                    console.log('Payment successful:', data.eventData);
+                } else if (data.event === "Checkout.Close") {
+                    // The user closed the checkout without completing the payment
+                    console.log('Checkout closed.');
+                    setIsProcessing(false); // Re-enable the button if the user closes the modal
+                }
+            }
+        });
+        setPaddle(window.Paddle);
+    } else {
+        console.error("Paddle.js is not loaded.");
+    }
   }, []);
 
   const lessonTypes = [
@@ -273,20 +290,17 @@ export default function BookLessonPage() {
         if (!selectedLessonDetails.priceId) {
             throw new Error("This product's Price ID is not configured. Please contact support.");
         }
-        // Step 1: Call server action to create a transaction, get back the ID
-        const transactionId = await createPaddleCheckout(
-          selectedLessonDetails.priceId,
-          bookingData.userEmail,
-          docRef.id
+        
+        const checkoutUrl = await createPaddleCheckout(
+            selectedLessonDetails.priceId,
+            bookingData.userEmail,
+            docRef.id
         );
 
-        if (transactionId && paddle) {
-           // Step 2: Use Paddle.js to open the checkout overlay
+        if (checkoutUrl && paddle) {
            paddle.Checkout.open({
-              transactionId: transactionId,
+              override: checkoutUrl,
            });
-           // We don't redirect. The overlay handles the rest.
-           // The webhook will update the booking status upon successful payment.
         } else {
           throw new Error("Could not create a payment transaction.");
         }
@@ -300,8 +314,7 @@ export default function BookLessonPage() {
         description = error.message;
       }
       toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
-    } finally {
-        setIsProcessing(false);
+      setIsProcessing(false);
     }
   };
 
@@ -310,9 +323,29 @@ export default function BookLessonPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
       <Script
-        src="https://cdn.paddle.com/paddle/v2/paddle.js"
+        src="https://cdn.paddle.com/paddle/paddle.js"
         onLoad={() => {
           console.log("Paddle.js script loaded.");
+           if (window.Paddle) {
+                window.Paddle.Setup({ 
+                    seller: parseInt(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID!),
+                    eventCallback: function(data: any) {
+                        if (data.event === "Checkout.Complete") {
+                            console.log('Payment successful:', data.eventData);
+                             const queryParams = new URLSearchParams({
+                                lessonType: selectedLessonDetails?.label || "Your Lesson",
+                                price: (selectedLessonDetails?.price || 0).toString(),
+                                ...(selectedDate && { date: format(selectedDate, 'yyyy-MM-dd') }),
+                            });
+                             router.push(`/bookings/success?${queryParams.toString()}`);
+                        } else if (data.event === "Checkout.Close") {
+                            console.log('Checkout closed.');
+                            setIsProcessing(false);
+                        }
+                    }
+                });
+                setPaddle(window.Paddle);
+            }
         }}
       />
       <header className="bg-card border-b sticky top-0 z-40">
