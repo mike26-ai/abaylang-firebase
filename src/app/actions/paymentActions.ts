@@ -34,7 +34,15 @@ if (!process.env.PADDLE_API_KEY || process.env.PADDLE_API_KEY.includes("YOUR_PAD
 // Trim whitespace and remove potential quotes from the API key to prevent formatting errors.
 const paddleApiKey = (process.env.PADDLE_API_KEY || '').trim().replace(/['"]+/g, '');
 // Explicitly set the environment to 'sandbox' to match the sandbox API key.
-const paddle = new Paddle(paddleApiKey, { environment: 'sandbox' });
+const paddle = new Paddle(paddleApiKey, { 
+    environment: 'sandbox',
+    options: {
+        checkout: {
+            // Use Paddle's generic checkout domain to avoid custom domain verification issues in sandbox.
+            uri: 'https://checkout.paddle.com',
+        },
+    },
+});
 
 
 /**
