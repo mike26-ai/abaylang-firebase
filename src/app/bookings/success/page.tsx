@@ -22,6 +22,7 @@ function BookingSuccessContent() {
   const price = searchParams.get('price'); // This will be null for free trials now
 
   if (!lessonType) {
+    // If no lessonType, we can't show details. Redirect to booking page.
     if (typeof window !== 'undefined') {
         router.push('/bookings');
     }
@@ -32,7 +33,7 @@ function BookingSuccessContent() {
     );
   }
 
-  const isFreeTrial = price === null || parseFloat(price) === 0;
+  const isFreeTrial = !price || parseFloat(price) === 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background flex items-center justify-center p-4">
@@ -42,16 +43,16 @@ function BookingSuccessContent() {
             <CheckCircle className="w-8 h-8" />
           </div>
           <CardTitle className="text-3xl font-bold text-foreground">
-            {isFreeTrial ? "Your Free Trial is Confirmed!" : "Your Slot is Held!"}
+            {isFreeTrial ? "Your Free Trial is Confirmed!" : "Booking Acknowledged!"}
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
-             {isFreeTrial ? "We're excited to see you. Check your dashboard for details." : "Please complete your payment to confirm your booking."}
+             {isFreeTrial ? "We're excited to see you. Check your dashboard for details." : "You are now being redirected to complete your payment."}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-8 space-y-8">
           
           <div className="space-y-4">
-            <h3 className="font-semibold text-xl text-foreground text-center">Booking Details</h3>
+            <h3 className="font-semibold text-xl text-foreground text-center">Booking Summary</h3>
             <div className="border rounded-lg p-4 grid sm:grid-cols-2 gap-4 bg-background">
               <div className="flex items-center gap-3">
                 <Tag className="w-5 h-5 text-primary" />
@@ -105,7 +106,7 @@ function BookingSuccessContent() {
                 <Info className="h-4 w-4 text-primary" />
                 <AlertTitle className="font-bold text-primary">Next Steps</AlertTitle>
                 <AlertDescription>
-                    To finalize your booking, please proceed to the payment page. Your booking will be confirmed within 12 business hours after payment.
+                   If you are not automatically redirected, please use the button on your dashboard to complete the payment. Your lesson is confirmed once payment is complete.
                 </AlertDescription>
             </Alert>
            )}

@@ -10,7 +10,7 @@ import { Paddle } from '@paddle/paddle-node-sdk';
 // 2.  You MUST use a SANDBOX key with SANDBOX Price IDs. A LIVE key will not work with SANDBOX products (and vice-versa).
 // Find this in your Paddle Dashboard under: Developer Tools > Authentication > API keys
 //
-// If you are seeing a "transaction_checkout_not_enabled" error:
+// If you are seeing a "transaction_checkout_not_enabled" error or a "Page Not Found" on the checkout page:
 // 1.  This is a PADDLE DASHBOARD configuration issue, NOT a code issue.
 // 2.  Go to your Paddle Dashboard -> Catalog -> Products.
 // 3.  Click on the product you are trying to sell.
@@ -20,7 +20,7 @@ import { Paddle } from '@paddle/paddle-node-sdk';
 // If you are seeing a "Default Payment Link has not yet been defined" error:
 // 1.  This is a PADDLE DASHBOARD configuration issue, NOT a code issue.
 // 2.  Go to your Paddle Sandbox Dashboard -> Checkout -> Checkout settings.
-// 3.  Under "Default payment link", you must either create a new one or set an existing one as default.
+// 3.  Under "Default payment link", you must either create a new one or set an existing one as default by entering a valid URL (e.g., https://your-firebase-app.web.app).
 // 4.  This is required by Paddle for API-created checkouts to have a fallback domain.
 // ====================================================================================
 
@@ -54,8 +54,9 @@ export async function createPaddleCheckout(
 ): Promise<string | undefined> {
 
   // Step 1: Validate the provided priceId to ensure it's not missing or a placeholder.
-  if (!priceId || priceId.includes("YOUR_PADDLE") || priceId.trim() === "") {
-    console.error(`Error: An invalid Paddle Price ID was provided: '${priceId}'. Check the product configuration.`);
+  if (!priceId || priceId.includes("YOUR_PADDLE") || priceId.trim() === "" || priceId.includes("pri_01j4")) {
+    const errorMessage = `Error: An invalid or placeholder Paddle Price ID was provided: '${priceId}'. Check the product configuration in your .env file or Paddle dashboard.`;
+    console.error(errorMessage);
     throw new Error(`The product ID is not configured correctly. Please contact support.`);
   }
 

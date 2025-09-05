@@ -21,7 +21,7 @@ import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import { createPaddleCheckout } from "@/app/actions/paymentActions";
-import { lessonTypeToPriceIdMap, paddlePriceIds } from "@/config/paddle";
+import { paddlePriceIds } from "@/config/paddle";
 
 
 interface BookedSlotInfo {
@@ -242,15 +242,13 @@ export default function BookLessonPage() {
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
 
       if (isFreeTrial) {
-        // For free trials, go to a simple success page directly.
         const queryParams = new URLSearchParams({
           lessonType: bookingData.lessonType,
-          date: bookingData.date,
-          time: bookingData.time,
+          ...(bookingData.date !== 'N/A_PACKAGE' && { date: bookingData.date }),
+          ...(bookingData.time !== 'N/A_PACKAGE' && { time: bookingData.time }),
         });
         router.push(`/bookings/success?${queryParams.toString()}`);
       } else {
-        // For paid lessons, proceed to payment.
         if (!selectedLessonDetails.priceId) {
             throw new Error("This product's Price ID is not configured. Please contact support.");
         }
@@ -262,7 +260,6 @@ export default function BookLessonPage() {
         if (checkoutUrl) {
           router.push(checkoutUrl);
         } else {
-          // This case should ideally not be reached if createPaddleCheckout throws an error
           throw new Error("Could not create a payment link.");
         }
       }
@@ -272,12 +269,11 @@ export default function BookLessonPage() {
       if (error.code === 'permission-denied') {
         description = "Booking failed due to a permissions issue. Please ensure you are logged in.";
       } else {
-        description = error.message; // Use the specific error message from the server action
+        description = error.message; 
       }
       toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
       setIsProcessing(false);
     }
-    // No finally block to set isProcessing to false, because we are redirecting away.
   };
 
   const isPackageSelected = selectedLessonDetails?.type === 'package';
@@ -351,7 +347,7 @@ export default function BookLessonPage() {
                                         </div>
                                     </div>
                                     <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
-                                        {lesson.features.slice(0, 2).map((feature, index) => (
+                                        {lesson.features.map((feature, index) => (
                                         <li key={index} className="flex items-center gap-2">
                                             <Check className="w-4 h-4 text-primary flex-shrink-0" />
                                             <span className="text-muted-foreground">{feature}</span>
