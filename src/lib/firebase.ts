@@ -39,8 +39,7 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || firebaseConfig.apiKey
     ********************************************************************************
     Firebase environment variables are not set or are using placeholder values.
     The application will run, but Firebase features will not work correctly.
-    To enable Firebase, please create a .env.local file (if it does not exist)
-    and add your project's credentials.
+    To enable Firebase, please add your project's credentials to your .env file.
     ********************************************************************************
   `);
 }
