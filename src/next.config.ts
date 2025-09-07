@@ -30,12 +30,28 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // This experimental block is necessary for Firebase Studio to work correctly.
   experimental: {
     allowedDevOrigins: [
       'https://*.cluster-ombtxv25tbd6yrjpp3lukp6zhc.cloudworkstations.dev',
     ],
   },
+  // Adding cdn.paddle.com to script-src Content Security Policy
+  // This is a good practice when using external scripts.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: `script-src 'self' 'unsafe-eval' 'unsafe-inline' cdn.paddle.com;`,
+          },
+        ],
+      },
+    ]
+  },
 };
 
 export default nextConfig;
+
+    

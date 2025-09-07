@@ -22,8 +22,6 @@ import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import { createPaddleCheckout } from "@/app/actions/paymentActions";
 import { paddlePriceIds } from "@/config/paddle";
-import Script from "next/script";
-import type { Paddle } from '@paddle/paddle-js';
 
 interface BookedSlotInfo {
   startTimeValue: string;
@@ -79,20 +77,12 @@ const generateBaseStartTimes = (): string[] => {
 
 const baseStartTimes = generateBaseStartTimes();
 
-declare global {
-    interface Window {
-        Paddle: any;
-    }
-}
-
 export default function BookLessonPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialType = searchParams.get('type');
-  
-  const [paddle, setPaddle] = useState<Paddle | undefined>();
 
   const lessonTypes = [
     // Individual
@@ -220,11 +210,6 @@ export default function BookLessonPage() {
       toast({ title: "Selection Incomplete", description: "Please select a date and time for your lesson.", variant: "destructive" });
       return;
     }
-    
-    if (selectedLessonDetails.price > 0 && !paddle) {
-      toast({ title: "Payment System Loading", description: "The payment system is initializing. Please wait a moment and try again.", variant: "destructive" });
-      return;
-    }
 
     setIsProcessing(true);
 
@@ -273,10 +258,9 @@ export default function BookLessonPage() {
             docRef.id
         );
 
-        if (checkoutUrl && paddle) {
-           paddle.Checkout.open({
-              override: checkoutUrl,
-           });
+        if (checkoutUrl) {
+           // Redirect the user to the checkout URL
+           window.location.href = checkoutUrl;
         } else {
           throw new Error("Could not create a payment transaction.");
         }
@@ -298,37 +282,6 @@ export default function BookLessonPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
-      <Script
-        src="https://cdn.paddle.com/paddle/paddle.js"
-        onLoad={() => {
-          console.log("Paddle.js script loaded.");
-           if (window.Paddle && process.env.NEXT_PUBLIC_PADDLE_SELLER_ID) {
-                window.Paddle.Setup({ 
-                    seller: parseInt(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID),
-                    eventCallback: function(data: any) {
-                        if (data.event === "Checkout.Complete") {
-                            console.log('Payment successful:', data.eventData);
-                             const queryParams = new URLSearchParams({
-                                lessonType: selectedLessonDetails?.label || "Your Lesson",
-                                price: (selectedLessonDetails?.price || 0).toString(),
-                                ...(selectedDate && { date: format(selectedDate, 'yyyy-MM-dd') }),
-                            });
-                             router.push(`/bookings/success?${queryParams.toString()}`);
-                        } else if (data.event === "Checkout.Close") {
-                            console.log('Checkout closed.');
-                            setIsProcessing(false);
-                        }
-                    }
-                });
-                setPaddle(window.Paddle);
-            } else {
-                console.error("Paddle.js loaded, but Paddle or Seller ID is not available.");
-            }
-        }}
-        onError={() => {
-            console.error("Failed to load Paddle.js script.");
-        }}
-      />
       <header className="bg-card border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
@@ -650,3 +603,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
