@@ -1,4 +1,3 @@
-
 // File: src/config/paddle.ts
 
 /**
@@ -14,7 +13,8 @@
  *     PRICE IDs from your Paddle SANDBOX Dashboard.
  * 2.  Go to your Paddle Sandbox Dashboard -> Catalog -> Products. Click a product,
  *     and in the "Prices" section, copy the ID that starts with "pri_".
- * 3.  These IDs are safe to be public and are loaded via environment variables.
+ * 3.  These IDs are safe to be public. It is recommended to add them to your
+ *     .env file for easy management (e.g., NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_PRICE_ID=pri_...).
  * =================================================================================
  */
 
@@ -36,7 +36,3 @@ export const paddlePriceIds = {
   starterBundle: process.env.NEXT_PUBLIC_PADDLE_STARTER_BUNDLE_PRICE_ID || "pri_YOUR_STARTER_BUNDLE_PRICE_ID",
   foundationPack: process.env.NEXT_PUBLIC_PADDLE_FOUNDATION_PACK_PRICE_ID || "pri_YOUR_FOUNDATION_PACK_PRICE_ID",
 };
-
-// A mapping from the URL query parameter or internal identifier to the Price ID
-// This is intentionally left empty. The booking page will now use the paddlePriceIds object directly.
-export const lessonTypeToPriceIdMap: { [key: string]: string | undefined } = {};
