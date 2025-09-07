@@ -2,66 +2,61 @@
 
 import { Paddle } from '@paddle/paddle-node-sdk';
 
-// NOTE FOR DEVELOPER:
-// If you are seeing a "You aren't permitted to perform this request" error,
-// it means you are likely using a "Read-Only" API key OR you are mixing environments.
-// 1. You MUST generate a key with "Full Access" permissions.
-// 2. You MUST use a SANDBOX key with SANDBOX Price IDs. A LIVE key will not work with SANDBOX products.
-// Find this in your Paddle Dashboard under: Developer Tools > Authentication > New API Key
+// ====================================================================================
+// --- TROUBLESHOOTING PADDLE CONFIGURATION ERRORS ---
+// ====================================================================================
+// If you are seeing a "You aren't permitted to perform this request" error:
+// 1.  You MUST generate an API key with "Full Access" permissions. A "Read-Only" key will fail.
+// 2.  You MUST use a SANDBOX key with SANDBOX Price IDs. A LIVE key will not work with SANDBOX products (and vice-versa).
+// Find this in your Paddle Dashboard under: Developer Tools > Authentication > API keys
+//
+// If you are seeing a "transaction_checkout_not_enabled" error or a "Page Not Found" on the checkout page:
+// 1.  This is a PADDLE DASHBOARD configuration issue, NOT a code issue.
+// 2.  Go to your Paddle Sandbox Dashboard -> Catalog -> Products.
+// 3.  Click on the product you are trying to sell.
+// 4.  In the "Prices" section, click the three dots (...) next to the price you are using and "Edit price".
+// 5.  Ensure the "Allow this price to be used with Paddle Checkout" checkbox is CHECKED.
+//
+// If you are seeing a "Default Payment Link has not yet been defined" error:
+// 1.  This is a PADDLE DASHBOARD configuration issue, NOT a code issue.
+// 2.  Go to your Paddle Sandbox Dashboard -> Checkout -> Checkout settings.
+// 3.  Under "Default payment link", you must either create a new one or set an existing one by entering a valid URL (e.g., https://your-firebase-app.web.app).
+// 4.  This is required by Paddle for API-created checkouts to have a fallback domain.
+// ====================================================================================
+
 
 // Initialize Paddle. The SDK will throw an error if the key is missing.
 // This check improves error messaging if the environment variable is not set.
 if (!process.env.PADDLE_API_KEY || process.env.PADDLE_API_KEY.includes("YOUR_PADDLE_API_KEY")) {
     console.error("CRITICAL: PADDLE_API_KEY is not set in the environment variables. The application cannot process payments.");
-    // We throw a generic error to the client for security, but log the specific issue on the server.
 }
 
 // Trim whitespace and remove potential quotes from the API key to prevent formatting errors.
 const paddleApiKey = (process.env.PADDLE_API_KEY || '').trim().replace(/['"]+/g, '');
-const paddle = new Paddle(paddleApiKey);
+const paddle = new Paddle(paddleApiKey, {
+  environment: 'sandbox' // Explicitly set to sandbox
+});
 
 
 /**
  * Creates a secure checkout link using the Paddle API.
  *
- * @param lessonType - The type of lesson being booked (e.g., 'quick-practice', 'comprehensive-lesson').
+ * @param priceId - The specific Paddle Price ID for the item being purchased.
  * @param userEmail - The email of the customer.
  * @param bookingId - The unique ID of the booking document in Firestore.
  * @returns The URL for the Paddle checkout page.
  */
 export async function createPaddleCheckout(
-  lessonType: string,
+  priceId: string,
   userEmail: string,
   bookingId: string
 ): Promise<string | undefined> {
 
-  // Step 1: Determine which Paddle Price ID to use based on the lesson type.
-  // We fetch these IDs from environment variables for security and flexibility.
-  let priceId: string | undefined;
-
-  if (lessonType === 'Quick Practice') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_PRICE_ID;
-  } else if (lessonType === 'Comprehensive Lesson') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_COMPREHENSIVE_LESSON_PRICE_ID;
-  } else if (lessonType === 'Quick Group Conversation') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_QUICK_GROUP_CONVERSATION_PRICE_ID;
-  } else if (lessonType === 'Immersive Conversation Practice') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_IMMERSIVE_CONVERSATION_PRICE_ID;
-  } else if (lessonType === 'Quick Practice Bundle') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_BUNDLE_PRICE_ID;
-  } else if (lessonType === 'Learning Intensive') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_LEARNING_INTENSIVE_PRICE_ID;
-  } else if (lessonType === 'Starter Bundle') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_STARTER_BUNDLE_PRICE_ID;
-  } else if (lessonType === 'Foundation Pack') {
-    priceId = process.env.NEXT_PUBLIC_PADDLE_FOUNDATION_PACK_PRICE_ID;
-  }
-  // NOTE: This can be expanded with 'else if' blocks for every other product type.
-
-  // If we couldn't find a matching price ID, we cannot proceed.
-  if (!priceId || priceId.includes("YOUR_PADDLE")) {
-    console.error(`Error: No valid Paddle Price ID found for lesson type: ${lessonType}. Check your .env.local file.`);
-    throw new Error(`The product ID for '${lessonType}' is not configured. Please contact support.`);
+  // Step 1: Validate the provided priceId to ensure it's not missing or a placeholder.
+  if (!priceId || priceId.includes("YOUR_PADDLE") || priceId.trim() === "" || priceId.includes("price_free_trial")) {
+    const errorMessage = `Error: An invalid or placeholder Paddle Price ID was provided: '${priceId}'. Check the product configuration in your src/config/paddle.ts file or Paddle dashboard.`;
+    console.error(errorMessage);
+    throw new Error(`The product ID is not configured correctly. Please contact support.`);
   }
 
   try {
@@ -69,7 +64,7 @@ export async function createPaddleCheckout(
     const transaction = await paddle.transactions.create({
       items: [
         {
-          priceId: priceId, // Use the dynamically selected Price ID
+          priceId: priceId, // Use the directly provided Price ID
           quantity: 1,
         },
       ],
@@ -84,7 +79,13 @@ export async function createPaddleCheckout(
 
     // Step 3: Return the secure checkout URL generated by Paddle.
     // The optional chaining (?.) is a safe way to access nested properties.
-    return transaction.checkout?.url;
+    const checkoutUrl = transaction.checkout?.url;
+
+    if (!checkoutUrl) {
+      throw new Error("Paddle transaction was created but did not return a checkout URL.");
+    }
+
+    return checkoutUrl;
 
   } catch (error: any) {
     // --- IMPROVED ERROR LOGGING ---
