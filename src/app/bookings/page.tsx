@@ -94,30 +94,6 @@ export default function BookLessonPage() {
   
   const [paddle, setPaddle] = useState<Paddle | undefined>();
 
-  useEffect(() => {
-    if (window.Paddle) {
-        window.Paddle.Setup({ 
-            seller: parseInt(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID!),
-            eventCallback: function(data: any) {
-                // The data object contains information about the event
-                // E.g. data.event, data.eventData
-                if (data.event === "Checkout.Complete") {
-                    // The checkout has been completed, you can close the dialog if you need to.
-                    // The webhook will handle the backend confirmation.
-                    console.log('Payment successful:', data.eventData);
-                } else if (data.event === "Checkout.Close") {
-                    // The user closed the checkout without completing the payment
-                    console.log('Checkout closed.');
-                    setIsProcessing(false); // Re-enable the button if the user closes the modal
-                }
-            }
-        });
-        setPaddle(window.Paddle);
-    } else {
-        console.error("Paddle.js is not loaded.");
-    }
-  }, []);
-
   const lessonTypes = [
     // Individual
     {
@@ -326,9 +302,9 @@ export default function BookLessonPage() {
         src="https://cdn.paddle.com/paddle/paddle.js"
         onLoad={() => {
           console.log("Paddle.js script loaded.");
-           if (window.Paddle) {
+           if (window.Paddle && process.env.NEXT_PUBLIC_PADDLE_SELLER_ID) {
                 window.Paddle.Setup({ 
-                    seller: parseInt(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID!),
+                    seller: parseInt(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID),
                     eventCallback: function(data: any) {
                         if (data.event === "Checkout.Complete") {
                             console.log('Payment successful:', data.eventData);
@@ -345,7 +321,12 @@ export default function BookLessonPage() {
                     }
                 });
                 setPaddle(window.Paddle);
+            } else {
+                console.error("Paddle.js loaded, but Paddle or Seller ID is not available.");
             }
+        }}
+        onError={() => {
+            console.error("Failed to load Paddle.js script.");
         }}
       />
       <header className="bg-card border-b sticky top-0 z-40">
