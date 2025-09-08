@@ -1,41 +1,55 @@
+// File Path: src/lib/firebase.ts
 
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// Note: getStorage is no longer imported as Firebase Storage is decoupled.
 
-// Your web app's Firebase configuration
-// Ensure these environment variables are set in your .env.local file or deployment environment
-const firebaseConfig = {
+// ====================================================================================
+// --- TROUBLESHOOTING GUIDE: "auth/unauthorized-domain" ERROR ---
+// ====================================================================================
+// This error means the domain you are using to run this app is not on Firebase's
+// list of approved domains for authentication.
+//
+// TO FIX THIS:
+// 1. Go to your Firebase Console: https://console.firebase.google.com/
+// 2. Select your project.
+// 3. Go to "Authentication" in the left sidebar.
+// 4. Click on the "Settings" tab.
+// 5. Under "Authorized domains", click the "Add domain" button.
+// 6. Enter the domain from your browser's address bar. For Firebase Studio, this
+//    will be a long URL ending in ".cloudworkstations.dev".
+//    Example: my-project-12345.cluster-abcdef.cloudworkstations.dev
+// 7. Click "Add". The issue should now be resolved.
+// ====================================================================================
+
+
+const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET, // This can be removed or left, but is unused.
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  // measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID // Optional: if using Firebase Analytics
+  // Measurement ID is optional and only needed for Google Analytics.
+  ...(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID && {
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  }),
 };
 
-// Basic check if critical config values are present
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("YOUR_API_KEY")) {
-  console.error(
-    "Firebase API Key is missing or using a placeholder. " +
-    "Please ensure NEXT_PUBLIC_FIREBASE_API_KEY is set correctly in your .env or .env.local file."
-  );
-}
-if (!firebaseConfig.projectId || firebaseConfig.projectId.includes("YOUR_PROJECT_ID")) {
-  console.error(
-    "Firebase Project ID is missing or using a placeholder. " +
-    "Please ensure NEXT_PUBLIC_FIREBASE_PROJECT_ID is set correctly in your .env or .env.local file."
-  );
+// Gracefully handle missing configuration for development
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId || firebaseConfig.apiKey.includes("YOUR_API_KEY")) {
+  console.warn(`
+    ********************************************************************************
+    Firebase environment variables are not set or are using placeholder values.
+    The application will run, but Firebase features will not work correctly.
+    To enable Firebase, please add your project's credentials to your .env file.
+    ********************************************************************************
+  `);
 }
 
 
-// Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
-// The storage export is removed as we are using an external service.
-// const storage = getStorage(app); 
 
 export { app, auth, db };
