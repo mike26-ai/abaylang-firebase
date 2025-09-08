@@ -13,15 +13,23 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
-import { createPaddleCheckout } from "@/app/actions/paymentActions";
 import { paddlePriceIds } from "@/config/paddle";
+import Script from "next/script"
+import { confirmBookingAfterPayment } from "@/app/actions/bookingActions"
+
+
+declare global {
+  interface Window {
+    Paddle: any;
+  }
+}
 
 interface BookedSlotInfo {
   startTimeValue: string;
@@ -84,6 +92,8 @@ export default function BookLessonPage() {
   const searchParams = useSearchParams();
   const initialType = searchParams.get('type');
 
+  const [isPaddleLoaded, setIsPaddleLoaded] = useState(false);
+
   const lessonTypes = [
     // Individual
     {
@@ -137,6 +147,25 @@ export default function BookLessonPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+
+  useEffect(() => {
+    if (window.Paddle) {
+      const vendorId = process.env.NEXT_PUBLIC_PADDLE_VENDOR_ID;
+      if (vendorId && !isNaN(parseInt(vendorId))) {
+        window.Paddle.Environment.set('sandbox');
+        window.Paddle.Setup({ vendor: parseInt(vendorId) });
+        setIsPaddleLoaded(true);
+      } else {
+        console.error("PADDLE_VENDOR_ID is not configured or is invalid. Please check your .env file.");
+        toast({
+          title: "Payment Error",
+          description: "Payment system is not configured. Please contact support.",
+          variant: "destructive"
+        });
+      }
+    }
+  }, [toast]);
+
 
   const availableDates = Array.from({ length: 30 }, (_, i) => addDays(startOfDay(new Date()), i));
   const selectedLessonDetails = lessonTypes.find((type) => type.value === selectedType);
@@ -220,7 +249,7 @@ export default function BookLessonPage() {
           ? selectedLessonDetails.unitDuration
           : typeof selectedLessonDetails.duration === 'number'
           ? selectedLessonDetails.duration
-          : 60; // Default to 60 if somehow not available
+          : 60;
 
       const bookingData = {
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
@@ -246,34 +275,49 @@ export default function BookLessonPage() {
           ...(bookingData.date !== 'N/A_PACKAGE' && { date: bookingData.date }),
           ...(bookingData.time !== 'N/A_PACKAGE' && { time: bookingData.time }),
         });
+        setIsProcessing(false);
         router.push(`/bookings/success?${queryParams.toString()}`);
       } else {
-        if (!selectedLessonDetails.priceId) {
+        if (!selectedLessonDetails.priceId || selectedLessonDetails.priceId.includes("YOUR_PADDLE")) {
             throw new Error("This product's Price ID is not configured. Please contact support.");
         }
-        
-        const checkoutUrl = await createPaddleCheckout(
-            selectedLessonDetails.priceId,
-            bookingData.userEmail,
-            docRef.id
-        );
-
-        if (checkoutUrl) {
-           // Redirect the user to the checkout URL
-           window.location.href = checkoutUrl;
-        } else {
-          throw new Error("Could not create a payment transaction.");
+        if (!window.Paddle) {
+          throw new Error("Payment provider is not available. Please refresh the page.");
         }
+        
+        window.Paddle.Checkout.open({
+            product: selectedLessonDetails.priceId,
+            email: bookingData.userEmail,
+            passthrough: JSON.stringify({ booking_id: docRef.id }),
+            successCallback: async (data: any) => {
+                console.log("Paddle Success:", data);
+                const result = await confirmBookingAfterPayment(docRef.id, data.checkout.id);
+                if (result.success) {
+                    const queryParams = new URLSearchParams({
+                        lessonType: bookingData.lessonType,
+                        ...(bookingData.date !== 'N/A_PACKAGE' && { date: bookingData.date }),
+                        ...(bookingData.time !== 'N/A_PACKAGE' && { time: bookingData.time }),
+                        price: bookingData.price.toString(),
+                    });
+                    router.push(`/bookings/success?${queryParams.toString()}`);
+                } else {
+                    toast({
+                        title: "Booking Confirmation Failed",
+                        description: "Your payment was successful, but we couldn't confirm your booking automatically. Please contact support.",
+                        variant: "destructive",
+                        duration: 10000
+                    });
+                }
+            },
+            closeCallback: () => {
+                console.log("Paddle checkout closed.");
+                setIsProcessing(false);
+            }
+        });
       }
     } catch (error: any) {
       console.error("Booking error:", error);
-      let description = "Could not complete your booking. Please try again.";
-      if (error.code === 'permission-denied') {
-        description = "Booking failed due to a permissions issue. Please ensure you are logged in.";
-      } else {
-        description = error.message;
-      }
-      toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
+      toast({ title: "Booking Failed", description: error.message, variant: "destructive", duration: 9000 });
       setIsProcessing(false);
     }
   };
@@ -281,6 +325,31 @@ export default function BookLessonPage() {
   const isPackageSelected = selectedLessonDetails?.type === 'package';
 
   return (
+    <>
+    <Script
+        src="https://cdn.paddle.com/paddle/paddle.js"
+        onLoad={() => {
+            console.log("Paddle.js script loaded.");
+             if (window.Paddle) {
+                const vendorId = process.env.NEXT_PUBLIC_PADDLE_VENDOR_ID;
+                if (vendorId && !isNaN(parseInt(vendorId))) {
+                    window.Paddle.Environment.set('sandbox');
+                    window.Paddle.Setup({ vendor: parseInt(vendorId) });
+                    setIsPaddleLoaded(true);
+                } else {
+                     console.error("PADDLE_VENDOR_ID is not configured or is invalid. Please check your .env file.");
+                }
+            }
+        }}
+        onError={(e) => {
+            console.error('Failed to load Paddle.js script', e)
+             toast({
+              title: "Payment Error",
+              description: "Could not load the payment provider. Please refresh the page.",
+              variant: "destructive"
+            });
+        }}
+    />
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
       <header className="bg-card border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -575,7 +644,7 @@ export default function BookLessonPage() {
                      {selectedLessonDetails.price > 0 && (
                         <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">
                         <ShieldCheck className="w-3 h-3 inline-block mr-1"/>
-                        Your spot is held temporarily. Proceed to secure payment.
+                        Secure payment provided by Paddle.
                         </p>
                     )}
                   </div>
@@ -585,7 +654,7 @@ export default function BookLessonPage() {
                   <Button
                     className="w-full"
                     onClick={handleBooking}
-                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !learningGoals) }
+                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.price > 0 && !isPaddleLoaded) || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !learningGoals) }
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
                     {isProcessing ? "Processing..." : selectedLessonDetails?.price === 0 ? "Confirm Free Trial" : `Proceed to Payment - $${selectedLessonDetails?.price || 0}`}
@@ -601,7 +670,6 @@ export default function BookLessonPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }
-
-    
