@@ -123,7 +123,7 @@ export default function RegisterPage() {
             friendlyMessage = "Email/password accounts are not enabled. Please contact support.";
             break;
           case 'auth/api-key-not-valid':
-            friendlyMessage = "The Firebase API Key is not valid. This indicates an issue with your Firebase project setup or environment variables.";
+            friendlyMessage = "The Firebase API Key is invalid. This indicates a critical issue with your Firebase project setup or environment variables.";
             break;
           case 'auth/project-not-found':
           case 'auth/app-deleted':

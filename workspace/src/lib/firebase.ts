@@ -37,12 +37,17 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 // Gracefully handle missing configuration for development
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId || firebaseConfig.apiKey.includes("YOUR_API_KEY")) {
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY_HERE") {
   console.warn(`
     ********************************************************************************
-    Firebase environment variables are not set or are using placeholder values.
-    The application will run, but Firebase features will not work correctly.
-    To enable Firebase, please add your project's credentials to your .env file.
+    CRITICAL WARNING: Firebase client-side environment variables are not set.
+    The application will load, but Firebase features (like login) will fail
+    with an "auth/api-key-not-valid" error.
+    
+    SOLUTION: 
+    1. Ensure you have a .env file in your project's root directory.
+    2. Add your Firebase project's web app credentials to the .env file.
+    3. YOU MUST RESTART THE DEVELOPMENT SERVER after creating or modifying the .env file.
     ********************************************************************************
   `);
 }
