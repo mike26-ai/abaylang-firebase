@@ -2,7 +2,7 @@
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
 
 // ====================================================================================
 // --- TROUBLESHOOTING GUIDE: "auth/unauthorized-domain" ERROR ---
@@ -57,5 +57,24 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Enable multi-tab persistence to make the connection more resilient and prevent "client is offline" errors.
+// This is a one-time setup call.
+enableMultiTabIndexedDbPersistence(db)
+  .catch((err) => {
+    if (err.code === 'failed-precondition') {
+      // This error can happen if multiple tabs are open when the app is first loaded.
+      // It's generally safe to ignore in development.
+      console.warn(
+        "Firestore persistence failed to initialize. This can happen if you have multiple tabs open. The app will still work, but data may not be available offline."
+      );
+    } else if (err.code === 'unimplemented') {
+      // This can happen in browsers that don't support IndexedDB.
+      console.warn(
+        "Firestore persistence is not available in this browser. The app will still work, but data will not be cached offline."
+      );
+    }
+  });
+
 
 export { app, auth, db };
