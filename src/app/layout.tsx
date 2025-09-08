@@ -2,6 +2,7 @@
 
 import type { Metadata } from 'next';
 import React from "react";
+import Script from 'next/script'; // Import the Script component
 import { Lato, Lora } from "next/font/google";
 import "./globals.css";
 import { FirebaseProvider } from "@/components/providers/firebase-provider";
@@ -46,6 +47,8 @@ export default function RootLayout({
           <ConditionalLayoutWrapper>{children}</ConditionalLayoutWrapper>
           <Toaster />
         </FirebaseProvider>
+        {/* Add the Paddle.js script here. It will load asynchronously. */}
+        <Script src="https://cdn.paddle.com/paddle/paddle.js" />
       </body>
     </html>
   );
