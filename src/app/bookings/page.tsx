@@ -214,25 +214,20 @@ export default function BookLessonPage() {
     setIsProcessing(true);
 
     try {
-      const lessonToBook = lessonTypes.find(lesson => lesson.value === selectedType);
-      if (!lessonToBook) {
-        throw new Error("Selected lesson details could not be found.");
-      }
-      
-      const isFreeTrial = lessonToBook.price === 0;
+      const isFreeTrial = selectedLessonDetails.price === 0;
 
-      const unitDuration = typeof lessonToBook.unitDuration === 'number'
-          ? lessonToBook.unitDuration
-          : typeof lessonToBook.duration === 'number'
-          ? lessonToBook.duration
+      const unitDuration = typeof selectedLessonDetails.unitDuration === 'number'
+          ? selectedLessonDetails.unitDuration
+          : typeof selectedLessonDetails.duration === 'number'
+          ? selectedLessonDetails.duration
           : 60; // Default to 60 if somehow not available
 
       const bookingData = {
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
         time: selectedTime || 'N/A_PACKAGE',
         duration: unitDuration,
-        lessonType: lessonToBook.label,
-        price: lessonToBook.price,
+        lessonType: selectedLessonDetails.label,
+        price: selectedLessonDetails.price,
         status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
         tutorId: "MahderNegashNano",
         tutorName: "Mahder Negash",
@@ -253,12 +248,12 @@ export default function BookLessonPage() {
         });
         router.push(`/bookings/success?${queryParams.toString()}`);
       } else {
-        if (!lessonToBook.priceId) {
+        if (!selectedLessonDetails.priceId) {
             throw new Error("This product's Price ID is not configured. Please contact support.");
         }
         
         const checkoutUrl = await createPaddleCheckout(
-            lessonToBook.priceId,
+            selectedLessonDetails.priceId,
             bookingData.userEmail,
             docRef.id
         );
@@ -608,3 +603,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
