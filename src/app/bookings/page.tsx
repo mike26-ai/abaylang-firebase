@@ -158,9 +158,10 @@ export default function BookLessonPage() {
       } else {
         console.error("PADDLE_VENDOR_ID is not configured or is invalid. Please check your .env file.");
         toast({
-          title: "Payment Error",
-          description: "Payment system is not configured. Please contact support.",
-          variant: "destructive"
+          title: "Payment System Error",
+          description: "The payment provider is not configured correctly. Please ensure NEXT_PUBLIC_PADDLE_VENDOR_ID is set in your .env file.",
+          variant: "destructive",
+          duration: 10000,
         });
       }
     }
