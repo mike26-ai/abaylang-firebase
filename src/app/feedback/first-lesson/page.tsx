@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
-import { submitFirstLessonFeedbackAction } from "@/app/actions/feedbackActions";
+import { submitTestimonialAction } from "@/app/actions/testimonialActions";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -42,26 +42,24 @@ export default function FirstLessonFeedbackPage() {
       return;
     }
     setIsSubmitting(true);
+    
+    // Append user data required by the now-secure testimonial action
+    formData.append("userId", user.uid);
+    formData.append("userName", user.displayName || "Anonymous");
+    formData.append("userEmail", user.email || "");
 
     try {
-      // Step 1: Call the server action to save the private feedback and WAIT for its response.
-      const result = await submitFirstLessonFeedbackAction(user.uid, formData);
+      // Step 1: Call the secure server action to save the testimonial.
+      await submitTestimonialAction(formData);
 
-      // Check if the server action was successful.
-      if (!result.success) {
-        // If the server action failed, throw an error to be caught by the catch block.
-        throw new Error(result.error || "An unknown error occurred on the server.");
-      }
-
-      // Step 2: On server success, perform the client-side update to the user's own profile.
-      // This is allowed by security rules because the user is the owner.
+      // Step 2: On success, perform the client-side update to the user's own profile.
       const userDocRef = doc(db, "users", user.uid);
       await updateDoc(userDocRef, {
         showFirstLessonFeedbackPrompt: false,
         hasSubmittedFirstLessonFeedback: true,
       });
 
-      // Step 3: Finally, redirect the user to their profile page with a success toast.
+      // Step 3: Redirect the user to their profile page with a success toast.
       toast({
         title: "Feedback Submitted!",
         description: "Thank you for helping us improve.",
