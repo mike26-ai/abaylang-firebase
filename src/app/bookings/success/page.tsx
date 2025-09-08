@@ -43,10 +43,10 @@ function BookingSuccessContent() {
             <CheckCircle className="w-8 h-8" />
           </div>
           <CardTitle className="text-3xl font-bold text-foreground">
-            {isFreeTrial ? "Your Free Trial is Confirmed!" : "Booking Acknowledged!"}
+            {isFreeTrial ? "Your Free Trial is Confirmed!" : "Payment Successful!"}
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
-             {isFreeTrial ? "We're excited to see you. Check your dashboard for details." : "You are now being redirected to complete your payment."}
+             {isFreeTrial ? "We're excited to see you. Check your dashboard for details." : "Your lesson is confirmed. See you soon!"}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-8 space-y-8">
@@ -106,7 +106,7 @@ function BookingSuccessContent() {
                 <Info className="h-4 w-4 text-primary" />
                 <AlertTitle className="font-bold text-primary">Next Steps</AlertTitle>
                 <AlertDescription>
-                   If you are not automatically redirected, please use the button on your dashboard to complete the payment. Your lesson is confirmed once payment is complete.
+                   Your lesson is now confirmed. You can view the details and join the session from your student dashboard. A confirmation email has also been sent.
                 </AlertDescription>
             </Alert>
            )}
