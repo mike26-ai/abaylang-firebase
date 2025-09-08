@@ -1,3 +1,4 @@
+
 // File Path: src/lib/firebase.ts
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
@@ -37,12 +38,18 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 // Gracefully handle missing configuration for development
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId || firebaseConfig.apiKey.includes("YOUR_API_KEY")) {
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
   console.warn(`
     ********************************************************************************
-    Firebase environment variables are not set or are using placeholder values.
-    The application will run, but Firebase features will not work correctly.
-    To enable Firebase, please add your project's credentials to your .env file.
+    CRITICAL WARNING: Firebase client-side environment variables are not set.
+    NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are required.
+    
+    The application will load, but Firebase features (like login) will fail.
+    
+    SOLUTION: 
+    1. Ensure you have a .env file in your project's root directory.
+    2. Add your Firebase project's web app credentials to the .env file.
+    3. You must restart the development server after creating or modifying the .env file.
     ********************************************************************************
   `);
 }

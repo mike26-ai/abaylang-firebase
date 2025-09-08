@@ -1,3 +1,4 @@
+
 // File Path: src/components/auth/login-form.tsx
 
 "use client";
@@ -69,10 +70,23 @@ export function LoginForm() {
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = "An unknown error occurred. Please try again.";
-      // This single check handles user-not-found and wrong-password securely.
-      if (error.code === 'auth/invalid-credential') {
-          errorMessage = "Invalid email or password. Please check your credentials and try again.";
+      
+      // Improved error handling
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/invalid-credential':
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+            errorMessage = "Invalid email or password. Please check your credentials and try again.";
+            break;
+          case 'auth/invalid-api-key':
+            errorMessage = "The Firebase API Key is not valid. This indicates a critical issue with your Firebase project setup or .env configuration.";
+            break;
+          default:
+             errorMessage = "An error occurred during login. Please try again.";
+        }
       }
+      
       toast({
         title: "Login Failed",
         description: errorMessage,

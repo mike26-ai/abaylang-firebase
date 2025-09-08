@@ -123,7 +123,7 @@ export default function RegisterPage() {
             friendlyMessage = "Email/password accounts are not enabled. Please contact support.";
             break;
           case 'auth/invalid-api-key':
-            friendlyMessage = "Firebase API Key is invalid. This indicates an issue with your Firebase project setup or environment variables.";
+            friendlyMessage = "The Firebase API Key is invalid. This indicates a critical issue with your Firebase project setup or environment variables.";
             break;
           case 'auth/project-not-found':
           case 'auth/app-deleted':
@@ -328,7 +328,7 @@ export default function RegisterPage() {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link href="/login" className="text-primary hover:underline font-medium">
+                <Link href="/login" className="font-medium text-primary hover:underline">
                   Sign in
                 </Link>
               </p>
