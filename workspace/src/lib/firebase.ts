@@ -37,7 +37,7 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 // Gracefully handle missing configuration for development
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY_HERE") {
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("your_api_key")) {
   console.warn(`
     ********************************************************************************
     CRITICAL WARNING: Firebase client-side environment variables are not set.
@@ -46,7 +46,7 @@ if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY_HERE") {
     
     SOLUTION: 
     1. Ensure you have a .env file in your project's root directory with the
-       correct NEXT_PUBLIC_FIREBASE_... variables.
+       correct NEXT_PUBLIC_FIREBASE_... variables from your Firebase console.
     2. YOU MUST RESTART THE DEVELOPMENT SERVER after creating or modifying the .env file.
     ********************************************************************************
   `);

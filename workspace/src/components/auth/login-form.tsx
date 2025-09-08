@@ -79,7 +79,7 @@ export function LoginForm() {
             errorMessage = "Invalid email or password. Please check your credentials and try again.";
             break;
           case 'auth/api-key-not-valid':
-            errorMessage = "The Firebase API Key is not valid. This indicates a critical issue with your Firebase project setup or .env configuration.";
+            errorMessage = "The Firebase API Key is not valid. This is a critical configuration issue. Please check the .env file and restart the server.";
             break;
           default:
              errorMessage = "An error occurred during login. Please try again.";
