@@ -37,7 +37,7 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 // Gracefully handle missing configuration for development
-if (!firebaseConfig.apiKey) {
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY_HERE") {
   console.warn(`
     ********************************************************************************
     CRITICAL WARNING: Firebase client-side environment variables are not set.
