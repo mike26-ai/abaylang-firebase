@@ -54,12 +54,12 @@ export const paddleHostedLinks =
 // but they are NOT used in the Hosted Checkout flow.
 export const paddlePriceIds = {
   freeTrial: "price_free_trial",
-  quickPractice: process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_PRICE_ID || "pri_YOUR_QUICK_PRACTICE_PRICE_ID",
-  comprehensiveLesson: process.env.NEXT_PUBLIC_PADDLE_COMPREHENSIVE_LESSON_PRICE_ID || "pri_YOUR_COMPREHENSIVE_LESSON_PRICE_ID",
-  quickGroupConversation: process.env.NEXT_PUBLIC_PADDLE_QUICK_GROUP_CONVERSATION_PRICE_ID || "pri_YOUR_QUICK_GROUP_PRICE_ID",
-  immersiveConversationPractice: process.env.NEXT_PUBLIC_PADDLE_IMMERSIVE_CONVERSATION_PRICE_ID || "pri_YOUR_IMMERSIVE_GROUP_PRICE_ID",
-  quickPracticeBundle: process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_BUNDLE_PRICE_ID || "pri_YOUR_QUICK_PRACTICE_BUNDLE_PRICE_ID",
-  learningIntensive: process.env.NEXT_PUBLIC_PADDLE_LEARNING_INTENSIVE_PRICE_ID || "pri_YOUR_LEARNING_INTENSIVE_PRICE_ID",
-  starterBundle: process.env.NEXT_PUBLIC_PADDLE_STARTER_BUNDLE_PRICE_ID || "pri_YOUR_STARTER_BUNDLE_PRICE_ID",
-  foundationPack: process.env.NEXT_PUBLIC_PADDLE_FOUNDATION_PACK_PRICE_ID || "pri_YOUR_FOUNDATION_PACK_PRICE_ID",
+  quickPractice: process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_PRICE_ID || "pri_01k42rzjr37b3gbnm57gy73q0n",
+  comprehensiveLesson: process.env.NEXT_PUBLIC_PADDLE_COMPREHENSIVE_LESSON_PRICE_ID || "pri_01k42s7crjg5qaqybyk5ysytzh",
+  quickGroupConversation: process.env.NEXT_PUBLIC_PADDLE_QUICK_GROUP_CONVERSATION_PRICE_ID || "pri_01k42sbb9nyg3k7ndn2ngn7vsb",
+  immersiveConversationPractice: process.env.NEXT_PUBLIC_PADDLE_IMMERSIVE_CONVERSATION_PRICE_ID || "pri_01k42sdr84bmrpv6edh0qzjxwq",
+  quickPracticeBundle: process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_BUNDLE_PRICE_ID || "pri_01k42shrqkf5ysnx2t92wg087y",
+  learningIntensive: process.env.NEXT_PUBLIC_PADDLE_LEARNING_INTENSIVE_PRICE_ID || "pri_01k42skf5mnag80gqgkkxwsq1k",
+  starterBundle: process.env.NEXT_PUBLIC_PADDLE_STARTER_BUNDLE_PRICE_ID || "pri_01k42snac1aqw30bqsx3y694gq",
+  foundationPack: process.env.NEXT_PUBLIC_PADDLE_FOUNDATION_PACK_PRICE_ID || "pri_01k42sptq9716bknset0x62ep1",
 };
