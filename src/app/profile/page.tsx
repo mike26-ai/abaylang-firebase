@@ -120,116 +120,120 @@ export default function StudentDashboardPage() {
     lessonType: "",
     lessonDate: "",
   });
-  const fetchBookings = async () => {
-    if (!user) {
-      setIsLoadingBookings(false);
-      return;
-    }
-    setIsLoadingBookings(true);
-    try {
-      const bookingsCol = collection(db, "bookings");
-      const q = query(
-        bookingsCol,
-        where("userId", "==", user.uid),
-        orderBy("createdAt", "desc")
-      );
-  
-      const querySnapshot = await getDocs(q);
-      const fetchedBookings = querySnapshot.docs.map((doc) => ({
-          ...(doc.data() as BookingType),
-          id: doc.id,
-          hasReview: false, // Default to false
-          duration: doc.data().duration || 60
-      }));
-
-      const reviewChecks = fetchedBookings.map(async (booking) => {
-        if (booking.status === 'completed') {
-          const testimonialsCol = collection(db, "testimonials");
-          const reviewQuery = query(
-              testimonialsCol, 
-              where("userId", "==", user.uid), 
-              where("lessonId", "==", booking.id),
-              limit(1)
-          );
-          const reviewSnapshot = await getDocs(reviewQuery);
-          return { ...booking, hasReview: !reviewSnapshot.empty };
-        }
-        return booking;
-      });
-
-      const bookingsWithReviewStatus = await Promise.all(reviewChecks);
-      setBookings(bookingsWithReviewStatus);
-  
-    } catch (error: any) {
-      console.error("CRITICAL ERROR fetching data in dashboard:", error);
-      toast({
-        title: "Error Loading Dashboard",
-        description: "Could not load booking information. Please check your connection.",
-        variant: "destructive",
-        duration: 9000,
-      });
-    } finally {
-      setIsLoadingBookings(false);
-    }
-  };
-  const fetchUserProfile = async () => {
-    if (!user) return;
-    setIsLoadingProfile(true);
-    try {
-      const userDocRef = doc(db, "users", user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (userDocSnap.exists()) {
-        const profile = userDocSnap.data() as UserProfile;
-        setUserProfileData(profile);
-        setEditFormData({
-          name: profile.name || user.displayName || "",
-          nativeLanguage: profile.nativeLanguage || "",
-          country: profile.country || "",
-          amharicLevel: profile.amharicLevel || "beginner",
-        });
-      } else {
-        const basicProfile: UserProfile = {
-          uid: user.uid,
-          email: user.email || "",
-          name: user.displayName || "New User",
-          role: "student",
-          createdAt: Timestamp.now(),
-          photoURL: user.photoURL || null,
-          country: "",
-          amharicLevel: "beginner",
-          nativeLanguage: "",
-          showFirstLessonFeedbackPrompt: false,
-          hasSubmittedFirstLessonFeedback: false,
-        };
-        await setDoc(doc(db, "users", user.uid), basicProfile);
-        setUserProfileData(basicProfile);
-        setEditFormData({ name: basicProfile.name, nativeLanguage: "", country: "", amharicLevel: "beginner" });
-      }
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      toast({
-        title: "Error",
-        description: "Could not load your profile data.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingProfile(false);
-    }
-  };
-
 
   useEffect(() => {
-    if (authLoading) return;
+    // This guard is the critical fix. It prevents any data fetching
+    // from running until the authentication state is confirmed.
+    if (authLoading) {
+      return;
+    }
+
     if (!user) {
       setIsLoadingBookings(false);
       setIsLoadingProfile(false);
+      // Optional: Redirect if you want to protect this page
+      // router.push('/login');
       return;
     }
+
+    const fetchUserProfile = async () => {
+      setIsLoadingProfile(true);
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const profile = userDocSnap.data() as UserProfile;
+          setUserProfileData(profile);
+          setEditFormData({
+            name: profile.name || user.displayName || "",
+            nativeLanguage: profile.nativeLanguage || "",
+            country: profile.country || "",
+            amharicLevel: profile.amharicLevel || "beginner",
+          });
+        } else {
+          // If no profile, create a basic one
+          const basicProfile: UserProfile = {
+            uid: user.uid,
+            email: user.email || "",
+            name: user.displayName || "New User",
+            role: "student",
+            createdAt: Timestamp.now(),
+            photoURL: user.photoURL || null,
+            country: "",
+            amharicLevel: "beginner",
+            nativeLanguage: "",
+            showFirstLessonFeedbackPrompt: false,
+            hasSubmittedFirstLessonFeedback: false,
+          };
+          await setDoc(doc(db, "users", user.uid), basicProfile);
+          setUserProfileData(basicProfile);
+          setEditFormData({ name: basicProfile.name, nativeLanguage: "", country: "", amharicLevel: "beginner" });
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        toast({
+          title: "Error",
+          description: "Could not load your profile data.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+    
+    const fetchBookings = async () => {
+      setIsLoadingBookings(true);
+      try {
+        const bookingsCol = collection(db, "bookings");
+        const q = query(
+          bookingsCol,
+          where("userId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        );
+    
+        const querySnapshot = await getDocs(q);
+        const fetchedBookings = querySnapshot.docs.map((doc) => ({
+            ...(doc.data() as BookingType),
+            id: doc.id,
+            hasReview: false,
+            duration: doc.data().duration || 60
+        }));
+  
+        const reviewChecks = fetchedBookings.map(async (booking) => {
+          if (booking.status === 'completed') {
+            const testimonialsCol = collection(db, "testimonials");
+            const reviewQuery = query(
+                testimonialsCol, 
+                where("userId", "==", user.uid), 
+                where("lessonId", "==", booking.id),
+                limit(1)
+            );
+            const reviewSnapshot = await getDocs(reviewQuery);
+            return { ...booking, hasReview: !reviewSnapshot.empty };
+          }
+          return booking;
+        });
+  
+        const bookingsWithReviewStatus = await Promise.all(reviewChecks);
+        setBookings(bookingsWithReviewStatus);
+    
+      } catch (error: any) {
+        console.error("CRITICAL ERROR fetching data in dashboard:", error);
+        toast({
+          title: "Error Loading Dashboard",
+          description: "Could not load booking information. Please check your connection.",
+          variant: "destructive",
+          duration: 9000,
+        });
+      } finally {
+        setIsLoadingBookings(false);
+      }
+    };
+
     fetchUserProfile();
     fetchBookings();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading]); 
+  }, [user, authLoading, toast]); 
 
   const handleProfileEditInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -308,7 +312,6 @@ export default function StudentDashboardPage() {
             createdAt: serverTimestamp(),
         });
         
-        // This handles both regular and first-lesson feedback submissions
         if (userProfileData.showFirstLessonFeedbackPrompt) {
           const userDocRef = doc(db, "users", user.uid);
           await updateDoc(userDocRef, {
@@ -981,5 +984,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    
