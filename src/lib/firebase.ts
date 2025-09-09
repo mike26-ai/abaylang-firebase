@@ -1,9 +1,9 @@
-
 // File Path: src/lib/firebase.ts
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+// Import initializeFirestore to pass in the new settings
+import { getFirestore, initializeFirestore } from "firebase/firestore";
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -33,11 +33,17 @@ if (!firebaseConfig.apiKey) {
   `);
 }
 
-
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+// --- THE FIX ---
+// Use initializeFirestore to include settings that prevent the "client is offline" error in Next.js.
+// experimentalForceLongPolling: true forces a more stable connection method.
+// useFetchStreams: false is a required partner for the long polling option.
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  useFetchStreams: false,
+});
+
 
 export { app, auth, db };
-
-    
