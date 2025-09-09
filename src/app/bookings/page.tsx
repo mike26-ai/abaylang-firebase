@@ -271,7 +271,7 @@ export default function BookLessonPage() {
         });
         router.push(`/bookings/success?${queryParams.toString()}`);
       } else {
-        // [NEW] Hosted Checkout Logic
+        // [CORRECTED] Hosted Checkout Logic
         const linkKey = lessonValueToLinkKey[selectedType as LessonValue];
         if (!linkKey) {
           throw new Error("Could not find a payment link for the selected lesson type.");
@@ -622,3 +622,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
