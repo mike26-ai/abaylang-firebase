@@ -99,3 +99,5 @@ export async function createPaddleCheckout(
     throw new Error(`Payment provider error: ${error.message}. Please check your Paddle configuration.`);
   }
 }
+
+    
