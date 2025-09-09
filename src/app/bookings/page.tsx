@@ -13,21 +13,44 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
-import { createPaddleCheckout } from "@/app/actions/paymentActions";
-import { paddlePriceIds } from "@/config/paddle";
+// [NEW] Import the hosted checkout links
+import { paddleHostedLinks } from "@/config/paddle";
 
 interface BookedSlotInfo {
   startTimeValue: string;
   startTimeDate: Date;
   endTimeDate: Date;
 }
+
+// Maps the lesson 'value' to the key in the paddleHostedLinks object
+type LessonValue = 
+  | "quick-practice"
+  | "comprehensive-lesson"
+  | "quick-group-conversation"
+  | "immersive-conversation-practice"
+  | "quick-practice-bundle"
+  | "learning-intensive"
+  | "starter-bundle"
+  | "foundation-pack";
+
+const lessonValueToLinkKey: Record<LessonValue, keyof typeof paddleHostedLinks> = {
+  "quick-practice": "quickPractice",
+  "comprehensive-lesson": "comprehensiveLesson",
+  "quick-group-conversation": "quickGroupConversation",
+  "immersive-conversation-practice": "immersiveConversationPractice",
+  "quick-practice-bundle": "quickPracticeBundle",
+  "learning-intensive": "learningIntensive",
+  "starter-bundle": "starterBundle",
+  "foundation-pack": "foundationPack",
+};
+
 
 async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
   if (!date) return [];
@@ -88,45 +111,45 @@ export default function BookLessonPage() {
     // Individual
     {
       value: "free-trial", label: "Free Trial", duration: 30, price: 0, description: "One-time only trial to meet the tutor",
-      features: ["Meet the tutor", "Experience teaching style", "Discuss learning goals"], type: "individual", priceId: paddlePriceIds.freeTrial
+      features: ["Meet the tutor", "Experience teaching style", "Discuss learning goals"], type: "individual"
     },
     {
       value: "quick-practice", label: "Quick Practice", duration: 30, price: 9, description: "Perfect for conversation practice",
-      features: ["Conversation practice", "Pronunciation correction", "Quick grammar review"], type: "individual", priceId: paddlePriceIds.quickPractice
+      features: ["Conversation practice", "Pronunciation correction", "Quick grammar review"], type: "individual"
     },
     {
       value: "comprehensive-lesson", label: "Comprehensive Lesson", duration: 60, price: 16, description: "Structured learning session",
-      features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials"], type: "individual", priceId: paddlePriceIds.comprehensiveLesson
+      features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials"], type: "individual"
     },
     // Group
     {
       value: "quick-group-conversation", label: "Quick Group Conversation", duration: 30, price: 7, description: "Practice with fellow learners",
-      features: ["Small group setting (4-6)", "Focused conversation", "Peer learning experience"], type: "group", minStudents: 4, maxStudents: 6, priceId: paddlePriceIds.quickGroupConversation
+      features: ["Small group setting (4-6)", "Focused conversation", "Peer learning experience"], type: "group", minStudents: 4, maxStudents: 6
     },
     {
       value: "immersive-conversation-practice", label: "Immersive Conversation Practice", duration: 60, price: 12, description: "Deeper conversation and cultural insights",
-      features: ["Extended conversation time", "In-depth cultural topics", "Collaborative learning"], type: "group", minStudents: 4, maxStudents: 6, priceId: paddlePriceIds.immersiveConversationPractice
+      features: ["Extended conversation time", "In-depth cultural topics", "Collaborative learning"], type: "group", minStudents: 4, maxStudents: 6
     },
     // Packages
     {
       value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: "10 x 30-min", price: 50, originalPrice: 70, totalLessons: 10, unitDuration: 30,
       description: "10 conversation practice sessions",
-      features: ["10 lessons, 30 mins each", "Just $5 per lesson", "Focus on speaking fluency", "Flexible scheduling"], type: "package", priceId: paddlePriceIds.quickPracticeBundle
+      features: ["10 lessons, 30 mins each", "Just $5 per lesson", "Focus on speaking fluency", "Flexible scheduling"], type: "package"
     },
     {
       value: "learning-intensive", label: "Learning Intensive", duration: "10 x 60-min", price: 100, originalPrice: 150, totalLessons: 10, unitDuration: 60,
       description: "Accelerate your structured learning",
-      features: ["10 lessons, 60 mins each", "Just $10 per lesson", "Comprehensive curriculum", "Priority booking"], type: "package", priceId: paddlePriceIds.learningIntensive
+      features: ["10 lessons, 60 mins each", "Just $10 per lesson", "Comprehensive curriculum", "Priority booking"], type: "package"
     },
      {
       value: "starter-bundle", label: "Starter Bundle", duration: "5 x 30-min", price: 25, originalPrice: 35, totalLessons: 5, unitDuration: 30,
       description: "Start practicing conversation regularly",
-      features: ["5 lessons, 30 mins each", "Great value to get started", "Build conversational confidence"], type: "package", priceId: paddlePriceIds.starterBundle
+      features: ["5 lessons, 30 mins each", "Great value to get started", "Build conversational confidence"], type: "package"
     },
     {
       value: "foundation-pack", label: "Foundation Pack", duration: "5 x 60-min", price: 60, originalPrice: 75, totalLessons: 5, unitDuration: 60,
       description: "Build a solid foundation",
-      features: ["5 lessons, 60 mins each", "Perfect for beginners", "Covers core concepts"], type: "package", priceId: paddlePriceIds.foundationPack
+      features: ["5 lessons, 60 mins each", "Perfect for beginners", "Covers core concepts"], type: "package"
     },
   ];
 
@@ -220,7 +243,7 @@ export default function BookLessonPage() {
           ? selectedLessonDetails.unitDuration
           : typeof selectedLessonDetails.duration === 'number'
           ? selectedLessonDetails.duration
-          : 60; // Default to 60 if somehow not available
+          : 60;
 
       const bookingData = {
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
@@ -248,31 +271,27 @@ export default function BookLessonPage() {
         });
         router.push(`/bookings/success?${queryParams.toString()}`);
       } else {
-        if (!selectedLessonDetails.priceId) {
-            throw new Error("This product's Price ID is not configured. Please contact support.");
+        // [NEW] Hosted Checkout Logic
+        const linkKey = lessonValueToLinkKey[selectedType as LessonValue];
+        if (!linkKey) {
+          throw new Error("Could not find a payment link for the selected lesson type.");
         }
         
-        const checkoutUrl = await createPaddleCheckout(
-            selectedLessonDetails.priceId,
-            bookingData.userEmail,
-            docRef.id
-        );
+        const staticUrl = paddleHostedLinks[linkKey];
 
-        if (checkoutUrl) {
-           // Redirect the user to the checkout URL
-           window.location.href = checkoutUrl;
-        } else {
-          throw new Error("Could not create a payment transaction.");
+        if (!staticUrl || staticUrl.includes("YOUR_SANDBOX_CHECKOUT_LINK_HERE")) {
+          throw new Error("This product's payment link is not configured. Please contact support.");
         }
+
+        // Construct the dynamic URL with the booking_id for tracking
+        const checkoutUrl = `${staticUrl}?passthrough={"booking_id":"${docRef.id}"}`;
+
+        // Redirect the user to the Hosted Checkout page
+        window.location.href = checkoutUrl;
       }
     } catch (error: any) {
       console.error("Booking error:", error);
-      let description = "Could not complete your booking. Please try again.";
-      if (error.code === 'permission-denied') {
-        description = "Booking failed due to a permissions issue. Please ensure you are logged in.";
-      } else {
-        description = error.message;
-      }
+      let description = error.message || "Could not complete your booking. Please try again.";
       toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
       setIsProcessing(false);
     }
@@ -560,7 +579,7 @@ export default function BookLessonPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
                       <span className="font-medium text-foreground">
-                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), selectedLessonDetails?.duration as number), 'HH:mm')}`}
+                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), (selectedLessonDetails?.unitDuration || selectedLessonDetails?.duration) as number), 'HH:mm')}`}
                       </span>
                     </div>
                   )}
@@ -603,5 +622,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
