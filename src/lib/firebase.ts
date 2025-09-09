@@ -1,27 +1,9 @@
+
 // File Path: src/lib/firebase.ts
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
-
-// ====================================================================================
-// --- TROUBLESHOOTING GUIDE: "auth/unauthorized-domain" ERROR ---
-// ====================================================================================
-// This error means the domain you are using to run this app is not on Firebase's
-// list of approved domains for authentication.
-//
-// TO FIX THIS:
-// 1. Go to your Firebase Console: https://console.firebase.google.com/
-// 2. Select your project.
-// 3. Go to "Authentication" in the left sidebar.
-// 4. Click on the "Settings" tab.
-// 5. Under "Authorized domains", click the "Add domain" button.
-// 6. Enter the domain from your browser's address bar. For Firebase Studio, this
-//    will be a long URL ending in ".cloudworkstations.dev".
-//    Example: my-project-12345.cluster-abcdef.cloudworkstations.dev
-// 7. Click "Add". The issue should now be resolved.
-// ====================================================================================
-
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -30,25 +12,23 @@ const firebaseConfig: FirebaseOptions = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  // Measurement ID is optional and only needed for Google Analytics.
   ...(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID && {
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
   }),
 };
 
-// Gracefully handle missing configuration for development
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  console.warn(`
+// A simple check to see if the environment variables are loaded.
+// This is the most common reason for the API key error.
+if (!firebaseConfig.apiKey) {
+  console.error(`
     ********************************************************************************
-    CRITICAL WARNING: Firebase client-side environment variables are not set.
-    NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are required.
-    
-    The application will load, but Firebase features (like login) will fail.
+    ERROR: Firebase client-side environment variables are not set.
+    The application will fail to initialize Firebase and authentication will not work.
     
     SOLUTION: 
-    1. Ensure you have a .env file in your project's root directory.
-    2. Add your Firebase project's web app credentials to the .env file.
-    3. You must restart the development server after creating or modifying the .env file.
+    1. Make sure you have a .env file in your project's root directory.
+    2. Populate it with the NEXT_PUBLIC_FIREBASE_... variables from your Firebase console.
+    3. YOU MUST RESTART THE DEVELOPMENT SERVER after creating or modifying the .env file.
     ********************************************************************************
   `);
 }
@@ -57,24 +37,5 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-// Enable multi-tab persistence to make the connection more resilient and prevent "client is offline" errors.
-// This is a one-time setup call.
-enableMultiTabIndexedDbPersistence(db)
-  .catch((err) => {
-    if (err.code === 'failed-precondition') {
-      // This error can happen if multiple tabs are open when the app is first loaded.
-      // It's generally safe to ignore in development.
-      console.warn(
-        "Firestore persistence failed to initialize. This can happen if you have multiple tabs open. The app will still work, but data may not be available offline."
-      );
-    } else if (err.code === 'unimplemented') {
-      // This can happen in browsers that don't support IndexedDB.
-      console.warn(
-        "Firestore persistence is not available in this browser. The app will still work, but data will not be cached offline."
-      );
-    }
-  });
-
 
 export { app, auth, db };
