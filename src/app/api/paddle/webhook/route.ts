@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       const transaction = event.data;
       
       // 3. Extract our internal booking_id from the customData field.
+      // For Hosted Checkouts, the 'passthrough' URL parameter populates this field.
       // This is the crucial link between the Paddle transaction and our database record.
       const bookingId = transaction.customData?.booking_id;
 

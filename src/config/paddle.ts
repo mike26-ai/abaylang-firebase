@@ -22,14 +22,14 @@
 // --- SANDBOX LINKS ---
 // Replace these with your actual Hosted Checkout URLs from the Paddle Sandbox.
 const sandboxLinks = {
-  quickPractice: "https://YOUR_SANDBOX_CHECKOUT_LINK_HERE",
-  comprehensiveLesson: "https://YOUR_SANDBOX_CHECKOUT_LINK_HERE",
-  quickGroupConversation: "https://YOUR_SANDBOX_CHECKOUT_LINK_HERE",
-  immersiveConversationPractice: "https://YOUR_SANDBOX_CHECKOUT_LINK_HERE",
-  quickPracticeBundle: "https://YOUR_SANDBOX_CHECKOUT_LINK_HERE",
-  learningIntensive: "https://YOUR_SANDBOX_CHECKOUT_LINK_HERE",
-  starterBundle: "https://YOUR_SANDBOX_CHECKOUT_LINK_HERE",
-  foundationPack: "https://YOUR_SANDBOX_CHECKOUT_LINK_HERE",
+  quickPractice: "https://sandbox-pay.paddle.io/hsc_01k44w6c7pdzwtdm84hrp5khfb_b798p8bckht11y136gtgrza3dgf1v41f",
+  comprehensiveLesson: "https://sandbox-pay.paddle.io/hsc_01k4q997qa3rgn2v1dn8rwgh1t_mcck1jw6220f8gyn6dmg3yxp0d1h2zdj",
+  quickGroupConversation: "https://sandbox-pay.paddle.io/hsc_01k4q9de9pp0nehrfzza9xt4qk_tyskmgdfjpqf9gb4exbdppmfamr7yvr6",
+  immersiveConversationPractice: "https://sandbox-pay.paddle.io/hsc_01k4q9g1zv2h3jwgrfyd2vxwea_a7y9n51973m2sv5pj6ex8nghyynprfd9",
+  quickPracticeBundle: "https://sandbox-pay.paddle.io/hsc_01k4q9knbp3ftxekna4dk1931t_qs5nxhz8e0gxnzr26vn6wf550d87x5xk",
+  learningIntensive: "https://sandbox-pay.paddle.io/hsc_01k4q9px04qc7wqcq02gs10tgy_9yxtr4jjvx6e96ajqmtn25qnr8bdt5bv",
+  starterBundle: "https://sandbox-pay.paddle.io/hsc_01k4q9t9vz1f0539h7b2kfhxre_sfvbqr5ganhnxv6e5yt97dpxxc3csw38",
+  foundationPack: "https://sandbox-pay.paddle.io/hsc_01k4q9wd0jsm41fpzz8v4ba30d_7e1kc61sn16kf7s4ddg465tk9fxaf5dz",
 };
 
 // --- LIVE LINKS ---
