@@ -148,26 +148,6 @@ export default function BookLessonPage() {
   const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
-  useEffect(() => {
-    if (window.Paddle) {
-      const vendorId = process.env.NEXT_PUBLIC_PADDLE_VENDOR_ID;
-      if (vendorId && !isNaN(parseInt(vendorId))) {
-        window.Paddle.Environment.set('sandbox');
-        window.Paddle.Setup({ vendor: parseInt(vendorId) });
-        setIsPaddleLoaded(true);
-      } else {
-        console.error("PADDLE_VENDOR_ID is not configured or is invalid. Please check your .env file.");
-        toast({
-          title: "Payment System Error",
-          description: "The payment provider is not configured correctly. Please ensure NEXT_PUBLIC_PADDLE_VENDOR_ID is set in your .env file.",
-          variant: "destructive",
-          duration: 10000,
-        });
-      }
-    }
-  }, [toast]);
-
-
   const availableDates = Array.from({ length: 30 }, (_, i) => addDays(startOfDay(new Date()), i));
   const selectedLessonDetails = lessonTypes.find((type) => type.value === selectedType);
 
@@ -330,8 +310,7 @@ export default function BookLessonPage() {
     <Script
         src="https://cdn.paddle.com/paddle/paddle.js"
         onLoad={() => {
-            console.log("Paddle.js script loaded.");
-             if (window.Paddle) {
+            if (window.Paddle) {
                 const vendorId = process.env.NEXT_PUBLIC_PADDLE_VENDOR_ID;
                 if (vendorId && !isNaN(parseInt(vendorId))) {
                     window.Paddle.Environment.set('sandbox');
@@ -339,6 +318,12 @@ export default function BookLessonPage() {
                     setIsPaddleLoaded(true);
                 } else {
                      console.error("PADDLE_VENDOR_ID is not configured or is invalid. Please check your .env file.");
+                     toast({
+                        title: "Payment System Error",
+                        description: "The payment provider is not configured correctly. Please ensure NEXT_PUBLIC_PADDLE_VENDOR_ID is set.",
+                        variant: "destructive",
+                        duration: 10000,
+                     });
                 }
             }
         }}
@@ -674,3 +659,5 @@ export default function BookLessonPage() {
     </>
   )
 }
+
+    
