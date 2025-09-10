@@ -39,13 +39,13 @@ export async function POST(request: NextRequest) {
     if (event?.eventType === 'transaction.completed') {
       const transaction = event.data;
       
-      // 3. Extract our internal booking_id from the customData field.
-      // For Hosted Checkouts, the 'passthrough' URL parameter populates this field.
+      // 3. [FIXED] Extract our internal booking_id from the customData field.
+      // For Hosted Checkouts, the 'passthrough' URL parameter populates this field directly.
       // This is the crucial link between the Paddle transaction and our database record.
       const bookingId = transaction.customData?.booking_id;
 
       if (!bookingId) {
-        console.warn('Received transaction.completed event without a booking_id in customData.');
+        console.warn('Received transaction.completed event without a booking_id in customData. This is the data received:', JSON.stringify(transaction, null, 2));
         // Return a 200 OK to acknowledge receipt, even if we can't process it.
         // This prevents Paddle from resending the webhook.
         return NextResponse.json({ received: true });

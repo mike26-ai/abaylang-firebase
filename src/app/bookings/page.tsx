@@ -31,6 +31,7 @@ interface BookedSlotInfo {
 
 // Maps the lesson 'value' to the key in the paddleHostedLinks object
 type LessonValue = 
+  | "free-trial"
   | "quick-practice"
   | "comprehensive-lesson"
   | "quick-group-conversation"
@@ -41,6 +42,7 @@ type LessonValue =
   | "foundation-pack";
 
 const lessonValueToLinkKey: Record<LessonValue, keyof typeof paddleHostedLinks> = {
+  "free-trial": "quickPractice", // Placeholder, won't be used for free items
   "quick-practice": "quickPractice",
   "comprehensive-lesson": "comprehensiveLesson",
   "quick-group-conversation": "quickGroupConversation",
@@ -161,7 +163,8 @@ export default function BookLessonPage() {
   const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
-  const availableDates = Array.from({ length: 30 }, (_, i) => addDays(startOfDay(new Date()), i));
+  // [FIXED] Extend booking window to 90 days
+  const availableDates = Array.from({ length: 90 }, (_, i) => addDays(startOfDay(new Date()), i));
   const selectedLessonDetails = lessonTypes.find((type) => type.value === selectedType);
 
   useEffect(() => {
@@ -622,5 +625,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
