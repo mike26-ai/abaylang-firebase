@@ -28,6 +28,7 @@ import {
   BookOpenText,
   CheckCircle,
   X,
+  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -59,6 +60,7 @@ interface DashboardStats {
   totalStudents: number;
   totalRevenue: number; 
   averageRating: number; 
+  newBookingsCount: number; // New stat for bookings awaiting confirmation
 }
 
 // Define action type for spinner logic
@@ -74,8 +76,9 @@ export default function AdminDashboardPage() {
     pendingTestimonialsCount: 0,
     newInquiries: 0,
     totalStudents: 0,
-    totalRevenue: 0, // Will be calculated or remain placeholder
-    averageRating: 0, // Will be calculated or remain placeholder
+    totalRevenue: 0,
+    averageRating: 0,
+    newBookingsCount: 0, // New stat
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
@@ -107,6 +110,8 @@ export default function AdminDashboardPage() {
         const pendingTestimonialsQuery = query(collection(db, "testimonials"), where("status", "==", "pending"));
         const newInquiriesQuery = query(collection(db, "contactMessages"), where("read", "==", false));
         const totalStudentsQuery = query(collection(db, "users"), where("role", "==", "student"));
+        const newBookingsQuery = query(collection(db, "bookings"), where("status", "==", "awaiting-payment")); // New query
+        
         const recentBookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(5));
         const recentMessagesQuery = query(collection(db, "contactMessages"), orderBy("createdAt", "desc"), limit(5));
         const recentStudentsQuery = query(collection(db, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5));
@@ -117,6 +122,7 @@ export default function AdminDashboardPage() {
           pendingTestimonialsSnapshot,
           newInquiriesSnapshot,
           totalStudentsSnapshot,
+          newBookingsSnapshot, // New snapshot
           recentBookingsDocs,
           recentMessagesDocs,
           recentStudentsDocs,
@@ -126,6 +132,7 @@ export default function AdminDashboardPage() {
           getCountFromServer(pendingTestimonialsQuery),
           getCountFromServer(newInquiriesQuery),
           getCountFromServer(totalStudentsQuery),
+          getCountFromServer(newBookingsQuery), // New getCountFromServer
           getDocs(recentBookingsQuery),
           getDocs(recentMessagesQuery),
           getDocs(recentStudentsQuery),
@@ -139,15 +146,13 @@ export default function AdminDashboardPage() {
         setRecentMessages(recentMessagesDocs.docs.map(d => ({ id: d.id, ...d.data() } as ContactMessage)));
         setRecentStudents(recentStudentsDocs.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile)));
         
-        // Placeholder for revenue and average rating calculation
-        // For revenue: sum prices of 'completed' bookings
-        // For average rating: average of 'approved' testimonial ratings
 
         setStats({
           upcomingBookings: upcomingBookingsSnapshot.data().count,
           pendingTestimonialsCount: pendingTestimonialsSnapshot.data().count,
           newInquiries: newInquiriesSnapshot.data().count,
           totalStudents: totalStudentsSnapshot.data().count,
+          newBookingsCount: newBookingsSnapshot.data().count, // Set new stat
           totalRevenue: 1250, // Placeholder
           averageRating: 4.9, // Placeholder
         });
@@ -202,7 +207,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.upcomingBookings}</div>
-              <p className="text-xs text-muted-foreground">lessons scheduled</p>
+              <p className="text-xs text-muted-foreground">confirmed lessons</p>
             </CardContent>
           </Card>
 
@@ -240,11 +245,17 @@ export default function AdminDashboardPage() {
           </Card>
         </div>
 
-        {(stats.pendingTestimonialsCount > 0 || stats.newInquiries > 0) && (
+        {(stats.pendingTestimonialsCount > 0 || stats.newInquiries > 0 || stats.newBookingsCount > 0) && (
           <Card className="shadow-lg mb-8 bg-gradient-to-r from-primary/5 to-accent/30">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-foreground mb-3">Action Required</h3>
               <div className="flex flex-wrap gap-3">
+                {stats.newBookingsCount > 0 && (
+                  <Badge variant="secondary" className="bg-green-400/20 text-green-700 dark:text-green-500 border-green-400/30">
+                     <CreditCard className="mr-1.5 h-3 w-3" />
+                    {stats.newBookingsCount} new booking{stats.newBookingsCount > 1 ? "s" : ""} awaiting payment
+                  </Badge>
+                )}
                 {stats.pendingTestimonialsCount > 0 && (
                   <Badge variant="secondary" className="bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30">
                     {stats.pendingTestimonialsCount} testimonial{stats.pendingTestimonialsCount > 1 ? "s" : ""} pending
@@ -262,7 +273,12 @@ export default function AdminDashboardPage() {
 
         <Tabs defaultValue="bookings" className="space-y-6">
           <TabsList className="bg-card border w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4">
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="bookings" className="relative">
+              Bookings
+              {stats.newBookingsCount > 0 && (
+                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-green-500 text-white text-xs rounded-full">{stats.newBookingsCount}</Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="testimonials" className="relative">
               Testimonials
               {stats.pendingTestimonialsCount > 0 && (
@@ -305,9 +321,20 @@ export default function AdminDashboardPage() {
                         </TableCell>
                         <TableCell>{booking.lessonType || `${booking.duration} min`}</TableCell>
                         <TableCell>
-                          <Badge variant={booking.status === "confirmed" ? "default" : booking.status === "completed" ? "secondary" : "destructive"}>
-                            {booking.status}
-                          </Badge>
+                           <Badge
+                                variant={
+                                booking.status === "confirmed" ? "default" 
+                                : booking.status === "completed" ? "secondary"
+                                : booking.status === "cancelled" ? "destructive"
+                                : "secondary" 
+                                }
+                                className={
+                                booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30"
+                                : ""
+                                }
+                            >
+                               {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </Badge>
                         </TableCell>
                       </TableRow>
                     ))}

@@ -105,9 +105,6 @@ export default function StudentDashboardPage() {
   const [otherRescheduleReason, setOtherRescheduleReason] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
   
-  const [paymentConfirmationDialog, setPaymentConfirmationDialog] = useState(false);
-  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<string | null>(null);
-
 
   const [feedbackModal, setFeedbackModal] = useState<{
     isOpen: boolean;
@@ -122,8 +119,6 @@ export default function StudentDashboardPage() {
   });
 
   useEffect(() => {
-    // This guard is the critical fix. It prevents any data fetching
-    // from running until the authentication state is confirmed.
     if (authLoading) {
       return;
     }
@@ -131,8 +126,6 @@ export default function StudentDashboardPage() {
     if (!user) {
       setIsLoadingBookings(false);
       setIsLoadingProfile(false);
-      // Optional: Redirect if you want to protect this page
-      // router.push('/login');
       return;
     }
 
@@ -152,7 +145,6 @@ export default function StudentDashboardPage() {
             amharicLevel: profile.amharicLevel || "beginner",
           });
         } else {
-          // If no profile, create a basic one
           const basicProfile: UserProfile = {
             uid: user.uid,
             email: user.email || "",
@@ -428,12 +420,6 @@ export default function StudentDashboardPage() {
       [0];
   }, [bookings]);
 
-  const copyToClipboard = (textToCopy: string) => {
-    navigator.clipboard.writeText(textToCopy);
-    toast({ title: "Copied!", description: "Booking ID copied to clipboard." });
-  };
-
-
   if (authLoading || (!userProfileData && isLoadingProfile && !user)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -633,29 +619,22 @@ export default function StudentDashboardPage() {
                                 variant={
                                 booking.status === "confirmed" ? "default" 
                                 : booking.status === "awaiting-payment" ? "secondary"
-                                : booking.status === "payment-pending-confirmation" ? "secondary"
                                 : "destructive" 
                                 }
                                 className={
                                 booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30"
-                                : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
                                 : ""
                                 }
                             >
                                {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
 
-                            {booking.status === 'awaiting-payment' ? (
-                                <Button size="sm" onClick={() => {
-                                  setSelectedBookingForPayment(booking.id);
-                                  setPaymentConfirmationDialog(true);
-                                }}>
-                                    <Send className="mr-2 h-4 w-4" /> I Have Sent Payment
-                                </Button>
-                            ) : booking.status === 'confirmed' && booking.zoomLink ? (
+                            {booking.status === 'confirmed' && booking.zoomLink ? (
                                 <JoinLessonButton booking={booking} />
                             ) : booking.status === 'confirmed' && !booking.zoomLink ? (
                                 <p className="text-xs text-muted-foreground text-right">Zoom link will appear here soon.</p>
+                            ) : booking.status === 'awaiting-payment' ? (
+                                <p className="text-xs text-muted-foreground text-right">Awaiting payment confirmation.</p>
                             ) : (
                               <div className="flex items-center gap-2">
                                 <TooltipProvider>
@@ -865,72 +844,6 @@ export default function StudentDashboardPage() {
         onClose={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
         onSubmit={handleFeedbackSubmit}
       />
-
-      <AlertDialog open={paymentConfirmationDialog} onOpenChange={(isOpen) => {
-          if (!isOpen) {
-              setPaymentConfirmationDialog(false);
-              setSelectedBookingForPayment(null);
-          }
-      }}>
-        <AlertDialogContent className="sm:max-w-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Action Required to Confirm Your Lesson</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your spot is held temporarily. Follow these steps to finalize your booking.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-2 space-y-4 text-sm">
-            
-            <div className="space-y-2">
-                <Label className="font-semibold text-foreground">Step 1: Copy Your Unique Booking ID</Label>
-                <p className="text-xs text-muted-foreground">This is essential for us to identify your payment.</p>
-                <div className="relative">
-                    <Input 
-                        id="payment-note"
-                        readOnly
-                        value={`Booking ID: ${selectedBookingForPayment}`}
-                        className="pr-10 bg-muted/50"
-                    />
-                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => copyToClipboard(`Booking ID: ${selectedBookingForPayment}`)} disabled={!selectedBookingForPayment}>
-                        <Copy className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
-
-            <div className="space-y-2">
-                 <Label className="font-semibold text-foreground">Step 2: Send Proof of Payment</Label>
-                 <p className="text-xs text-muted-foreground">Send a screenshot of your receipt to one of the contacts below.</p>
-                <div className="p-3 bg-muted/50 rounded-md">
-                    <p className="font-medium text-foreground">Email:</p>
-                    <a href={`mailto:${contactEmail}`} className="text-primary underline">{contactEmail}</a>
-                </div>
-                <div className="p-3 bg-muted/50 rounded-md">
-                    <p className="font-medium text-foreground">WhatsApp:</p>
-                    <p className="text-muted-foreground">+251991176968</p>
-                </div>
-            </div>
-            
-            <div className="mt-4 p-3 bg-yellow-400/10 border border-yellow-400/20 rounded-lg">
-                <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                    <strong className="font-semibold flex items-center justify-center gap-1.5"><Star className="w-4 h-4" /> IMPORTANT:</strong> 
-                    Please include your copied Booking ID and registered email (<strong className="font-bold">{user?.email}</strong>) in your message for faster confirmation.
-                </p>
-            </div>
-
-             <div className="flex items-start gap-2 pt-2">
-                <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                    **Step 3:** Once we verify your payment, the status in your dashboard will change to "Confirmed" and your Zoom link will appear. This usually takes up to 12 business hours. For more details, please read our <Link href="/faq#payment-policy" className="underline font-semibold hover:text-primary/80">Booking & Payment Policy</Link>.
-                </p>
-             </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setPaymentConfirmationDialog(false)}>
-              Okay, I Understand
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <AlertDialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
         <AlertDialogContent>
