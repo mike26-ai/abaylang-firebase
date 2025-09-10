@@ -110,7 +110,7 @@ export default function AdminDashboardPage() {
         const pendingTestimonialsQuery = query(collection(db, "testimonials"), where("status", "==", "pending"));
         const newInquiriesQuery = query(collection(db, "contactMessages"), where("read", "==", false));
         const totalStudentsQuery = query(collection(db, "users"), where("role", "==", "student"));
-        const newBookingsQuery = query(collection(db, "bookings"), where("status", "==", "awaiting-payment")); // New query
+        const newBookingsQuery = query(collection(db, "bookings"), where("status", "==", "payment-pending-confirmation")); // New query
         
         const recentBookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(5));
         const recentMessagesQuery = query(collection(db, "contactMessages"), orderBy("createdAt", "desc"), limit(5));
@@ -251,9 +251,9 @@ export default function AdminDashboardPage() {
               <h3 className="text-lg font-semibold text-foreground mb-3">Action Required</h3>
               <div className="flex flex-wrap gap-3">
                 {stats.newBookingsCount > 0 && (
-                  <Badge variant="secondary" className="bg-green-400/20 text-green-700 dark:text-green-500 border-green-400/30">
+                  <Badge variant="secondary" className="bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30">
                      <CreditCard className="mr-1.5 h-3 w-3" />
-                    {stats.newBookingsCount} new booking{stats.newBookingsCount > 1 ? "s" : ""} awaiting payment
+                    {stats.newBookingsCount} new booking{stats.newBookingsCount > 1 ? "s" : ""} awaiting confirmation
                   </Badge>
                 )}
                 {stats.pendingTestimonialsCount > 0 && (
@@ -276,7 +276,7 @@ export default function AdminDashboardPage() {
             <TabsTrigger value="bookings" className="relative">
               Bookings
               {stats.newBookingsCount > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-green-500 text-white text-xs rounded-full">{stats.newBookingsCount}</Badge>
+                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-blue-500 text-white text-xs rounded-full">{stats.newBookingsCount}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="testimonials" className="relative">
@@ -329,8 +329,8 @@ export default function AdminDashboardPage() {
                                 : "secondary" 
                                 }
                                 className={
-                                booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30"
-                                : ""
+                                booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" :
+                                booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30" : ""
                                 }
                             >
                                {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
