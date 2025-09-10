@@ -643,7 +643,8 @@ export default function StudentDashboardPage() {
                                 <p className="text-xs text-muted-foreground text-right">Zoom link will appear here soon.</p>
                             ) : (booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation') ? (
                                 <p className="text-xs text-muted-foreground text-right">Awaiting payment confirmation.</p>
-                            ) : (
+                            ) : null}
+                             {booking.status === 'confirmed' && (
                               <div className="flex items-center gap-2">
                                 <TooltipProvider>
                                   <Tooltip>
@@ -918,7 +919,7 @@ export default function StudentDashboardPage() {
             </DialogHeader>
             <div className="py-4 text-center text-sm text-muted-foreground space-y-3">
                 <p>A confirmation receipt has been sent to your email. Please check your inbox (and spam folder).</p>
-                <p>You will see the status of your booking on your dashboard change from <strong>'Payment Pending Confirmation'</strong> to <strong>'Confirmed'</strong> within 1-2 business hours.</p>
+                <p>On your dashboard, your booking status will change from <strong>'Payment Pending Confirmation'</strong> to <strong>'Confirmed'</strong> within 1-2 business hours.</p>
                 <p>Once confirmed, the Zoom link for your lesson will appear here. If your booking is not confirmed within this timeframe, please feel free to <strong>contact us</strong> so we can assist you immediately.</p>
             </div>
             <DialogFooter>

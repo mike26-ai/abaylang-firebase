@@ -6,10 +6,9 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ArrowRight, User, Calendar, Clock, Tag, DollarSign, Wallet, Star, Info } from 'lucide-react';
+import { CheckCircle, ArrowRight, User, Calendar, Clock, Tag, DollarSign, Info } from 'lucide-react';
 import { tutorInfo } from '@/config/site';
 import { format, parse } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function BookingSuccessContent() {
@@ -108,7 +107,7 @@ function BookingSuccessContent() {
                 <AlertDescription className="space-y-1">
                   <p>A confirmation receipt has been sent to your email.</p>
                   <p>On your dashboard, your booking status will change from <strong>'Payment Pending Confirmation'</strong> to <strong>'Confirmed'</strong> within 1-2 business hours.</p>
-                  <p>Once confirmed, the Zoom link for your lesson will appear on your dashboard.</p>
+                  <p>Once confirmed, the Zoom link for your lesson will appear on your dashboard. If your booking is not confirmed within this timeframe, please feel free to <strong>contact us</strong>.</p>
                 </AlertDescription>
             </Alert>
            )}
