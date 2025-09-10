@@ -411,14 +411,14 @@ export default function StudentDashboardPage() {
   };
 
   const upcomingBookings = useMemo(() => bookings.filter(
-    (b) => (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && b.date !== 'N/A_PACKAGE' && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
+    (b) => (b.status === "confirmed" || b.status === "awaiting-payment") && b.date !== 'N/A_PACKAGE' && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
   ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime()), [bookings]);
   
   const pastBookings = useMemo(() => bookings.filter(
-    (b) => b.status === "completed" || b.status === "cancelled" || (b.date !== 'N/A_PACKAGE' && (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
+    (b) => b.status === "completed" || b.status === "cancelled" || (b.date !== 'N/A_PACKAGE' && (b.status === "confirmed" || b.status === "awaiting-payment") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
   ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00")).getTime() - new Date(a.date + ' ' + (a.time || "00:00")).getTime()), [bookings]);
   
-  const upcomingLessonsCount = useMemo(() => upcomingBookings.filter(b => b.status === 'confirmed' || b.status === 'awaiting-payment' || b.status === 'payment-pending-confirmation').length, [upcomingBookings]);
+  const upcomingLessonsCount = useMemo(() => upcomingBookings.filter(b => b.status === 'confirmed' || b.status === 'awaiting-payment').length, [upcomingBookings]);
   const completedBookingsCount = useMemo(() => bookings.filter((b) => b.status === "completed").length, [bookings]);
   const totalHours = useMemo(() => bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 60), 0) / 60, [bookings]);
   
@@ -530,7 +530,7 @@ export default function StudentDashboardPage() {
                 <CardContent>
                   <div className="text-2xl font-bold">{upcomingLessonsCount}</div>
                   <p className="text-xs text-muted-foreground">
-                    {upcomingBookings.filter(b => b.status === 'awaiting-payment' || b.status === 'payment-pending-confirmation').length} pending
+                    {upcomingBookings.filter(b => b.status === 'awaiting-payment').length} pending
                   </p>
                 </CardContent>
               </Card>
@@ -632,7 +632,7 @@ export default function StudentDashboardPage() {
                                 }
                                 className={
                                 booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" :
-                                booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30" : ""
+                                ""
                                 }
                             >
                                {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -642,7 +642,7 @@ export default function StudentDashboardPage() {
                                 <JoinLessonButton booking={booking} />
                             ) : booking.status === 'confirmed' && !booking.zoomLink ? (
                                 <p className="text-xs text-muted-foreground text-right">Zoom link will appear here soon.</p>
-                            ) : (booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation') ? (
+                            ) : booking.status === 'awaiting-payment' ? (
                                 <p className="text-xs text-muted-foreground text-right">Awaiting payment confirmation.</p>
                             ) : null}
                              {booking.status === 'confirmed' && (
@@ -920,7 +920,7 @@ export default function StudentDashboardPage() {
             </DialogHeader>
             <div className="py-4 text-center text-sm text-muted-foreground space-y-3">
                 <p>A confirmation receipt has been sent to your email. Please check your inbox (and spam folder).</p>
-                <p>On your dashboard, your booking status will change from <strong>'Payment Pending Confirmation'</strong> to <strong>'Confirmed'</strong> within 1-2 business hours.</p>
+                <p>On your dashboard, your booking status will change from <strong>'Awaiting Payment'</strong> to <strong>'Confirmed'</strong> within 1-2 business hours.</p>
                 <p>Once confirmed, the Zoom link for your lesson will appear here. If your booking is not confirmed within this timeframe, please feel free to <strong>contact us</strong> so we can assist you immediately.</p>
             </div>
             <DialogFooter>
