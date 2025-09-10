@@ -7,5 +7,4 @@
 // removed in a future cleanup.
 
 // The old createPaddleCheckout function has been removed.
-
     
