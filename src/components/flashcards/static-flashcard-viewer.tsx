@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Volume2 } from "lucide-react";
@@ -21,6 +21,32 @@ interface StaticFlashcardViewerProps {
 
 export default function StaticFlashcardViewer({ cards }: StaticFlashcardViewerProps) {
   const [flippedStates, setFlippedStates] = useState<Record<string, boolean>>({});
+  const [amharicVoice, setAmharicVoice] = useState<SpeechSynthesisVoice | null>(null);
+
+  useEffect(() => {
+    // This code runs only on the client, after the component has mounted.
+    // This is the safe place to access `window` and `localStorage`.
+    const getVoices = () => {
+      if ('speechSynthesis' in window) {
+        const voices = window.speechSynthesis.getVoices();
+        const amVoice = voices.find(voice => voice.lang.toLowerCase().startsWith('am'));
+        setAmharicVoice(amVoice || null);
+      }
+    };
+    
+    // Voices might load asynchronously, so we listen for the event.
+    if ('speechSynthesis' in window) {
+        getVoices(); // Try to get them immediately
+        window.speechSynthesis.onvoiceschanged = getVoices;
+    }
+
+    return () => {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = null;
+        }
+    };
+  }, []);
+
 
   const handleFlip = (cardId: string) => {
     setFlippedStates((prev) => ({ ...prev, [cardId]: !prev[cardId] }));
@@ -28,14 +54,11 @@ export default function StaticFlashcardViewer({ cards }: StaticFlashcardViewerPr
 
   const playAudio = (text: string) => {
     if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUttext(text);
-      const voices = window.speechSynthesis.getVoices();
-      // Try to find Amharic voice, may not be available on all systems
-      const amharicVoice = voices.find(voice => voice.lang.toLowerCase().startsWith('am'));
+      const utterance = new SpeechSynthesisUtterance(text);
       if (amharicVoice) {
         utterance.voice = amharicVoice;
       } else {
-         utterance.lang = 'am'; // Fallback, might not sound correct
+         utterance.lang = 'am'; // Fallback if no specific Amharic voice is found
       }
       window.speechSynthesis.speak(utterance);
     } else {
