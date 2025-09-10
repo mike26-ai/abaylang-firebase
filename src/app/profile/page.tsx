@@ -529,7 +529,7 @@ export default function StudentDashboardPage() {
                 <CardContent>
                   <div className="text-2xl font-bold">{upcomingLessonsCount}</div>
                   <p className="text-xs text-muted-foreground">
-                    {upcomingBookings.filter(b => b.status === 'awaiting-payment').length} awaiting payment
+                    {upcomingBookings.filter(b => b.status === 'awaiting-payment' || b.status === 'payment-pending-confirmation').length} pending
                   </p>
                 </CardContent>
               </Card>
@@ -630,8 +630,8 @@ export default function StudentDashboardPage() {
                                 : "destructive" 
                                 }
                                 className={
-                                booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30"
-                                : ""
+                                booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" :
+                                booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30" : ""
                                 }
                             >
                                {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -641,7 +641,7 @@ export default function StudentDashboardPage() {
                                 <JoinLessonButton booking={booking} />
                             ) : booking.status === 'confirmed' && !booking.zoomLink ? (
                                 <p className="text-xs text-muted-foreground text-right">Zoom link will appear here soon.</p>
-                            ) : booking.status === 'awaiting-payment' ? (
+                            ) : (booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation') ? (
                                 <p className="text-xs text-muted-foreground text-right">Awaiting payment confirmation.</p>
                             ) : (
                               <div className="flex items-center gap-2">
@@ -911,19 +911,19 @@ export default function StudentDashboardPage() {
                         <CheckCircle className="w-8 h-8" />
                     </div>
                 </div>
-                <DialogTitle className="text-center text-2xl">Payment Confirmed!</DialogTitle>
+                <DialogTitle className="text-center text-2xl">Payment Successful!</DialogTitle>
                 <DialogDescription className="text-center text-base">
-                    Your lesson booking is being processed.
+                    Your lesson booking is now being confirmed.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4 text-center text-sm text-muted-foreground space-y-3">
-                <p>You will see the status of your booking change from "Awaiting Payment" to "Confirmed" shortly.</p>
-                <p>A payment receipt has been sent to your email. Please check your inbox (and spam folder).</p>
-                <p>Once confirmed, a Zoom link for your lesson will be available here on your dashboard.</p>
+                <p>A confirmation receipt has been sent to your email. Please check your inbox (and spam folder).</p>
+                <p>You will see the status of your booking on your dashboard change from <strong>'Payment Pending Confirmation'</strong> to <strong>'Confirmed'</strong> within 1-2 business hours.</p>
+                <p>Once confirmed, the Zoom link for your lesson will appear here. If your booking is not confirmed within this timeframe, please feel free to <strong>contact us</strong> so we can assist you immediately.</p>
             </div>
             <DialogFooter>
                 <Button onClick={() => setShowPaymentSuccessDialog(false)} className="w-full">
-                    Got it!
+                    Return to My Dashboard
                 </Button>
             </DialogFooter>
         </DialogContent>

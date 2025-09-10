@@ -254,7 +254,7 @@ export default function BookLessonPage() {
         duration: unitDuration,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
+        status: isFreeTrial ? 'confirmed' : 'payment-pending-confirmation',
         tutorId: "MahderNegashNano",
         tutorName: "Mahder Negash",
         userId: user.uid,
@@ -265,16 +265,17 @@ export default function BookLessonPage() {
       };
 
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
+      
+      const queryParams = new URLSearchParams({
+        lessonType: bookingData.lessonType,
+        price: bookingData.price.toString(),
+        ...(bookingData.date !== 'N/A_PACKAGE' && { date: bookingData.date }),
+        ...(bookingData.time !== 'N/A_PACKAGE' && { time: bookingData.time }),
+      });
 
       if (isFreeTrial) {
-        const queryParams = new URLSearchParams({
-          lessonType: bookingData.lessonType,
-          ...(bookingData.date !== 'N/A_PACKAGE' && { date: bookingData.date }),
-          ...(bookingData.time !== 'N/A_PACKAGE' && { time: bookingData.time }),
-        });
         router.push(`/bookings/success?${queryParams.toString()}`);
       } else {
-        // [CORRECTED] Hosted Checkout Logic
         const linkKey = lessonValueToLinkKey[selectedType as LessonValue];
         if (!linkKey) {
           throw new Error("Could not find a payment link for the selected lesson type.");
@@ -285,11 +286,11 @@ export default function BookLessonPage() {
         if (!staticUrl || staticUrl.includes("YOUR_SANDBOX_CHECKOUT_LINK_HERE")) {
           throw new Error("This product's payment link is not configured. Please contact support.");
         }
+        
+        const successUrl = `${window.location.origin}/bookings/success?${queryParams.toString()}`;
+        
+        const checkoutUrl = `${staticUrl}?passthrough={"booking_id":"${docRef.id}"}&success_url=${encodeURIComponent(successUrl)}`;
 
-        // Construct the dynamic URL with the booking_id for tracking
-        const checkoutUrl = `${staticUrl}?passthrough={"booking_id":"${docRef.id}"}`;
-
-        // Redirect the user to the Hosted Checkout page
         window.location.href = checkoutUrl;
       }
     } catch (error: any) {

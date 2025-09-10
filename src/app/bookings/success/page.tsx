@@ -19,10 +19,11 @@ function BookingSuccessContent() {
   const lessonType = searchParams.get('lessonType');
   const date = searchParams.get('date');
   const time = searchParams.get('time');
-  const price = searchParams.get('price'); // This will be null for free trials now
+  const price = searchParams.get('price'); 
+  const isFreeTrial = !price || parseFloat(price) === 0;
 
+  // If critical information is missing, we can't show details. Redirect to the main booking page.
   if (!lessonType) {
-    // If no lessonType, we can't show details. Redirect to booking page.
     if (typeof window !== 'undefined') {
         router.push('/bookings');
     }
@@ -33,7 +34,6 @@ function BookingSuccessContent() {
     );
   }
 
-  const isFreeTrial = !price || parseFloat(price) === 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background flex items-center justify-center p-4">
@@ -46,7 +46,7 @@ function BookingSuccessContent() {
             {isFreeTrial ? "Your Free Trial is Confirmed!" : "Payment Successful!"}
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
-             {isFreeTrial ? "We're excited to see you. Check your dashboard for details." : "Your lesson is confirmed. See you soon!"}
+             {isFreeTrial ? "We're excited to see you. Check your dashboard for details." : "Your booking is now being confirmed. See you soon!"}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-8 space-y-8">
@@ -104,9 +104,11 @@ function BookingSuccessContent() {
            {!isFreeTrial && (
              <Alert className="border-primary/30 bg-primary/5">
                 <Info className="h-4 w-4 text-primary" />
-                <AlertTitle className="font-bold text-primary">Next Steps</AlertTitle>
-                <AlertDescription>
-                   Your lesson is now confirmed. You can view the details and join the session from your student dashboard. A confirmation email has also been sent.
+                <AlertTitle className="font-bold text-primary">What Happens Next?</AlertTitle>
+                <AlertDescription className="space-y-1">
+                  <p>A confirmation receipt has been sent to your email.</p>
+                  <p>On your dashboard, your booking status will change from <strong>'Payment Pending Confirmation'</strong> to <strong>'Confirmed'</strong> within 1-2 business hours.</p>
+                  <p>Once confirmed, the Zoom link for your lesson will appear on your dashboard.</p>
                 </AlertDescription>
             </Alert>
            )}
