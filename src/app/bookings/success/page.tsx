@@ -16,14 +16,17 @@ import { Spinner } from "@/components/ui/spinner";
 
 export default function BookingSuccessPage() {
     const searchParams = useSearchParams();
-    const bookingId = searchParams.get('booking_id');
+    // For paid bookings, Paddle often returns a `checkout` query parameter with the transaction ID.
+    // For free trials, we pass `booking_id` ourselves. We'll use the presence of `free_trial` to differentiate.
     const isFreeTrial = searchParams.get('free_trial') === 'true';
+    const bookingId = searchParams.get('booking_id'); // Only present for free trial direct redirect
     
     const [bookingDetails, setBookingDetails] = useState<Booking | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // If there's no booking ID, we can't fetch details.
+        // We only have the booking ID for free trials, so we only fetch details for those.
+        // For paid sessions, we show a generic "pending confirmation" message.
         if (!bookingId) {
             setIsLoading(false);
             return;
@@ -57,12 +60,13 @@ export default function BookingSuccessPage() {
                 message: "You're all set! Your free trial has been scheduled. You can view the details in your dashboard. We look forward to seeing you!",
             };
         }
+        // This is the message for users returning from a paid Paddle checkout.
         return {
             icon: <Clock className="h-10 w-10 text-yellow-600" />,
             bgColor: "bg-yellow-500/10",
-            title: "Booking Submitted!",
-            description: "Your lesson is awaiting payment confirmation.",
-            message: "Your lesson slot is reserved. Please proceed with payment as instructed. Your booking status will be updated to 'Confirmed' on your dashboard shortly after payment is verified (usually within 1-2 business hours).",
+            title: "Payment Successful!",
+            description: "Your lesson is awaiting final confirmation.",
+            message: "Thank you for your payment. Your booking status will be automatically updated to 'Confirmed' on your dashboard as soon as the system processes the transaction (usually within a minute).",
         };
     };
 
@@ -81,12 +85,12 @@ export default function BookingSuccessPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? (
+                    {isLoading && isFreeTrial ? (
                         <div className="flex justify-center py-4"><Spinner /></div>
                     ) : (
                         <div className="space-y-4">
                             <p className="text-muted-foreground">{message}</p>
-                            {bookingDetails && (
+                            {bookingDetails && isFreeTrial && (
                                 <div className="text-left bg-muted/50 p-4 rounded-md border text-sm">
                                     <h4 className="font-semibold mb-2 text-foreground">Booking Summary</h4>
                                     <div className="space-y-1">
