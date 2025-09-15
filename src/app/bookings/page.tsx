@@ -20,8 +20,6 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
-// PHASE 2: Import the hosted checkout links
-import { paddleHostedLinks } from "@/config/paddle";
 
 interface BookedSlotInfo {
   startTimeValue: string;
@@ -83,19 +81,6 @@ export default function BookLessonPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialType = searchParams.get('type');
-
-  // Map lesson values to their corresponding Paddle Hosted Link keys
-  const lessonTypeToLinkKey: Record<string, keyof typeof paddleHostedLinks> = {
-    "free-trial": "freeTrial",
-    "quick-practice": "quickPractice",
-    "comprehensive-lesson": "comprehensiveLesson",
-    "quick-group-conversation": "quickGroupConversation",
-    "immersive-conversation-practice": "immersiveConversationPractice",
-    "quick-practice-bundle": "quickPracticeBundle",
-    "learning-intensive": "learningIntensive",
-    "starter-bundle": "starterBundle",
-    "foundation-pack": "foundationPack",
-  };
 
 
   const lessonTypes = [
@@ -255,22 +240,8 @@ export default function BookLessonPage() {
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
       const bookingId = docRef.id;
 
-      if (isFreeTrial) {
-        router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
-      } else {
-        const linkKey = lessonTypeToLinkKey[selectedLessonDetails.value];
-        const hostedLink = paddleHostedLinks[linkKey];
-
-        if (!hostedLink) {
-          throw new Error(`Payment link for "${selectedLessonDetails.label}" is not configured.`);
-        }
-        
-        // --- NEW: Code-based redirect logic ---
-        const successUrl = `${window.location.origin}/bookings/success`;
-        const checkoutUrl = `${hostedLink}?passthrough={"booking_id":"${bookingId}"}&success_url=${encodeURIComponent(successUrl)}`;
-        
-        window.location.href = checkoutUrl;
-      }
+      // PHASE 1 FIX: Redirect all bookings to the success page for now.
+      router.push(`/bookings/success?booking_id=${bookingId}&free_trial=${isFreeTrial}`);
 
     } catch (error: any) {
       console.error("Booking error:", error);
