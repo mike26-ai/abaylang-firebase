@@ -69,10 +69,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { JoinLessonButton } from "@/components/bookings/join-lesson-button";
 
 interface DashboardBooking extends BookingType {
@@ -84,7 +83,6 @@ export default function StudentDashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [bookings, setBookings] = useState<DashboardBooking[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
@@ -103,8 +101,6 @@ export default function StudentDashboardPage() {
   const [rescheduleReason, setRescheduleReason] = useState("");
   const [otherRescheduleReason, setOtherRescheduleReason] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
-  
-  const [showPaymentSuccessDialog, setShowPaymentSuccessDialog] = useState(false);
 
   const [feedbackModal, setFeedbackModal] = useState<{
     isOpen: boolean;
@@ -117,15 +113,6 @@ export default function StudentDashboardPage() {
     lessonType: "",
     lessonDate: "",
   });
-
-  useEffect(() => {
-    if (searchParams.get('payment_success') === 'true') {
-      setShowPaymentSuccessDialog(true);
-      // Clean the URL to prevent the dialog from re-appearing on refresh
-      router.replace('/profile', { scroll: false });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
 
   useEffect(() => {
     if (authLoading) {
@@ -904,32 +891,6 @@ export default function StudentDashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <Dialog open={showPaymentSuccessDialog} onOpenChange={setShowPaymentSuccessDialog}>
-        <DialogContent>
-            <DialogHeader>
-                <div className="flex justify-center mb-4">
-                    <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-primary-foreground">
-                        <CheckCircle className="w-8 h-8" />
-                    </div>
-                </div>
-                <DialogTitle className="text-center text-2xl">Payment Successful!</DialogTitle>
-                <DialogDescription className="text-center text-base">
-                    Your lesson booking is now being confirmed.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 text-center text-sm text-muted-foreground space-y-3">
-                <p>A confirmation receipt has been sent to your email. Please check your inbox (and spam folder).</p>
-                <p>On your dashboard, your booking status will change from <strong>'Awaiting Payment'</strong> to <strong>'Confirmed'</strong> within 1-2 business hours.</p>
-                <p>Once confirmed, the Zoom link for your lesson will appear here. If your booking is not confirmed within this timeframe, please feel free to <strong>contact us</strong> so we can assist you immediately.</p>
-            </div>
-            <DialogFooter>
-                <Button onClick={() => setShowPaymentSuccessDialog(false)} className="w-full">
-                    Return to My Dashboard
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

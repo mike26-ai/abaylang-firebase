@@ -1,4 +1,3 @@
-
 // File: src/app/bookings/success/page.tsx
 "use client";
 
@@ -24,18 +23,13 @@ export default function BookingSuccessPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!bookingId && !isFreeTrial) {
-            setIsLoading(false);
-            return;
-        }
-
-        if (isFreeTrial) {
+        // If there's no booking ID, we can't fetch details.
+        if (!bookingId) {
             setIsLoading(false);
             return;
         }
 
         const fetchBookingDetails = async () => {
-            if (!bookingId) return;
             setIsLoading(true);
             try {
                 const bookingDocRef = doc(db, "bookings", bookingId);
@@ -51,20 +45,39 @@ export default function BookingSuccessPage() {
         };
 
         fetchBookingDetails();
-    }, [bookingId, isFreeTrial]);
+    }, [bookingId]);
+
+    const getStatusInfo = () => {
+        if (isFreeTrial) {
+            return {
+                icon: <CheckCircle className="h-10 w-10 text-primary" />,
+                bgColor: "bg-primary/10",
+                title: "Free Trial Confirmed!",
+                description: "Your introductory lesson is booked.",
+                message: "You're all set! Your free trial has been scheduled. You can view the details in your dashboard. We look forward to seeing you!",
+            };
+        }
+        return {
+            icon: <Clock className="h-10 w-10 text-yellow-600" />,
+            bgColor: "bg-yellow-500/10",
+            title: "Booking Submitted!",
+            description: "Your lesson is awaiting payment confirmation.",
+            message: "Your lesson slot is reserved. Please proceed with payment as instructed. Your booking status will be updated to 'Confirmed' on your dashboard shortly after payment is verified (usually within 1-2 business hours).",
+        };
+    };
+
+    const { icon, bgColor, title, description, message } = getStatusInfo();
 
     return (
         <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center py-12">
             <Card className="w-full max-w-lg text-center shadow-xl">
                 <CardHeader>
-                    <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${isFreeTrial ? 'bg-primary/10' : 'bg-yellow-500/10'}`}>
-                        {isFreeTrial ? <CheckCircle className="h-10 w-10 text-primary" /> : <Clock className="h-10 w-10 text-yellow-600" />}
+                    <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${bgColor}`}>
+                        {icon}
                     </div>
-                    <CardTitle className="text-3xl">
-                        {isFreeTrial ? "Free Trial Confirmed!" : "Payment Submitted!"}
-                    </CardTitle>
+                    <CardTitle className="text-3xl">{title}</CardTitle>
                     <CardDescription className="text-lg text-muted-foreground">
-                        {isFreeTrial ? "Your introductory lesson is booked." : "Your booking is pending confirmation."}
+                        {description}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -72,34 +85,24 @@ export default function BookingSuccessPage() {
                         <div className="flex justify-center py-4"><Spinner /></div>
                     ) : (
                         <div className="space-y-4">
-                            {isFreeTrial ? (
-                                <p className="text-muted-foreground">
-                                    You're all set! Your free trial has been scheduled. You can view the details in your dashboard. We look forward to seeing you!
-                                </p>
-                            ) : (
-                                <>
-                                    <p className="text-muted-foreground">
-                                        Thank you for your payment. We are now verifying it. Your booking status will be updated to "Confirmed" on your dashboard shortly (usually within 1-2 business hours).
-                                    </p>
-                                    {bookingDetails && (
-                                        <div className="text-left bg-muted/50 p-4 rounded-md border text-sm">
-                                            <h4 className="font-semibold mb-2 text-foreground">Booking Summary</h4>
-                                            <div className="space-y-1">
-                                                <p><span className="font-medium text-muted-foreground">Lesson:</span> {bookingDetails.lessonType}</p>
-                                                {bookingDetails.date !== 'N/A_PACKAGE' && (
-                                                    <p>
-                                                        <span className="font-medium text-muted-foreground">Date:</span> 
-                                                        {format(parse(bookingDetails.date, 'yyyy-MM-dd', new Date()), "PPP")} at {bookingDetails.time}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                    <p className="text-xs text-muted-foreground pt-2">
-                                        You will receive an email confirmation once the booking is approved. If you have any questions, please contact us.
-                                    </p>
-                                </>
+                            <p className="text-muted-foreground">{message}</p>
+                            {bookingDetails && (
+                                <div className="text-left bg-muted/50 p-4 rounded-md border text-sm">
+                                    <h4 className="font-semibold mb-2 text-foreground">Booking Summary</h4>
+                                    <div className="space-y-1">
+                                        <p><span className="font-medium text-muted-foreground">Lesson:</span> {bookingDetails.lessonType}</p>
+                                        {bookingDetails.date !== 'N/A_PACKAGE' && (
+                                            <p>
+                                                <span className="font-medium text-muted-foreground">Date:</span> 
+                                                {format(parse(bookingDetails.date, 'yyyy-MM-dd', new Date()), "PPP")} at {bookingDetails.time}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
                             )}
+                            <p className="text-xs text-muted-foreground pt-2">
+                                You will receive an email confirmation once the booking is fully approved. If you have any questions, please contact us.
+                            </p>
                             <Button asChild size="lg" className="mt-4">
                                 <Link href="/profile">Go to My Dashboard</Link>
                             </Button>

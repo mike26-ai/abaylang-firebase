@@ -227,7 +227,7 @@ export default function BookLessonPage() {
         duration: unitDuration,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: isFreeTrial ? 'confirmed' : 'payment-pending-confirmation',
+        status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
         tutorId: "MahderNegashNano",
         tutorName: "Mahder Negash",
         userId: user.uid,
@@ -240,7 +240,7 @@ export default function BookLessonPage() {
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
 
       if (isFreeTrial) {
-        router.push(`/bookings/success?free_trial=true`);
+        router.push(`/bookings/success?booking_id=${docRef.id}&free_trial=true`);
       } else {
           const checkoutLinkKey = selectedLessonDetails.checkoutLinkKey as keyof typeof paddleHostedLinks;
           const hostedLink = paddleHostedLinks[checkoutLinkKey];
@@ -250,7 +250,6 @@ export default function BookLessonPage() {
           }
 
           const passthroughData = { booking_id: docRef.id };
-          // This is the reverted, working URL structure without the success_url
           const checkoutUrl = `${hostedLink}?passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
           
           window.location.href = checkoutUrl;
@@ -329,7 +328,7 @@ export default function BookLessonPage() {
                                         <div className="text-right">
                                         <div className="text-2xl font-bold text-primary">$${lesson.price}</div>
                                         {lesson.originalPrice && (
-                                            <div className="text-sm text-muted-foreground line-through">$${lesson.originalPrice}</div>
+                                            <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>
                                         )}
                                         </div>
                                     </div>
