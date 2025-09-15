@@ -251,12 +251,11 @@ export default function BookLessonPage() {
           throw new Error("This product's payment link is not configured. Please contact support.");
         }
 
-        const successUrl = `${window.location.origin}/bookings/success`;
         const passthroughData = { booking_id: bookingId };
         
         // --- THE FIX ---
-        // The passthrough data must be URL-encoded to be safely transmitted in the URL.
-        const checkoutUrl = `${paddleLink}?passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}&success_url=${encodeURIComponent(successUrl)}`;
+        // The passthrough data must be URL-encoded. We REMOVE the success_url parameter.
+        const checkoutUrl = `${paddleLink}?passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
 
         window.location.href = checkoutUrl;
       }
