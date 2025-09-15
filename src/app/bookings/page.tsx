@@ -251,16 +251,13 @@ export default function BookLessonPage() {
           throw new Error("This product's payment link is not configured. Please contact support.");
         }
 
-        // Construct the success URL to bring the user back to our site.
-        const successUrl = `${window.location.origin}/bookings/success?booking_id=${bookingId}`;
-
-        // Create the passthrough data object.
+        const successUrl = `${window.location.origin}/bookings/success`;
         const passthroughData = { booking_id: bookingId };
-
-        // Construct the final checkout URL.
+        
+        // --- THE FIX ---
+        // The passthrough data must be URL-encoded to be safely transmitted in the URL.
         const checkoutUrl = `${paddleLink}?passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}&success_url=${encodeURIComponent(successUrl)}`;
 
-        // Redirect the user to Paddle.
         window.location.href = checkoutUrl;
       }
 
@@ -597,5 +594,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
