@@ -1,3 +1,4 @@
+
 // File: src/app/actions/paymentActions.ts
 'use server';
 
@@ -8,3 +9,5 @@
 // with Paddle's Hosted Checkout links, making this server action obsolete.
 // This file is kept to avoid breaking potential imports, but it is recommended
 // to be removed in a future cleanup.
+
+    

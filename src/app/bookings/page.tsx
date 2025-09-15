@@ -228,7 +228,7 @@ export default function BookLessonPage() {
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
         status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
-        tutorId: "MahderNegashNano",
+        tutorId: "MahderNegashMamo",
         tutorName: "Mahder Negash",
         userId: user.uid,
         userName: user.displayName || "User",
@@ -250,8 +250,10 @@ export default function BookLessonPage() {
           }
 
           const passthroughData = { booking_id: docRef.id };
+          // Construct the URL with the passthrough parameter for the webhook.
           const checkoutUrl = `${hostedLink}?passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
           
+          // Perform a full-page redirect to the Paddle Hosted Checkout.
           window.location.href = checkoutUrl;
       }
     } catch (error: any) {
@@ -587,3 +589,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    

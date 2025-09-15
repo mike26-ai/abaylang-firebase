@@ -39,19 +39,18 @@ export async function POST(request: NextRequest) {
     if (event?.eventType === 'transaction.completed') {
       const transaction = event.data;
       
-      // [CORRECTED] Extract our internal booking_id from the customData field.
+      // Extract our internal booking_id from the customData field.
       // This is the correct path for Hosted Checkouts using the 'passthrough' URL parameter.
       const bookingId = transaction.customData?.booking_id;
-
 
       if (!bookingId) {
         console.warn('Received transaction.completed event without a booking_id in customData. This is the data received:', JSON.stringify(transaction, null, 2));
         // Return a 200 OK to acknowledge receipt, even if we can't process it.
         // This prevents Paddle from resending the webhook.
-        return NextResponse.json({ received: true });
+        return NextResponse.json({ received: true, message: "Acknowledged, but no booking_id found." });
       }
 
-      // 4. Update the booking document in Firestore.
+      // 4. Update the booking document in Firestore from 'awaiting-payment' to 'confirmed'.
       console.log(`Updating booking ${bookingId} to 'confirmed'.`);
       const bookingDocRef = doc(db, 'bookings', bookingId as string);
       
@@ -77,3 +76,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Webhook signature verification failed or an error occurred.' }, { status: 400 });
   }
 }
+
+    
