@@ -242,19 +242,15 @@ export default function BookLessonPage() {
       const bookingId = docRef.id;
 
       if (isFreeTrial) {
-        // For free trials, redirect directly to our success page.
         router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
       } else {
-        // For paid lessons, build the Paddle URL and redirect.
-        const paddleLink = paddleHostedLinks[selectedLessonDetails.paddleLinkKey];
-        if (!paddleLink) {
+        // --- THE FIX: Hardcode a known-good URL for testing and remove all dynamic parameters ---
+        const checkoutUrl = "https://sandbox-pay.paddle.com/checkout/448a3355-873c-4c31-8c44-bf83f5c12891";
+
+        if (!checkoutUrl) {
           throw new Error("This product's payment link is not configured. Please contact support.");
         }
         
-        // --- THE FIX ---
-        // REMOVED ALL DYNAMIC PARAMETERS TO ISOLATE THE REDIRECT ISSUE.
-        const checkoutUrl = paddleLink;
-
         window.location.href = checkoutUrl;
       }
 
