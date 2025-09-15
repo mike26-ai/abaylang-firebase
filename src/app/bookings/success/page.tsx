@@ -1,3 +1,4 @@
+
 // File: src/app/bookings/success/page.tsx
 "use client";
 
@@ -16,10 +17,10 @@ import { Spinner } from "@/components/ui/spinner";
 
 export default function BookingSuccessPage() {
     const searchParams = useSearchParams();
-    // For paid bookings, Paddle often returns a `checkout` query parameter with the transaction ID.
-    // For free trials, we pass `booking_id` ourselves. We'll use the presence of `free_trial` to differentiate.
+    // For paid bookings, Paddle might add query params.
+    // For free trials, we pass `booking_id` and `free_trial`. We'll use these to differentiate.
     const isFreeTrial = searchParams.get('free_trial') === 'true';
-    const bookingId = searchParams.get('booking_id'); // Only present for free trial direct redirect
+    const bookingId = searchParams.get('booking_id'); 
     
     const [bookingDetails, setBookingDetails] = useState<Booking | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -64,9 +65,9 @@ export default function BookingSuccessPage() {
         return {
             icon: <Clock className="h-10 w-10 text-yellow-600" />,
             bgColor: "bg-yellow-500/10",
-            title: "Payment Successful!",
+            title: "Payment Submitted!",
             description: "Your lesson is awaiting final confirmation.",
-            message: "Thank you for your payment. Your booking status will be automatically updated to 'Confirmed' on your dashboard as soon as the system processes the transaction (usually within a minute).",
+            message: "Thank you! Your booking status will be automatically updated to 'Confirmed' on your dashboard as soon as the system processes the transaction (usually within a minute).",
         };
     };
 
@@ -105,7 +106,7 @@ export default function BookingSuccessPage() {
                                 </div>
                             )}
                             <p className="text-xs text-muted-foreground pt-2">
-                                You will receive an email confirmation once the booking is fully approved. If you have any questions, please contact us.
+                                You will receive an email confirmation shortly. If you have any questions, please contact us.
                             </p>
                             <Button asChild size="lg" className="mt-4">
                                 <Link href="/profile">Go to My Dashboard</Link>
@@ -117,3 +118,5 @@ export default function BookingSuccessPage() {
         </div>
     );
 }
+
+    

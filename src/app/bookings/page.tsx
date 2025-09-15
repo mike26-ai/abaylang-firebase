@@ -255,12 +255,9 @@ export default function BookLessonPage() {
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
       const bookingId = docRef.id;
 
-      // --- PHASE 2 LOGIC ---
       if (isFreeTrial) {
-        // If it's a free trial, just go to the success page.
         router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
       } else {
-        // For paid lessons, construct the Paddle URL and redirect.
         const linkKey = lessonTypeToLinkKey[selectedLessonDetails.value];
         const hostedLink = paddleHostedLinks[linkKey];
 
@@ -268,13 +265,12 @@ export default function BookLessonPage() {
           throw new Error(`Payment link for "${selectedLessonDetails.label}" is not configured.`);
         }
         
-        // Construct the final checkout URL with the booking_id for the webhook
-        const checkoutUrl = `${hostedLink}?passthrough={"booking_id":"${bookingId}"}`;
+        // --- NEW: Code-based redirect logic ---
+        const successUrl = `${window.location.origin}/bookings/success`;
+        const checkoutUrl = `${hostedLink}?passthrough={"booking_id":"${bookingId}"}&success_url=${encodeURIComponent(successUrl)}`;
         
-        // Perform a full-page redirect to Paddle's checkout
         window.location.href = checkoutUrl;
       }
-      // --- END PHASE 2 LOGIC ---
 
     } catch (error: any) {
       console.error("Booking error:", error);
