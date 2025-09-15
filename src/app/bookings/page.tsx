@@ -250,7 +250,7 @@ export default function BookLessonPage() {
           }
 
           const passthroughData = { booking_id: docRef.id };
-          // REVERTED: The success_url was causing issues with Paddle. Removing it to restore functionality.
+          // This is the reverted, working URL structure without the success_url
           const checkoutUrl = `${hostedLink}?passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
           
           window.location.href = checkoutUrl;
