@@ -250,8 +250,8 @@ export default function BookLessonPage() {
           }
 
           const passthroughData = { booking_id: docRef.id };
-          const successUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/bookings/success?booking_id=${docRef.id}`;
-          const checkoutUrl = `${hostedLink}?passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}&success_url=${encodeURIComponent(successUrl)}`;
+          // REVERTED: The success_url was causing issues with Paddle. Removing it to restore functionality.
+          const checkoutUrl = `${hostedLink}?passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
           
           window.location.href = checkoutUrl;
       }
@@ -281,7 +281,7 @@ export default function BookLessonPage() {
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
-          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with {tutorInfo.name}</p>
+          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with ${tutorInfo.name}</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -327,9 +327,9 @@ export default function BookLessonPage() {
                                         </div>
                                         </div>
                                         <div className="text-right">
-                                        <div className="text-2xl font-bold text-primary">${lesson.price}</div>
+                                        <div className="text-2xl font-bold text-primary">$${lesson.price}</div>
                                         {lesson.originalPrice && (
-                                            <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>
+                                            <div className="text-sm text-muted-foreground line-through">$${lesson.originalPrice}</div>
                                         )}
                                         </div>
                                     </div>
@@ -459,7 +459,7 @@ export default function BookLessonPage() {
                   <MessageSquare className="w-5 h-5 text-primary" />
                   Learning Goals (Optional)
                 </CardTitle>
-                <CardDescription>Tell {tutorInfo.name.split(" ")[0]} about your specific learning objectives</CardDescription>
+                <CardDescription>Tell ${tutorInfo.name.split(" ")[0]} about your specific learning objectives</CardDescription>
               </CardHeader>
               <CardContent>
                 <Textarea
@@ -555,7 +555,7 @@ export default function BookLessonPage() {
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between text-lg font-bold">
                       <span className="text-foreground">Total:</span>
-                      <span className="text-primary">${selectedLessonDetails.price}</span>
+                      <span className="text-primary">$${selectedLessonDetails.price}</span>
                     </div>
                      {selectedLessonDetails.price > 0 && (
                         <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">
