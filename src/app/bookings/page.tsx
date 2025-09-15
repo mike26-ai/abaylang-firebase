@@ -20,7 +20,8 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
-// NOTE: All Paddle-related imports and logic are intentionally removed for this reset step.
+// PHASE 2: Import the hosted checkout links
+import { paddleHostedLinks } from "@/config/paddle";
 
 interface BookedSlotInfo {
   startTimeValue: string;
@@ -82,6 +83,20 @@ export default function BookLessonPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialType = searchParams.get('type');
+
+  // Map lesson values to their corresponding Paddle Hosted Link keys
+  const lessonTypeToLinkKey: Record<string, keyof typeof paddleHostedLinks> = {
+    "free-trial": "freeTrial",
+    "quick-practice": "quickPractice",
+    "comprehensive-lesson": "comprehensiveLesson",
+    "quick-group-conversation": "quickGroupConversation",
+    "immersive-conversation-practice": "immersiveConversationPractice",
+    "quick-practice-bundle": "quickPracticeBundle",
+    "learning-intensive": "learningIntensive",
+    "starter-bundle": "starterBundle",
+    "foundation-pack": "foundationPack",
+  };
+
 
   const lessonTypes = [
     // Individual
@@ -238,10 +253,28 @@ export default function BookLessonPage() {
       };
 
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
+      const bookingId = docRef.id;
 
-      // REDIRECT TO SUCCESS PAGE FOR ALL BOOKINGS (FREE OR PAID)
-      // We will add the payment redirect logic in the next step.
-      router.push(`/bookings/success?booking_id=${docRef.id}&free_trial=${isFreeTrial}`);
+      // --- PHASE 2 LOGIC ---
+      if (isFreeTrial) {
+        // If it's a free trial, just go to the success page.
+        router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
+      } else {
+        // For paid lessons, construct the Paddle URL and redirect.
+        const linkKey = lessonTypeToLinkKey[selectedLessonDetails.value];
+        const hostedLink = paddleHostedLinks[linkKey];
+
+        if (!hostedLink) {
+          throw new Error(`Payment link for "${selectedLessonDetails.label}" is not configured.`);
+        }
+        
+        // Construct the final checkout URL with the booking_id for the webhook
+        const checkoutUrl = `${hostedLink}?passthrough={"booking_id":"${bookingId}"}`;
+        
+        // Perform a full-page redirect to Paddle's checkout
+        window.location.href = checkoutUrl;
+      }
+      // --- END PHASE 2 LOGIC ---
 
     } catch (error: any) {
       console.error("Booking error:", error);
