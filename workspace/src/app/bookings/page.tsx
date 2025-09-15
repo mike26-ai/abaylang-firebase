@@ -138,7 +138,7 @@ export default function BookLessonPage() {
   const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
-  const availableDates = Array.from({ length: 30 }, (_, i) => addDays(startOfDay(new Date()), i));
+  const availableDates = Array.from({ length: 90 }, (_, i) => addDays(startOfDay(new Date()), i));
   const selectedLessonDetails = lessonTypes.find((type) => type.value === selectedType);
 
   useEffect(() => {
@@ -220,7 +220,7 @@ export default function BookLessonPage() {
           ? selectedLessonDetails.unitDuration
           : typeof selectedLessonDetails.duration === 'number'
           ? selectedLessonDetails.duration
-          : 60; // Default to 60 if somehow not available
+          : 60;
 
       const bookingData = {
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
@@ -229,7 +229,7 @@ export default function BookLessonPage() {
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
         status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
-        tutorId: "MahderNegashNano",
+        tutorId: "MahderNegashMamo",
         tutorName: "Mahder Negash",
         userId: user.uid,
         userName: user.displayName || "User",
@@ -239,15 +239,12 @@ export default function BookLessonPage() {
       };
 
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
+      const bookingId = docRef.id;
 
       if (isFreeTrial) {
-        const queryParams = new URLSearchParams({
-          lessonType: bookingData.lessonType,
-          ...(bookingData.date !== 'N/A_PACKAGE' && { date: bookingData.date }),
-          ...(bookingData.time !== 'N/A_PACKAGE' && { time: bookingData.time }),
-        });
-        router.push(`/bookings/success?${queryParams.toString()}`);
+        router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
       } else {
+        // --- THE FIX: Call the server action to create a checkout ---
         if (!selectedLessonDetails.priceId) {
             throw new Error("This product's Price ID is not configured. Please contact support.");
         }
@@ -255,24 +252,19 @@ export default function BookLessonPage() {
         const checkoutUrl = await createPaddleCheckout(
             selectedLessonDetails.priceId,
             bookingData.userEmail,
-            docRef.id
+            bookingId
         );
 
         if (checkoutUrl) {
-           // Redirect the user to the checkout URL
            window.location.href = checkoutUrl;
         } else {
           throw new Error("Could not create a payment transaction.");
         }
       }
+
     } catch (error: any) {
       console.error("Booking error:", error);
-      let description = "Could not complete your booking. Please try again.";
-      if (error.code === 'permission-denied') {
-        description = "Booking failed due to a permissions issue. Please ensure you are logged in.";
-      } else {
-        description = error.message;
-      }
+      let description = error.message || "Could not complete your booking. Please try again.";
       toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
       setIsProcessing(false);
     }
@@ -296,7 +288,7 @@ export default function BookLessonPage() {
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
-          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with {tutorInfo.name}</p>
+          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with ${tutorInfo.name}</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -342,7 +334,7 @@ export default function BookLessonPage() {
                                         </div>
                                         </div>
                                         <div className="text-right">
-                                        <div className="text-2xl font-bold text-primary">${lesson.price}</div>
+                                        <div className="text-2xl font-bold text-primary">$${lesson.price}</div>
                                         {lesson.originalPrice && (
                                             <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>
                                         )}
@@ -474,7 +466,7 @@ export default function BookLessonPage() {
                   <MessageSquare className="w-5 h-5 text-primary" />
                   Learning Goals (Optional)
                 </CardTitle>
-                <CardDescription>Tell {tutorInfo.name.split(" ")[0]} about your specific learning objectives</CardDescription>
+                <CardDescription>Tell ${tutorInfo.name.split(" ")[0]} about your specific learning objectives</CardDescription>
               </CardHeader>
               <CardContent>
                 <Textarea
@@ -560,7 +552,7 @@ export default function BookLessonPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
                       <span className="font-medium text-foreground">
-                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), selectedLessonDetails?.duration as number), 'HH:mm')}`}
+                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), (selectedLessonDetails?.unitDuration || selectedLessonDetails?.duration) as number), 'HH:mm')}`}
                       </span>
                     </div>
                   )}
@@ -570,7 +562,7 @@ export default function BookLessonPage() {
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between text-lg font-bold">
                       <span className="text-foreground">Total:</span>
-                      <span className="text-primary">${selectedLessonDetails.price}</span>
+                      <span className="text-primary">$${selectedLessonDetails.price}</span>
                     </div>
                      {selectedLessonDetails.price > 0 && (
                         <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">

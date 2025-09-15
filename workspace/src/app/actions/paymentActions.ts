@@ -33,9 +33,7 @@ if (!process.env.PADDLE_API_KEY || process.env.PADDLE_API_KEY.includes("YOUR_PAD
 
 // Trim whitespace and remove potential quotes from the API key to prevent formatting errors.
 const paddleApiKey = (process.env.PADDLE_API_KEY || '').trim().replace(/['"]+/g, '');
-const paddle = new Paddle(paddleApiKey, {
-  environment: 'sandbox' // Explicitly set to sandbox
-});
+const paddle = new Paddle(paddleApiKey);
 
 
 /**
