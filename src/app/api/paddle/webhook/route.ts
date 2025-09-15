@@ -27,6 +27,13 @@ export async function POST(request: NextRequest) {
     console.error('Paddle webhook secret is not configured.');
     return NextResponse.json({ error: 'Webhook secret not configured.' }, { status: 500 });
   }
+  
+  // FIX: Add a check to ensure the request body is not empty before parsing.
+  if (!rawRequestBody) {
+    console.warn('Received an empty request body for Paddle webhook. Aborting.');
+    return NextResponse.json({ error: 'Empty request body.' }, { status: 400 });
+  }
+
 
   try {
     // The unmarshal method verifies the signature and parses the event.
@@ -76,5 +83,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Webhook signature verification failed or an error occurred.' }, { status: 400 });
   }
 }
-
-    
