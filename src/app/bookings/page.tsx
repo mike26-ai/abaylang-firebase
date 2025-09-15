@@ -20,7 +20,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
-import { paddleHostedLinks } from "@/config/paddle";
+// NOTE: All Paddle-related imports and logic are intentionally removed for this reset step.
 
 interface BookedSlotInfo {
   startTimeValue: string;
@@ -87,45 +87,45 @@ export default function BookLessonPage() {
     // Individual
     {
       value: "free-trial", label: "Free Trial", duration: 30, price: 0, description: "One-time only trial to meet the tutor",
-      features: ["Meet the tutor", "Experience teaching style", "Discuss learning goals"], type: "individual", checkoutLinkKey: "freeTrial"
+      features: ["Meet the tutor", "Experience teaching style", "Discuss learning goals"], type: "individual"
     },
     {
       value: "quick-practice", label: "Quick Practice", duration: 30, price: 9, description: "Perfect for conversation practice",
-      features: ["Conversation practice", "Pronunciation correction", "Quick grammar review"], type: "individual", checkoutLinkKey: "quickPractice"
+      features: ["Conversation practice", "Pronunciation correction", "Quick grammar review"], type: "individual"
     },
     {
       value: "comprehensive-lesson", label: "Comprehensive Lesson", duration: 60, price: 16, description: "Structured learning session",
-      features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials"], type: "individual", checkoutLinkKey: "comprehensiveLesson"
+      features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials"], type: "individual"
     },
     // Group
     {
       value: "quick-group-conversation", label: "Quick Group Conversation", duration: 30, price: 7, description: "Practice with fellow learners",
-      features: ["Small group setting (4-6)", "Focused conversation", "Peer learning experience"], type: "group", minStudents: 4, maxStudents: 6, checkoutLinkKey: "quickGroupConversation"
+      features: ["Small group setting (4-6)", "Focused conversation", "Peer learning experience"], type: "group", minStudents: 4, maxStudents: 6
     },
     {
       value: "immersive-conversation-practice", label: "Immersive Conversation Practice", duration: 60, price: 12, description: "Deeper conversation and cultural insights",
-      features: ["Extended conversation time", "In-depth cultural topics", "Collaborative learning"], type: "group", minStudents: 4, maxStudents: 6, checkoutLinkKey: "immersiveConversationPractice"
+      features: ["Extended conversation time", "In-depth cultural topics", "Collaborative learning"], type: "group", minStudents: 4, maxStudents: 6
     },
     // Packages
     {
       value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: "10 x 30-min", price: 50, originalPrice: 70, totalLessons: 10, unitDuration: 30,
       description: "10 conversation practice sessions",
-      features: ["10 lessons, 30 mins each", "Just $5 per lesson", "Focus on speaking fluency", "Flexible scheduling"], type: "package", checkoutLinkKey: "quickPracticeBundle"
+      features: ["10 lessons, 30 mins each", "Just $5 per lesson", "Focus on speaking fluency", "Flexible scheduling"], type: "package"
     },
     {
       value: "learning-intensive", label: "Learning Intensive", duration: "10 x 60-min", price: 100, originalPrice: 150, totalLessons: 10, unitDuration: 60,
       description: "Accelerate your structured learning",
-      features: ["10 lessons, 60 mins each", "Just $10 per lesson", "Comprehensive curriculum", "Priority booking"], type: "package", checkoutLinkKey: "learningIntensive"
+      features: ["10 lessons, 60 mins each", "Just $10 per lesson", "Comprehensive curriculum", "Priority booking"], type: "package"
     },
      {
       value: "starter-bundle", label: "Starter Bundle", duration: "5 x 30-min", price: 25, originalPrice: 35, totalLessons: 5, unitDuration: 30,
       description: "Start practicing conversation regularly",
-      features: ["5 lessons, 30 mins each", "Great value to get started", "Build conversational confidence"], type: "package", checkoutLinkKey: "starterBundle"
+      features: ["5 lessons, 30 mins each", "Great value to get started", "Build conversational confidence"], type: "package"
     },
     {
       value: "foundation-pack", label: "Foundation Pack", duration: "5 x 60-min", price: 60, originalPrice: 75, totalLessons: 5, unitDuration: 60,
       description: "Build a solid foundation",
-      features: ["5 lessons, 60 mins each", "Perfect for beginners", "Covers core concepts"], type: "package", checkoutLinkKey: "foundationPack"
+      features: ["5 lessons, 60 mins each", "Perfect for beginners", "Covers core concepts"], type: "package"
     },
   ];
 
@@ -239,23 +239,10 @@ export default function BookLessonPage() {
 
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
 
-      if (isFreeTrial) {
-        router.push(`/bookings/success?booking_id=${docRef.id}&free_trial=true`);
-      } else {
-          const checkoutLinkKey = selectedLessonDetails.checkoutLinkKey as keyof typeof paddleHostedLinks;
-          const hostedLink = paddleHostedLinks[checkoutLinkKey];
+      // REDIRECT TO SUCCESS PAGE FOR ALL BOOKINGS (FREE OR PAID)
+      // We will add the payment redirect logic in the next step.
+      router.push(`/bookings/success?booking_id=${docRef.id}&free_trial=${isFreeTrial}`);
 
-          if (!hostedLink || hostedLink.includes("YOUR_")) {
-              throw new Error("This product's checkout link is not configured. Please contact support.");
-          }
-
-          const passthroughData = { booking_id: docRef.id };
-          // Construct the URL with the passthrough parameter for the webhook.
-          const checkoutUrl = `${hostedLink}?passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
-          
-          // Perform a full-page redirect to the Paddle Hosted Checkout.
-          window.location.href = checkoutUrl;
-      }
     } catch (error: any) {
       console.error("Booking error:", error);
       let description = error.message || "Could not complete your booking. Please try again.";
