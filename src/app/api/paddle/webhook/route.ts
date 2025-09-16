@@ -1,4 +1,3 @@
-
 // File: src/app/api/paddle/webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { Paddle } from '@paddle/paddle-node-sdk';
@@ -28,7 +27,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Webhook secret not configured.' }, { status: 500 });
   }
   
-  // FIX: Add a check to ensure the request body is not empty before parsing.
+  // Add a check to ensure the request body is not empty before parsing.
   if (!rawRequestBody) {
     console.warn('Received an empty request body for Paddle webhook. Aborting.');
     return NextResponse.json({ error: 'Empty request body.' }, { status: 400 });

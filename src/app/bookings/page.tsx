@@ -265,13 +265,13 @@ export default function BookLessonPage() {
         
         const successUrl = `${window.location.origin}/bookings/success`;
         
-        // Step 1: Create the passthrough data as a JSON object.
+        // Step 1: Create the passthrough data as a JSON object. This is what the webhook will receive.
         const passthroughData = { booking_id: bookingId };
         
-        // Step 2: JSON.stringify the object and then URL-encode the entire string.
+        // Step 2: JSON.stringify the object and then URL-encode the entire string. This is the correct, robust way.
         const encodedPassthrough = encodeURIComponent(JSON.stringify(passthroughData));
         
-        // Step 3: URL-encode the success URL.
+        // Step 3: URL-encode the success URL to ensure it's passed correctly.
         const encodedSuccessUrl = encodeURIComponent(successUrl);
         
         // Step 4: Construct the final, robust checkout URL.
@@ -628,5 +628,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    

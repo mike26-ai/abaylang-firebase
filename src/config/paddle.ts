@@ -24,14 +24,14 @@
  */
 export const paddleHostedLinks = {
     freeTrial: "", // This is a placeholder for logic, not a real Paddle link
-    quickPractice: process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_LINK || "https://sandbox-pay.paddle.com/checkout/448a3355-873c-4c31-8c44-bf83f5c12891",
-    comprehensiveLesson: process.env.NEXT_PUBLIC_PADDLE_COMPREHENSIVE_LESSON_LINK || "https://sandbox-pay.paddle.com/checkout/014f4a3e-6a5d-4f0e-8d07-2c93315a6b7b",
-    quickGroupConversation: process.env.NEXT_PUBLIC_PADDLE_QUICK_GROUP_CONVERSATION_LINK || "https://sandbox-pay.paddle.com/checkout/19932ad8-33e3-4710-a29e-4c7b809a7a6c",
-    immersiveConversationPractice: process.env.NEXT_PUBLIC_PADDLE_IMMERSIVE_CONVERSATION_LINK || "https://sandbox-pay.paddle.com/checkout/f2e5114c-473d-4c3e-a82f-2c35c24e6c98",
-    quickPracticeBundle: process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_BUNDLE_LINK || "https://sandbox-pay.paddle.com/checkout/c96d9f8f-c073-4f91-9c1c-967a780b4321",
-    learningIntensive: process.env.NEXT_PUBLIC_PADDLE_LEARNING_INTENSIVE_LINK || "https://sandbox-pay.paddle.com/checkout/15da6f8f-3ed4-4f96-932f-410a8d9b5432",
-    starterBundle: process.env.NEXT_PUBLIC_PADDLE_STARTER_BUNDLE_LINK || "https://sandbox-pay.paddle.com/checkout/8f8e8a8d-28e4-4c80-8796-78b105a30f7b",
-    foundationPack: process.env.NEXT_PUBLIC_PADDLE_FOUNDATION_PACK_LINK || "https://sandbox-pay.paddle.com/checkout/8b0a9b8c-5a6b-4e3a-9e8a-8d7b105a30f7b",
+    quickPractice: process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_LINK || "https://amharic-connect.sandboxed.paddle.com/checkout/buy/a292634e-8dae-48a3-a71c-5d15c81f0217",
+    comprehensiveLesson: process.env.NEXT_PUBLIC_PADDLE_COMPREHENSIVE_LESSON_LINK || "https://amharic-connect.sandboxed.paddle.com/checkout/buy/588f63c8-028a-4c28-98e3-0c15985834f8",
+    quickGroupConversation: process.env.NEXT_PUBLIC_PADDLE_QUICK_GROUP_CONVERSATION_LINK || "https://amharic-connect.sandboxed.paddle.com/checkout/buy/0717387b-40b4-4e2b-a010-94268e37d55f",
+    immersiveConversationPractice: process.env.NEXT_PUBLIC_PADDLE_IMMERSIVE_CONVERSATION_LINK || "https://amharic-connect.sandboxed.paddle.com/checkout/buy/d11e582e-9a2c-4b5c-b17c-179339e88b6c",
+    quickPracticeBundle: process.env.NEXT_PUBLIC_PADDLE_QUICK_PRACTICE_BUNDLE_LINK || "https://amharic-connect.sandboxed.paddle.com/checkout/buy/2b0b1a0d-2101-4f4b-8e10-189f7f02d4b9",
+    learningIntensive: process.env.NEXT_PUBLIC_PADDLE_LEARNING_INTENSIVE_LINK || "https://amharic-connect.sandboxed.paddle.com/checkout/buy/8e1a7b8e-3c22-4a00-b8c7-2c9339e88b6c",
+    starterBundle: process.env.NEXT_PUBLIC_PADDLE_STARTER_BUNDLE_LINK || "https://amharic-connect.sandboxed.paddle.com/checkout/buy/6d8e2a8b-2a2b-4e1a-9f8a-8d7b105a30f7b",
+    foundationPack: process.env.NEXT_PUBLIC_PADDLE_FOUNDATION_PACK_LINK || "https://amharic-connect.sandboxed.paddle.com/checkout/buy/b0a9b8c-5a6b-4e3a-9e8a-8d7b105a30f7b",
   };
   
 

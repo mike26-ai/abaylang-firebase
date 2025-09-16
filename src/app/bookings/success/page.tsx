@@ -64,9 +64,9 @@ export default function BookingSuccessPage() {
         return {
             icon: <Clock className="h-10 w-10 text-yellow-600" />,
             bgColor: "bg-yellow-500/10",
-            title: "Booking Request Submitted!",
-            description: "Your lesson is awaiting manual payment confirmation.",
-            message: "Thank you! Please follow the payment instructions provided. Your booking status will be updated to 'Confirmed' on your dashboard as soon as the tutor verifies the transaction.",
+            title: "Payment Processing",
+            description: "Your lesson is awaiting automatic confirmation.",
+            message: "Thank you for your payment! The system is now confirming your transaction. Your booking status will be updated to 'Confirmed' on your dashboard automatically, usually within a minute.",
         };
     };
 
@@ -106,7 +106,7 @@ export default function BookingSuccessPage() {
                                 </div>
                             )}
                             <p className="text-xs text-muted-foreground pt-2">
-                                You will be contacted via email once your payment is confirmed. If you have any questions, please contact us.
+                                If your booking is not confirmed within a few minutes, please contact us for support.
                             </p>
                             <Button asChild size="lg" className="mt-4">
                                 <Link href="/profile">Go to My Dashboard</Link>
