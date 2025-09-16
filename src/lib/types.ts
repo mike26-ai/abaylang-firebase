@@ -147,3 +147,12 @@ export interface LessonMaterial {
   uploaderId: string; // Admin's UID
   // Could add categories, levels, etc.
 }
+
+export type BlockedSlot = {
+  id: string;
+  startTime: Timestamp;       // UTC Timestamp
+  endTime: Timestamp;         // UTC Timestamp
+  createdBy: string;          // admin uid
+  createdAt: Timestamp;
+  reason?: string;
+};
