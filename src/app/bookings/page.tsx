@@ -231,7 +231,6 @@ export default function BookLessonPage() {
         duration: unitDuration,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        // Paid lessons now start as 'payment-pending-confirmation' to differentiate from manual system
         status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
         tutorId: "MahderNegashMamo",
         tutorName: "Mahder Negash",
@@ -244,57 +243,49 @@ export default function BookLessonPage() {
 
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
       const bookingId = docRef.id;
-      // --- DEBUG LOG [START] ---
-      // Rationale: Log the created booking document to confirm this step is successful.
+      
       console.log('✅ Booking document created successfully in Firestore.', {
         id: bookingId,
         status: bookingData.status,
         data: bookingData,
       });
-      // --- DEBUG LOG [END] ---
       // END: EXISTING FUNCTIONALITY
 
-      // START: NEW FEATURE CODE - Handle redirect based on lesson type
       if (isFreeTrial) {
         // If it's a free trial, the booking is confirmed instantly, redirect to our success page.
         router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
       } else {
-        // For paid lessons, redirect to Paddle Hosted Checkout.
+        // --- START: RECOMMENDED FIX IMPLEMENTATION ---
+        // Construct checkout URL for paid lessons
         const paddleLinkKey = selectedLessonDetails.paddleLinkKey;
         const paddleLink = paddleHostedLinks[paddleLinkKey];
         
+        // Safety check to ensure the link is configured
         if (!paddleLink) {
-          throw new Error(`Paddle link for '${selectedLessonDetails.label}' is not configured.`);
+          throw new Error(`Paddle link not configured for '${selectedLessonDetails.label}'`);
         }
         
-        // This is where we construct the final Paddle URL.
         const successUrl = `${window.location.origin}/bookings/success`;
+
+        // Correctly encode both the bookingId and success_url to be URL-safe
+        const encodedBookingId = encodeURIComponent(bookingId);
+        const encodedSuccessUrl = encodeURIComponent(successUrl);
         
-        // We add passthrough[booking_id] so the webhook knows which booking to confirm.
-        // We add success_url so Paddle redirects the user back to our site after payment.
-        const checkoutUrl = `${paddleLink}?passthrough[booking_id]=${bookingId}&success_url=${encodeURIComponent(successUrl)}`;
+        // Construct the final, robust checkout URL
+        const checkoutUrl = `${paddleLink}?passthrough[booking_id]=${encodedBookingId}&success_url=${encodedSuccessUrl}`;
         
-        // --- DEBUG LOG [START] ---
-        // Rationale: This is the most critical log. It shows the exact URL we are sending the user to.
-        // We can copy this from the browser console to test it directly.
-        console.log('🚀 Redirecting to Paddle. Constructed URL:', checkoutUrl);
-        // --- DEBUG LOG [END] ---
+        // Detailed logging for debugging purposes
+        console.log('🚀 Final Paddle Checkout URL:', checkoutUrl);
 
         // Redirect the user's browser to the Paddle checkout page.
         window.location.href = checkoutUrl;
+        // --- END: RECOMMENDED FIX IMPLEMENTATION ---
       }
-      // END: NEW FEATURE CODE
 
     } catch (error: any) {
-      // --- DEBUG LOG [START] ---
-      // Rationale: Log the specific error if any part of the process fails on our side.
       console.error("❌ Booking process failed before redirect:", error);
-      // Rationale: A browser alert makes it impossible to miss during testing.
       alert(`An error occurred during booking. Check the console for details. Error: ${error.message}`);
-      // --- DEBUG LOG [END] ---
-      console.error("Booking error:", error);
-      let description = error.message || "Could not complete your booking. Please try again.";
-      toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
+      toast({ title: "Booking Failed", description: error.message || "Could not complete your booking. Please try again.", variant: "destructive", duration: 9000 });
       setIsProcessing(false);
     }
   };
@@ -634,5 +625,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
