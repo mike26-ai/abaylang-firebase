@@ -20,7 +20,9 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
+// NEW FEATURE CODE: Import the Paddle Hosted Checkout links
 import { paddleHostedLinks } from "@/config/paddle";
+
 
 interface BookedSlotInfo {
   startTimeValue: string;
@@ -222,13 +224,15 @@ export default function BookLessonPage() {
           ? selectedLessonDetails.duration
           : 60;
 
+      // START: EXISTING FUNCTIONALITY - Create the booking document first for all types
       const bookingData = {
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
         time: selectedTime || 'N/A_PACKAGE',
         duration: unitDuration,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: isFreeTrial ? 'confirmed' : 'payment-pending-confirmation',
+        // NEW FEATURE CODE: Paid lessons now start as 'awaiting-payment'
+        status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
         tutorId: "MahderNegashMamo",
         tutorName: "Mahder Negash",
         userId: user.uid,
@@ -239,8 +243,33 @@ export default function BookLessonPage() {
       };
 
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
-      
-      router.push(`/bookings/success?booking_id=${docRef.id}&free_trial=${isFreeTrial}`);
+      const bookingId = docRef.id;
+      // END: EXISTING FUNCTIONALITY
+
+      // START: NEW FEATURE CODE - Handle redirect based on lesson type
+      if (isFreeTrial) {
+        // If it's a free trial, the booking is confirmed instantly, redirect to our success page.
+        router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
+      } else {
+        // For paid lessons, redirect to Paddle Hosted Checkout.
+        const paddleLinkKey = selectedLessonDetails.paddleLinkKey;
+        const paddleLink = paddleHostedLinks[paddleLinkKey];
+        
+        if (!paddleLink) {
+          throw new Error(`Paddle link for '${selectedLessonDetails.label}' is not configured.`);
+        }
+        
+        // This is where we construct the final Paddle URL.
+        const successUrl = `${window.location.origin}/bookings/success`;
+        
+        // We add passthrough[booking_id] so the webhook knows which booking to confirm.
+        // We add success_url so Paddle redirects the user back to our site after payment.
+        const checkoutUrl = `${paddleLink}?passthrough[booking_id]=${bookingId}&success_url=${encodeURIComponent(successUrl)}`;
+        
+        // Redirect the user's browser to the Paddle checkout page.
+        window.location.href = checkoutUrl;
+      }
+      // END: NEW FEATURE CODE
 
     } catch (error: any) {
       console.error("Booking error:", error);
@@ -557,7 +586,7 @@ export default function BookLessonPage() {
                      {isPaidLesson && (
                         <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">
                           <ShieldCheck className="w-3 h-3 inline-block mr-1"/>
-                          Your lesson is confirmed after manual payment verification by the tutor.
+                          Secure payment processing via Paddle.
                         </p>
                     )}
                   </div>
@@ -570,7 +599,7 @@ export default function BookLessonPage() {
                     disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !paymentNote) }
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
-                    {isProcessing ? "Processing..." : isPaidLesson ? "Submit Booking Request" : "Confirm Free Trial"}
+                    {isProcessing ? "Processing..." : isPaidLesson ? "Proceed to Payment" : "Confirm Free Trial"}
                   </Button>
                 </div>
                 <div className="text-xs text-muted-foreground space-y-1 text-center">
