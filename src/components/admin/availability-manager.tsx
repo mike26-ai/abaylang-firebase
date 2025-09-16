@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect }d from "react";
+import { useState, useEffect } from "react";
 import {
   collection,
   query,
