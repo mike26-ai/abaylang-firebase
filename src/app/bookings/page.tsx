@@ -256,26 +256,28 @@ export default function BookLessonPage() {
         router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
       } else {
         // --- START: RECOMMENDED FIX IMPLEMENTATION ---
-        // Construct checkout URL for paid lessons
         const paddleLinkKey = selectedLessonDetails.paddleLinkKey;
         const paddleLink = paddleHostedLinks[paddleLinkKey];
         
-        // Safety check to ensure the link is configured
         if (!paddleLink) {
           throw new Error(`Paddle link not configured for '${selectedLessonDetails.label}'`);
         }
         
         const successUrl = `${window.location.origin}/bookings/success`;
-
-        // Correctly encode the success_url to be URL-safe
+        
+        // Step 1: Create the passthrough data as a JSON object.
+        const passthroughData = { booking_id: bookingId };
+        
+        // Step 2: JSON.stringify the object and then URL-encode the entire string.
+        const encodedPassthrough = encodeURIComponent(JSON.stringify(passthroughData));
+        
+        // Step 3: URL-encode the success URL.
         const encodedSuccessUrl = encodeURIComponent(successUrl);
         
-        // Construct the final, robust checkout URL. 
-        // NOTE: The bookingId does not need to be encoded here as it's a simple string,
-        // but the key part is NOT encoding the square brackets in 'passthrough[booking_id]'.
-        const checkoutUrl = `${paddleLink}?passthrough[booking_id]=${bookingId}&success_url=${encodedSuccessUrl}`;
+        // Step 4: Construct the final, robust checkout URL.
+        const checkoutUrl = `${paddleLink}?passthrough=${encodedPassthrough}&success_url=${encodedSuccessUrl}`;
         
-        // Detailed logging for debugging purposes
+        // Debugging log to verify the final URL before redirecting.
         console.log('🚀 Final Paddle Checkout URL:', checkoutUrl);
 
         // Redirect the user's browser to the Paddle checkout page.
