@@ -133,7 +133,7 @@ export default function BookLessonPage() {
   const [selectedType, setSelectedType] = useState(initialType && lessonTypes.some(l => l.value === initialType) ? initialType : "comprehensive-lesson");
   const [selectedDate, setSelectedDateState] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
-  const [learningGoals, setLearningGoals] = useState("");
+  const [paymentNote, setPaymentNote] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
@@ -228,31 +228,19 @@ export default function BookLessonPage() {
         duration: unitDuration,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
+        status: isFreeTrial ? 'confirmed' : 'payment-pending-confirmation',
         tutorId: "MahderNegashMamo",
         tutorName: "Mahder Negash",
         userId: user.uid,
         userName: user.displayName || "User",
         userEmail: user.email || "No Email",
-        ...(learningGoals.trim() && { learningGoals: learningGoals.trim() }),
+        ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
         createdAt: serverTimestamp(),
       };
 
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
-      const bookingId = docRef.id;
-
-      if (isFreeTrial) {
-        router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
-      } else {
-        // --- THE FIX: Hardcode a known-good URL for testing and remove all dynamic parameters ---
-        const checkoutUrl = "https://sandbox-pay.paddle.com/checkout/448a3355-873c-4c31-8c44-bf83f5c12891";
-
-        if (!checkoutUrl) {
-          throw new Error("This product's payment link is not configured. Please contact support.");
-        }
-        
-        window.location.href = checkoutUrl;
-      }
+      
+      router.push(`/bookings/success?booking_id=${docRef.id}&free_trial=${isFreeTrial}`);
 
     } catch (error: any) {
       console.error("Booking error:", error);
@@ -263,6 +251,7 @@ export default function BookLessonPage() {
   };
 
   const isPackageSelected = selectedLessonDetails?.type === 'package';
+  const isPaidLesson = (selectedLessonDetails?.price || 0) > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
@@ -456,15 +445,24 @@ export default function BookLessonPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl text-foreground">
                   <MessageSquare className="w-5 h-5 text-primary" />
-                  Learning Goals (Optional)
+                  {isPaidLesson ? "Payment Note (Optional)" : "Learning Goals (Optional)"}
                 </CardTitle>
-                <CardDescription>Tell ${tutorInfo.name.split(" ")[0]} about your specific learning objectives</CardDescription>
+                <CardDescription>
+                  {isPaidLesson 
+                    ? "Add a note for the tutor (e.g., your payment transaction ID or username)."
+                    : `Tell ${tutorInfo.name.split(" ")[0]} about your specific learning objectives.`
+                  }
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="What would you like to focus on? (e.g., conversational Amharic for family, basic reading/writing, specific cultural topics)"
-                  value={learningGoals}
-                  onChange={(e) => setLearningGoals(e.target.value)}
+                  placeholder={
+                    isPaidLesson 
+                    ? "e.g., PayPal Transaction ID: 123ABCXYZ"
+                    : "e.g., conversational Amharic for family, basic reading/writing..."
+                  }
+                  value={paymentNote}
+                  onChange={(e) => setPaymentNote(e.target.value)}
                   rows={4}
                   className="resize-none"
                 />
@@ -556,10 +554,10 @@ export default function BookLessonPage() {
                       <span className="text-foreground">Total:</span>
                       <span className="text-primary">$${selectedLessonDetails.price}</span>
                     </div>
-                     {selectedLessonDetails.price > 0 && (
+                     {isPaidLesson && (
                         <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">
-                        <ShieldCheck className="w-3 h-3 inline-block mr-1"/>
-                        Your spot is held temporarily. Proceed to secure payment.
+                          <ShieldCheck className="w-3 h-3 inline-block mr-1"/>
+                          Your lesson is confirmed after manual payment verification by the tutor.
                         </p>
                     )}
                   </div>
@@ -569,10 +567,10 @@ export default function BookLessonPage() {
                   <Button
                     className="w-full"
                     onClick={handleBooking}
-                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !learningGoals) }
+                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !paymentNote) }
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
-                    {isProcessing ? "Processing..." : selectedLessonDetails?.price === 0 ? "Confirm Free Trial" : `Proceed to Payment - $${selectedLessonDetails?.price || 0}`}
+                    {isProcessing ? "Processing..." : isPaidLesson ? "Submit Booking Request" : "Confirm Free Trial"}
                   </Button>
                 </div>
                 <div className="text-xs text-muted-foreground space-y-1 text-center">
@@ -587,5 +585,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    

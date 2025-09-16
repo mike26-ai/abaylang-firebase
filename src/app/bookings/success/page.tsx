@@ -1,4 +1,3 @@
-
 // File: src/app/bookings/success/page.tsx
 "use client";
 
@@ -65,9 +64,9 @@ export default function BookingSuccessPage() {
         return {
             icon: <Clock className="h-10 w-10 text-yellow-600" />,
             bgColor: "bg-yellow-500/10",
-            title: "Payment Submitted!",
-            description: "Your lesson is awaiting final confirmation.",
-            message: "Thank you! Your booking status will be automatically updated to 'Confirmed' on your dashboard as soon as the system processes the transaction (usually within a minute).",
+            title: "Booking Request Submitted!",
+            description: "Your lesson is awaiting manual payment confirmation.",
+            message: "Thank you! Please follow the payment instructions provided. Your booking status will be updated to 'Confirmed' on your dashboard as soon as the tutor verifies the transaction.",
         };
     };
 
@@ -86,12 +85,12 @@ export default function BookingSuccessPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoading && isFreeTrial ? (
+                    {isLoading ? (
                         <div className="flex justify-center py-4"><Spinner /></div>
                     ) : (
                         <div className="space-y-4">
                             <p className="text-muted-foreground">{message}</p>
-                            {bookingDetails && isFreeTrial && (
+                            {bookingDetails && (
                                 <div className="text-left bg-muted/50 p-4 rounded-md border text-sm">
                                     <h4 className="font-semibold mb-2 text-foreground">Booking Summary</h4>
                                     <div className="space-y-1">
@@ -102,11 +101,12 @@ export default function BookingSuccessPage() {
                                                 {format(parse(bookingDetails.date, 'yyyy-MM-dd', new Date()), "PPP")} at {bookingDetails.time}
                                             </p>
                                         )}
+                                         {bookingDetails.paymentNote && <p><span className="font-medium text-muted-foreground">Note:</span> {bookingDetails.paymentNote}</p>}
                                     </div>
                                 </div>
                             )}
                             <p className="text-xs text-muted-foreground pt-2">
-                                You will receive an email confirmation shortly. If you have any questions, please contact us.
+                                You will be contacted via email once your payment is confirmed. If you have any questions, please contact us.
                             </p>
                             <Button asChild size="lg" className="mt-4">
                                 <Link href="/profile">Go to My Dashboard</Link>
