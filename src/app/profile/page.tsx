@@ -397,9 +397,32 @@ export default function StudentDashboardPage() {
     return differenceInHours(lessonDateTime, new Date()) >= 12;
   };
 
-  const upcomingBookings = useMemo(() => bookings.filter(
-    (b) => (b.status === "confirmed" || b.status === "awaiting-payment") && b.date !== 'N/A_PACKAGE' && !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
-  ).sort((a,b) => new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime()), [bookings]);
+  // START: NEW FEATURE CODE
+  // This hook filters and sorts upcoming lessons for display.
+  const upcomingBookings = useMemo(() => {
+    // Defines the sort order for statuses. Confirmed lessons get higher priority.
+    const statusOrder = { confirmed: 1, 'awaiting-payment': 2 };
+
+    return bookings
+      .filter(
+        (b) =>
+          (b.status === "confirmed" || b.status === "awaiting-payment") &&
+          b.date !== 'N/A_PACKAGE' &&
+          !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
+      )
+      .sort((a, b) => {
+        // Primary sort: by status using the predefined order.
+        const statusComparison = statusOrder[a.status] - statusOrder[b.status];
+        if (statusComparison !== 0) {
+          return statusComparison;
+        }
+        // Secondary sort: by date, for lessons with the same status.
+        const dateA = new Date(a.date + ' ' + (a.time || "00:00")).getTime();
+        const dateB = new Date(b.date + ' ' + (b.time || "00:00")).getTime();
+        return dateA - dateB;
+      });
+  }, [bookings]);
+  // END: NEW FEATURE CODE
   
   const pastBookings = useMemo(() => bookings.filter(
     (b) => b.status === "completed" || b.status === "cancelled" || (b.date !== 'N/A_PACKAGE' && (b.status === "confirmed" || b.status === "awaiting-payment") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
@@ -599,9 +622,11 @@ export default function StudentDashboardPage() {
                       <CardContent className="p-4 md:p-6">
                         <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                           <div className="flex items-center gap-3 md:gap-4 flex-grow">
+                            {/* START: NEW FEATURE CODE - Visual Differentiator */}
                             <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
                                {booking.status === 'confirmed' ? <CheckCircle className="w-6 h-6 text-primary" /> : <Clock className="w-6 h-6 text-yellow-600"/>}
                             </div>
+                            {/* END: NEW FEATURE CODE */}
                             <div>
                               <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Amharic Lesson"}</h3>
                               <p className="text-sm text-muted-foreground">
@@ -611,19 +636,14 @@ export default function StudentDashboardPage() {
                             </div>
                           </div>
                           <div className="flex flex-col items-start md:items-end gap-2 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto">
+                             {/* START: NEW FEATURE CODE - Enhanced Badge */}
                              <Badge
-                                variant={
-                                booking.status === "confirmed" ? "default" 
-                                : booking.status === "awaiting-payment" ? "secondary"
-                                : "destructive" 
-                                }
-                                className={
-                                booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" :
-                                ""
-                                }
+                                variant={booking.status === "confirmed" ? "default" : "secondary"}
+                                className={booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}
                             >
                                {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
+                             {/* END: NEW FEATURE CODE */}
 
                             {booking.status === 'confirmed' && booking.zoomLink ? (
                                 <JoinLessonButton booking={booking} />
