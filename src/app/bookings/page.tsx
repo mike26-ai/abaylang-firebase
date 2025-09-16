@@ -15,56 +15,82 @@ import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse } from 'date-fns';
+import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, endOfDay } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
-import type { Booking as BookingType } from "@/lib/types";
+import type { Booking as BookingType, BlockedSlot } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
 // NEW FEATURE CODE: Import the Paddle Hosted Checkout links
 import { paddleHostedLinks } from "@/config/paddle";
 
 
-interface BookedSlotInfo {
-  startTimeValue: string;
+interface UnavailableRange {
   startTimeDate: Date;
   endTimeDate: Date;
 }
 
-async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
+async function getUnavailableRanges(date: Date): Promise<UnavailableRange[]> {
   if (!date) return [];
   try {
     const formattedDate = format(date, 'yyyy-MM-dd');
+    const dayStart = startOfDay(date);
+    const dayEnd = endOfDay(date);
+
+    // Query 1: Fetch confirmed bookings for the day
     const bookingsRef = collection(db, "bookings");
-    const q = query(
+    const bookingsQuery = query(
       bookingsRef,
       where("date", "==", formattedDate),
       where("status", "in", ["confirmed", "completed"])
     );
-    const querySnapshot = await getDocs(q);
 
-    const bookedSlots: BookedSlotInfo[] = [];
-    querySnapshot.forEach(doc => {
+    // Query 2: Fetch admin-blocked slots that overlap with the day
+    const blockedSlotsRef = collection(db, "blockedSlots");
+    const blockedSlotsQuery = query(
+      blockedSlotsRef,
+      where("startTime", "<=", Timestamp.fromDate(dayEnd)),
+      where("endTime", ">=", Timestamp.fromDate(dayStart))
+    );
+
+    // Run queries in parallel
+    const [bookingsSnapshot, blockedSlotsSnapshot] = await Promise.all([
+      getDocs(bookingsQuery),
+      getDocs(blockedSlotsQuery),
+    ]);
+    
+    const unavailableRanges: UnavailableRange[] = [];
+
+    // Process bookings
+    bookingsSnapshot.forEach(doc => {
       const data = doc.data() as BookingType;
       if (data.time && data.duration) {
         const slotDate = startOfDay(date);
         const parsedStartTime = parse(data.time, 'HH:mm', slotDate);
         if (!isNaN(parsedStartTime.getTime())) {
-            bookedSlots.push({
-                startTimeValue: data.time,
+            unavailableRanges.push({
                 startTimeDate: parsedStartTime,
                 endTimeDate: addMinutes(parsedStartTime, data.duration)
             });
-        } else {
-            console.warn(`Could not parse booked time: ${data.time} for date ${formattedDate}`);
         }
       }
     });
-    return bookedSlots;
+    
+    // Process blocked slots
+    blockedSlotsSnapshot.forEach(doc => {
+      const data = doc.data() as BlockedSlot;
+      unavailableRanges.push({
+        startTimeDate: data.startTime.toDate(),
+        endTimeDate: data.endTime.toDate(),
+      });
+    });
+
+    return unavailableRanges;
   } catch (error) {
-    console.error("Error fetching booked slots data:", error);
-    return [];
+    console.error("Error fetching unavailable ranges:", error);
+    return []; // Return empty array on error to avoid breaking UI
   }
 }
+
 
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
@@ -137,7 +163,7 @@ export default function BookLessonPage() {
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [paymentNote, setPaymentNote] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
+  const [dailyUnavailableRanges, setDailyUnavailableRanges] = useState<UnavailableRange[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
   const availableDates = Array.from({ length: 90 }, (_, i) => addDays(startOfDay(new Date()), i));
@@ -146,12 +172,12 @@ export default function BookLessonPage() {
   useEffect(() => {
     if (selectedDate) {
       setIsFetchingSlots(true);
-      getBookedSlotsData(selectedDate).then(ranges => {
-        setDailyBookedRanges(ranges);
+      getUnavailableRanges(selectedDate).then(ranges => {
+        setDailyUnavailableRanges(ranges);
         setIsFetchingSlots(false);
         setSelectedTime(undefined);
       }).catch(error => {
-        console.error("Failed to get booked slots data:", error);
+        console.error("Failed to get unavailable ranges:", error);
         toast({ title: "Error", description: "Could not fetch available slots.", variant: "destructive" });
         setIsFetchingSlots(false);
       });
@@ -181,21 +207,23 @@ export default function BookLessonPage() {
       }
       const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
 
-      let isSlotBooked = false;
-      for (const bookedRange of dailyBookedRanges) {
-        if (potentialStartTime < bookedRange.endTimeDate && potentialEndTime > bookedRange.startTimeDate) {
-          isSlotBooked = true;
+      let isSlotUnavailable = false;
+      for (const unavailableRange of dailyUnavailableRanges) {
+        // Check for overlap: (StartA < EndB) and (EndA > StartB)
+        if (potentialStartTime < unavailableRange.endTimeDate && potentialEndTime > unavailableRange.startTimeDate) {
+          isSlotUnavailable = true;
           break;
         }
       }
       slots.push({
         display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
         value: startTimeString,
-        isDisabled: isSlotBooked,
+        isDisabled: isSlotUnavailable,
       });
     }
     return slots;
-  }, [selectedDate, selectedLessonDetails, dailyBookedRanges]);
+  }, [selectedDate, selectedLessonDetails, dailyUnavailableRanges]);
+
 
   const handleBooking = async () => {
     if (!user) {
@@ -628,3 +656,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
