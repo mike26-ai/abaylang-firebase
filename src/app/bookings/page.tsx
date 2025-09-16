@@ -267,12 +267,13 @@ export default function BookLessonPage() {
         
         const successUrl = `${window.location.origin}/bookings/success`;
 
-        // Correctly encode both the bookingId and success_url to be URL-safe
-        const encodedBookingId = encodeURIComponent(bookingId);
+        // Correctly encode the success_url to be URL-safe
         const encodedSuccessUrl = encodeURIComponent(successUrl);
         
-        // Construct the final, robust checkout URL
-        const checkoutUrl = `${paddleLink}?passthrough[booking_id]=${encodedBookingId}&success_url=${encodedSuccessUrl}`;
+        // Construct the final, robust checkout URL. 
+        // NOTE: The bookingId does not need to be encoded here as it's a simple string,
+        // but the key part is NOT encoding the square brackets in 'passthrough[booking_id]'.
+        const checkoutUrl = `${paddleLink}?passthrough[booking_id]=${bookingId}&success_url=${encodedSuccessUrl}`;
         
         // Detailed logging for debugging purposes
         console.log('🚀 Final Paddle Checkout URL:', checkoutUrl);
@@ -625,3 +626,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
