@@ -231,7 +231,7 @@ export default function BookLessonPage() {
         duration: unitDuration,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        // NEW FEATURE CODE: Paid lessons now start as 'awaiting-payment'
+        // Paid lessons now start as 'payment-pending-confirmation' to differentiate from manual system
         status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
         tutorId: "MahderNegashMamo",
         tutorName: "Mahder Negash",
@@ -244,6 +244,14 @@ export default function BookLessonPage() {
 
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
       const bookingId = docRef.id;
+      // --- DEBUG LOG [START] ---
+      // Rationale: Log the created booking document to confirm this step is successful.
+      console.log('✅ Booking document created successfully in Firestore.', {
+        id: bookingId,
+        status: bookingData.status,
+        data: bookingData,
+      });
+      // --- DEBUG LOG [END] ---
       // END: EXISTING FUNCTIONALITY
 
       // START: NEW FEATURE CODE - Handle redirect based on lesson type
@@ -266,12 +274,24 @@ export default function BookLessonPage() {
         // We add success_url so Paddle redirects the user back to our site after payment.
         const checkoutUrl = `${paddleLink}?passthrough[booking_id]=${bookingId}&success_url=${encodeURIComponent(successUrl)}`;
         
+        // --- DEBUG LOG [START] ---
+        // Rationale: This is the most critical log. It shows the exact URL we are sending the user to.
+        // We can copy this from the browser console to test it directly.
+        console.log('🚀 Redirecting to Paddle. Constructed URL:', checkoutUrl);
+        // --- DEBUG LOG [END] ---
+
         // Redirect the user's browser to the Paddle checkout page.
         window.location.href = checkoutUrl;
       }
       // END: NEW FEATURE CODE
 
     } catch (error: any) {
+      // --- DEBUG LOG [START] ---
+      // Rationale: Log the specific error if any part of the process fails on our side.
+      console.error("❌ Booking process failed before redirect:", error);
+      // Rationale: A browser alert makes it impossible to miss during testing.
+      alert(`An error occurred during booking. Check the console for details. Error: ${error.message}`);
+      // --- DEBUG LOG [END] ---
       console.error("Booking error:", error);
       let description = error.message || "Could not complete your booking. Please try again.";
       toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
@@ -614,3 +634,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
