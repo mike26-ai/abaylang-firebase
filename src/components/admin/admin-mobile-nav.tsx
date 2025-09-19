@@ -4,14 +4,13 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, LogOut, ExternalLink, ShieldCheck } from "lucide-react";
+import { Menu, LogOut, ExternalLink, ShieldCheck, CalendarOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { Separator } from "@/components/ui/separator";
 import type { NavItem } from "@/config/site";
 
 // Re-using the same icon mapping from the desktop sidebar for consistency
@@ -20,6 +19,7 @@ import { LayoutDashboard, CalendarDays, MessageSquareText, Award, Users } from "
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Admin Dashboard": LayoutDashboard,
   "Manage Bookings": CalendarDays,
+  "Manage Availability": CalendarOff, // NEW
   "Manage Testimonials": Award,
   "View Inquiries": MessageSquareText,
   "Manage Students": Users,
