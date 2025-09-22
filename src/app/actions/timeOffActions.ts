@@ -7,17 +7,34 @@ import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { revalidatePath } from "next/cache";
 import { headers } from 'next/headers';
 
+// Define a consistent return type for all actions
+type ActionResponse<T = null> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+};
+
+// Shape of the time off data returned to the client
+type TimeOffData = {
+  id: string;
+  startTime: Timestamp;
+  endTime: Timestamp;
+  reason?: string;
+};
+
+
 // Helper function to safely initialize Firebase Admin
 async function getAdminServices() {
-    try {
-        const app = initAdmin();
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        return { app, auth, db, error: null };
-    } catch (e: any) {
-        console.error("Failed to initialize Firebase Admin SDK:", e.message);
-        return { app: null, auth: null, db: null, error: e.message };
-    }
+  try {
+    const app = initAdmin();
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    return { app, auth, db, error: null };
+  } catch (e: any) {
+    console.error("Failed to initialize Firebase Admin SDK:", e.message);
+    // Return a specific, recognizable error message
+    return { app: null, auth: null, db: null, error: "The server is not configured correctly." };
+  }
 }
 
 // NOTE: In a real app with multi-tutor support, we would need the user's UID to
@@ -31,16 +48,16 @@ const TUTOR_ID = "MahderNegashMamo"; // Placeholder for the single tutor's ID
  * the time off block does not conflict with existing confirmed bookings.
  */
 export async function createTimeOff(formData: {
-    startDate: string;
-    startTime: string;
-    endDate: string;
-    endTime: string;
-    reason?: string;
-}) {
-    const { db, auth } = await getAdminServices();
-    if (!db || !auth) {
-        return { success: false, error: "The server is not configured correctly." };
-    }
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+  reason?: string;
+}): Promise<ActionResponse> {
+  const { db, error } = await getAdminServices();
+  if (error || !db) {
+    return { success: false, error: error || "Database connection failed." };
+  }
 
     // TODO: A real auth check would verify the session token from headers.
     // For this implementation, we assume a valid admin session if this action is called.
@@ -54,27 +71,16 @@ export async function createTimeOff(formData: {
             return { success: false, error: "Start time must be before end time." };
         }
 
-        // --- Validation: Check for conflicts with existing CONFIRMED bookings ---
         const bookingsRef = db.collection("bookings");
         const conflictQuery = bookingsRef
             .where("status", "==", "confirmed")
-            // Firestore timestamp queries for overlaps:
-            // (booking.startTime < new.endTime) AND (booking.endTime > new.startTime)
-            // Since we store date/time separately, this check is more complex.
-            // A robust solution would store start/end times as full Timestamps in bookings.
-            // For now, we will perform a less precise check that is good enough for this app.
-            // This is a known simplification from the design document.
-            // A more robust query would require composite indexes and unified timestamps.
-            .where("date", ">=", formData.startDate.split('T')[0])
-            .where("date", "<=", formData.endDate.split('T')[0]);
+            .where("startTime", "<", endTime)
+            .where("endTime", ">", startTime);
         
         const conflictingBookingsSnapshot = await conflictQuery.get();
 
         if (!conflictingBookingsSnapshot.empty) {
-            // Further client-side or server-side filtering would be needed here
-            // to check the time overlap precisely. For now, we'll flag any booking
-            // on the same day(s) as a potential conflict to be safe.
-             return { success: false, error: "This time off may conflict with an existing booking. Please check manually." };
+             return { success: false, error: "This time off conflicts with an existing confirmed booking." };
         }
 
 
@@ -87,7 +93,6 @@ export async function createTimeOff(formData: {
             createdBy: createdBy,
         });
 
-        // Revalidate paths to ensure fresh data is fetched on the client
         revalidatePath("/bookings");
         revalidatePath("/admin/availability");
 
@@ -102,10 +107,10 @@ export async function createTimeOff(formData: {
 /**
  * Deletes a time off block from Firestore.
  */
-export async function deleteTimeOff(timeOffId: string) {
-    const { db } = await getAdminServices();
-    if (!db) {
-        return { success: false, error: "The server is not configured correctly." };
+export async function deleteTimeOff(timeOffId: string): Promise<ActionResponse> {
+    const { db, error } = await getAdminServices();
+    if (error || !db) {
+        return { success: false, error: error || "Database connection failed." };
     }
 
     try {
@@ -121,21 +126,21 @@ export async function deleteTimeOff(timeOffId: string) {
 /**
  * Fetches all time off blocks.
  */
-export async function getTimeOff() {
-    const { db } = await getAdminServices();
-    if (!db) {
-        console.warn("getTimeOff: DB not available. Returning empty array.");
-        return [];
-    }
+export async function getTimeOff(): Promise<ActionResponse<TimeOffData[]>> {
+  const { db, error } = await getAdminServices();
+  if (error || !db) {
+    return { success: false, error: error || "Database connection failed." };
+  }
 
-    try {
-        const snapshot = await db.collection("timeOff").orderBy("startTime", "desc").get();
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        })) as { id: string; startTime: Timestamp; endTime: Timestamp; reason?: string }[];
-    } catch (error: any) {
-        console.error("Error fetching time off blocks:", error);
-        throw new Error("Could not fetch time off blocks.");
-    }
+  try {
+    const snapshot = await db.collection("timeOff").orderBy("startTime", "desc").get();
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as TimeOffData[];
+    return { success: true, data };
+  } catch (error: any) {
+    console.error("Error fetching time off blocks:", error);
+    return { success: false, error: "Could not fetch time off blocks due to a server error." };
+  }
 }

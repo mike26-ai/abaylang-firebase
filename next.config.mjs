@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: false, // keep build failing on TS errors
   },
   eslint: {
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: false, // keep build failing on ESLint errors
   },
   images: {
     remotePatterns: [
@@ -19,15 +19,10 @@ const nextConfig = {
         hostname: "res.cloudinary.com",
         port: "",
         pathname: "/**",
-      }
+      },
     ],
   },
-  experimental: {
-    // This is necessary for Firebase Studio to work correctly in dev mode.
-    allowedDevOrigins: [
-      "https://*.cluster-ombtxv25tbd6yrjpp3lukp6zhc.cloudworkstations.dev",
-    ],
-  },
+  // removed invalid experimental.allowedDevOrigins
 };
 
 export default nextConfig;

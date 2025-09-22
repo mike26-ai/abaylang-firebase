@@ -264,7 +264,7 @@ export default function BookLessonPage() {
 
     } catch (error: any) {
       console.error("Booking error:", error);
-      let description = error.message || "Could not complete your booking. Please try again.";
+      const description = error.message || "Could not complete your booking. Please try again.";
       toast({ title: "Booking Failed", description, variant: "destructive", duration: 9000 });
       setIsProcessing(false);
     }

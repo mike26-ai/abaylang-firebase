@@ -50,7 +50,7 @@ export function ForgotPasswordForm() {
       });
     } catch (error: any) {
       console.error("Password reset error:", error);
-      let errorMessage = "An error occurred. Please try again.";
+      const errorMessage = "An error occurred. Please try again.";
       if (error.code === 'auth/user-not-found') {
         // For security, we don't reveal if the user exists, but we show the same success message.
         // This prevents email enumeration attacks.
