@@ -1,75 +1,39 @@
 
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck } from "lucide-react"
+import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Info } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
-import type { Booking as BookingType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
-// NEW FEATURE CODE: Import the Paddle Hosted Checkout links
 import { paddleHostedLinks } from "@/config/paddle";
+import { getSlotData, type SlotData } from "@/app/actions/slotActions";
+import { createSecureBooking } from "@/app/actions/bookingActions";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 
-interface BookedSlotInfo {
-  startTimeValue: string;
-  startTimeDate: Date;
-  endTimeDate: Date;
-}
-
-async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
-  if (!date) return [];
-  try {
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    const bookingsRef = collection(db, "bookings");
-    const q = query(
-      bookingsRef,
-      where("date", "==", formattedDate),
-      where("status", "in", ["confirmed", "completed"])
-    );
-    const querySnapshot = await getDocs(q);
-
-    const bookedSlots: BookedSlotInfo[] = [];
-    querySnapshot.forEach(doc => {
-      const data = doc.data() as BookingType;
-      if (data.time && data.duration) {
-        const slotDate = startOfDay(date);
-        const parsedStartTime = parse(data.time, 'HH:mm', slotDate);
-        if (!isNaN(parsedStartTime.getTime())) {
-            bookedSlots.push({
-                startTimeValue: data.time,
-                startTimeDate: parsedStartTime,
-                endTimeDate: addMinutes(parsedStartTime, data.duration)
-            });
-        } else {
-            console.warn(`Could not parse booked time: ${data.time} for date ${formattedDate}`);
-        }
-      }
-    });
-    return bookedSlots;
-  } catch (error) {
-    console.error("Error fetching booked slots data:", error);
-    return [];
-  }
+// Define the structure for a generated time slot in the UI
+interface TimeSlot {
+  display: string;
+  value: string;
+  status: 'available' | 'booked' | 'timeOff' | 'past';
 }
 
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
   const refDate = new Date();
-  for (let h = 0; h < 24; h++) { // Generate times for all 24 hours
+  for (let h = 0; h < 24; h++) { 
     times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'HH:mm'));
     times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'HH:mm'));
   }
@@ -87,7 +51,6 @@ export default function BookLessonPage() {
 
 
   const lessonTypes = [
-    // Individual
     {
       value: "free-trial", label: "Free Trial", duration: 30, price: 0, description: "One-time only trial to meet the tutor",
       features: ["Meet the tutor", "Experience teaching style", "Discuss learning goals"], type: "individual", paddleLinkKey: "freeTrial" as const
@@ -100,7 +63,6 @@ export default function BookLessonPage() {
       value: "comprehensive-lesson", label: "Comprehensive Lesson", duration: 60, price: 16, description: "Structured learning session",
       features: ["Structured lesson plan", "Cultural context & stories", "Homework & materials"], type: "individual", paddleLinkKey: "comprehensiveLesson" as const
     },
-    // Group
     {
       value: "quick-group-conversation", label: "Quick Group Conversation", duration: 30, price: 7, description: "Practice with fellow learners",
       features: ["Small group setting (4-6)", "Focused conversation", "Peer learning experience"], type: "group", minStudents: 4, maxStudents: 6, paddleLinkKey: "quickGroupConversation" as const
@@ -109,7 +71,6 @@ export default function BookLessonPage() {
       value: "immersive-conversation-practice", label: "Immersive Conversation Practice", duration: 60, price: 12, description: "Deeper conversation and cultural insights",
       features: ["Extended conversation time", "In-depth cultural topics", "Collaborative learning"], type: "group", minStudents: 4, maxStudents: 6, paddleLinkKey: "immersiveConversationPractice" as const
     },
-    // Packages
     {
       value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: "10 x 30-min", price: 50, originalPrice: 70, totalLessons: 10, unitDuration: 30,
       description: "10 conversation practice sessions",
@@ -137,26 +98,35 @@ export default function BookLessonPage() {
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [paymentNote, setPaymentNote] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
+  const [slotData, setSlotData] = useState<SlotData | null>(null);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
   const availableDates = Array.from({ length: 90 }, (_, i) => addDays(startOfDay(new Date()), i));
   const selectedLessonDetails = lessonTypes.find((type) => type.value === selectedType);
 
+  const fetchSlotData = useCallback(async (date: Date) => {
+    setIsFetchingSlots(true);
+    setSlotData(null);
+    setSelectedTime(undefined);
+    try {
+        const result = await getSlotData(date);
+        if (result.success && result.data) {
+            setSlotData(result.data);
+        } else {
+            toast({ title: "Error", description: result.error || "Could not fetch available slots.", variant: "destructive" });
+        }
+    } catch (error) {
+        toast({ title: "Error", description: "An unexpected error occurred while fetching slots.", variant: "destructive" });
+    } finally {
+        setIsFetchingSlots(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     if (selectedDate) {
-      setIsFetchingSlots(true);
-      getBookedSlotsData(selectedDate).then(ranges => {
-        setDailyBookedRanges(ranges);
-        setIsFetchingSlots(false);
-        setSelectedTime(undefined);
-      }).catch(error => {
-        console.error("Failed to get booked slots data:", error);
-        toast({ title: "Error", description: "Could not fetch available slots.", variant: "destructive" });
-        setIsFetchingSlots(false);
-      });
+      fetchSlotData(selectedDate);
     }
-  }, [selectedDate, toast]);
+  }, [selectedDate, fetchSlotData]);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date && isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))) {
@@ -167,35 +137,51 @@ export default function BookLessonPage() {
     }
   };
 
-  const displayTimeSlots = useMemo(() => {
-    if (!selectedDate || !selectedLessonDetails || selectedLessonDetails.type === 'package') return [];
-    const slots: { display: string; value: string; isDisabled: boolean }[] = [];
-    const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number;
-    const slotDate = startOfDay(selectedDate);
-
-    for (const startTimeString of baseStartTimes) {
-      const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
-      if (isNaN(potentialStartTime.getTime())) {
-          console.warn(`Could not parse base start time: ${startTimeString}`);
-          continue;
-      }
-      const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
-
-      let isSlotBooked = false;
-      for (const bookedRange of dailyBookedRanges) {
-        if (potentialStartTime < bookedRange.endTimeDate && potentialEndTime > bookedRange.startTimeDate) {
-          isSlotBooked = true;
-          break;
-        }
-      }
-      slots.push({
-        display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
-        value: startTimeString,
-        isDisabled: isSlotBooked,
-      });
+  const displayTimeSlots = useMemo((): TimeSlot[] => {
+    if (!selectedDate || !selectedLessonDetails || selectedLessonDetails.type === 'package' || !slotData) {
+        return [];
     }
-    return slots;
-  }, [selectedDate, selectedLessonDetails, dailyBookedRanges]);
+
+    const now = new Date();
+    const slotDate = startOfDay(selectedDate);
+    const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number;
+
+    return baseStartTimes.map(startTimeString => {
+        const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
+        if (isNaN(potentialStartTime.getTime())) {
+            return { display: 'Invalid', value: startTimeString, status: 'booked' };
+        }
+        const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
+        let status: TimeSlot['status'] = 'available';
+
+        if (potentialStartTime < now) {
+            status = 'past';
+        } else {
+            // Check against time off first (highest precedence)
+            for (const offRange of slotData.timeOff) {
+                if (potentialStartTime < offRange.endTime && potentialEndTime > offRange.startTime) {
+                    status = 'timeOff';
+                    break;
+                }
+            }
+            // If not time off, check against booked slots
+            if (status === 'available') {
+                for (const bookedRange of slotData.booked) {
+                    if (potentialStartTime < bookedRange.endTime && potentialEndTime > bookedRange.startTime) {
+                        status = 'booked';
+                        break;
+                    }
+                }
+            }
+        }
+        
+        return {
+            display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
+            value: startTimeString,
+            status: status
+        };
+    });
+}, [selectedDate, selectedLessonDetails, slotData]);
 
   const handleBooking = async () => {
     if (!user) {
@@ -223,39 +209,31 @@ export default function BookLessonPage() {
           : typeof selectedLessonDetails.duration === 'number'
           ? selectedLessonDetails.duration
           : 60;
-
-      // START: EXISTING FUNCTIONALITY - Create the booking document first for all types
+      
       const bookingData = {
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
         time: selectedTime || 'N/A_PACKAGE',
         duration: unitDuration,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
-        tutorId: "MahderNegashMamo",
-        tutorName: "Mahder Negash",
+        status: isFreeTrial ? 'confirmed' : 'awaiting-payment' as 'confirmed' | 'awaiting-payment',
         userId: user.uid,
         userName: user.displayName || "User",
         userEmail: user.email || "No Email",
-        ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
-        createdAt: serverTimestamp(),
+        learningGoals: paymentNote.trim(), // Re-purposing the field
       };
 
-      const docRef = await addDoc(collection(db, "bookings"), bookingData);
-      const bookingId = docRef.id;
+      const result = await createSecureBooking(bookingData);
       
-      console.log('✅ Booking document created successfully in Firestore.', {
-        id: bookingId,
-        status: bookingData.status,
-        data: bookingData,
-      });
-      // END: EXISTING FUNCTIONALITY
+      if (!result.success || !result.bookingId) {
+        throw new Error(result.message || "Failed to secure your booking slot.");
+      }
 
+      const bookingId = result.bookingId;
+      
       if (isFreeTrial) {
-        // If it's a free trial, the booking is confirmed instantly, redirect to our success page.
         router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
       } else {
-        // --- START: RECOMMENDED FIX IMPLEMENTATION ---
         const paddleLinkKey = selectedLessonDetails.paddleLinkKey;
         const paddleLink = paddleHostedLinks[paddleLinkKey];
         
@@ -264,31 +242,20 @@ export default function BookLessonPage() {
         }
         
         const successUrl = `${window.location.origin}/bookings/success`;
-        
-        // Step 1: Create the passthrough data as a JSON object. This is what the webhook will receive.
         const passthroughData = { booking_id: bookingId };
-        
-        // Step 2: JSON.stringify the object and then URL-encode the entire string. This is the correct, robust way.
         const encodedPassthrough = encodeURIComponent(JSON.stringify(passthroughData));
-        
-        // Step 3: URL-encode the success URL to ensure it's passed correctly.
         const encodedSuccessUrl = encodeURIComponent(successUrl);
-        
-        // Step 4: Construct the final, robust checkout URL.
         const checkoutUrl = `${paddleLink}?passthrough=${encodedPassthrough}&success_url=${encodedSuccessUrl}`;
         
-        // Debugging log to verify the final URL before redirecting.
-        console.log('🚀 Final Paddle Checkout URL:', checkoutUrl);
-
-        // Redirect the user's browser to the Paddle checkout page.
         window.location.href = checkoutUrl;
-        // --- END: RECOMMENDED FIX IMPLEMENTATION ---
       }
 
     } catch (error: any) {
-      console.error("❌ Booking process failed before redirect:", error);
-      alert(`An error occurred during booking. Check the console for details. Error: ${error.message}`);
+      console.error("❌ Booking process failed:", error);
       toast({ title: "Booking Failed", description: error.message || "Could not complete your booking. Please try again.", variant: "destructive", duration: 9000 });
+      if (selectedDate) {
+        fetchSlotData(selectedDate); // Re-fetch slots to show the latest availability
+      }
       setIsProcessing(false);
     }
   };
@@ -432,18 +399,42 @@ export default function BookLessonPage() {
                         <p className="text-muted-foreground text-center py-4">No available slots for this duration/date.</p>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {displayTimeSlots.map((slot) => (
-                            <Button
-                            key={slot.value + slot.display}
-                            variant={selectedTime === slot.value ? "default" : "outline"}
-                            onClick={() => setSelectedTime(slot.value)}
-                            disabled={slot.isDisabled}
-                            className={slot.isDisabled ? "bg-muted text-muted-foreground line-through hover:bg-muted" : ""}
-                            >
-                            {slot.display}
-                            {slot.isDisabled && <span className="text-xs ml-1">(Booked)</span>}
-                            </Button>
-                        ))}
+                        <TooltipProvider>
+                        {displayTimeSlots.map((slot) => {
+                          const isDisabled = slot.status !== 'available';
+                          const tooltipContent = {
+                              booked: "This slot is already booked.",
+                              timeOff: "The tutor is unavailable at this time.",
+                              past: "This time has already passed.",
+                              available: ""
+                          };
+                          return (
+                            <Tooltip key={slot.value + slot.display} delayDuration={100}>
+                              <TooltipTrigger asChild>
+                                <div className="w-full">
+                                    <Button
+                                      variant={selectedTime === slot.value ? "default" : "outline"}
+                                      onClick={() => setSelectedTime(slot.value)}
+                                      disabled={isDisabled}
+                                      className={`w-full ${
+                                        slot.status === 'booked' ? "bg-muted text-muted-foreground line-through hover:bg-muted" :
+                                        slot.status === 'timeOff' ? "bg-yellow-400/10 text-yellow-700 dark:text-yellow-500 border-yellow-400/20 line-through" :
+                                        ""
+                                      }`}
+                                    >
+                                      {slot.display}
+                                    </Button>
+                                </div>
+                              </TooltipTrigger>
+                              {isDisabled && (
+                                <TooltipContent>
+                                    <p>{tooltipContent[slot.status]}</p>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          )
+                        })}
+                        </TooltipProvider>
                         </div>
                     )}
                     </CardContent>
@@ -488,22 +479,18 @@ export default function BookLessonPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl text-foreground">
                   <MessageSquare className="w-5 h-5 text-primary" />
-                  {isPaidLesson ? "Payment Note (Optional)" : "Learning Goals (Optional)"}
+                  {isPaidLesson ? "Learning Goals / Note to Tutor (Optional)" : "Learning Goals (Optional)"}
                 </CardTitle>
                 <CardDescription>
                   {isPaidLesson 
-                    ? "Add a note for the tutor (e.g., your payment transaction ID or username)."
+                    ? `Tell ${tutorInfo.name.split(" ")[0]} about your learning objectives.`
                     : `Tell ${tutorInfo.name.split(" ")[0]} about your specific learning objectives.`
                   }
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder={
-                    isPaidLesson 
-                    ? "e.g., PayPal Transaction ID: 123ABCXYZ"
-                    : "e.g., conversational Amharic for family, basic reading/writing..."
-                  }
+                  placeholder="e.g., conversational Amharic for family, basic reading/writing..."
                   value={paymentNote}
                   onChange={(e) => setPaymentNote(e.target.value)}
                   rows={4}
