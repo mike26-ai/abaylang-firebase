@@ -22,6 +22,15 @@ type TimeOffData = {
   reason?: string;
 };
 
+// Shape of the form data coming from the client
+type TimeOffInput = {
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+  reason?: string;
+};
+
 
 // Helper function to safely initialize Firebase Admin
 async function getAdminServices() {
@@ -47,13 +56,7 @@ const TUTOR_ID = "MahderNegashMamo"; // Placeholder for the single tutor's ID
  * Performs server-side validation to ensure the user is an admin and
  * the time off block does not conflict with existing confirmed bookings.
  */
-export async function createTimeOff(formData: {
-  startDate: string;
-  startTime: string;
-  endDate: string;
-  endTime: string;
-  reason?: string;
-}): Promise<ActionResponse> {
+export async function createTimeOff(formData: TimeOffInput): Promise<ActionResponse> {
   const { db, error } = await getAdminServices();
   if (error || !db) {
     return { success: false, error: error || "Database connection failed." };
@@ -71,6 +74,7 @@ export async function createTimeOff(formData: {
             return { success: false, error: "Start time must be before end time." };
         }
 
+        // This is the query that requires the composite index.
         const bookingsRef = db.collection("bookings");
         const conflictQuery = bookingsRef
             .where("status", "==", "confirmed")
