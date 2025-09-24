@@ -40,9 +40,9 @@ export async function createSecureBooking(bookingData: {
     // 1. Check for conflict with existing CONFIRMED bookings
     const bookingsRef = db.collection('bookings');
     const bookingConflictQuery = bookingsRef
-      .where('date', '==', date)
-      .where('time', '==', time)
-      .where('status', 'in', ['confirmed', 'awaiting-payment']);
+      .where('status', 'in', ['confirmed', 'awaiting-payment'])
+      .where('startTime', '<', requestedEndTime)
+      .where('endTime', '>', requestedStartTime);
       
     const bookingConflictSnapshot = await bookingConflictQuery.get();
     if (!bookingConflictSnapshot.empty) {
@@ -63,6 +63,8 @@ export async function createSecureBooking(bookingData: {
     // 3. If all checks pass, create the booking document
     const docRef = await addDoc(collection(db, 'bookings'), {
       ...bookingData,
+      startTime: requestedStartTime, // Storing the correct timestamp
+      endTime: requestedEndTime,     // Storing the correct timestamp
       createdAt: serverTimestamp(),
     });
 
@@ -74,6 +76,10 @@ export async function createSecureBooking(bookingData: {
 
   } catch (error: any) {
     console.error('Error in createSecureBooking:', error);
+    // Provide a more user-friendly error for index issues.
+    if (error.code === 'FAILED_PRECONDITION') {
+        return { success: false, message: "The database isn't configured for this query yet. Please create the required index in your Firebase console and try again." };
+    }
     return {
       success: false,
       message: error.message || 'An unexpected server error occurred.',

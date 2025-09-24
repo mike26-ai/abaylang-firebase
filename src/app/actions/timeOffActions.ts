@@ -103,7 +103,12 @@ export async function createTimeOff(formData: TimeOffInput): Promise<ActionRespo
         return { success: true };
 
     } catch (error: any) {
-        return { success: false, error: error.message };
+        console.error("Error in createTimeOff action:", error);
+        // This makes the error message more visible to the user if it's an index issue.
+        if (error.code === 'FAILED_PRECONDITION') {
+            return { success: false, error: "Query requires a Firestore index. Please check the server terminal logs for a link to create it." };
+        }
+        return { success: false, error: error.message || "An unexpected server error occurred." };
     }
 }
 
