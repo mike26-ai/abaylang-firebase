@@ -3,6 +3,8 @@
 import { auth } from "@/lib/firebase";
 import type { Booking, TimeOff } from "@/lib/types";
 import { format } from "date-fns";
+import {_getAvailability, _blockSlot, _unblockSlot} from "@/app/api/availability/service";
+
 
 // The base URL for our API routes, which will adapt to the environment.
 const API_BASE_URL = '/api';
@@ -11,6 +13,58 @@ interface AvailabilityResponse {
   bookings: Booking[];
   timeOff: TimeOff[];
 }
+
+/**
+ * TESTABLE LOGIC (SERVER-SIDE)
+ * This function contains the core logic for fetching availability and can be unit-tested.
+ * It is called by the /api/availability/get route handler.
+ */
+export const getAvailabilityLogic = _getAvailability;
+
+
+/**
+ * TESTABLE LOGIC (SERVER-SIDE)
+ * This function contains the core logic for blocking a slot and can be unit-tested.
+ * It is called by the /api/availability/block route handler.
+ *
+ * @example
+ * // How to test this function (e.g., using Jest):
+ * jest.mock('firebase-admin/firestore');
+ *
+ * describe('blockSlotLogic', () => {
+ *   it('should throw an error if a conflicting booking exists', async () => {
+ *     // Mock Firestore to return a conflicting booking
+ *     const conflictingBooking = { ... };
+ *     firestore.collection().where().get.mockResolvedValue({ empty: false, docs: [conflictingBooking] });
+ *
+ *     // Expect the function to throw a specific error
+ *     await expect(blockSlotLogic(...)).rejects.toThrow('slot_already_booked');
+ *   });
+ *
+ *   it('should create a timeOff document if no conflict exists', async () => {
+ *      // Mock Firestore to return no conflicting bookings
+ *      firestore.collection().where().get.mockResolvedValue({ empty: true });
+ *      const addMock = firestore.collection().add;
+ *
+ *      await blockSlotLogic(...);
+ *
+ *      // Expect the add function to have been called with the correct data
+ *      expect(addMock).toHaveBeenCalledWith(expect.objectContaining({ note: 'Admin Block' }));
+ *   });
+ * });
+ */
+export const blockSlotLogic = _blockSlot;
+
+
+/**
+ * TESTABLE LOGIC (SERVER-SIDE)
+ * This function contains the core logic for unblocking a slot and can be unit-tested.
+ * It is called by the /api/availability/unblock route handler.
+ */
+export const unblockSlotLogic = _unblockSlot;
+
+
+// --- CLIENT-SIDE FUNCTIONS ---
 
 /**
  * Fetches both confirmed bookings and time-off blocks for a specific tutor on a given date.
