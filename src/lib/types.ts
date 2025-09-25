@@ -24,6 +24,18 @@ export interface Booking {
   zoomLink?: string; // NEW: For the lesson's Zoom link
 }
 
+export interface TimeOff {
+  id: string;
+  tutorId: string;
+  startISO: string; // ISO 8601 format string
+  endISO: string;   // ISO 8601 format string
+  blockedById: string;
+  blockedByEmail?: string;
+  note?: string;
+  createdAt: Timestamp;
+}
+
+
 export interface Testimonial {
   id: string;
   userId: string;
