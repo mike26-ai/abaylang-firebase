@@ -93,9 +93,9 @@ export async function POST(request: NextRequest) {
     // 5. Return success response
     return NextResponse.json({ success: true, data: timeOffDocData }, { status: 201 });
 
-  } catch (error: any) {
+  } catch (err: any) {
     console.error('API Error (/availability/block):', err);
-    if (error.message.includes('slot_already_booked')) {
+    if (err.message.includes('slot_already_booked')) {
         return NextResponse.json({ success: false, error: 'This time slot is already booked by a student.', details: err.message }, { status: 409 });
     }
     return NextResponse.json(

@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
         endTime: (doc.data().endTime as Timestamp)?.toDate().toISOString(),
         createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString(),
       }));
-    } catch (err) {
-      console.error("API Error: Failed to fetch bookings:", err);
+    } catch (err: any) {
+      console.error("API Error: Failed to fetch bookings:", err.message);
       // Do not throw; allow the function to continue and return partial data.
     }
 
@@ -79,19 +79,19 @@ export async function GET(request: NextRequest) {
           ...doc.data(),
           createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString(),
       }));
-    } catch (err) {
-        console.error("API Error: Failed to fetch timeOff blocks (likely missing index):", err);
+    } catch (err: any) {
+        console.error("API Error: Failed to fetch timeOff blocks (likely missing index):", err.message);
         // Do not throw; allow the function to continue and return partial data.
     }
 
     // 3. Return combined data, ensuring a successful response structure
     return NextResponse.json({ success: true, data: { bookings, timeOff } });
 
-  } catch (error: any) {
+  } catch (err: any) {
     // This outer catch handles errors from validation or other unexpected issues.
-    console.error('API Error (/availability/get):', error);
+    console.error('API Error (/availability/get):', err);
     return NextResponse.json(
-      { success: false, error: 'Failed to process availability request', details: error?.message },
+      { success: false, error: 'Failed to process availability request', details: err?.message },
       { status: 500 }
     );
   }

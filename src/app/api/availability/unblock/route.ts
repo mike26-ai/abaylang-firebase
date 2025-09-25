@@ -4,6 +4,7 @@ import { initAdmin } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, runTransaction } from 'firebase-admin/firestore';
 import { z } from 'zod';
+import { ADMIN_EMAIL } from '@/config/site';
 
 // Initialize Firebase Admin SDK
 try {
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
         }
 
         const timeOffData = docSnap.data();
-        const isAdmin = decodedToken.admin === true || decodedToken.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+        const isAdmin = decodedToken.admin === true || decodedToken.email === ADMIN_EMAIL;
         const isOwner = timeOffData?.blockedById === decodedToken.uid;
 
         // Authorization check: Must be admin or the user who created the block
@@ -70,12 +71,12 @@ export async function POST(request: NextRequest) {
     // 4. Return success response
     return NextResponse.json({ success: true, data: result }, { status: 200 });
 
-  } catch (error: any) {
+  } catch (err: any) {
     console.error('API Error (/availability/unblock):', err);
-    if (error.message === 'not_found') {
+    if (err.message === 'not_found') {
         return NextResponse.json({ success: false, error: 'Time off block not found.', details: err.message }, { status: 404 });
     }
-    if (error.message === 'unauthorized') {
+    if (err.message === 'unauthorized') {
         return NextResponse.json({ success: false, error: 'User is not authorized to delete this time block.', details: err.message }, { status: 403 });
     }
     return NextResponse.json(
