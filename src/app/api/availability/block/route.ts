@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
         const conflictingBookingsSnapshot = await transaction.get(conflictQuery);
 
         if (!conflictingBookingsSnapshot.empty) {
+            // Throw a specific error to be caught below
             throw new Error('slot_already_booked');
         }
 
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
         };
       
         transaction.set(newTimeOffRef, timeOffDoc);
+        // Return the full document data to be sent back in the response
         return { id: newTimeOffRef.id, ...timeOffDoc };
     });
 

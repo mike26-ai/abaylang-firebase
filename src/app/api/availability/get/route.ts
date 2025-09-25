@@ -14,14 +14,14 @@ try {
 
 const db = getFirestore();
 
-// Zod schema for input validation
+// Zod schema for input validation from query parameters
 const GetAvailabilitySchema = z.object({
   tutorId: z.string().min(1, 'Tutor ID is required.'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format.'),
 });
 
 /**
- * GET handler to fetch availability.
+ * GET handler to fetch availability for a specific tutor and date.
  * This route handler now contains all its own logic.
  */
 export async function GET(request: NextRequest) {
@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
     const bookings = bookingsSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
+      // Ensure Timestamps are converted to ISO strings for JSON serialization
       startTime: (doc.data().startTime as Timestamp)?.toDate().toISOString(),
       endTime: (doc.data().endTime as Timestamp)?.toDate().toISOString(),
       createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString(),

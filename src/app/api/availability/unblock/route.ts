@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
         if (!docSnap.exists) {
             const error = new Error('not_found');
-            (error as any).status = 404;
+            (error as any).status = 404; // Attach status for specific error handling
             throw error;
         }
 
@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
         const isAdmin = decodedToken.admin === true || decodedToken.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
         const isOwner = timeOffData?.blockedById === decodedToken.uid;
 
+        // Authorization check: Must be admin or the user who created the block
         if (!isAdmin && !isOwner) {
             const error = new Error('unauthorized');
             (error as any).status = 403;
