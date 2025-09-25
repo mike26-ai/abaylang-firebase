@@ -22,7 +22,8 @@ const GetAvailabilitySchema = z.object({
 
 /**
  * GET handler to fetch availability for a specific tutor and date.
- * This route handler now contains all its own logic.
+ * This route handler now contains individual try/catch blocks for each query
+ * to ensure it always returns a valid JSON response, even if one query fails.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -36,48 +37,61 @@ export async function GET(request: NextRequest) {
     }
     const { date, tutorId } = validationResult.data;
     
-    // 2. Perform Firestore queries
+    // 2. Perform Firestore queries with individual error handling
     const selectedDate = parse(date, 'yyyy-MM-dd', new Date());
     const startOfSelectedDay = startOfDay(selectedDate);
     const endOfSelectedDay = endOfDay(selectedDate);
     
-    // Fetch confirmed bookings
-    const bookingsQuery = db.collection('bookings')
-      .where('tutorId', '==', tutorId)
-      .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-      .where('startTime', '>=', startOfSelectedDay)
-      .where('startTime', '<=', endOfSelectedDay);
-      
-    const bookingsSnapshot = await bookingsQuery.get();
-    const bookings = bookingsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      // Ensure Timestamps are converted to ISO strings for JSON serialization
-      startTime: (doc.data().startTime as Timestamp)?.toDate().toISOString(),
-      endTime: (doc.data().endTime as Timestamp)?.toDate().toISOString(),
-      createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString(),
-    }));
+    let bookings: any[] = [];
+    let timeOff: any[] = [];
 
-    // Fetch time-off blocks
-    const timeOffQuery = db.collection('timeOff')
+    // Fetch confirmed bookings
+    try {
+      const bookingsQuery = db.collection('bookings')
         .where('tutorId', '==', tutorId)
-        .where('startISO', '>=', startOfSelectedDay.toISOString())
-        .where('startISO', '<=', endOfSelectedDay.toISOString());
+        .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
+        .where('startTime', '>=', startOfSelectedDay)
+        .where('startTime', '<=', endOfSelectedDay);
         
-    const timeOffSnapshot = await timeOffQuery.get();
-    const timeOff = timeOffSnapshot.docs.map(doc => ({
+      const bookingsSnapshot = await bookingsQuery.get();
+      bookings = bookingsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
+        startTime: (doc.data().startTime as Timestamp)?.toDate().toISOString(),
+        endTime: (doc.data().endTime as Timestamp)?.toDate().toISOString(),
         createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString(),
-    }));
+      }));
+    } catch (err) {
+      console.error("API Error: Failed to fetch bookings:", err);
+      // Do not throw; allow the function to continue and return partial data.
+    }
 
-    // 3. Return combined data
+    // Fetch time-off blocks
+    try {
+      const timeOffQuery = db.collection('timeOff')
+          .where('tutorId', '==', tutorId)
+          .where('startISO', '>=', startOfSelectedDay.toISOString())
+          .where('startISO', '<=', endOfSelectedDay.toISOString());
+          
+      const timeOffSnapshot = await timeOffQuery.get();
+      timeOff = timeOffSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString(),
+      }));
+    } catch (err) {
+        console.error("API Error: Failed to fetch timeOff blocks (likely missing index):", err);
+        // Do not throw; allow the function to continue and return partial data.
+    }
+
+    // 3. Return combined data, ensuring a successful response structure
     return NextResponse.json({ success: true, data: { bookings, timeOff } });
 
   } catch (error: any) {
+    // This outer catch handles errors from validation or other unexpected issues.
     console.error('API Error (/availability/get):', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch availability data', details: error?.message },
+      { success: false, error: 'Failed to process availability request', details: error?.message },
       { status: 500 }
     );
   }
