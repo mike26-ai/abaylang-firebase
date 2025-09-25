@@ -71,15 +71,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: result }, { status: 200 });
 
   } catch (error: any) {
-    console.error('API Error (/availability/unblock):', error);
+    console.error('API Error (/availability/unblock):', err);
     if (error.message === 'not_found') {
-        return NextResponse.json({ success: false, error: 'Time off block not found.', details: error.message }, { status: 404 });
+        return NextResponse.json({ success: false, error: 'Time off block not found.', details: err.message }, { status: 404 });
     }
     if (error.message === 'unauthorized') {
-        return NextResponse.json({ success: false, error: 'User is not authorized to delete this time block.', details: error.message }, { status: 403 });
+        return NextResponse.json({ success: false, error: 'User is not authorized to delete this time block.', details: err.message }, { status: 403 });
     }
     return NextResponse.json(
-      { success: false, error: 'Failed to unblock time slot.', details: error?.message },
+      { success: false, error: 'Failed to unblock time slot.', details: err?.message },
       { status: 500 }
     );
   }
