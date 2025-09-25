@@ -22,3 +22,19 @@ This system is modular. To switch to a different provider (e.g., UploadThing):
 1.  Create a new Server Action (e.g., `uploadToUploadThing`).
 2.  Update the components that call the upload action to use your new function.
 3.  Update your environment variables with the new service's credentials.
+
+## Firestore Composite Indexes
+
+For the application's queries to work efficiently, you will need to manually create the following composite indexes in your Firebase Console. The application may prompt you with a direct link to create these if they are missing.
+
+1.  **Bookings Collection Index:**
+    *   **Collection:** `bookings`
+    *   **Fields:** `date` (Ascending), `tutorId` (Ascending), `status` (Ascending)
+    *   **Query Scope:** Collection
+    *   **Purpose:** This index is essential for efficiently fetching available and booked time slots for a specific tutor on a given date, ensuring the booking calendar loads quickly and accurately.
+
+2.  **TimeOff Collection Index:**
+    *   **Collection:** `timeOff`
+    *   **Fields:** `date` (Ascending), `tutorId` (Ascending)
+    *   **Query Scope:** Collection
+    *   **Purpose:** This index allows the system to quickly retrieve all the time-off blocks for a tutor on a specific date, which is necessary for displaying the tutor's availability correctly.
