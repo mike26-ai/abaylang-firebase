@@ -1,13 +1,11 @@
-
 // File: src/app/layout.tsx
 
 import type { Metadata } from 'next';
 import React from "react";
 import { Lato, Lora } from "next/font/google";
 import "./globals.css";
-import { FirebaseProvider } from "@/components/providers/firebase-provider";
-import { Toaster } from "@/components/ui/toaster";
 import { ConditionalLayoutWrapper } from "@/components/layout/conditional-layout-wrapper";
+import { ClientProviders } from '@/components/providers/client-providers';
 
 // This section defines your custom fonts and is unchanged.
 const lato = Lato({
@@ -34,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 // This is your updated RootLayout component.
-// We removed the manual <head> because the 'metadata' object handles it automatically.
+// We are now using the <ClientProviders> wrapper for all client-side context.
 export default function RootLayout({
   children,
 }: {
@@ -43,10 +41,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${lato.variable} ${lora.variable}`}>
       <body>
-        <FirebaseProvider>
+        <ClientProviders>
           <ConditionalLayoutWrapper>{children}</ConditionalLayoutWrapper>
-          <Toaster />
-        </FirebaseProvider>
+        </ClientProviders>
       </body>
     </html>
   );
