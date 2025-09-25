@@ -15,21 +15,29 @@ interface AvailabilityResponse {
 // --- CLIENT-SIDE FUNCTIONS ---
 
 /**
- * Fetches both confirmed bookings and time-off blocks for a specific tutor on a given date.
- * This is a public-facing function and does not require authentication.
- * @param tutorId - The ID of the tutor.
- * @param date - The date for which to fetch availability.
+ * Fetches availability data for a specific tutor on a given date via a secure API route.
+ * @param date - The date for which to fetch availability, as a YYYY-MM-DD string.
  * @returns An object containing arrays of bookings and time-off blocks.
  */
-export async function getAvailability(tutorId: string, date: Date): Promise<AvailabilityResponse> {
-  const formattedDate = format(date, 'yyyy-MM-dd');
-  const response = await fetch(`${API_BASE_URL}/availability/get?tutorId=${tutorId}&date=${formattedDate}`);
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch availability data.');
+export async function getAvailability(date: string): Promise<AvailabilityResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/availability/get?date=${date}`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Server response error:', errorData);
+      throw new Error(errorData.error || 'Failed to fetch availability data.');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (err: any) {
+    console.error('Fetch availability error:', err);
+    // Re-throw the error so the calling component can handle it (e.g., show a toast).
+    throw new Error('A network error occurred while fetching availability data.');
   }
-  return response.json();
 }
+
 
 interface BlockSlotPayload {
   tutorId: string;
