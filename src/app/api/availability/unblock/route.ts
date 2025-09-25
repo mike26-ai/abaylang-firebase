@@ -1,54 +1,28 @@
-// File: src/app/api/availability/unblock/route.ts
-import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin } from '@/lib/firebase-admin';
-import { getAuth } from 'firebase-admin/auth';
-import { z } from 'zod';
-import { _unblockSlot } from '../service'; // Import the testable logic
 
-// Initialize Firebase Admin SDK
-initAdmin();
-const auth = getAuth();
+import { NextResponse } from 'next/server';
+import { getFirestore } from 'firebase-admin/firestore';
+import '@/lib/firebase-admin';
 
-// Zod schema for input validation remains the same
-const UnblockTimeSchema = z.object({
-  timeOffId: z.string().min(1, 'timeOffId is required.'),
-});
-
-/**
- * POST handler to unblock (delete) a time-off slot.
- * This route handler is now a thin wrapper around the testable business logic.
- */
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    // 1. Verify Authentication
-    const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
-    if (!idToken) {
-      return NextResponse.json({ code: 'unauthenticated', message: 'No authentication token provided.' }, { status: 401 });
-    }
-    const decodedToken = await auth.verifyIdToken(idToken);
+    const body = await req.json();
+    const { date, slot } = body;
 
-    // 2. Validate Input Body
-    const body = await request.json();
-    const validationResult = UnblockTimeSchema.safeParse(body);
-    if (!validationResult.success) {
-      return NextResponse.json({ code: 'invalid_input', message: validationResult.error.flatten().fieldErrors }, { status: 400 });
+    if (!date || !slot) {
+      return NextResponse.json({ success: false, error: 'Missing date or slot' }, { status: 400 });
     }
-    const { timeOffId } = validationResult.data;
 
-    // 3. Call the decoupled, testable logic function
-    const result = await _unblockSlot(timeOffId, decodedToken);
+    const db = getFirestore();
+    const ref = db.collection('availability').doc(`${date}_${slot}`);
 
-    // 4. Return success response
-    return NextResponse.json(result, { status: 200 });
+    await ref.delete();
 
-  } catch (error: any) {
-    console.error('Error in unblock route:', error);
-    if (error.message === 'not_found') {
-        return NextResponse.json({ code: 'not_found', message: 'Time off block not found.' }, { status: 404 });
-    }
-    if (error.message === 'unauthorized') {
-        return NextResponse.json({ code: 'unauthorized', message: 'User is not authorized to delete this time block.' }, { status: 403 });
-    }
-    return NextResponse.json({ code: 'server_error', message: 'Failed to unblock time slot.' }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    console.error('API error (/availability/unblock):', err);
+    return NextResponse.json(
+      { success: false, error: 'Failed to unblock slot', details: err?.message },
+      { status: 500 }
+    );
   }
 }
