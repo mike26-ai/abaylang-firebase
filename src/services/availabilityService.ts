@@ -1,4 +1,3 @@
-
 // File: src/services/availabilityService.ts
 
 import { auth } from "@/lib/firebase";
@@ -22,7 +21,7 @@ interface AvailabilityResponse {
  */
 export async function getAvailability(date: string): Promise<AvailabilityResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/availability/get?date=${date}`);
+    const response = await fetch(`/api/availability/get?date=${date}`);
 
     if (!response.ok) {
       const errorData = await response.json();
