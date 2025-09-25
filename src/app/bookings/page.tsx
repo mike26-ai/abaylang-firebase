@@ -13,58 +13,16 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
-import type { Booking as BookingType } from "@/lib/types";
-import { SiteLogo } from "@/components/layout/SiteLogo";
-// NEW FEATURE CODE: Import the Paddle Hosted Checkout links
+import type { Booking as BookingType, TimeOff } from "@/lib/types";
+import { SiteLogo } from "@/components/layout/SiteLogo"
 import { paddleHostedLinks } from "@/config/paddle";
 
-
-interface BookedSlotInfo {
-  startTimeValue: string;
-  startTimeDate: Date;
-  endTimeDate: Date;
-}
-
-async function getBookedSlotsData(date: Date): Promise<BookedSlotInfo[]> {
-  if (!date) return [];
-  try {
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    const bookingsRef = collection(db, "bookings");
-    const q = query(
-      bookingsRef,
-      where("date", "==", formattedDate),
-      where("status", "in", ["confirmed", "completed"])
-    );
-    const querySnapshot = await getDocs(q);
-
-    const bookedSlots: BookedSlotInfo[] = [];
-    querySnapshot.forEach(doc => {
-      const data = doc.data() as BookingType;
-      if (data.time && data.duration) {
-        const slotDate = startOfDay(date);
-        const parsedStartTime = parse(data.time, 'HH:mm', slotDate);
-        if (!isNaN(parsedStartTime.getTime())) {
-            bookedSlots.push({
-                startTimeValue: data.time,
-                startTimeDate: parsedStartTime,
-                endTimeDate: addMinutes(parsedStartTime, data.duration)
-            });
-        } else {
-            console.warn(`Could not parse booked time: ${data.time} for date ${formattedDate}`);
-        }
-      }
-    });
-    return bookedSlots;
-  } catch (error) {
-    console.error("Error fetching booked slots data:", error);
-    return [];
-  }
-}
+// Import the new services
+import { getAvailability } from "@/services/availabilityService";
+import { createBooking } from "@/services/bookingService";
 
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
@@ -137,7 +95,11 @@ export default function BookLessonPage() {
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [paymentNote, setPaymentNote] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [dailyBookedRanges, setDailyBookedRanges] = useState<BookedSlotInfo[]>([]);
+  
+  // Updated state to hold both bookings and timeOff data
+  const [dailyBookedSlots, setDailyBookedSlots] = useState<BookingType[]>([]);
+  const [dailyTimeOff, setDailyTimeOff] = useState<TimeOff[]>([]);
+
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
   const availableDates = Array.from({ length: 90 }, (_, i) => addDays(startOfDay(new Date()), i));
@@ -146,17 +108,20 @@ export default function BookLessonPage() {
   useEffect(() => {
     if (selectedDate) {
       setIsFetchingSlots(true);
-      getBookedSlotsData(selectedDate).then(ranges => {
-        setDailyBookedRanges(ranges);
+      // Use the new service to get all availability data
+      getAvailability(tutorInfo.name.replace(/\s+/g, ""), selectedDate).then(({ bookings, timeOff }) => {
+        setDailyBookedSlots(bookings);
+        setDailyTimeOff(timeOff);
         setIsFetchingSlots(false);
         setSelectedTime(undefined);
       }).catch(error => {
-        console.error("Failed to get booked slots data:", error);
+        console.error("Failed to get availability data:", error);
         toast({ title: "Error", description: "Could not fetch available slots.", variant: "destructive" });
         setIsFetchingSlots(false);
       });
     }
   }, [selectedDate, toast]);
+
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date && isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))) {
@@ -167,36 +132,42 @@ export default function BookLessonPage() {
     }
   };
 
+  // Refactored logic to merge bookings and timeOff
   const displayTimeSlots = useMemo(() => {
     if (!selectedDate || !selectedLessonDetails || selectedLessonDetails.type === 'package') return [];
-    const slots: { display: string; value: string; isDisabled: boolean }[] = [];
+    
+    const slots: { display: string; value: string; status: 'available' | 'booked' | 'blocked' }[] = [];
     const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number;
     const slotDate = startOfDay(selectedDate);
+    
+    const bookedSlotTimes = new Set(dailyBookedSlots.map(b => b.time));
+    const blockedSlotTimes = new Set(dailyTimeOff.map(t => t.time));
 
     for (const startTimeString of baseStartTimes) {
-      const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
-      if (isNaN(potentialStartTime.getTime())) {
-          console.warn(`Could not parse base start time: ${startTimeString}`);
-          continue;
-      }
-      const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
+      const isBooked = bookedSlotTimes.has(startTimeString);
+      const isBlocked = blockedSlotTimes.has(startTimeString);
 
-      let isSlotBooked = false;
-      for (const bookedRange of dailyBookedRanges) {
-        if (potentialStartTime < bookedRange.endTimeDate && potentialEndTime > bookedRange.startTimeDate) {
-          isSlotBooked = true;
-          break;
-        }
+      const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
+      const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
+      
+      let status: 'available' | 'booked' | 'blocked' = 'available';
+      if (isBooked) {
+        status = 'booked';
+      } else if (isBlocked) {
+        status = 'blocked';
       }
+
       slots.push({
         display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
         value: startTimeString,
-        isDisabled: isSlotBooked,
+        status,
       });
     }
     return slots;
-  }, [selectedDate, selectedLessonDetails, dailyBookedRanges]);
+  }, [selectedDate, selectedLessonDetails, dailyBookedSlots, dailyTimeOff]);
 
+
+  // Refactored handleBooking to use the new service
   const handleBooking = async () => {
     if (!user) {
       toast({ title: "Login Required", description: "Please log in to book a lesson.", variant: "destructive" });
@@ -224,38 +195,29 @@ export default function BookLessonPage() {
           ? selectedLessonDetails.duration
           : 60;
 
-      // START: EXISTING FUNCTIONALITY - Create the booking document first for all types
-      const bookingData = {
+      const bookingPayload = {
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
         time: selectedTime || 'N/A_PACKAGE',
         duration: unitDuration,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
-        status: isFreeTrial ? 'confirmed' : 'awaiting-payment',
         tutorId: "MahderNegashMamo",
         tutorName: "Mahder Negash",
         userId: user.uid,
         userName: user.displayName || "User",
         userEmail: user.email || "No Email",
         ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
-        createdAt: serverTimestamp(),
+        isFreeTrial
       };
 
-      const docRef = await addDoc(collection(db, "bookings"), bookingData);
-      const bookingId = docRef.id;
+      // Use the new secure server action
+      const { bookingId } = await createBooking(bookingPayload);
       
-      console.log('✅ Booking document created successfully in Firestore.', {
-        id: bookingId,
-        status: bookingData.status,
-        data: bookingData,
-      });
-      // END: EXISTING FUNCTIONALITY
+      console.log('✅ Booking document created successfully via server action.', { id: bookingId });
 
       if (isFreeTrial) {
-        // If it's a free trial, the booking is confirmed instantly, redirect to our success page.
         router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
       } else {
-        // --- START: RECOMMENDED FIX IMPLEMENTATION ---
         const paddleLinkKey = selectedLessonDetails.paddleLinkKey;
         const paddleLink = paddleHostedLinks[paddleLinkKey];
         
@@ -264,31 +226,22 @@ export default function BookLessonPage() {
         }
         
         const successUrl = `${window.location.origin}/bookings/success`;
-        
-        // Step 1: Create the passthrough data as a JSON object. This is what the webhook will receive.
         const passthroughData = { booking_id: bookingId };
-        
-        // Step 2: JSON.stringify the object and then URL-encode the entire string. This is the correct, robust way.
         const encodedPassthrough = encodeURIComponent(JSON.stringify(passthroughData));
-        
-        // Step 3: URL-encode the success URL to ensure it's passed correctly.
         const encodedSuccessUrl = encodeURIComponent(successUrl);
-        
-        // Step 4: Construct the final, robust checkout URL.
         const checkoutUrl = `${paddleLink}?passthrough=${encodedPassthrough}&success_url=${encodedSuccessUrl}`;
         
-        // Debugging log to verify the final URL before redirecting.
-        console.log('🚀 Final Paddle Checkout URL:', checkoutUrl);
-
-        // Redirect the user's browser to the Paddle checkout page.
         window.location.href = checkoutUrl;
-        // --- END: RECOMMENDED FIX IMPLEMENTATION ---
       }
 
     } catch (error: any) {
-      console.error("❌ Booking process failed before redirect:", error);
-      alert(`An error occurred during booking. Check the console for details. Error: ${error.message}`);
-      toast({ title: "Booking Failed", description: error.message || "Could not complete your booking. Please try again.", variant: "destructive", duration: 9000 });
+      console.error("❌ Booking process failed:", error);
+      toast({ 
+        title: "Booking Failed", 
+        description: error.message.includes("409") ? "This slot is no longer available. Please select another time." : (error.message || "Could not complete your booking. Please try again."), 
+        variant: "destructive", 
+        duration: 9000 
+      });
       setIsProcessing(false);
     }
   };
@@ -437,11 +390,12 @@ export default function BookLessonPage() {
                             key={slot.value + slot.display}
                             variant={selectedTime === slot.value ? "default" : "outline"}
                             onClick={() => setSelectedTime(slot.value)}
-                            disabled={slot.isDisabled}
-                            className={slot.isDisabled ? "bg-muted text-muted-foreground line-through hover:bg-muted" : ""}
+                            disabled={slot.status !== 'available'}
+                            className={slot.status !== 'available' ? "bg-muted text-muted-foreground line-through hover:bg-muted" : ""}
                             >
                             {slot.display}
-                            {slot.isDisabled && <span className="text-xs ml-1">(Booked)</span>}
+                            {slot.status === 'booked' && <span className="text-xs ml-1">(Booked)</span>}
+                            {slot.status === 'blocked' && <span className="text-xs ml-1">(Unavailable)</span>}
                             </Button>
                         ))}
                         </div>
