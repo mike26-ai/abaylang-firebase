@@ -1,8 +1,7 @@
 // File: src/app/api/availability/unblock/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin } from '@/lib/firebase-admin';
+import { db, initAdmin } from '@/lib/firebase-admin'; // Correct import
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, runTransaction } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { ADMIN_EMAIL } from '@/config/site';
 
@@ -12,9 +11,7 @@ try {
 } catch (error) {
   console.error("CRITICAL: Failed to initialize Firebase Admin SDK in unblock/route.ts", error);
 }
-
 const auth = getAuth();
-const db = getFirestore();
 
 // Zod schema for input validation
 const UnblockTimeSchema = z.object({
@@ -23,7 +20,7 @@ const UnblockTimeSchema = z.object({
 
 /**
  * POST handler to unblock (delete) a time-off slot.
- * This route handler now contains all its own logic.
+ * Uses a Firestore transaction to ensure the operation is atomic.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -43,13 +40,12 @@ export async function POST(request: NextRequest) {
     const { timeOffId } = validationResult.data;
 
     // 3. Perform Firestore transaction
-    const result = await runTransaction(db, async (transaction) => {
+    const result = await db.runTransaction(async (transaction) => {
         const timeOffDocRef = db.collection('timeOff').doc(timeOffId);
         const docSnap = await transaction.get(timeOffDocRef);
 
         if (!docSnap.exists) {
             const error = new Error('not_found');
-            (error as any).status = 404; // Attach status for specific error handling
             throw error;
         }
 
@@ -60,7 +56,6 @@ export async function POST(request: NextRequest) {
         // Authorization check: Must be admin or the user who created the block
         if (!isAdmin && !isOwner) {
             const error = new Error('unauthorized');
-            (error as any).status = 403;
             throw error;
         }
         

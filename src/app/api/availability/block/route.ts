@@ -1,8 +1,8 @@
+
 // File: src/app/api/availability/block/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin } from '@/lib/firebase-admin';
+import { db, Timestamp, initAdmin } from '@/lib/firebase-admin'; // Correct import
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp, runTransaction } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { ADMIN_EMAIL } from '@/config/site';
 
@@ -12,9 +12,7 @@ try {
 } catch (error) {
   console.error("CRITICAL: Failed to initialize Firebase Admin SDK in block/route.ts", error);
 }
-
 const auth = getAuth();
-const db = getFirestore();
 
 // Zod schema for input validation
 const BlockTimeSchema = z.object({
@@ -29,7 +27,7 @@ const BlockTimeSchema = z.object({
 
 /**
  * POST handler to block a time slot for a tutor.
- * This route handler now contains all its own logic.
+ * Uses a Firestore transaction to ensure atomicity and prevent race conditions.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -55,21 +53,19 @@ export async function POST(request: NextRequest) {
     
     // 4. Perform Firestore transaction
     const { tutorId, startISO, endISO, note } = validationResult.data;
-    const startTime = Timestamp.fromDate(new Date(startISO));
-    const endTime = Timestamp.fromDate(new Date(endISO));
 
-    const timeOffDocData = await runTransaction(db, async (transaction) => {
+    // Correct usage: db.runTransaction is a method on the Firestore instance
+    const timeOffDocData = await db.runTransaction(async (transaction) => {
         const bookingsRef = db.collection('bookings');
         const conflictQuery = bookingsRef
             .where('tutorId', '==', tutorId)
             .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-            .where('startTime', '<', endTime)
-            .where('endTime', '>', startTime);
+            .where('startTime', '<', Timestamp.fromDate(new Date(endISO)))
+            .where('endTime', '>', Timestamp.fromDate(new Date(startISO)));
       
         const conflictingBookingsSnapshot = await transaction.get(conflictQuery);
 
         if (!conflictingBookingsSnapshot.empty) {
-            // Throw a specific error to be caught below
             throw new Error('slot_already_booked');
         }
 
@@ -85,10 +81,8 @@ export async function POST(request: NextRequest) {
         };
       
         transaction.set(newTimeOffRef, timeOffDoc);
-        // Return the full document data to be sent back in the response
         return { id: newTimeOffRef.id, ...timeOffDoc };
     });
-
 
     // 5. Return success response
     return NextResponse.json({ success: true, data: timeOffDocData }, { status: 201 });
