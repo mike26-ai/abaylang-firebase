@@ -1,6 +1,5 @@
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
-import { _createBooking } from "@/app/api/bookings/create/service";
 
 const API_BASE_URL = '/api';
 
@@ -18,39 +17,6 @@ interface CreateBookingPayload {
     paymentNote?: string;
     isFreeTrial: boolean;
 }
-
-/**
- * TESTABLE LOGIC (SERVER-SIDE)
- * This function contains the core logic for creating a booking and can be unit-tested.
- * It is called by the /api/bookings/create route handler.
- *
- * @example
- * // How to test this function (e.g., using Jest):
- * jest.mock('firebase-admin/firestore');
- *
- * describe('createBookingLogic', () => {
- *   it('should throw an error if the slot is blocked by timeOff', async () => {
- *     // Mock Firestore to return a conflicting timeOff document
- *     firestore.collection().where().get.mockResolvedValue({ empty: false, docs: [...] });
- *     
- *     // Expect the function to throw a specific error
- *     await expect(createBookingLogic(...)).rejects.toThrow('tutor is unavailable');
- *   });
- *
- *   it('should create a booking document if the slot is free', async () => {
- *     // Mock Firestore to return no conflicts
- *     firestore.collection().where().get.mockResolvedValue({ empty: true });
- *     const setMock = firestore.collection().doc().set;
- *     
- *     await createBookingLogic(...);
- *     
- *     // Expect the set function to have been called with the correct status
- *     expect(setMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'awaiting-payment' }));
- *   });
- * });
- */
-export const createBookingLogic = _createBooking;
-
 
 // --- CLIENT-SIDE FUNCTION ---
 
