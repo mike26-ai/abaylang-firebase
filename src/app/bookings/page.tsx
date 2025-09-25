@@ -109,9 +109,9 @@ export default function BookLessonPage() {
     if (selectedDate) {
       setIsFetchingSlots(true);
       // Use the new service to get all availability data
-      getAvailability(tutorInfo.name.replace(/\s+/g, ""), selectedDate).then(({ bookings, timeOff }) => {
+      getAvailability(format(selectedDate, 'yyyy-MM-dd')).then(({ bookings, timeOff }) => {
         setDailyBookedSlots(bookings);
-        setDailyTimeOff(timeOff);
+        setDailyTimeOff(timeOff || []); // Handle case where timeOff might be undefined
         setIsFetchingSlots(false);
         setSelectedTime(undefined);
       }).catch(error => {
@@ -141,7 +141,7 @@ export default function BookLessonPage() {
     const slotDate = startOfDay(selectedDate);
     
     const bookedSlotTimes = new Set(dailyBookedSlots.map(b => b.time));
-    const blockedSlotTimes = new Set(dailyTimeOff.map(t => t.time));
+    const blockedSlotTimes = new Set(dailyTimeOff.map(t => format(new Date(t.startISO), 'HH:mm')));
 
     for (const startTimeString of baseStartTimes) {
       const isBooked = bookedSlotTimes.has(startTimeString);

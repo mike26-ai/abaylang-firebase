@@ -1,3 +1,4 @@
+
 // File: src/services/availabilityService.ts
 
 import { auth } from "@/lib/firebase";
@@ -30,7 +31,11 @@ export async function getAvailability(date: string): Promise<AvailabilityRespons
     }
 
     const data = await response.json();
-    return data;
+    // Ensure the response always has both keys, even if the API only returns bookings
+    return {
+      bookings: data.bookings || [],
+      timeOff: data.timeOff || [],
+    };
   } catch (err: any) {
     console.error('Fetch availability error:', err);
     // Re-throw the error so the calling component can handle it (e.g., show a toast).
