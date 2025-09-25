@@ -2,9 +2,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore, Timestamp, runTransaction } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { ADMIN_EMAIL } from '@/config/site';
-import { _blockSlot } from '../service'; // Import the testable logic
 
 // Initialize Firebase Admin SDK
 try {
@@ -12,7 +12,9 @@ try {
 } catch (error) {
   console.error("CRITICAL: Failed to initialize Firebase Admin SDK in block/route.ts", error);
 }
+
 const auth = getAuth();
+const db = getFirestore();
 
 // Zod schema for input validation
 const BlockTimeSchema = z.object({
@@ -27,7 +29,7 @@ const BlockTimeSchema = z.object({
 
 /**
  * POST handler to block a time slot for a tutor.
- * This route handler is now a thin wrapper around the testable business logic.
+ * This route handler now contains all its own logic.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -51,8 +53,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid input', details: validationResult.error.flatten().fieldErrors }, { status: 400 });
     }
     
-    // 4. Call the decoupled, testable logic function
-    const timeOffDocData = await _blockSlot({ ...validationResult.data, decodedToken });
+    // 4. Perform Firestore transaction
+    const { tutorId, startISO, endISO, note } = validationResult.data;
+    const startTime = Timestamp.fromDate(new Date(startISO));
+    const endTime = Timestamp.fromDate(new Date(endISO));
+
+    const timeOffDocData = await runTransaction(db, async (transaction) => {
+        const bookingsRef = db.collection('bookings');
+        const conflictQuery = bookingsRef
+            .where('tutorId', '==', tutorId)
+            .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
+            .where('startTime', '<', endTime)
+            .where('endTime', '>', startTime);
+      
+        const conflictingBookingsSnapshot = await transaction.get(conflictQuery);
+
+        if (!conflictingBookingsSnapshot.empty) {
+            throw new Error('slot_already_booked');
+        }
+
+        const newTimeOffRef = db.collection('timeOff').doc();
+        const timeOffDoc = {
+            tutorId,
+            startISO,
+            endISO,
+            note: note || '',
+            blockedById: decodedToken.uid,
+            blockedByEmail: decodedToken.email,
+            createdAt: Timestamp.now(),
+        };
+      
+        transaction.set(newTimeOffRef, timeOffDoc);
+        return { id: newTimeOffRef.id, ...timeOffDoc };
+    });
+
 
     // 5. Return success response
     return NextResponse.json({ success: true, data: timeOffDocData }, { status: 201 });

@@ -2,8 +2,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore, runTransaction } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { _unblockSlot } from '../service'; // Import the testable logic
 
 // Initialize Firebase Admin SDK
 try {
@@ -11,7 +11,9 @@ try {
 } catch (error) {
   console.error("CRITICAL: Failed to initialize Firebase Admin SDK in unblock/route.ts", error);
 }
+
 const auth = getAuth();
+const db = getFirestore();
 
 // Zod schema for input validation
 const UnblockTimeSchema = z.object({
@@ -20,7 +22,7 @@ const UnblockTimeSchema = z.object({
 
 /**
  * POST handler to unblock (delete) a time-off slot.
- * This route handler is now a thin wrapper around the testable business logic.
+ * This route handler now contains all its own logic.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -39,8 +41,30 @@ export async function POST(request: NextRequest) {
     }
     const { timeOffId } = validationResult.data;
 
-    // 3. Call the decoupled, testable logic function
-    const result = await _unblockSlot(timeOffId, decodedToken);
+    // 3. Perform Firestore transaction
+    const result = await runTransaction(db, async (transaction) => {
+        const timeOffDocRef = db.collection('timeOff').doc(timeOffId);
+        const docSnap = await transaction.get(timeOffDocRef);
+
+        if (!docSnap.exists) {
+            const error = new Error('not_found');
+            (error as any).status = 404;
+            throw error;
+        }
+
+        const timeOffData = docSnap.data();
+        const isAdmin = decodedToken.admin === true || decodedToken.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+        const isOwner = timeOffData?.blockedById === decodedToken.uid;
+
+        if (!isAdmin && !isOwner) {
+            const error = new Error('unauthorized');
+            (error as any).status = 403;
+            throw error;
+        }
+        
+        transaction.delete(timeOffDocRef);
+        return { message: 'Time off block successfully deleted.' };
+    });
 
     // 4. Return success response
     return NextResponse.json({ success: true, data: result }, { status: 200 });
