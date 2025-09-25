@@ -2,14 +2,17 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp, runTransaction } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { ADMIN_EMAIL } from '@/config/site';
+import { _blockSlot } from '../service'; // Import the testable logic
 
 // Initialize Firebase Admin SDK
-const app = initAdmin();
-const db = getFirestore(app);
-const auth = getAuth(app);
+try {
+  initAdmin();
+} catch (error) {
+  console.error("CRITICAL: Failed to initialize Firebase Admin SDK in block/route.ts", error);
+}
+const auth = getAuth();
 
 // Zod schema for input validation
 const BlockTimeSchema = z.object({
@@ -24,81 +27,44 @@ const BlockTimeSchema = z.object({
 
 /**
  * POST handler to block a time slot for a tutor.
- * Requires admin authentication. Uses a transaction to prevent race conditions.
+ * This route handler is now a thin wrapper around the testable business logic.
  */
 export async function POST(request: NextRequest) {
-  // 1. Verify Authentication
-  const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
-  if (!idToken) {
-    return NextResponse.json({ code: 'unauthenticated', message: 'No authentication token provided.' }, { status: 401 });
-  }
-
-  let decodedToken;
   try {
-    decodedToken = await auth.verifyIdToken(idToken);
-  } catch (error) {
-    return NextResponse.json({ code: 'unauthenticated', message: 'Invalid authentication token.' }, { status: 401 });
-  }
-  
-  // 2. Verify Authorization (Admin Check)
-  const isAdmin = decodedToken.email === ADMIN_EMAIL || decodedToken.admin === true;
-  if (!isAdmin) {
-    return NextResponse.json({ code: 'unauthorized', message: 'User does not have admin privileges.' }, { status: 403 });
-  }
+    // 1. Verify Authentication
+    const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
+    if (!idToken) {
+      return NextResponse.json({ success: false, error: 'No authentication token provided.' }, { status: 401 });
+    }
+    const decodedToken = await auth.verifyIdToken(idToken);
+    
+    // 2. Verify Authorization (Admin Check)
+    const isAdmin = decodedToken.email === ADMIN_EMAIL || decodedToken.admin === true;
+    if (!isAdmin) {
+      return NextResponse.json({ success: false, error: 'User does not have admin privileges.' }, { status: 403 });
+    }
 
-  // 3. Validate Input Body
-  const body = await request.json();
-  const validationResult = BlockTimeSchema.safeParse(body);
-  if (!validationResult.success) {
-    return NextResponse.json({ code: 'invalid_input', message: validationResult.error.flatten().fieldErrors }, { status: 400 });
-  }
-  const { tutorId, startISO, endISO, note } = validationResult.data;
-
-  try {
-    const startTime = Timestamp.fromDate(new Date(startISO));
-    const endTime = Timestamp.fromDate(new Date(endISO));
-
-    // 4. Run a transaction to ensure atomic read-then-write
-    const timeOffDocData = await runTransaction(db, async (transaction) => {
-      const bookingsRef = db.collection('bookings');
-      const conflictQuery = bookingsRef
-        .where('tutorId', '==', tutorId)
-        .where('status', '==', 'confirmed')
-        .where('startTime', '<', endTime)
-        .where('endTime', '>', startTime);
-      
-      const conflictingBookingsSnapshot = await transaction.get(conflictQuery);
-
-      if (!conflictingBookingsSnapshot.empty) {
-        // This will abort the transaction
-        throw new Error('This time slot is already booked by a student.');
-      }
-
-      // If no conflict, proceed to create the timeOff document
-      const newTimeOffRef = db.collection('timeOff').doc();
-      const timeOffDoc = {
-        tutorId,
-        startISO,
-        endISO,
-        note: note || '',
-        blockedById: decodedToken.uid,
-        blockedByEmail: decodedToken.email,
-        createdAt: Timestamp.now(),
-      };
-      
-      transaction.set(newTimeOffRef, timeOffDoc);
-
-      return { id: newTimeOffRef.id, ...timeOffDoc };
-    });
+    // 3. Validate Input Body
+    const body = await request.json();
+    const validationResult = BlockTimeSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json({ success: false, error: 'Invalid input', details: validationResult.error.flatten().fieldErrors }, { status: 400 });
+    }
+    
+    // 4. Call the decoupled, testable logic function
+    const timeOffDocData = await _blockSlot({ ...validationResult.data, decodedToken });
 
     // 5. Return success response
-    return NextResponse.json(timeOffDocData, { status: 201 });
+    return NextResponse.json({ success: true, data: timeOffDocData }, { status: 201 });
 
   } catch (error: any) {
-    console.error('Error blocking time slot:', error);
-    if (error.message.includes('already booked')) {
-        return NextResponse.json({ code: 'conflict', message: error.message }, { status: 409 });
+    console.error('API Error (/availability/block):', error);
+    if (error.message.includes('slot_already_booked')) {
+        return NextResponse.json({ success: false, error: 'This time slot is already booked by a student.', details: error.message }, { status: 409 });
     }
-    return NextResponse.json({ code: 'server_error', message: 'Failed to block time slot.' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to block time slot.', details: error?.message },
+      { status: 500 }
+    );
   }
 }
