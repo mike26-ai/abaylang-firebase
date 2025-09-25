@@ -93,13 +93,13 @@ export async function POST(request: NextRequest) {
     // 5. Return success response
     return NextResponse.json({ success: true, data: timeOffDocData }, { status: 201 });
 
-  } catch (err: any) {
-    console.error('API Error (/availability/block):', err);
-    if (err.message.includes('slot_already_booked')) {
-        return NextResponse.json({ success: false, error: 'This time slot is already booked by a student.', details: err.message }, { status: 409 });
+  } catch (error: any) {
+    console.error('API Error (/availability/block):', error);
+    if (error.message.includes('slot_already_booked')) {
+        return NextResponse.json({ success: false, error: 'This time slot is already booked by a student.', details: error.message }, { status: 409 });
     }
     return NextResponse.json(
-      { success: false, error: 'Failed to block time slot.', details: err?.message },
+      { success: false, error: 'Failed to block time slot.', details: error?.message },
       { status: 500 }
     );
   }
