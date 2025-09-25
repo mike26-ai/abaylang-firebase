@@ -5,12 +5,16 @@ import { z } from 'zod';
 import { _getAvailability } from '../service'; // Import the testable logic
 
 // Initialize Firebase Admin SDK
-initAdmin();
+try {
+  initAdmin();
+} catch (error) {
+  console.error("CRITICAL: Failed to initialize Firebase Admin SDK in get/route.ts", error);
+}
 
-// Zod schema for input validation remains the same
+// Zod schema for input validation
 const GetAvailabilitySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format.'),
   tutorId: z.string().min(1, 'Tutor ID is required.'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format.'),
 });
 
 /**
@@ -21,22 +25,25 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const params = Object.fromEntries(searchParams.entries());
 
-  // 1. Validate input
-  const validationResult = GetAvailabilitySchema.safeParse(params);
-  if (!validationResult.success) {
-    return NextResponse.json({ code: 'invalid_input', message: validationResult.error.flatten().fieldErrors }, { status: 400 });
-  }
-  const { date, tutorId } = validationResult.data;
-  
   try {
+    // 1. Validate input
+    const validationResult = GetAvailabilitySchema.safeParse(params);
+    if (!validationResult.success) {
+      return NextResponse.json({ success: false, error: 'Invalid input', details: validationResult.error.flatten().fieldErrors }, { status: 400 });
+    }
+    const { date, tutorId } = validationResult.data;
+    
     // 2. Call the decoupled, testable logic function
     const availabilityData = await _getAvailability(tutorId, date);
 
     // 3. Return combined data
-    return NextResponse.json(availabilityData);
+    return NextResponse.json({ success: true, data: availabilityData });
 
   } catch (error: any) {
-    console.error('Error fetching availability:', error);
-    return NextResponse.json({ code: 'server_error', message: 'Failed to fetch availability data.' }, { status: 500 });
+    console.error('API Error (/availability/get):', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch availability data', details: error?.message },
+      { status: 500 }
+    );
   }
 }

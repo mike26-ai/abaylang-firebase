@@ -5,19 +5,19 @@
  * request/response objects.
  */
 import { getFirestore, Timestamp, runTransaction } from 'firebase-admin/firestore';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay, parse } from 'date-fns';
 
 const db = getFirestore();
 
 export async function _getAvailability(tutorId: string, date: string) {
-    const selectedDate = new Date(`${date}T00:00:00`);
-    const startOfSelectedDay = Timestamp.fromDate(startOfDay(selectedDate));
-    const endOfSelectedDay = Timestamp.fromDate(endOfDay(selectedDate));
+    const selectedDate = parse(date, 'yyyy-MM-dd', new Date());
+    const startOfSelectedDay = startOfDay(selectedDate);
+    const endOfSelectedDay = endOfDay(selectedDate);
     
     // Fetch confirmed bookings
     const bookingsQuery = db.collection('bookings')
       .where('tutorId', '==', tutorId)
-      .where('status', '==', 'confirmed')
+      .where('status', 'in', ['confirmed', 'awaiting-payment'])
       .where('startTime', '>=', startOfSelectedDay)
       .where('startTime', '<=', endOfSelectedDay);
       
@@ -25,18 +25,24 @@ export async function _getAvailability(tutorId: string, date: string) {
     const bookings = bookingsSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
+      // Convert Timestamps to ISO strings for JSON serialization
       startTime: (doc.data().startTime as Timestamp)?.toDate().toISOString(),
       endTime: (doc.data().endTime as Timestamp)?.toDate().toISOString(),
+      createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString(),
     }));
 
     // Fetch time-off blocks
     const timeOffQuery = db.collection('timeOff')
         .where('tutorId', '==', tutorId)
-        .where('startISO', '>=', startOfSelectedDay.toDate().toISOString())
-        .where('startISO', '<=', endOfSelectedDay.toDate().toISOString());
+        .where('startISO', '>=', startOfSelectedDay.toISOString())
+        .where('startISO', '<=', endOfSelectedDay.toISOString());
         
     const timeOffSnapshot = await timeOffQuery.get();
-    const timeOff = timeOffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const timeOff = timeOffSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString(),
+    }));
 
     return { bookings, timeOff };
 }
@@ -51,7 +57,7 @@ export async function _blockSlot(payload: { tutorId: string; startISO: string; e
         const bookingsRef = db.collection('bookings');
         const conflictQuery = bookingsRef
             .where('tutorId', '==', tutorId)
-            .where('status', '==', 'confirmed')
+            .where('status', 'in', ['confirmed', 'awaiting-payment'])
             .where('startTime', '<', endTime)
             .where('endTime', '>', startTime);
       
@@ -90,7 +96,7 @@ export async function _unblockSlot(timeOffId: string, decodedToken: any) {
         }
 
         const timeOffData = docSnap.data();
-        const isAdmin = decodedToken.admin === true;
+        const isAdmin = decodedToken.admin === true || decodedToken.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
         const isOwner = timeOffData?.blockedById === decodedToken.uid;
 
         if (!isAdmin && !isOwner) {

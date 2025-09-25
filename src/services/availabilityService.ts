@@ -16,24 +16,25 @@ interface AvailabilityResponse {
 
 /**
  * Fetches availability data for a specific tutor on a given date via a secure API route.
- * @param date - The date for which to fetch availability, as a YYYY-MM-DD string.
+ * @param tutorId - The ID of the tutor.
+ * @param date - The date for which to fetch availability.
  * @returns An object containing arrays of bookings and time-off blocks.
  */
-export async function getAvailability(date: string): Promise<AvailabilityResponse> {
+export async function getAvailability(tutorId: string, date: Date): Promise<AvailabilityResponse> {
+  const formattedDate = format(date, 'yyyy-MM-dd');
   try {
-    const response = await fetch(`/api/availability/get?date=${date}`);
+    const response = await fetch(`${API_BASE_URL}/availability/get?tutorId=${tutorId}&date=${formattedDate}`);
+    const result = await response.json();
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Server response error:', errorData);
-      throw new Error(errorData.error || 'Failed to fetch availability data.');
+    if (!response.ok || !result.success) {
+      console.error('Server response error:', result);
+      throw new Error(result.error || 'Failed to fetch availability data.');
     }
 
-    const data = await response.json();
-    // Ensure the response always has both keys, even if the API only returns bookings
+    // Safely access data, providing default empty arrays if data is missing.
     return {
-      bookings: data.bookings || [],
-      timeOff: data.timeOff || [],
+      bookings: result.data?.bookings || [],
+      timeOff: result.data?.timeOff || [],
     };
   } catch (err: any) {
     console.error('Fetch availability error:', err);
@@ -72,11 +73,11 @@ export async function blockSlot(payload: BlockSlotPayload): Promise<TimeOff> {
     body: JSON.stringify(payload),
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to block time slot.');
+  const result = await response.json();
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || 'Failed to block time slot.');
   }
-  return response.json();
+  return result.data;
 }
 
 interface UnblockSlotPayload {
@@ -105,9 +106,9 @@ export async function unblockSlot(payload: UnblockSlotPayload): Promise<{ messag
     body: JSON.stringify(payload),
   });
 
-  if (!response.ok) {
-     const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to unblock time slot.');
+  const result = await response.json();
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || 'Failed to unblock time slot.');
   }
-  return response.json();
+  return result.data;
 }

@@ -2,9 +2,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { ADMIN_EMAIL } from '@/config/site';
+import { _blockSlot } from '../service'; // Import the testable logic
 
 // Initialize Firebase Admin SDK
 try {
@@ -13,7 +13,6 @@ try {
   console.error("CRITICAL: Failed to initialize Firebase Admin SDK in block/route.ts", error);
 }
 const auth = getAuth();
-const db = getFirestore();
 
 // Zod schema for input validation
 const BlockTimeSchema = z.object({
@@ -28,7 +27,7 @@ const BlockTimeSchema = z.object({
 
 /**
  * POST handler to block a time slot for a tutor.
- * This route handler now includes robust error handling.
+ * This route handler is now a thin wrapper around the testable business logic.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -52,8 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid input', details: validationResult.error.flatten().fieldErrors }, { status: 400 });
     }
     
-    // 4. Call the decoupled, testable logic function from the service file
-    const { _blockSlot } = await import('../service');
+    // 4. Call the decoupled, testable logic function
     const timeOffDocData = await _blockSlot({ ...validationResult.data, decodedToken });
 
     // 5. Return success response
