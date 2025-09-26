@@ -43,12 +43,12 @@ For the application's queries to work efficiently, you will need to manually cre
 
 1.  **Bookings Collection Index:**
     *   **Collection:** `bookings`
-    *   **Fields:** `date` (Ascending), `tutorId` (Ascending), `status` (Ascending)
+    *   **Fields:** `tutorId` (Ascending), `startTime` (Ascending), `endTime` (Ascending)
     *   **Query Scope:** Collection
-    *   **Purpose:** This index is essential for efficiently fetching available and booked time slots for a specific tutor on a given date, ensuring the booking calendar loads quickly and accurately.
+    *   **Purpose:** This index is essential for efficiently checking for booking conflicts in a transaction, ensuring that a time slot cannot be double-booked.
 
 2.  **TimeOff Collection Index:**
     *   **Collection:** `timeOff`
-    *   **Fields:** `date` (Ascending), `tutorId` (Ascending)
+    *   **Fields:** `tutorId` (Ascending), `startISO` (Ascending)
     *   **Query Scope:** Collection
     *   **Purpose:** This index allows the system to quickly retrieve all the time-off blocks for a tutor on a specific date, which is necessary for displaying the tutor's availability correctly.
