@@ -35,21 +35,29 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
     }
     const idToken = await user.getIdToken();
 
-    const response = await fetch(`${API_BASE_URL}/bookings/create`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`, // Send the token for server-side verification
-        },
-        body: JSON.stringify(bookingPayload),
-    });
+    try {
+        const response = await fetch(`${API_BASE_URL}/bookings/create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`, // Send the token for server-side verification
+            },
+            body: JSON.stringify(bookingPayload),
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (!response.ok) {
-        // Forward the server's error message if available, otherwise use a generic one.
-        throw new Error(data.message || 'Failed to create booking.');
+        if (!response.ok) {
+            // Log the full server response for better debugging
+            console.error("Booking creation failed with status:", response.status, "and response:", data);
+            // Forward the server's error message if available, otherwise use a generic one.
+            throw new Error(data.message || 'Failed to create booking.');
+        }
+
+        return data;
+    } catch (err) {
+        console.error('Error in createBooking client function:', err);
+        // Re-throw the error so the UI can handle it
+        throw err;
     }
-
-    return data;
 }
