@@ -1,3 +1,4 @@
+
 // File: src/services/availabilityService.ts
 
 import { auth } from "@/lib/firebase";

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -10,7 +11,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { TimeSlot } from '@/components/bookings/time-slot';
 import { getAvailability, blockSlot, unblockSlot } from '@/services/availabilityService';
 import type { Booking, TimeOff } from '@/lib/types';
-import { tutorInfo } from '@/config/site'; // Assuming a single tutor for now
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 
@@ -33,27 +33,34 @@ export function TimeOffManager() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [availability, setAvailability] = useState<{ bookings: Booking[]; timeOff: TimeOff[] }>({ bookings: [], timeOff: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const tutorId = "MahderNegashMamo"; // Hardcoded for single tutor model
 
-  const fetchAvailability = async (date: Date) => {
-    setIsLoading(true);
-    try {
-      const data = await getAvailability(tutorId, date);
-      setAvailability(data);
-    } catch (error) {
-      console.error('Failed to fetch availability:', error);
-      toast({ title: 'Error', description: 'Could not fetch schedule data.', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (selectedDate) {
-      fetchAvailability(selectedDate);
+    // Guard clause: Do not fetch if no date is selected.
+    if (!selectedDate) {
+      setIsLoading(false);
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate]);
+
+    const fetchAvailability = async (date: Date) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await getAvailability(tutorId, date);
+        setAvailability(data);
+      } catch (err: any) {
+        console.error("Could not fetch available slots:", err);
+        setError("Could not fetch available slots. Please try again.");
+        toast({ title: 'Error', description: err.message || 'Could not fetch schedule data.', variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchAvailability(selectedDate);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, tutorId]);
 
   const timeSlots = useMemo(() => {
     if (!selectedDate) return [];
@@ -121,7 +128,7 @@ export function TimeOffManager() {
           note: 'Admin Block',
         });
         toast({ title: 'Slot Blocked', description: `Time slot ${slot.display} has been marked as unavailable.` });
-        fetchAvailability(selectedDate); // Re-fetch to get real data
+        if(selectedDate) await getAvailability(tutorId, selectedDate).then(setAvailability);
       } catch (error: any) {
         setAvailability(originalState); // Revert on failure
         toast({ title: 'Blocking Failed', description: error.message || 'Could not block the time slot.', variant: 'destructive' });
@@ -143,7 +150,7 @@ export function TimeOffManager() {
       try {
         await unblockSlot({ timeOffId: timeOffIdToRemove });
         toast({ title: 'Slot Unblocked', description: `Time slot ${slot.display} is now available.` });
-        fetchAvailability(selectedDate); // Re-fetch to get real data
+        if(selectedDate) await getAvailability(tutorId, selectedDate).then(setAvailability);
       } catch (error: any) {
         setAvailability(originalState); // Revert on failure
         toast({ title: 'Unblocking Failed', description: error.message || 'Could not unblock the time slot.', variant: 'destructive' });
@@ -178,6 +185,11 @@ export function TimeOffManager() {
           <CardContent>
             {isLoading ? (
               <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>
+            ) : error ? (
+              <Alert variant="destructive">
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             ) : (
                 <>
                 <Alert className="mb-6">
