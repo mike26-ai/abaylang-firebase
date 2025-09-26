@@ -18,15 +18,16 @@ interface AvailabilityResponse {
 /**
  * Fetches availability data for a specific tutor on a given date via a secure API route.
  * @param tutorId - The ID of the tutor.
- * @param date - The date for which to fetch availability.
+ * @param date - The date for which to fetch availability. Defaults to today if invalid.
  * @returns An object containing arrays of bookings and time-off blocks.
  */
-export async function getAvailability(tutorId: string, date: Date): Promise<AvailabilityResponse> {
-    if (!date || !isValid(date)) {
-        console.error("Invalid date passed to getAvailability:", date);
-        throw new Error("Invalid date provided. Cannot fetch availability.");
+export async function getAvailability(tutorId: string, date?: Date): Promise<AvailabilityResponse> {
+    let safeDate = date;
+    if (!safeDate || !isValid(safeDate)) {
+        console.warn("Invalid or missing date passed to getAvailability, defaulting to today:", safeDate);
+        safeDate = new Date(); // Fallback to today
     }
-  const formattedDate = format(date, 'yyyy-MM-dd');
+  const formattedDate = format(safeDate, 'yyyy-MM-dd');
   try {
     const response = await fetch(`${API_BASE_URL}/availability/get?tutorId=${tutorId}&date=${formattedDate}`);
     
