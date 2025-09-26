@@ -13,7 +13,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse } from 'date-fns';
+import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType, TimeOff } from "@/lib/types";
@@ -106,20 +106,27 @@ export default function BookLessonPage() {
   const selectedLessonDetails = lessonTypes.find((type) => type.value === selectedType);
 
   useEffect(() => {
-    if (selectedDate) {
-      setIsFetchingSlots(true);
-      // Use the new service to get all availability data
-      getAvailability(format(selectedDate, 'yyyy-MM-dd')).then(({ bookings, timeOff }) => {
-        setDailyBookedSlots(bookings);
-        setDailyTimeOff(timeOff || []); // Handle case where timeOff might be undefined
-        setIsFetchingSlots(false);
-        setSelectedTime(undefined);
-      }).catch(error => {
-        console.error("Failed to get availability data:", error);
-        toast({ title: "Error", description: "Could not fetch available slots.", variant: "destructive" });
-        setIsFetchingSlots(false);
-      });
+    // FIX: Add a guard clause to ensure selectedDate is a valid date before fetching.
+    if (!selectedDate || !isValid(selectedDate)) {
+      setDailyBookedSlots([]);
+      setDailyTimeOff([]);
+      return;
     }
+    
+    setIsFetchingSlots(true);
+    const tutorId = "MahderNegashMamo"; // In a multi-tutor app, this would be dynamic.
+    
+    // Use the new service to get all availability data
+    getAvailability(tutorId, selectedDate).then(({ bookings, timeOff }) => {
+      setDailyBookedSlots(bookings);
+      setDailyTimeOff(timeOff || []); // Handle case where timeOff might be undefined
+      setSelectedTime(undefined); // Reset time selection on new date
+    }).catch(error => {
+      console.error("Failed to get availability data:", error);
+      toast({ title: "Error", description: "Could not fetch available slots.", variant: "destructive" });
+    }).finally(() => {
+        setIsFetchingSlots(false);
+    });
   }, [selectedDate, toast]);
 
 
