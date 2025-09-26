@@ -1,6 +1,5 @@
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
-import type { Booking } from "@/lib/types";
 
 const API_BASE_URL = '/api';
 
@@ -30,6 +29,7 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
     if (!user) {
         throw new Error("Authentication required to create a booking.");
     }
+    // Security check on the client for immediate feedback
     if (user.uid !== bookingPayload.userId) {
         throw new Error("User mismatch. Cannot create booking for another user.");
     }
@@ -39,7 +39,7 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`,
+            'Authorization': `Bearer ${idToken}`, // Send the token for server-side verification
         },
         body: JSON.stringify(bookingPayload),
     });
