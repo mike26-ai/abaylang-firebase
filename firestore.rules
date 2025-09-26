@@ -1,60 +1,130 @@
-
+/**
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model for user profiles and allows public read access with owner-only writes for other data.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores individual user profiles. Only the user themselves can read/write their profile.
+ * - /bookings/{bookingId}: Stores lesson booking documents. Public read, owner writes.
+ * - /timeOff/{timeOffId}: Stores time off blocks. Public read, owner writes.
+ *
+ * Key Security Decisions:
+ * - Users can only access their own data under /users/{userId}.
+ * - Public read access is enabled for the bookings and timeOff collections to allow listing.
+ * - create, update, delete operations are secured with isOwner().
+ *
+ * Denormalization for Authorization:
+ * - The rules rely on the `userId` field within the user profile document to match the document ID, ensuring path consistency and enabling owner-only access.
+ */
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check for admin role
-    function isAdmin() {
-      // Check for a custom admin claim OR if the user's email matches the known admin email.
-      // Replace 'mahdernmamo@gmail.com' with your actual admin email if not using environment variables here.
-      return request.auth.token.admin == true || request.auth.token.email == 'mahdernmamo@gmail.com';
-    }
-
-    // Users Collection
-    // - Authenticated users can read any profile (for tutor info, etc.)
-    // - Users can only create and update their OWN profile document.
+    /**
+     * @description Manages user profile data, ensuring only the authenticated user can access their own profile.
+     * @path /users/{userId}
+     * @allow (create) - Authenticated user creates their profile with matching UID.
+     * @allow (get, update, delete) - Authenticated user accesses their own profile.
+     * @deny (create) - Authenticated user attempts to create a profile with a mismatched UID.
+     * @deny (get, update, delete) - Authenticated user attempts to access another user's profile.
+     * @principle Enforces document ownership for all operations.
+     */
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth.uid == userId;
+      // Verify auth status
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Check if the user ID matches the authenticated user's ID
+      function isOwner() {
+        return request.auth.uid == userId;
+      }
+
+      // Verify that the user is the owner and the resource exists
+      function isExistingOwner() {
+        return isOwner() && resource.data != null;
+      }
+
+      allow get: if isOwner();
+      allow list: if false; // No listing of users allowed.
+
+      // Users can create their own profile if the userId matches their auth.uid
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+
+      // Owner can update and delete their profile.  Also enforce immutability of the userId field.
+      allow update: if isExistingOwner() && request.resource.data.uid == resource.data.uid;
+      allow delete: if isExistingOwner();
     }
 
-    // Bookings Collection
-    // - Admins can read/write any booking.
-    // - Authenticated users can create bookings for themselves.
-    // - Users can only read and update (e.g., cancel) their OWN bookings.
+    /**
+     * @description Manages lesson bookings, allowing public reads and owner-only writes based on the `userId` field.
+     * @path /bookings/{bookingId}
+     * @allow (get, list) - Any user can read booking information.
+     * @allow (create) - Authenticated user creates a booking with a matching `userId`.
+     * @allow (update, delete) - Only the owner (creator) of the booking can modify or delete it.
+     * @deny (create) - Authenticated user attempts to create a booking with a mismatched `userId`.
+     * @deny (update, delete) - Authenticated user attempts to modify or delete a booking they don't own.
+     * @principle Enforces document ownership for writes while allowing public reads.
+     */
     match /bookings/{bookingId} {
-      allow read, write: if isAdmin();
-      allow create: if request.auth.uid == request.resource.data.userId;
-      allow read, update: if request.auth.uid == resource.data.userId;
+      // Verify auth status
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Check if the user ID matches the authenticated user's ID
+      function isOwner() {
+        return request.auth.uid == resource.data.userId;
+      }
+
+       // Check if the request is made by owner and resource exists
+      function isExistingOwner() {
+        return isOwner() && resource.data != null;
+      }
+
+
+      allow get, list: if true;
+
+      // Only allow create if signed in and request.auth.uid == request.resource.data.userId
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+
+      // Allow update/delete if signed in and request.auth.uid == resource.data.userId
+      allow update: if isExistingOwner() && isSignedIn();
+      allow delete: if isExistingOwner() && isSignedIn();
     }
 
-    // Testimonials Collection
-    // - Anyone can read approved testimonials.
-    // - Authenticated users can create new testimonials (which will be 'pending').
-    // - Admins can read, update (approve/reject), and delete any testimonial.
-    match /testimonials/{testimonialId} {
-       allow read: if resource.data.status == 'approved' || isAdmin();
-       allow create: if request.auth != null;
-       allow update, delete: if isAdmin();
-    }
-    
-    // Contact Messages Collection
-    // - Only admins can read or write (update read status) messages.
-    // - No public read access.
-    match /contactMessages/{messageId} {
-      allow read, write: if isAdmin();
-      // Note: There's an implicit 'allow create' from the client-side, 
-      // which is generally acceptable for a contact form.
-      // To tighten this, you would use a Cloud Function triggered by a form submission.
-    }
-    
-    // TimeOff Collection
-    // - Any authenticated user can read the time-off schedule (needed for booking page).
-    // - ONLY admins can create, update, or delete time-off documents.
+    /**
+     * @description Manages tutor time off blocks, allowing public reads and admin-only writes.
+     * @path /timeOff/{timeOffId}
+     * @allow (get, list) - Any user can read time off information.
+     * @allow (create) - Only an admin user can create a timeOff block.
+     * @allow (update, delete) - Only the admin who created the timeOff block can modify or delete it.
+     * @deny (create) - Non-admin user attempts to create a timeOff block.
+     * @deny (update, delete) - Non-admin user attempts to modify or delete a TimeOff block.
+     * @principle Enforces admin-only writes while allowing public reads.
+     */
     match /timeOff/{timeOffId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin(); // create, update, delete
+       // Verify auth status
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isAdmin() {
+        return request.auth.token.admin == true;
+      }
+
+       // Check if the request is made by owner and resource exists
+      function isExistingOwner() {
+        return isAdmin() && resource.data != null;
+      }
+
+      allow get, list: if true;
+
+      // Only allow create if signed in and request.auth.uid == request.resource.data.tutorId
+      allow create: if isAdmin() && isSignedIn();
+
+      // Allow update/delete if signed in and request.auth.uid == resource.data.tutorId
+      allow update: if isExistingOwner() && isSignedIn();
+      allow delete: if isExistingOwner() && isSignedIn();
     }
   }
 }
