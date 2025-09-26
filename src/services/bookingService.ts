@@ -18,11 +18,9 @@ interface CreateBookingPayload {
     isFreeTrial: boolean;
 }
 
-// --- CLIENT-SIDE FUNCTION ---
-
 /**
  * Creates a new booking via a secure, server-side API endpoint.
- * This function uses a transaction on the server to prevent double-bookings.
+ * This function retrieves the current user's ID token and sends it for server-side verification.
  * @param bookingPayload - The data for the new booking.
  * @returns An object containing the new booking's ID.
  */
@@ -31,6 +29,7 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
     if (!user) {
         throw new Error("Authentication required to create a booking.");
     }
+    // Security check on the client for immediate feedback
     if (user.uid !== bookingPayload.userId) {
         throw new Error("User mismatch. Cannot create booking for another user.");
     }
@@ -40,7 +39,7 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`,
+            'Authorization': `Bearer ${idToken}`, // Send the token for server-side verification
         },
         body: JSON.stringify(bookingPayload),
     });
