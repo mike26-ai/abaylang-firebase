@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
         // Check for conflicting bookings
         const bookingConflictQuery = bookingsRef
           .where('tutorId', '==', finalBookingData.tutorId)
-          .where('status', 'in', ['confirmed', 'awaiting-payment'])
+          .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
           .where('startTime', '<', endTime)
           .where('endTime', '>', startTime);
         const conflictingBookings = await transaction.get(bookingConflictQuery);
