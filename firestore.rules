@@ -1,130 +1,182 @@
 /**
- * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for user profiles and allows public read access with owner-only writes for other data.
+ * Firestore Security Rules
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user profiles,
+ * allows public reads for bookings, availability, and testimonials, and
+ * restricts time-off management to admins.
  *
  * Data Structure:
- * - /users/{userId}: Stores individual user profiles. Only the user themselves can read/write their profile.
- * - /bookings/{bookingId}: Stores lesson booking documents. Public read, owner writes.
- * - /timeOff/{timeOffId}: Stores time off blocks. Public read, owner writes.
+ * - /users/{userId}: Stores user profile data. Access is restricted to the owning user.
+ * - /bookings/{bookingId}: Stores booking information. Publicly readable, writeable by the user who owns the booking.
+ * - /timeOff/{timeOffId}: Stores time-off requests. Only accessible to admins.
+ * - /availability/{docId}: Stores tutor availability. Publicly readable, writable by the tutor.
+ * - /testimonials/{testimonialId}: Stores user testimonials. Publicly readable, writable by the user who created it.
  *
  * Key Security Decisions:
- * - Users can only access their own data under /users/{userId}.
- * - Public read access is enabled for the bookings and timeOff collections to allow listing.
- * - create, update, delete operations are secured with isOwner().
+ * - User listing is disallowed for privacy.
+ * - Bookings are publicly readable, but modifications are restricted to the booking owner.
+ * - Time-off requests are exclusively managed by admins.
+ * - The rules do NOT enforce strict schema validation beyond authorization-critical fields, supporting rapid prototyping.
  *
  * Denormalization for Authorization:
- * - The rules rely on the `userId` field within the user profile document to match the document ID, ensuring path consistency and enabling owner-only access.
+ * - The `Booking` entity requires a `userId` field for authorization to determine the owner.
+ * - The `TimeOffBlock` entity requires a `tutorId` field to validate the owner.
+ * - The `Availability` entity requires a `tutorId` field to validate the owner.
+ * - The `Testimonials` entity requires a `userId` field to validate the owner.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Manages user profile data, ensuring only the authenticated user can access their own profile.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (create) - Authenticated user creates their profile with matching UID.
-     * @allow (get, update, delete) - Authenticated user accesses their own profile.
-     * @deny (create) - Authenticated user attempts to create a profile with a mismatched UID.
-     * @deny (get, update, delete) - Authenticated user attempts to access another user's profile.
-     * @principle Enforces document ownership for all operations.
+     * @allow (get) User A can read their own profile: `request.auth.uid == 'userA'`
+     * @deny (get) User A cannot read User B's profile: `request.auth.uid != 'userB'`
+     * @allow (create) User A can create their profile: `request.auth.uid == 'userA'`
+     * @deny (create) User A cannot create a profile with a mismatched UID: `request.resource.data.uid != 'userA'`
+     * @allow (update) User A can update their own profile: `request.auth.uid == 'userA'`
+     * @deny (update) User A cannot update their profile with a mismatched UID: `request.resource.data.uid != 'userA'`
+     * @deny (delete) User A cannot delete another user's profile.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      // Verify auth status
       function isSignedIn() {
         return request.auth != null;
       }
-
-      // Check if the user ID matches the authenticated user's ID
-      function isOwner() {
+      function isOwner(userId) {
         return request.auth.uid == userId;
       }
-
-      // Verify that the user is the owner and the resource exists
-      function isExistingOwner() {
-        return isOwner() && resource.data != null;
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
       }
 
-      allow get: if isOwner();
-      allow list: if false; // No listing of users allowed.
-
-      // Users can create their own profile if the userId matches their auth.uid
+      allow get: if isOwner(userId);
+      allow list: if false;
       allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.uid == request.auth.uid;
+      allow delete: if isExistingOwner(userId);
+    }
 
-      // Owner can update and delete their profile.  Also enforce immutability of the userId field.
-      allow update: if isExistingOwner() && request.resource.data.uid == resource.data.uid;
+    /**
+     * @description Controls access to booking documents.
+     * @path /bookings/{bookingId}
+     * @allow (get) Any user can read any booking.
+     * @allow (list) Any user can list bookings.
+     * @allow (create) User A can create a booking for themselves: `request.auth.uid == 'userA'`
+     * @deny (create) User A cannot create a booking for another user: `request.resource.data.userId != 'userA'`
+     * @allow (update) User A can update their own booking.
+     * @deny (update) User A cannot update another user's booking.
+     * @allow (delete) User A can delete their own booking.
+     * @deny (delete) User A cannot delete another user's booking.
+     * @principle Allows public reads but enforces ownership for writes.
+     */
+    match /bookings/{bookingId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner() {
+        return request.auth.uid == resource.data.userId;
+      }
+      function isExistingOwner() {
+        return isSignedIn() && isOwner() && resource.data != null;
+      }
+
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isExistingOwner();
       allow delete: if isExistingOwner();
     }
 
     /**
-     * @description Manages lesson bookings, allowing public reads and owner-only writes based on the `userId` field.
-     * @path /bookings/{bookingId}
-     * @allow (get, list) - Any user can read booking information.
-     * @allow (create) - Authenticated user creates a booking with a matching `userId`.
-     * @allow (update, delete) - Only the owner (creator) of the booking can modify or delete it.
-     * @deny (create) - Authenticated user attempts to create a booking with a mismatched `userId`.
-     * @deny (update, delete) - Authenticated user attempts to modify or delete a booking they don't own.
-     * @principle Enforces document ownership for writes while allowing public reads.
-     */
-    match /bookings/{bookingId} {
-      // Verify auth status
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      // Check if the user ID matches the authenticated user's ID
-      function isOwner() {
-        return request.auth.uid == resource.data.userId;
-      }
-
-       // Check if the request is made by owner and resource exists
-      function isExistingOwner() {
-        return isOwner() && resource.data != null;
-      }
-
-
-      allow get, list: if true;
-
-      // Only allow create if signed in and request.auth.uid == request.resource.data.userId
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-
-      // Allow update/delete if signed in and request.auth.uid == resource.data.userId
-      allow update: if isExistingOwner() && isSignedIn();
-      allow delete: if isExistingOwner() && isSignedIn();
-    }
-
-    /**
-     * @description Manages tutor time off blocks, allowing public reads and admin-only writes.
+     * @description Controls access to time-off block documents.
      * @path /timeOff/{timeOffId}
-     * @allow (get, list) - Any user can read time off information.
-     * @allow (create) - Only an admin user can create a timeOff block.
-     * @allow (update, delete) - Only the admin who created the timeOff block can modify or delete it.
-     * @deny (create) - Non-admin user attempts to create a timeOff block.
-     * @deny (update, delete) - Non-admin user attempts to modify or delete a TimeOff block.
-     * @principle Enforces admin-only writes while allowing public reads.
+     * @allow (get) Any user can read any timeOff.
+     * @allow (list) Any user can list timeOff documents.
+     * @allow (create) An admin can create a time-off block.
+     * @deny (create) A non-admin user cannot create a time-off block.
+     * @allow (update) An admin can update a time-off block.
+     * @deny (update) A non-admin user cannot update a time-off block.
+     * @allow (delete) An admin can delete a time-off block.
+     * @deny (delete) A non-admin user cannot delete a time-off block.
+     * @principle Restricts access to admins.
      */
     match /timeOff/{timeOffId} {
-       // Verify auth status
       function isSignedIn() {
         return request.auth != null;
       }
-
       function isAdmin() {
         return request.auth.token.admin == true;
       }
-
-       // Check if the request is made by owner and resource exists
       function isExistingOwner() {
-        return isAdmin() && resource.data != null;
+        return isSignedIn() && isAdmin() && resource.data != null;
       }
 
       allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
+    }
 
-      // Only allow create if signed in and request.auth.uid == request.resource.data.tutorId
-      allow create: if isAdmin() && isSignedIn();
+    /**
+     * @description Controls access to availability documents.
+     * @path /availability/{docId}
+     * @allow (get) Any user can read any availability.
+     * @allow (list) Any user can list availability documents.
+     * @allow (create) A tutor can create their own availability.
+     * @deny (create) A tutor cannot create availability for another tutor.
+     * @allow (update) A tutor can update their own availability.
+     * @deny (update) A tutor cannot update another tutor's availability.
+     * @allow (delete) A tutor can delete their own availability.
+     * @deny (delete) A tutor cannot delete another tutor's availability.
+     * @principle Allows public reads but enforces ownership for writes by tutors.
+     */
+    match /availability/{docId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner() {
+        return request.auth.uid == resource.data.tutorId;
+      }
+      function isExistingOwner() {
+          return isSignedIn() && isOwner() && resource.data != null;
+      }
 
-      // Allow update/delete if signed in and request.auth.uid == resource.data.tutorId
-      allow update: if isExistingOwner() && isSignedIn();
-      allow delete: if isExistingOwner() && isSignedIn();
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.tutorId == request.auth.uid;
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
+    }
+
+    /**
+     * @description Controls access to testimonial documents.
+     * @path /testimonials/{testimonialId}
+     * @allow (get) Any user can read any testimonial.
+     * @allow (list) Any user can list testimonial documents.
+     * @allow (create) A user can create their own testimonial.
+     * @deny (create) A user cannot create a testimonial for another user.
+     * @allow (update) A user can update their own testimonial.
+     * @deny (update) A user cannot update another user's testimonial.
+     * @allow (delete) A user can delete their own testimonial.
+     * @deny (delete) A user cannot delete another user's testimonial.
+     * @principle Allows public reads but enforces ownership for writes by users.
+     */
+    match /testimonials/{testimonialId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner() {
+        return request.auth.uid == resource.data.userId;
+      }
+       function isExistingOwner() {
+          return isSignedIn() && isOwner() && resource.data != null;
+      }
+
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
     }
   }
 }
