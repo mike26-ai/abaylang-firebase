@@ -4,7 +4,7 @@
 
 # The version of the App Hosting runtime.
 # We recommend using the latest major version.
-runtime: nodejs18 # Or nodejs20, depending on your Next.js version and preferences
+runtime: nodejs20 # Or nodejs20, depending on your Next.js version and preferences
 
 # buildSteps allows you to install dependencies and build your static assets.
 # These commands are executed on the server during every new deployment.
