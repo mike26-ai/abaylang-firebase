@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { db, initAdmin, Timestamp } from '@/lib/firebase-admin'; // Use our centralized admin init
@@ -68,8 +69,7 @@ export async function POST(request: NextRequest) {
           const bookingsRef = db.collection('bookings');
           const timeOffRef = db.collection('timeOff');
           
-          // --- FIX: Use a more efficient and direct query for conflicts ---
-          // This query directly finds bookings that overlap with the requested time.
+          // --- FIX: Use a more efficient and direct query for booking conflicts ---
           const bookingConflictQuery = bookingsRef
               .where('tutorId', '==', bookingPayload.tutorId)
               .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
@@ -82,14 +82,20 @@ export async function POST(request: NextRequest) {
           }
 
           // --- FIX: Use a direct query for time-off conflicts ---
-          // This query finds any time-off block that overlaps with the requested booking time.
           const timeOffConflictQuery = timeOffRef
               .where('tutorId', '==', bookingPayload.tutorId)
               .where('endISO', '>', startTime.toISOString())
               .where('startISO', '<', endTime.toISOString());
 
           const conflictingTimeOffSnapshot = await transaction.get(timeOffConflictQuery);
-          if (!conflictingTimeOffSnapshot.empty) {
+          
+          // --- FIX: Guard against null or malformed time-off documents ---
+          const validConflicts = conflictingTimeOffSnapshot.docs.filter(doc => {
+              const data = doc.data();
+              return data && data.startISO && data.endISO;
+          });
+
+          if (validConflicts.length > 0) {
             throw new Error('The tutor is unavailable at this time due to a scheduled break.');
           }
       }
