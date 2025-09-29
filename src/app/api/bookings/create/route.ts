@@ -1,4 +1,3 @@
-
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { db, initAdmin, Timestamp } from '@/lib/firebase-admin'; // Use our centralized admin init
@@ -92,24 +91,20 @@ export async function POST(request: NextRequest) {
           const timeOffSnapshot = await transaction.get(timeOffRef.where('tutorId', '==', bookingPayload.tutorId));
           const allBreaks = timeOffSnapshot.docs.map(doc => doc.data());
           
-          // --- DEBUG LOGGING ---
-          console.log("📅 Booking request (UTC):", startTime.toISOString(), "to", endTime.toISOString());
-          console.log("📅 Booking request (Server Local Time):", startTime.toString(), "to", endTime.toString());
-          console.log("⏸️ Tutor breaks fetched from Firestore:", JSON.stringify(allBreaks, null, 2));
-          // --- END DEBUG LOGGING ---
+          // Safety check: if there are no breaks, no need to check for conflicts.
+          if (allBreaks && allBreaks.length > 0) {
+              const conflictingTimeOff = allBreaks.filter(t => {
+                  if(t.startISO && t.endISO) {
+                      const blockStart = new Date(t.startISO);
+                      const blockEnd = new Date(t.endISO);
+                      return startTime! < blockEnd && endTime! > blockStart;
+                  }
+                  return false;
+              });
 
-          const conflictingTimeOff = allBreaks.filter(t => {
-              if(t.startISO && t.endISO) {
-                  const blockStart = new Date(t.startISO);
-                  const blockEnd = new Date(t.endISO);
-                  // --- THE FIX: Correct overlap logic ---
-                  return startTime! < blockEnd && endTime! > blockStart;
+              if (conflictingTimeOff.length > 0) {
+                  throw new Error('The tutor is unavailable at this time due to a scheduled break.');
               }
-              return false;
-          });
-
-          if (conflictingTimeOff.length > 0) {
-              throw new Error('The tutor is unavailable at this time due to a scheduled break.');
           }
       }
 
