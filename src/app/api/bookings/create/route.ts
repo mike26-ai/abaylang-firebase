@@ -104,8 +104,6 @@ export async function POST(request: NextRequest) {
               });
 
               if (realConflicts.length > 0) {
-                  // Step 2: Log and validate realConflicts
-                  console.log("DEBUG: Found conflicting timeOff docs:", realConflicts.map(c => c.data()));
                   throw new Error('The tutor is unavailable at this time due to a scheduled break.');
               }
           }
