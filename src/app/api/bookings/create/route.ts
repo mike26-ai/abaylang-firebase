@@ -114,6 +114,10 @@ export async function POST(request: NextRequest) {
                   }
                   return false; // Ignore any malformed timeOff documents
               });
+              
+              // DEBUG LOGS ADDED HERE
+              console.log("🔍 Debug: Booking start/end:", startTime, endTime);
+              console.log("🔍 Debug: Conflicting TimeOff entries:", conflictingTimeOff);
 
               if (conflictingTimeOff.length > 0) {
                   throw new Error('The tutor is unavailable at this time due to a scheduled break.');
