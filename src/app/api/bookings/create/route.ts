@@ -68,60 +68,29 @@ export async function POST(request: NextRequest) {
           const bookingsRef = db.collection('bookings');
           const timeOffRef = db.collection('timeOff');
           
-          const bookingDayStart = startOfDay(startTime).toISOString();
-          const bookingDayEnd = endOfDay(startTime).toISOString();
-
-          // Fetch bookings for the tutor and filter in-memory to avoid composite index
-          const bookingsSnapshot = await transaction.get(
-              bookingsRef.where('tutorId', '==', bookingPayload.tutorId).where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-          );
+          // --- FIX: Use a more efficient and direct query for conflicts ---
+          // This query directly finds bookings that overlap with the requested time.
+          const bookingConflictQuery = bookingsRef
+              .where('tutorId', '==', bookingPayload.tutorId)
+              .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
+              .where('startTime', '<', endTime)
+              .where('endTime', '>', startTime);
           
-          const conflictingBookings = bookingsSnapshot.docs.filter(doc => {
-              const b = doc.data();
-              if (b.startTime && b.endTime && b.startTime.toDate && b.endTime.toDate) {
-                  const existingStart = b.startTime.toDate();
-                  const existingEnd = b.endTime.toDate();
-                  return existingStart < endTime! && existingEnd > startTime!;
-              }
-              return false;
-          });
-
-          if (conflictingBookings.length > 0) {
-              throw new Error('This time slot is already booked by another student.');
+          const conflictingBookingsSnapshot = await transaction.get(bookingConflictQuery);
+          if (!conflictingBookingsSnapshot.empty) {
+            throw new Error('This time slot is already booked by another student.');
           }
 
-          // Fetch time-off blocks for the specific day to be more efficient
-          const timeOffSnapshot = await transaction.get(
-              timeOffRef.where('tutorId', '==', bookingPayload.tutorId)
-                        .where('startISO', '>=', bookingDayStart)
-                        .where('startISO', '<=', bookingDayEnd)
-          );
-          
-          const allBreaks = timeOffSnapshot.docs.map(doc => doc.data());
-          
-          if (allBreaks && allBreaks.length > 0) {
-              const conflictingTimeOff = allBreaks.filter(t => {
-                  // --- THE FIX: Stricter validation ---
-                  // Ensure both startISO and endISO are valid strings before creating Date objects.
-                  // This prevents crashes from null, undefined, or malformed data in Firestore.
-                  if (typeof t.startISO === 'string' && typeof t.endISO === 'string') {
-                      const blockStart = new Date(t.startISO);
-                      const blockEnd = new Date(t.endISO);
-                      // Check if the dates are valid before comparison
-                      if (!isNaN(blockStart.getTime()) && !isNaN(blockEnd.getTime())) {
-                        return startTime! < blockEnd && endTime! > blockStart;
-                      }
-                  }
-                  return false; // Ignore any malformed timeOff documents
-              });
-              
-              // DEBUG LOGS ADDED HERE
-              console.log("🔍 Debug: Booking start/end:", startTime, endTime);
-              console.log("🔍 Debug: Conflicting TimeOff entries:", conflictingTimeOff);
+          // --- FIX: Use a direct query for time-off conflicts ---
+          // This query finds any time-off block that overlaps with the requested booking time.
+          const timeOffConflictQuery = timeOffRef
+              .where('tutorId', '==', bookingPayload.tutorId)
+              .where('endISO', '>', startTime.toISOString())
+              .where('startISO', '<', endTime.toISOString());
 
-              if (conflictingTimeOff.length > 0) {
-                  throw new Error('The tutor is unavailable at this time due to a scheduled break.');
-              }
+          const conflictingTimeOffSnapshot = await transaction.get(timeOffConflictQuery);
+          if (!conflictingTimeOffSnapshot.empty) {
+            throw new Error('The tutor is unavailable at this time due to a scheduled break.');
           }
       }
 
