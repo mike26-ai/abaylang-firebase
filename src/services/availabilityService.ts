@@ -20,45 +20,34 @@ interface AvailabilityResponse {
  * @param date - The date for which to fetch availability. Defaults to today if invalid.
  * @returns An object containing arrays of bookings and time-off blocks.
  */
-export async function getAvailability(tutorId: string, date?: Date): Promise<AvailabilityResponse> {
-    let safeDate = date;
-    if (!safeDate || !isValid(safeDate)) {
-        console.warn("Invalid or missing date passed to getAvailability, defaulting to today:", safeDate);
-        safeDate = new Date(); // Fallback to today
-    }
-  const formattedDate = format(safeDate, 'yyyy-MM-dd');
-  try {
-    const response = await fetch(`${API_BASE_URL}/availability/get?tutorId=${tutorId}&date=${formattedDate}`);
-    
-    if (!response.ok) {
-        const text = await response.text(); // capture raw body if not JSON
-        console.error("Server response error (non-OK):", text);
-        throw new Error(`Failed to fetch availability: ${response.status} ${text}`);
-    }
-
-    let result: any;
+export async function getAvailability(tutorId: string, date: Date): Promise<AvailabilityResponse> {
+    const formattedDate = format(date, 'yyyy-MM-dd');
     try {
-        result = await response.json();
-    } catch (jsonErr) {
-        console.error("Invalid JSON returned from server:", jsonErr);
-        throw new Error("Server returned invalid JSON.");
-    }
+        const response = await fetch(`${API_BASE_URL}/availability/get?tutorId=${tutorId}&date=${formattedDate}`);
+        
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+            console.error("Server responded with an error:", response.status, errorBody);
+            throw new Error(errorBody.error || `Failed to fetch availability: ${response.statusText}`);
+        }
 
-    if (!result.success) {
-      console.error('Server response error:', result);
-      throw new Error(result.error || 'Failed to fetch availability data.');
-    }
+        const result = await response.json();
 
-    // Safely access data, providing default empty arrays if data is missing.
-    return {
-      bookings: result.data?.bookings || [],
-      timeOff: result.data?.timeOff || [],
-    };
-  } catch (err: any) {
-    console.error('Fetch availability error:', err);
-    // Re-throw the error so the calling component can handle it (e.g., show a toast).
-    throw err;
-  }
+        if (!result.success) {
+            console.error('Server logic error:', result);
+            throw new Error(result.error || 'Failed to retrieve availability data from the server.');
+        }
+
+        // Safely access data, providing default empty arrays if data is missing.
+        return {
+            bookings: result.data?.bookings || [],
+            timeOff: result.data?.timeOff || [],
+        };
+    } catch (err: any) {
+        console.error('Network or parsing error in getAvailability:', err);
+        // Re-throw a standardized error so the calling component can handle it.
+        throw new Error(`Could not fetch schedule. Please check your connection and try again. Details: ${err.message}`);
+    }
 }
 
 
