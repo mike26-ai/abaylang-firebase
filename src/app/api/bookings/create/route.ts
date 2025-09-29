@@ -102,11 +102,8 @@ export async function POST(request: NextRequest) {
               if(t.startISO && t.endISO) {
                   const blockStart = new Date(t.startISO);
                   const blockEnd = new Date(t.endISO);
-                  // Log each comparison for detailed debugging
-                  console.log(`Checking break: ${blockStart.toISOString()} - ${blockEnd.toISOString()}`);
-                  console.log(`Condition 1 (blockStart < endTime): ${blockStart < endTime!}`);
-                  console.log(`Condition 2 (blockEnd > startTime): ${blockEnd > startTime!}`);
-                  return blockStart < endTime! && blockEnd > startTime!;
+                  // --- THE FIX: Correct overlap logic ---
+                  return startTime! < blockEnd && endTime! > blockStart;
               }
               return false;
           });
