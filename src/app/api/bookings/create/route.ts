@@ -1,4 +1,3 @@
-
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { db, initAdmin, Timestamp } from '@/lib/firebase-admin'; // Use our centralized admin init
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
           
           const conflictingBookingsSnapshot = await transaction.get(bookingConflictQuery);
           if (!conflictingBookingsSnapshot.empty) {
-            throw new Error('This time slot is already booked by another student.');
+            throw new Error('slot_already_booked');
           }
 
           // --- FIX: Use a direct query for time-off conflicts ---
@@ -104,7 +103,7 @@ export async function POST(request: NextRequest) {
               });
 
               if (realConflicts.length > 0) {
-                  throw new Error('The tutor is unavailable at this time due to a scheduled break.');
+                  throw new Error('tutor_unavailable');
               }
           }
       }
@@ -131,11 +130,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error in create booking API route:', error);
-    let status = 500;
-    let message = error.message || 'Internal server error.';
-    if (message.includes('booked') || message.includes('unavailable')) {
-        status = 409; // Conflict
+    if (error.message === 'slot_already_booked') {
+        return NextResponse.json({ success: false, message: 'This time slot is already booked by another student.' }, { status: 409 });
     }
-    return NextResponse.json({ success: false, message: message }, { status });
+    if (error.message === 'tutor_unavailable') {
+        return NextResponse.json({ success: false, message: 'The tutor is unavailable at this time due to a scheduled break.' }, { status: 409 });
+    }
+    return NextResponse.json({ success: false, message: 'An internal server error occurred.' }, { status: 500 });
   }
 }
