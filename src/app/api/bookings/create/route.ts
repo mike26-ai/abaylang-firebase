@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { db, initAdmin, Timestamp } from '@/lib/firebase-admin'; // Use our centralized admin init
 import { getAuth } from 'firebase-admin/auth';
 import { z } from 'zod';
-import { addMinutes, parse } from 'date-fns';
+import { addMinutes, parse, startOfDay, endOfDay } from 'date-fns';
 
 // Initialize Firebase Admin SDK
 initAdmin();
@@ -67,6 +67,9 @@ export async function POST(request: NextRequest) {
 
           const bookingsRef = db.collection('bookings');
           const timeOffRef = db.collection('timeOff');
+          
+          const bookingDayStart = startOfDay(startTime).toISOString();
+          const bookingDayEnd = endOfDay(startTime).toISOString();
 
           // Fetch bookings for the tutor and filter in-memory to avoid composite index
           const bookingsSnapshot = await transaction.get(
@@ -87,19 +90,29 @@ export async function POST(request: NextRequest) {
               throw new Error('This time slot is already booked by another student.');
           }
 
-          // Fetch time-off blocks and filter in-memory
-          const timeOffSnapshot = await transaction.get(timeOffRef.where('tutorId', '==', bookingPayload.tutorId));
+          // Fetch time-off blocks for the specific day to be more efficient
+          const timeOffSnapshot = await transaction.get(
+              timeOffRef.where('tutorId', '==', bookingPayload.tutorId)
+                        .where('startISO', '>=', bookingDayStart)
+                        .where('startISO', '<=', bookingDayEnd)
+          );
+          
           const allBreaks = timeOffSnapshot.docs.map(doc => doc.data());
           
-          // Safety check: if there are no breaks, no need to check for conflicts.
           if (allBreaks && allBreaks.length > 0) {
               const conflictingTimeOff = allBreaks.filter(t => {
-                  if(t.startISO && t.endISO) {
+                  // --- THE FIX: Stricter validation ---
+                  // Ensure both startISO and endISO are valid strings before creating Date objects.
+                  // This prevents crashes from null, undefined, or malformed data in Firestore.
+                  if (typeof t.startISO === 'string' && typeof t.endISO === 'string') {
                       const blockStart = new Date(t.startISO);
                       const blockEnd = new Date(t.endISO);
-                      return startTime! < blockEnd && endTime! > blockStart;
+                      // Check if the dates are valid before comparison
+                      if (!isNaN(blockStart.getTime()) && !isNaN(blockEnd.getTime())) {
+                        return startTime! < blockEnd && endTime! > blockStart;
+                      }
                   }
-                  return false;
+                  return false; // Ignore any malformed timeOff documents
               });
 
               if (conflictingTimeOff.length > 0) {
