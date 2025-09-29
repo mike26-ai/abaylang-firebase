@@ -72,9 +72,10 @@ export function TimeOffManager() {
       const potentialEndTime = addMinutes(potentialStartTime, 30);
 
       const booking = availability.bookings.find(b => {
-         const bookingStart = parse(`${b.date} ${b.time}`, 'yyyy-MM-dd HH:mm', new Date());
-         const bookingEnd = addMinutes(bookingStart, b.duration || 60);
-         return potentialStartTime < bookingEnd && potentialEndTime > bookingStart;
+        if (!b.startTime || !b.endTime) return false;
+        const bookingStart = new Date(b.startTime);
+        const bookingEnd = new Date(b.endTime);
+        return potentialStartTime < bookingEnd && potentialEndTime > bookingStart;
       });
 
       const timeOffBlock = availability.timeOff.find(t => {
