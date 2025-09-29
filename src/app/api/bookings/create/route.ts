@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { db, initAdmin, Timestamp } from '@/lib/firebase-admin'; // Use our centralized admin init
@@ -89,11 +90,22 @@ export async function POST(request: NextRequest) {
 
           // Fetch time-off blocks and filter in-memory
           const timeOffSnapshot = await transaction.get(timeOffRef.where('tutorId', '==', bookingPayload.tutorId));
-          const conflictingTimeOff = timeOffSnapshot.docs.filter(doc => {
-              const t = doc.data();
+          const allBreaks = timeOffSnapshot.docs.map(doc => doc.data());
+          
+          // --- DEBUG LOGGING ---
+          console.log("📅 Booking request (UTC):", startTime.toISOString(), "to", endTime.toISOString());
+          console.log("📅 Booking request (Server Local Time):", startTime.toString(), "to", endTime.toString());
+          console.log("⏸️ Tutor breaks fetched from Firestore:", JSON.stringify(allBreaks, null, 2));
+          // --- END DEBUG LOGGING ---
+
+          const conflictingTimeOff = allBreaks.filter(t => {
               if(t.startISO && t.endISO) {
                   const blockStart = new Date(t.startISO);
                   const blockEnd = new Date(t.endISO);
+                  // Log each comparison for detailed debugging
+                  console.log(`Checking break: ${blockStart.toISOString()} - ${blockEnd.toISOString()}`);
+                  console.log(`Condition 1 (blockStart < endTime): ${blockStart < endTime!}`);
+                  console.log(`Condition 2 (blockEnd > startTime): ${blockEnd > startTime!}`);
                   return blockStart < endTime! && blockEnd > startTime!;
               }
               return false;
