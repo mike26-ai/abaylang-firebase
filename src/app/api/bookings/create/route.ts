@@ -88,18 +88,22 @@ export async function POST(request: NextRequest) {
 
           const conflictingTimeOffSnapshot = await transaction.get(timeOffConflictQuery);
           
+          // --- ADDED DEBUG LOG ---
+          console.log("DEBUG: Found potentially conflicting timeOff docs:", conflictingTimeOffSnapshot.docs.map(doc => doc.data()));
+          
           // --- FINAL FIX: Add fallback safety check to prevent false positives from null/malformed data ---
           if (!conflictingTimeOffSnapshot.empty) {
               const realConflicts = conflictingTimeOffSnapshot.docs.filter(doc => {
                   const timeOffData = doc.data();
                   // Ensure data exists and has the required fields before checking
-                  if (timeOffData && timeOffData.startISO && timeOffData.endISO) {
-                      const breakStart = new Date(timeOffData.startISO);
-                      const breakEnd = new Date(timeOffData.endISO);
-                      // Perform the definitive overlap check
-                      return startTime! < breakEnd && endTime! > breakStart;
+                  if (!timeOffData || !timeOffData.startISO || !timeOffData.endISO) {
+                      console.warn("Skipping malformed timeOff record:", doc.id);
+                      return false; // Ignore malformed documents
                   }
-                  return false; // Ignore malformed documents
+                  const breakStart = new Date(timeOffData.startISO);
+                  const breakEnd = new Date(timeOffData.endISO);
+                  // Perform the definitive overlap check
+                  return startTime! < breakEnd && endTime! > breakStart;
               });
 
               if (realConflicts.length > 0) {
