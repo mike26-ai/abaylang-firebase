@@ -45,16 +45,17 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
             body: JSON.stringify(bookingPayload),
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-            // Log the full server response for better debugging
-            console.error("Booking creation failed with status:", response.status, "and response:", data);
-            // Forward the server's error message if available, otherwise use a generic one.
-            throw new Error(data.message || 'Failed to create booking.');
+            // Attempt to parse the JSON error body from the server.
+            const data = await response.json().catch(() => ({})); // Fallback to empty object on JSON parse error.
+            const errorMessage = data?.message || `Failed with status ${response.status}`;
+            console.error("Booking creation failed:", errorMessage, "Full response:", data);
+            throw new Error(errorMessage);
         }
 
+        const data = await response.json();
         return data;
+        
     } catch (err) {
         console.error('Error in createBooking client function:', err);
         // Re-throw the error so the UI can handle it
