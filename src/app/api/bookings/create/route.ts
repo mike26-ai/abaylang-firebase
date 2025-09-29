@@ -89,14 +89,23 @@ export async function POST(request: NextRequest) {
 
           const conflictingTimeOffSnapshot = await transaction.get(timeOffConflictQuery);
           
-          // --- FIX: Guard against null or malformed time-off documents ---
-          const validConflicts = conflictingTimeOffSnapshot.docs.filter(doc => {
-              const data = doc.data();
-              return data && data.startISO && data.endISO;
-          });
+          // --- FINAL FIX: Add fallback safety check to prevent false positives from null/malformed data ---
+          if (!conflictingTimeOffSnapshot.empty) {
+              const realConflicts = conflictingTimeOffSnapshot.docs.filter(doc => {
+                  const timeOffData = doc.data();
+                  // Ensure data exists and has the required fields before checking
+                  if (timeOffData && timeOffData.startISO && timeOffData.endISO) {
+                      const breakStart = new Date(timeOffData.startISO);
+                      const breakEnd = new Date(timeOffData.endISO);
+                      // Perform the definitive overlap check
+                      return startTime! < breakEnd && endTime! > breakStart;
+                  }
+                  return false; // Ignore malformed documents
+              });
 
-          if (validConflicts.length > 0) {
-            throw new Error('The tutor is unavailable at this time due to a scheduled break.');
+              if (realConflicts.length > 0) {
+                  throw new Error('The tutor is unavailable at this time due to a scheduled break.');
+              }
           }
       }
 
