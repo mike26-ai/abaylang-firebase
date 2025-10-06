@@ -1,9 +1,10 @@
+
 // File: src/app/api/admin/dashboard-stats/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-import { startOfDay, format } from 'date-fns';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { startOfDay, format, parseISO } from 'date-fns';
 import { ADMIN_EMAIL } from '@/config/site';
 
 // Initialize Firebase Admin SDK
@@ -13,7 +14,7 @@ const adminDb = getFirestore();
 
 /**
  * This API route securely fetches all necessary data for the admin dashboard.
- * It is protected by an admin check that verifies the user's ID token and Firestore role.
+ * It is protected by an admin check and uses resilient queries that do not require composite indexes.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     const today = startOfDay(new Date());
 
     const [
-        upcomingBookingsSnapshot,
+        allConfirmedBookingsSnapshot, // Fetch all and filter in code
         pendingTestimonialsSnapshot,
         newInquiriesSnapshot,
         totalStudentsSnapshot,
@@ -47,11 +48,11 @@ export async function GET(request: NextRequest) {
         latestPendingTestimonialsSnapshot,
         approvedTestimonialsSnapshot
     ] = await Promise.all([
-        adminDb.collection('bookings').where('date', '>=', format(today, 'yyyy-MM-dd')).where('status', '==', 'confirmed').get(),
+        adminDb.collection('bookings').where('status', '==', 'confirmed').get(),
         adminDb.collection('testimonials').where('status', '==', 'pending').count().get(),
         adminDb.collection('contactMessages').where('read', '==', false).count().get(),
         adminDb.collection('users').where('role', '==', 'student').count().get(),
-        adminDb.collection('bookings').where('status', '==', 'payment-pending-confirmation').count().get(),
+        adminDb.collection('bookings').where('status', 'in', ['awaiting-payment', 'payment-pending-confirmation']).count().get(),
         adminDb.collection('bookings').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('contactMessages').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('users').where('role', '==', 'student').orderBy('createdAt', 'desc').limit(5).get(),
@@ -59,14 +60,21 @@ export async function GET(request: NextRequest) {
         adminDb.collection('testimonials').where('status', '==', 'approved').get(),
     ]);
 
-    // 3. Process the results
+    // 3. Process the results in-memory to avoid complex index requirements
+    const upcomingBookingsCount = allConfirmedBookingsSnapshot.docs.filter(doc => {
+        const bookingDate = doc.data().date;
+        if (!bookingDate || typeof bookingDate !== 'string') return false;
+        // The check is now >= today, correctly including today's bookings.
+        return new Date(bookingDate) >= today;
+    }).length;
+
     const approvedRatings = approvedTestimonialsSnapshot.docs.map(doc => doc.data().rating);
     const averageRating = approvedRatings.length > 0 
         ? approvedRatings.reduce((sum, rating) => sum + rating, 0) / approvedRatings.length 
         : 0;
 
     const stats = {
-      upcomingBookings: upcomingBookingsSnapshot.size,
+      upcomingBookings: upcomingBookingsCount,
       pendingTestimonialsCount: pendingTestimonialsSnapshot.data().count,
       newInquiries: newInquiriesSnapshot.data().count,
       totalStudents: totalStudentsSnapshot.data().count,
