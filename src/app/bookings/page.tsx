@@ -146,32 +146,51 @@ export default function BookLessonPage() {
     const slots: { display: string; value: string; status: 'available' | 'booked' | 'blocked' }[] = [];
     const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number;
     const slotDate = startOfDay(selectedDate);
-    
-    const bookedSlotTimes = new Set(dailyBookedSlots.map(b => b.time));
-    const blockedSlotTimes = new Set(dailyTimeOff.map(t => format(new Date(t.startISO), 'HH:mm')));
 
     for (const startTimeString of baseStartTimes) {
-      const isBooked = bookedSlotTimes.has(startTimeString);
-      const isBlocked = blockedSlotTimes.has(startTimeString);
+        const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
+        const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
 
-      const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
-      const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
-      
-      let status: 'available' | 'booked' | 'blocked' = 'available';
-      if (isBooked) {
-        status = 'booked';
-      } else if (isBlocked) {
-        status = 'blocked';
-      }
+        let currentStatus: 'available' | 'booked' | 'blocked' = 'available';
 
-      slots.push({
-        display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
-        value: startTimeString,
-        status,
-      });
+        // Check for conflicts with existing bookings
+        for (const booking of dailyBookedSlots) {
+            if (booking.startTime && booking.endTime) {
+                const bookingStart = new Date(booking.startTime.toDate());
+                const bookingEnd = new Date(booking.endTime.toDate());
+                if (potentialStartTime < bookingEnd && potentialEndTime > bookingStart) {
+                    currentStatus = 'booked';
+                    break;
+                }
+            }
+        }
+        if (currentStatus === 'booked') {
+            slots.push({
+                display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
+                value: startTimeString,
+                status: 'booked',
+            });
+            continue;
+        }
+
+        // Check for conflicts with time off blocks
+        for (const block of dailyTimeOff) {
+            const blockStart = new Date(block.startISO);
+            const blockEnd = new Date(block.endISO);
+            if (potentialStartTime < blockEnd && potentialEndTime > blockStart) {
+                currentStatus = 'blocked';
+                break;
+            }
+        }
+
+        slots.push({
+            display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
+            value: startTimeString,
+            status: currentStatus,
+        });
     }
     return slots;
-  }, [selectedDate, selectedLessonDetails, dailyBookedSlots, dailyTimeOff]);
+}, [selectedDate, selectedLessonDetails, dailyBookedSlots, dailyTimeOff]);
 
 
   // Refactored handleBooking to use the new service
@@ -398,7 +417,7 @@ export default function BookLessonPage() {
                             variant={selectedTime === slot.value ? "default" : "outline"}
                             onClick={() => setSelectedTime(slot.value)}
                             disabled={slot.status !== 'available'}
-                            className={slot.status !== 'available' ? "bg-muted text-muted-foreground line-through hover:bg-muted" : ""}
+                            className={slot.status !== 'available' ? "bg-destructive/20 text-destructive-foreground line-through hover:bg-destructive/20 cursor-not-allowed" : ""}
                             >
                             {slot.display}
                             {slot.status === 'booked' && <span className="text-xs ml-1">(Booked)</span>}
@@ -589,3 +608,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
