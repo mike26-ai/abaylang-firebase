@@ -147,10 +147,23 @@ export default function BookLessonPage() {
     const slots: { display: string; value: string; status: 'available' | 'booked' | 'blocked', bookedMeta?: BookingType, blockedMeta?: TimeOff }[] = [];
     const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number;
     const slotDate = startOfDay(selectedDate);
+    const now = new Date();
+    const isToday = isEqual(slotDate, startOfDay(now));
 
     for (const startTimeString of baseStartTimes) {
         const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
         const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
+
+        // Check if the slot is in the past for today's date
+        if (isToday && isPast(potentialStartTime)) {
+            slots.push({
+                display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
+                value: startTimeString,
+                status: 'blocked',
+                blockedMeta: { note: 'Time has passed' } as TimeOff,
+            });
+            continue;
+        }
 
         let currentStatus: 'available' | 'booked' | 'blocked' = 'available';
         let bookingMeta: BookingType | undefined;
@@ -610,5 +623,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    

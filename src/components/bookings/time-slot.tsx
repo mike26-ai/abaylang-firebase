@@ -1,4 +1,3 @@
-
 // File: src/components/bookings/time-slot.tsx
 "use client";
 
@@ -55,7 +54,7 @@ export function TimeSlot({
       className={cn(
         "w-full",
         status === 'available' && "hover:bg-accent",
-        status === 'blocked' && "bg-muted text-muted-foreground hover:bg-muted/80 cursor-not-allowed",
+        status === 'blocked' && "bg-destructive/10 text-destructive-foreground hover:bg-destructive/20 cursor-not-allowed font-semibold",
         status === 'booked' && "bg-blue-600/10 text-blue-800 dark:text-blue-300 border-blue-600/20 hover:bg-blue-600/20 cursor-not-allowed line-through"
       )}
       disabled={!isClickable}
@@ -76,7 +75,7 @@ export function TimeSlot({
                 <Lock className="w-4 h-4 mt-0.5"/>
                 <div>
                     <p className="font-semibold">Tutor Unavailable</p>
-                    {blockedMeta?.note && <p className="text-xs text-muted-foreground">Note: {blockedMeta.note}</p>}
+                    {blockedMeta?.note && blockedMeta.note !== 'Admin Block' && <p className="text-xs text-muted-foreground">Note: {blockedMeta.note}</p>}
                 </div>
               </div>
             )}
@@ -99,5 +98,3 @@ export function TimeSlot({
 
   return button;
 }
-
-    
