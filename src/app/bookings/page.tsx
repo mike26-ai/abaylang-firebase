@@ -131,7 +131,7 @@ export default function BookLessonPage() {
 
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (date && isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))) {
+    if (date && isPast(date) && !isEqual(startOfDay(date), date)) {
       toast({ title: "Invalid Date", description: "Cannot select a past date.", variant: "destructive" });
       setSelectedDateState(undefined);
     } else {
@@ -156,8 +156,8 @@ export default function BookLessonPage() {
         // Check for conflicts with existing bookings
         for (const booking of dailyBookedSlots) {
             if (booking.startTime && booking.endTime) {
-                const bookingStart = new Date(booking.startTime.toDate());
-                const bookingEnd = new Date(booking.endTime.toDate());
+                const bookingStart = new Date(booking.startTime as any);
+                const bookingEnd = new Date(booking.endTime as any);
                 if (potentialStartTime < bookingEnd && potentialEndTime > bookingStart) {
                     currentStatus = 'booked';
                     break;
