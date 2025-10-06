@@ -33,24 +33,12 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { db } from "@/lib/firebase";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  getCountFromServer,
-  Timestamp,
-  orderBy,
-  limit,
-  updateDoc,
-  doc,
-} from "firebase/firestore";
-import { format, startOfDay, isAfter } from "date-fns";
-import { Logo } from "@/components/layout/logo";
+import { format } from "date-fns";
 import type { Booking, Testimonial, ContactMessage, UserProfile } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
+import { updateDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 interface DashboardStats {
@@ -60,10 +48,17 @@ interface DashboardStats {
   totalStudents: number;
   totalRevenue: number; 
   averageRating: number; 
-  newBookingsCount: number; // New stat for bookings awaiting confirmation
+  newBookingsCount: number;
 }
 
-// Define action type for spinner logic
+interface DashboardData {
+  stats: DashboardStats;
+  recentBookings: Booking[];
+  pendingTestimonials: Testimonial[];
+  recentMessages: ContactMessage[];
+  recentStudents: UserProfile[];
+}
+
 type TestimonialActionType = "approved" | "rejected" | null;
 
 export default function AdminDashboardPage() {
@@ -71,23 +66,9 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [stats, setStats] = useState<DashboardStats>({
-    upcomingBookings: 0,
-    pendingTestimonialsCount: 0,
-    newInquiries: 0,
-    totalStudents: 0,
-    totalRevenue: 0,
-    averageRating: 0,
-    newBookingsCount: 0, // New stat
-  });
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
-  const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
-  const [pendingTestimonials, setPendingTestimonials] = useState<Testimonial[]>([]);
-  const [recentMessages, setRecentMessages] = useState<ContactMessage[]>([]);
-  const [recentStudents, setRecentStudents] = useState<UserProfile[]>([]);
-  
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [updatingTestimonial, setUpdatingTestimonial] = useState<{ id: string | null; action: TestimonialActionType }>({ id: null, action: null });
-
 
   useEffect(() => {
     if (authLoading) return;
@@ -101,70 +82,20 @@ export default function AdminDashboardPage() {
     }
 
     const fetchDashboardData = async () => {
-      setIsLoadingStats(true);
+      setIsLoading(true);
       try {
-        const today = startOfDay(new Date());
-
-        // --- QUERIES ---
-        // FIX: Simplified the upcomingBookingsQuery to remove the composite index requirement.
-        // We fetch all non-past bookings and then filter for 'confirmed' status in the client code.
-        const upcomingBookingsQuery = query(collection(db, "bookings"), where("date", ">=", format(today, "yyyy-MM-dd")));
-        const pendingTestimonialsQuery = query(collection(db, "testimonials"), where("status", "==", "pending"));
-        const newInquiriesQuery = query(collection(db, "contactMessages"), where("read", "==", false));
-        const totalStudentsQuery = query(collection(db, "users"), where("role", "==", "student"));
-        const newBookingsQuery = query(collection(db, "bookings"), where("status", "==", "payment-pending-confirmation"));
-        
-        const recentBookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(5));
-        const recentMessagesQuery = query(collection(db, "contactMessages"), orderBy("createdAt", "desc"), limit(5));
-        const recentStudentsQuery = query(collection(db, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5));
-        const latestPendingTestimonialsQuery = query(pendingTestimonialsQuery, orderBy("createdAt", "desc"), limit(5));
-        
-        const [
-          upcomingBookingsSnapshot,
-          pendingTestimonialsSnapshot,
-          newInquiriesSnapshot,
-          totalStudentsSnapshot,
-          newBookingsSnapshot,
-          recentBookingsDocs,
-          recentMessagesDocs,
-          recentStudentsDocs,
-          latestPendingTestimonialsDocs,
-        ] = await Promise.all([
-          getDocs(upcomingBookingsQuery), // Changed from getCountFromServer to getDocs to allow client-side filtering
-          getCountFromServer(pendingTestimonialsQuery),
-          getCountFromServer(newInquiriesQuery),
-          getCountFromServer(totalStudentsQuery),
-          getCountFromServer(newBookingsQuery),
-          getDocs(recentBookingsQuery),
-          getDocs(recentMessagesQuery),
-          getDocs(recentStudentsQuery),
-          getDocs(latestPendingTestimonialsQuery)
-        ]);
-        
-        // FIX: Perform the filtering on the client-side
-        const confirmedUpcomingCount = upcomingBookingsSnapshot.docs.filter(doc => doc.data().status === 'confirmed').length;
-
-        setPendingTestimonials(latestPendingTestimonialsDocs.docs.map(d => ({ id: d.id, ...d.data() } as Testimonial)));
-        setRecentBookings(recentBookingsDocs.docs.map(d => ({ id: d.id, ...d.data() } as Booking)));
-        setRecentMessages(recentMessagesDocs.docs.map(d => ({ id: d.id, ...d.data() } as ContactMessage)));
-        setRecentStudents(recentStudentsDocs.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile)));
-        
-
-        setStats({
-          upcomingBookings: confirmedUpcomingCount,
-          pendingTestimonialsCount: pendingTestimonialsSnapshot.data().count,
-          newInquiries: newInquiriesSnapshot.data().count,
-          totalStudents: totalStudentsSnapshot.data().count,
-          newBookingsCount: newBookingsSnapshot.data().count,
-          totalRevenue: 1250, // Placeholder
-          averageRating: 4.9, // Placeholder
-        });
+        const response = await fetch('/api/admin/dashboard-stats');
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        const data: DashboardData = await response.json();
+        setDashboardData(data);
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         toast({ title: "Error", description: "Could not load dashboard data.", variant: "destructive" });
       } finally {
-        setIsLoadingStats(false);
+        setIsLoading(false);
       }
     };
 
@@ -172,12 +103,25 @@ export default function AdminDashboardPage() {
   }, [user, isAdmin, authLoading, router, toast]);
 
   const handleTestimonialAction = async (id: string, action: "approved" | "rejected") => {
+    if (!dashboardData) return;
     setUpdatingTestimonial({ id, action });
     try {
       const testimonialDocRef = doc(db, "testimonials", id);
       await updateDoc(testimonialDocRef, { status: action });
-      setPendingTestimonials((prev) => prev.filter((testimonial) => testimonial.id !== id));
-      setStats(prev => ({...prev, pendingTestimonialsCount: Math.max(0, prev.pendingTestimonialsCount -1)}));
+      
+      // Update local state to reflect the change immediately
+      setDashboardData(prevData => {
+        if (!prevData) return null;
+        return {
+          ...prevData,
+          pendingTestimonials: prevData.pendingTestimonials.filter(t => t.id !== id),
+          stats: {
+            ...prevData.stats,
+            pendingTestimonialsCount: Math.max(0, prevData.stats.pendingTestimonialsCount - 1),
+          }
+        };
+      });
+
       toast({ title: "Success", description: `Testimonial ${action}.` });
     } catch (error) {
       console.error("Error updating testimonial:", error);
@@ -187,10 +131,15 @@ export default function AdminDashboardPage() {
     }
   };
   
-
-  if (authLoading || isLoadingStats || !user || !isAdmin) {
+  if (authLoading || isLoading || !user || !isAdmin) {
     return <div className="min-h-screen flex items-center justify-center"><Spinner size="lg" /> <p className="ml-3 text-muted-foreground">Loading Dashboard...</p></div>;
   }
+  
+  if (!dashboardData) {
+      return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Could not load dashboard data. Please try again.</p></div>
+  }
+
+  const { stats, recentBookings, pendingTestimonials, recentMessages, recentStudents } = dashboardData;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
@@ -243,7 +192,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.averageRating.toFixed(1)}</div>
-              <p className="text-xs text-muted-foreground">placeholder data</p>
+              <p className="text-xs text-muted-foreground">from approved testimonials</p>
             </CardContent>
           </Card>
         </div>
@@ -476,7 +425,7 @@ export default function AdminDashboardPage() {
                       <TableRow key={student.uid}>
                         <TableCell className="font-medium">{student.name}</TableCell>
                         <TableCell>{student.email}</TableCell>
-                        <TableCell>{student.createdAt ? format(student.createdAt.toDate(), "PP") : "N/A"}</TableCell>
+                        <TableCell>{student.createdAt ? format(new Date(student.createdAt as any), "PP") : "N/A"}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{student.amharicLevel?.replace(/-/g, " ") || "N/A"}</Badge>
                         </TableCell>
@@ -496,5 +445,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    

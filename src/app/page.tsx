@@ -5,18 +5,18 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock, Package } from "lucide-react"
+import { Star, Calendar, Globe, Heart, BookOpen, Clock, Package } from "lucide-react"
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useState, type ChangeEvent, type FormEvent, useEffect } from "react"
-import { addDoc, collection, serverTimestamp, getDocs, query, where, orderBy, limit } from "firebase/firestore"
+import { addDoc, collection, serverTimestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo, siteConfig } from "@/config/site"
 import Image from "next/image"
-import type { Testimonial as TestimonialType } from "@/lib/types"; // For fetching testimonials
+import type { Testimonial as TestimonialType } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo"
 
 export default function HomePage() {
@@ -30,38 +30,28 @@ export default function HomePage() {
     const fetchTestimonials = async () => {
       setIsLoadingTestimonials(true);
       try {
-        const testimonialsCol = collection(db, "testimonials");
-        // FIX: Query for status, but order in code to avoid needing a composite index
-        const q = query(
-          testimonialsCol,
-          where("status", "==", "approved"),
-          limit(10) // Fetch a few recent ones to sort
-        );
-        const querySnapshot = await getDocs(q);
-        const fetchedTestimonials = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TestimonialType));
-        
-        // Sort by date in the client-side code
-        fetchedTestimonials.sort((a, b) => {
-            const dateA = a.createdAt?.toDate()?.getTime() || 0;
-            const dateB = b.createdAt?.toDate()?.getTime() || 0;
+        // Fetch from the new, secure API route
+        const response = await fetch('/api/testimonials');
+        if (!response.ok) {
+          throw new Error('Failed to fetch testimonials');
+        }
+        const data = await response.json();
+
+        // Sort by date client-side
+        const sortedTestimonials = data.sort((a: TestimonialType, b: TestimonialType) => {
+            const dateA = a.createdAt ? new Date(a.createdAt as any).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt as any).getTime() : 0;
             return dateB - dateA;
         });
 
-        setTestimonials(fetchedTestimonials.slice(0, 3)); // Take the top 3 after sorting
+        setTestimonials(sortedTestimonials.slice(0, 3)); // Take top 3
 
       } catch (error: any) {
         console.error("Error fetching testimonials for homepage:", error);
-        let description = "Could not load recent testimonials.";
-        if (error.code === 'failed-precondition') {
-            description = "Could not load testimonials. This often means a required database index is missing. Please check the browser console for a link to create it, or check Firestore indexes.";
-        } else if (error.code === 'permission-denied') {
-            description = "Could not load testimonials due to a permission issue. Please check Firestore security rules for 'testimonials'.";
-        }
         toast({
           title: "Error Loading Testimonials",
-          description: description,
+          description: "Could not load recent testimonials.",
           variant: "destructive",
-          duration: 9000,
         });
       } finally {
         setIsLoadingTestimonials(false);
@@ -163,7 +153,7 @@ export default function HomePage() {
               asChild
             >
               <Link href="/tutor-profile">
-                <Play className="w-5 h-5 mr-2" />
+                <Star className="w-5 h-5 mr-2" />
                 Meet Your Tutor
               </Link>
             </Button>
@@ -209,7 +199,7 @@ export default function HomePage() {
             <div className="space-y-6">
               <Badge className="bg-accent text-accent-foreground">Meet Your Tutor</Badge>
               <h2 className="text-4xl md:text-5xl font-bold text-foreground">{tutorInfo.name}</h2>
-              <p className="text-xl text-primary font-medium">{tutorInfo.bio}</p>
+              <p className="text-xl text-primary font-medium">{tutorInfo.shortIntro}</p>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
                   Experienced Amharic teacher who makes language learning fun, simple, and interactive. Join me for easy lessons packed with culture and conversation!
@@ -250,10 +240,7 @@ export default function HomePage() {
                 <CardDescription className="text-muted-foreground">30-minute trial session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Meet the tutor</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Experience the teaching style</span></li>
-                </ul>
+                 <p className="text-center text-sm text-muted-foreground">Meet the tutor and experience the teaching style.</p>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
                   <Link href="/bookings?type=free-trial">Book Free Trial</Link>
                 </Button>
@@ -273,10 +260,7 @@ export default function HomePage() {
                 <CardDescription className="text-muted-foreground">30-minute focused session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                 <ul className="space-y-3">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Conversation practice</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Pronunciation correction</span></li>
-                </ul>
+                 <p className="text-center text-sm text-muted-foreground">Perfect for conversation practice and review.</p>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
                   <Link href="/bookings?type=quick-practice">Book Quick Session</Link>
                 </Button>
@@ -293,10 +277,7 @@ export default function HomePage() {
                 <CardDescription className="text-muted-foreground">60-minute deep dive session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Structured lesson plan</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Cultural context</span></li>
-                </ul>
+                <p className="text-center text-sm text-muted-foreground">Structured lesson with cultural context.</p>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
                   <Link href="/bookings?type=comprehensive-lesson">Book Full Lesson</Link>
                 </Button>

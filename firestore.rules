@@ -1,84 +1,154 @@
 /**
- * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for user profiles,
- *              allows open read access to bookings and time-off blocks, and restricts write
- *              access to owners for user profiles and administrators for time-off blocks.
+ * @file Overview
+ * This ruleset enforces a role-based access control model with ownership for user profiles.
+ * Admins, identifiable by a "role: admin" field in their user document, have broad access.
+ * Users can manage their own profiles and create bookings.
+ * Testimonials are publicly readable but only creatable by signed-in users and manageable by admins.
+ * News/Blog content is only manageable by admins.
  *
- * Data Structure:
- * - /users/{userId}: Stores individual user profiles, accessible only to the user themselves.
- * - /bookings/{bookingId}: Stores lesson booking documents, publicly readable.
- * - /timeOff/{timeOffId}: Stores time-off blocks, publicly readable.
+ * @dataStructure
+ * - /users/{userId}: Stores user profile data.  Admins have 'role: admin'.
+ * - /bookings/{bookingId}: Stores lesson booking data.
+ * - /availability/{docId}: Stores tutor availability information.
+ * - /timeOff/{docId}: Stores tutor time off information.
+ * - /testimonials/{testimonialId}: Stores user testimonials.
+ * - /news/{newsId}: Stores news or blog posts.
  *
- * Key Security Decisions:
- * - User profiles are private and only accessible to the owning user.
- * - Bookings and time-off blocks are publicly readable, but creation, update, and deletion are restricted.
- * - Time-off block creation is restricted to authenticated users. Updates and deletions are disallowed in this prototype.
- *
- * Denormalization for Authorization:
- *   The data model includes `userId` or `tutorId` fields, which are essential for ownership checks.
- *   These rules rely on the presence and correctness of these fields in the data itself.
- *
- * Structural Segregation:
- *   This ruleset avoids mixing public and private data within the same documents.
- *   User profiles are stored in a dedicated, private collection.
+ * @keySecurityDecisions
+ * - Users can only read and write their own user profiles (owner-only).
+ * - Admin role is determined by the presence of `role: "admin"` in the user document.
+ * - Testimonials are publicly readable.
+ * - All collections except /users/{userId} are listable.
+ * - No schema validation is performed in this prototyping phase.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // 🔹 Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      // You can store `role: "admin"` in users/{userId}
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
     /**
-     * @description Controls access to user profile documents.
+     * @description Manages user profiles. Users can only read and write their own profiles, or if they are an admin.
      * @path /users/{userId}
-     * @allow (create) - A user can create their own profile if the UID matches.
-     * @allow (get, list, update, delete) - A user can only access or modify their own profile.
-     * @deny (create) - A user cannot create a profile with a mismatched UID.
-     * @deny (update, delete) - A user cannot modify or delete another user's profile.
-     * @principle Enforces document ownership for all operations.
+     * @allow (read, write) if the user is the owner of the profile (userId matches request.auth.uid) or if the user is an admin.
+     * @deny (read, write) if the user is not the owner and not an admin.
+     * @principle Enforces user-ownership for profile management and allows admin override.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.uid == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.uid == resource.data.uid;
-      allow delete: if isExistingOwner(userId);
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false;
+      allow create: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     /**
-     * @description Controls access to booking documents.
+     * @description Manages lesson bookings. All users can read bookings, and any signed-in user can create, update or delete them.
      * @path /bookings/{bookingId}
-     * @allow (get, list) - Allows public read access to all bookings.
-     * @deny (create, update, delete) - Restricts all write operations.
-     * @principle Provides public read access but restricts modifications.
+     * @allow (read) any user can read any booking.
+     * @allow (create, update, delete) any signed-in user can write bookings.
+     * @deny (create, update, delete) if the user is not signed in.
+     * @principle Allows public read access with write access for signed-in users.
      */
     match /bookings/{bookingId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to time-off block documents.
-     * @path /timeOff/{timeOffId}
-     * @allow (get, list) - Allows public read access to all time-off blocks.
-     * @allow (create) - Allows creation of time-off blocks by authenticated users.
-     * @deny (update, delete) - Restricts update and delete operations.
-     * @principle Provides public read access, restricts modifications, and allows authenticated users to create new entries.
+     * @description Manages tutor availability. Tutors' availability is visible to everyone, and admins can modify it.
+     * @path /availability/{docId}
+     * @allow (read) anyone can read tutor availability.
+     * @allow (create, update, delete) any signed-in user or admin can write availability.
+     * @deny (create, update, delete) if the user is not signed in and not an admin.
+     * @principle Allows public read access with write access for signed-in users and admins.
      */
-    match /timeOff/{timeOffId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
+    match /availability/{docId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn() || isAdmin();
+      allow update: if isSignedIn() || isAdmin();
+      allow delete: if isSignedIn() || isAdmin();
+    }
 
-      allow get, list: if true;
+    /**
+     * @description Manages tutor time off. Time off blocks are visible to everyone, and admins can manage them.
+     * @path /timeOff/{docId}
+     * @allow (read) anyone can read time off blocks.
+     * @allow (create, update, delete) any signed-in user or admin can write time off.
+     * @deny (create, update, delete) if the user is not signed in and not an admin.
+     * @principle Allows public read access with write access for signed-in users and admins.
+     */
+    match /timeOff/{docId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn() || isAdmin();
+      allow update: if isSignedIn() || isAdmin();
+      allow delete: if isSignedIn() || isAdmin();
+    }
+
+    /**
+     * @description Manages testimonials. Testimonials are publicly readable, can be created by any signed-in user, and only admins can edit/delete them.
+     * @path /testimonials/{testimonialId}
+     * @allow (read) any user can read testimonials.
+     * @allow (create) any signed-in user can create testimonials.
+     * @allow (update, delete) only admins can modify testimonials.
+     * @deny (create) if the user is not signed in.
+     * @deny (update, delete) if the user is not an admin.
+     * @principle Allows public read access and user-submitted content with admin moderation.
+     */
+    match /testimonials/{testimonialId} {
+      allow get: if true;
+      allow list: if true;
       allow create: if isSignedIn();
-      allow update, delete: if false;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Manages news or blog posts. Only admins can create, read, update, or delete news posts.
+     * @path /news/{newsId}
+     * @allow (read) any user can read news posts.
+     * @allow (create, update, delete) only admins can manage news posts.
+     * @deny (create, update, delete) if the user is not an admin.
+     * @principle Restricts content management to administrators.
+     */
+    match /news/{newsId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Fallback rule that denies all other requests.
+     * @path /{document=**}
+     * @allow None. This is a deny-all rule.
+     * @deny All read and write requests to any document not explicitly matched by other rules.
+     * @principle Default-deny security posture.
+     */
+    match /{document=**} {
+      allow get: if false;
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

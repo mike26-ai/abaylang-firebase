@@ -22,12 +22,7 @@ const nextConfig = {
       }
     ],
   },
-  experimental: {
-    // This is necessary for Firebase Studio to work correctly in dev mode.
-    allowedDevOrigins: [
-      "https://*.cluster-ombtxv25tbd6yrjpp3lukp6zhc.cloudworkstations.dev",
-    ],
-  },
+  // experimental: { }, // optional — safe to remove
 };
 
 export default nextConfig;
