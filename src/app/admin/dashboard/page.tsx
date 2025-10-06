@@ -33,12 +33,12 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import type { Booking, Testimonial, ContactMessage, UserProfile } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 import { updateDoc, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 
 
 interface DashboardStats {
@@ -84,16 +84,44 @@ export default function AdminDashboardPage() {
     const fetchDashboardData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('/api/admin/dashboard-stats');
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken) {
+          throw new Error("Not authenticated");
         }
-        const data: DashboardData = await response.json();
-        setDashboardData(data);
 
-      } catch (error) {
+        const response = await fetch('/api/admin/dashboard-stats', {
+          headers: {
+            'Authorization': `Bearer ${idToken}`,
+          },
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch dashboard data');
+        }
+        
+        const data: DashboardData = await response.json();
+
+        // Convert ISO strings back to Date objects for client-side use
+        const parseTimestamps = (item: any) => {
+            const newItem = { ...item };
+            if (newItem.createdAt) newItem.createdAt = parseISO(newItem.createdAt);
+            if (newItem.startTime) newItem.startTime = parseISO(newItem.startTime);
+            if (newItem.endTime) newItem.endTime = parseISO(newItem.endTime);
+            return newItem;
+        };
+
+        setDashboardData({
+            ...data,
+            recentBookings: data.recentBookings.map(parseTimestamps),
+            pendingTestimonials: data.pendingTestimonials.map(parseTimestamps),
+            recentMessages: data.recentMessages.map(parseTimestamps),
+            recentStudents: data.recentStudents.map(parseTimestamps),
+        });
+
+      } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
-        toast({ title: "Error", description: "Could not load dashboard data.", variant: "destructive" });
+        toast({ title: "Error", description: error.message || "Could not load dashboard data.", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
@@ -109,7 +137,6 @@ export default function AdminDashboardPage() {
       const testimonialDocRef = doc(db, "testimonials", id);
       await updateDoc(testimonialDocRef, { status: action });
       
-      // Update local state to reflect the change immediately
       setDashboardData(prevData => {
         if (!prevData) return null;
         return {

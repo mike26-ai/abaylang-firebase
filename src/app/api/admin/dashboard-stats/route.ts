@@ -1,33 +1,38 @@
 // File: src/app/api/admin/dashboard-stats/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth, initAdmin } from '@/lib/firebase-admin';
+import { initAdmin } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 import { startOfDay, format } from 'date-fns';
 import { ADMIN_EMAIL } from '@/config/site';
 
-// Ensure Firebase Admin is initialized
+// Initialize Firebase Admin SDK
 initAdmin();
+const adminAuth = getAuth();
+const adminDb = getFirestore();
 
 /**
  * This API route securely fetches all necessary data for the admin dashboard.
- * It uses the Firebase Admin SDK, bypassing all client-side security rules,
- * and is protected by an admin check.
+ * It is protected by an admin check that verifies the user's ID token and Firestore role.
  */
 export async function GET(request: NextRequest) {
   try {
-    // 1. Verify Authentication and Admin Status
+    // 1. Verify Authentication and Admin Status from the incoming request
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
-      return NextResponse.json({ error: 'No authentication token provided.' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized: No authentication token provided.' }, { status: 401 });
     }
-    const decodedToken = await getAuth().verifyIdToken(idToken);
     
-    const isAdmin = decodedToken.email === ADMIN_EMAIL || decodedToken.admin === true;
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
+    const userData = userDoc.data();
+
+    const isAdmin = userData?.role === 'admin';
     if (!isAdmin) {
-      return NextResponse.json({ error: 'User does not have admin privileges.' }, { status: 403 });
+      return NextResponse.json({ error: 'Forbidden: User does not have admin privileges.' }, { status: 403 });
     }
 
-    // 2. Perform all database queries concurrently for performance
+    // 2. Perform all database queries concurrently using the Admin SDK
     const today = startOfDay(new Date());
 
     const [
@@ -70,15 +75,26 @@ export async function GET(request: NextRequest) {
       averageRating: averageRating,
     };
 
-    const serialize = (docs: admin.firestore.QuerySnapshot) => 
-      docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const serializeTimestamp = (docs: admin.firestore.QueryDocumentSnapshot[]) => 
+      docs.map(doc => {
+          const data = doc.data();
+          const serializedData: { [key: string]: any } = { id: doc.id };
+          for (const key in data) {
+              if (data[key] instanceof admin.firestore.Timestamp) {
+                  serializedData[key] = data[key].toDate().toISOString();
+              } else {
+                  serializedData[key] = data[key];
+              }
+          }
+          return serializedData;
+      });
 
     const data = {
         stats,
-        recentBookings: serialize(recentBookingsSnapshot),
-        pendingTestimonials: serialize(latestPendingTestimonialsSnapshot),
-        recentMessages: serialize(recentMessagesSnapshot),
-        recentStudents: serialize(recentStudentsSnapshot),
+        recentBookings: serializeTimestamp(recentBookingsSnapshot.docs),
+        pendingTestimonials: serializeTimestamp(latestPendingTestimonialsSnapshot.docs),
+        recentMessages: serializeTimestamp(recentMessagesSnapshot.docs),
+        recentStudents: serializeTimestamp(recentStudentsSnapshot.docs),
     };
 
     // 4. Return the combined data
@@ -88,6 +104,9 @@ export async function GET(request: NextRequest) {
     console.error('API Error (/api/admin/dashboard-stats):', error);
     if (error.code === 'auth/id-token-expired') {
         return NextResponse.json({ error: 'Authentication token has expired. Please log in again.' }, { status: 401 });
+    }
+     if (error.code === 'auth/argument-error') {
+        return NextResponse.json({ error: 'Invalid authentication token provided.' }, { status: 401 });
     }
     return NextResponse.json({ error: 'Failed to fetch dashboard statistics.', details: error.message }, { status: 500 });
   }
