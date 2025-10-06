@@ -6,7 +6,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { format, addMinutes, parse, startOfDay, isEqual } from 'date-fns';
+import { format, addMinutes, parse, startOfDay, isEqual, isPast } from 'date-fns';
 import { Spinner } from '@/components/ui/spinner';
 import { TimeSlot } from '@/components/bookings/time-slot';
 import { getAvailability, blockSlot, unblockSlot } from '@/services/availabilityService';
@@ -33,17 +33,11 @@ export function TimeOffManager() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [availability, setAvailability] = useState<{ bookings: Booking[]; timeOff: TimeOff[] }>({ bookings: [], timeOff: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingSlot, setIsUpdatingSlot] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const tutorId = "MahderNegashMamo"; // Hardcoded for single tutor model
 
-  useEffect(() => {
-    // Guard clause: Do not fetch if no date is selected.
-    if (!selectedDate) {
-      setIsLoading(false);
-      return;
-    }
-
-    const fetchAvailability = async (date: Date) => {
+  const fetchAvailability = async (date: Date) => {
       setIsLoading(true);
       setError(null);
       try {
@@ -57,24 +51,41 @@ export function TimeOffManager() {
         setIsLoading(false);
       }
     };
-    
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setIsLoading(false);
+      return;
+    }
     fetchAvailability(selectedDate);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, tutorId]);
 
   const timeSlots = useMemo(() => {
     if (!selectedDate) return [];
+    
+    const now = new Date();
+    const isToday = isEqual(startOfDay(selectedDate), startOfDay(now));
 
     return baseStartTimes.map((startTime) => {
       const slotDate = startOfDay(selectedDate);
       const potentialStartTime = parse(startTime, 'HH:mm', slotDate);
-      // Assume 30-minute slots for blocking
-      const potentialEndTime = addMinutes(potentialStartTime, 30);
+      const potentialEndTime = addMinutes(potentialStartTime, 30); // Admin blocks in 30-min increments
+
+      // Disable past slots on the current day
+      if (isToday && isPast(potentialStartTime)) {
+        return {
+          value: startTime,
+          display: `${startTime} - ${format(potentialEndTime, 'HH:mm')}`,
+          status: 'blocked' as const,
+          blockedMeta: { note: 'Time has passed' }
+        };
+      }
 
       const booking = availability.bookings.find(b => {
         if (!b.startTime || !b.endTime) return false;
-        const bookingStart = new Date(b.startTime);
-        const bookingEnd = new Date(b.endTime);
+        const bookingStart = new Date(b.startTime as any);
+        const bookingEnd = new Date(b.endTime as any);
         return potentialStartTime < bookingEnd && potentialEndTime > bookingStart;
       });
 
@@ -99,64 +110,53 @@ export function TimeOffManager() {
   }, [selectedDate, availability]);
 
   const handleSlotClick = async (slot: typeof timeSlots[0]) => {
-    if (!selectedDate || !user || !isAdmin) return;
+    if (!selectedDate || !user || !isAdmin || isUpdatingSlot) return;
 
     if (slot.status === 'booked') {
       toast({ title: 'Slot Booked', description: 'Cannot block a slot that is already booked by a student.', variant: 'default' });
       return;
     }
+    
+    setIsUpdatingSlot(slot.value);
 
     if (slot.status === 'available') {
-      const originalState = availability;
-      // Optimistic UI update
-      const tempId = `temp_${Date.now()}`;
-      const newTimeOff: TimeOff = {
-        id: tempId,
-        tutorId,
-        startISO: parse(`${format(selectedDate, 'yyyy-MM-dd')} ${slot.value}`, 'yyyy-MM-dd HH:mm', new Date()).toISOString(),
-        endISO: addMinutes(parse(`${format(selectedDate, 'yyyy-MM-dd')} ${slot.value}`, 'yyyy-MM-dd HH:mm', new Date()), 30).toISOString(),
-        blockedById: user.uid,
-        note: 'Admin Block',
-        createdAt: new Date() as any, // Temporary
-      };
-      setAvailability(prev => ({ ...prev, timeOff: [...prev.timeOff, newTimeOff] }));
-
       try {
+        const startISO = parse(`${format(selectedDate, 'yyyy-MM-dd')} ${slot.value}`, 'yyyy-MM-dd HH:mm', new Date()).toISOString();
+        const endISO = addMinutes(parse(startISO, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", new Date()), 30).toISOString();
+        
         await blockSlot({
           tutorId,
-          startISO: newTimeOff.startISO,
-          endISO: newTimeOff.endISO,
+          startISO,
+          endISO,
           note: 'Admin Block',
         });
+        
         toast({ title: 'Slot Blocked', description: `Time slot ${slot.display} has been marked as unavailable.` });
-        if(selectedDate) await getAvailability(tutorId, selectedDate).then(setAvailability);
+        if(selectedDate) await fetchAvailability(selectedDate);
+
       } catch (error: any) {
-        setAvailability(originalState); // Revert on failure
         toast({ title: 'Blocking Failed', description: error.message || 'Could not block the time slot.', variant: 'destructive' });
       }
     }
 
-    if (slot.status === 'blocked' && slot.blockedMeta) {
-      if (slot.blockedMeta.blockedById !== user.uid && !isAdmin) {
-          toast({ title: "Permission Denied", description: "You can only unblock slots you have created.", variant: "destructive"});
-          return;
+    if (slot.status === 'blocked' && slot.blockedMeta?.id) {
+       // Prevent unblocking "Time has passed" slots
+      if (slot.blockedMeta.note === 'Time has passed') {
+        setIsUpdatingSlot(null);
+        return;
       }
       
-      const originalState = availability;
-      const { id: timeOffIdToRemove } = slot.blockedMeta;
-
-      // Optimistic UI update
-      setAvailability(prev => ({ ...prev, timeOff: prev.timeOff.filter(t => t.id !== timeOffIdToRemove) }));
-
       try {
-        await unblockSlot({ timeOffId: timeOffIdToRemove });
+        await unblockSlot({ timeOffId: slot.blockedMeta.id });
         toast({ title: 'Slot Unblocked', description: `Time slot ${slot.display} is now available.` });
-        if(selectedDate) await getAvailability(tutorId, selectedDate).then(setAvailability);
+        if(selectedDate) await fetchAvailability(selectedDate);
+
       } catch (error: any) {
-        setAvailability(originalState); // Revert on failure
         toast({ title: 'Unblocking Failed', description: error.message || 'Could not unblock the time slot.', variant: 'destructive' });
       }
     }
+    
+    setIsUpdatingSlot(null);
   };
 
   return (
@@ -173,6 +173,7 @@ export function TimeOffManager() {
               selected={selectedDate}
               onSelect={setSelectedDate}
               className="rounded-md border p-0"
+              disabled={(date) => isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))}
             />
           </CardContent>
         </Card>
@@ -181,7 +182,7 @@ export function TimeOffManager() {
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>Time Slots for {selectedDate ? format(selectedDate, 'PPP') : '...'}</CardTitle>
-            <CardDescription>Click a slot to toggle its availability. Blue slots are booked by students.</CardDescription>
+            <CardDescription>Click a slot to toggle its availability. Blue slots are student lessons.</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -206,11 +207,17 @@ export function TimeOffManager() {
                 </Alert>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {timeSlots.map(slot => (
-                    <TimeSlot
-                        key={slot.value}
-                        {...slot}
-                        onClick={() => handleSlotClick(slot)}
-                    />
+                      <div key={slot.value} className="relative">
+                        <TimeSlot
+                            {...slot}
+                            onClick={() => handleSlotClick(slot)}
+                        />
+                        {isUpdatingSlot === slot.value && (
+                          <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-md">
+                            <Spinner size="sm" />
+                          </div>
+                        )}
+                      </div>
                     ))}
                 </div>
               </>
