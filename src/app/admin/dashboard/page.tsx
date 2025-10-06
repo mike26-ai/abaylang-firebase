@@ -33,7 +33,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import type { Booking, Testimonial, ContactMessage, UserProfile } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
@@ -102,22 +102,8 @@ export default function AdminDashboardPage() {
         
         const data: DashboardData = await response.json();
 
-        // Convert ISO strings back to Date objects for client-side use
-        const parseTimestamps = (item: any) => {
-            const newItem = { ...item };
-            if (newItem.createdAt) newItem.createdAt = parseISO(newItem.createdAt);
-            if (newItem.startTime) newItem.startTime = parseISO(newItem.startTime);
-            if (newItem.endTime) newItem.endTime = parseISO(newItem.endTime);
-            return newItem;
-        };
-
-        setDashboardData({
-            ...data,
-            recentBookings: data.recentBookings.map(parseTimestamps),
-            pendingTestimonials: data.pendingTestimonials.map(parseTimestamps),
-            recentMessages: data.recentMessages.map(parseTimestamps),
-            recentStudents: data.recentStudents.map(parseTimestamps),
-        });
+        // The API now sends ISO strings, so no further client-side parsing is needed here.
+        setDashboardData(data);
 
       } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
@@ -296,7 +282,10 @@ export default function AdminDashboardPage() {
                           <div className="text-xs text-muted-foreground">{booking.userEmail}</div>
                         </TableCell>
                         <TableCell>
-                          {booking.date !== 'N/A_PACKAGE' ? `${format(new Date(booking.date), "PP")} at ${booking.time}` : 'Package'}
+                          {booking.date && booking.date !== 'N/A_PACKAGE' && isValid(parseISO(booking.date))
+                            ? `${format(parseISO(booking.date), "PP")} at ${booking.time}`
+                            : 'Package'
+                          }
                         </TableCell>
                         <TableCell>{booking.lessonType || `${booking.duration} min`}</TableCell>
                         <TableCell>
@@ -452,7 +441,12 @@ export default function AdminDashboardPage() {
                       <TableRow key={student.uid}>
                         <TableCell className="font-medium">{student.name}</TableCell>
                         <TableCell>{student.email}</TableCell>
-                        <TableCell>{student.createdAt ? format(new Date(student.createdAt as any), "PP") : "N/A"}</TableCell>
+                        <TableCell>
+                            {student.createdAt && isValid(parseISO(student.createdAt as any)) 
+                              ? format(parseISO(student.createdAt as any), "PP") 
+                              : "N/A"
+                            }
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{student.amharicLevel?.replace(/-/g, " ") || "N/A"}</Badge>
                         </TableCell>

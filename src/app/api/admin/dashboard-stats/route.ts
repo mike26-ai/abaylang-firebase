@@ -2,7 +2,7 @@
 // File: src/app/api/admin/dashboard-stats/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
-import admin from "firebase-admin"; // <-- FIX: Import the 'admin' namespace
+import admin from "firebase-admin";
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { startOfDay } from 'date-fns';
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
       averageRating: averageRating,
     };
 
-    // FIX: Create a robust serialization helper function
+    // Helper function to safely serialize Firestore documents
     const serializeTimestamp = (docs: admin.firestore.QueryDocumentSnapshot[]) => 
       docs.map(doc => {
           const data = doc.data();
