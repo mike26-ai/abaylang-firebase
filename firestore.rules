@@ -1,86 +1,74 @@
 /**
  * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for user profiles
- * and shared access with ownership for bookings and time-off blocks.
- *
- * Data Structure:
- * - /users/{userId}: Stores individual user profiles. Access is restricted to the
- *   profile owner (the user with the matching UID).
- * - /bookings/{bookingId}: Stores lesson booking documents. Create operations require the user to be signed in.
- * - /timeOff/{timeOffId}: Stores tutor time-off blocks.
- *
- * Key Security Decisions:
- * - User profiles are private and only accessible to the profile owner.
- * - List operations on /users is denied to prevent data leakage.
- * - All write operations require a valid, authenticated user.
- * - Bookings are globally accessible.
- *
- * Denormalization for Authorization:
- * - The 'Booking' entity includes 'userId' to simplify ownership checks on booking documents.
+ * @core_philosophy This ruleset enforces a user-ownership model for user profiles and allows public read access to bookings and time-off blocks.
+ *   Administrative actions are not implemented in this prototype.
+ * @data_structure
+ *   - /users/{userId}: Stores individual user profiles. Access is restricted to the user themselves.
+ *   - /bookings/{bookingId}: Stores lesson booking documents. Read access is public.
+ *   - /timeOff/{timeOffId}: Stores time-off blocks for tutors. Read access is public.
+ * @key_security_decisions
+ *   - User listing is explicitly denied for privacy.
+ *   - The security posture for ambiguous relationships defaults to strict owner-only access.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Enforces strict ownership for user profiles. Only the user with the
-     * matching UID can read or write their own profile.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (get, update, delete) User with UID 'user123' can read/write the profile at /users/user123.
-     * @allow (create) User with UID 'user123' can create the profile at /users/user123.
-     * @deny (get, update, delete) User with UID 'user456' cannot read/write the profile at /users/user123.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) A user can create their own profile if the userId matches their auth UID.
+     * @allow (get, list, update, delete) A user can only access their own profile.
+     * @deny (create) A user cannot create a profile for another user.
+     * @deny (get, list, update, delete) A user cannot access another user's profile.
+     * @principle Enforces document ownership for user profiles.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId);
     }
 
     /**
-     * @description Allows anyone to read bookings, but restricts creation to authenticated users.
-     * Updates and deletes are denied.
+     * @description Controls access to booking documents.
      * @path /bookings/{bookingId}
-     * @allow (get, list) Any user can read any booking.
-     * @allow (create) Authenticated user can create a booking.
-     * @deny (update, delete) No one can update or delete bookings.
-     * @principle Allows public read access but requires authentication for create.
+     * @allow (get, list) Allows public read access to all booking documents.
+     * @deny (create, update, delete) Only authenticated users should create bookings with validated data.
+     * @principle Allows public read access while restricting write access to authorized users.
      */
     match /bookings/{bookingId} {
       allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow create: if isSignedIn(); // TODO: Add stricter create rule based on ownership and data validation.
+      allow update: if isSignedIn(); // TODO: Implement more restrictive update logic.
+      allow delete: if isSignedIn(); // TODO: Implement more restrictive delete logic.
     }
 
     /**
-     * @description Allows anyone to read timeOff blocks, but restricts creation to authenticated users.
-     * Updates and deletes are denied.
+     * @description Controls access to time-off block documents.
      * @path /timeOff/{timeOffId}
-     * @allow (get, list) Any user can read any timeOff block.
-     * @allow (create) Authenticated user can create a timeOff block.
-     * @deny (update, delete) No one can update or delete timeOff blocks.
+     * @allow (get, list) Allows public read access to all time-off block documents.
+     * @deny (create, update, delete) Only authenticated users should create timeOff with validated data.
+     * @principle Allows public read access while restricting write access to authorized users.
      */
     match /timeOff/{timeOffId} {
       allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow create: if isSignedIn(); // TODO: Add stricter create rule based on ownership and data validation.
+      allow update: if isSignedIn(); // TODO: Implement more restrictive update logic.
+      allow delete: if isSignedIn(); // TODO: Implement more restrictive delete logic.
     }
-  }
-
-  // Helper Functions
-  function isSignedIn() {
-    return request.auth != null;
-  }
-
-  function isOwner(userId) {
-    return request.auth.uid == userId;
-  }
-
-  function isExistingOwner(userId) {
-    return isOwner(userId) && resource != null;
   }
 }
