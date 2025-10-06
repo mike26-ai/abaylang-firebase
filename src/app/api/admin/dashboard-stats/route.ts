@@ -2,10 +2,10 @@
 // File: src/app/api/admin/dashboard-stats/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
+import admin from "firebase-admin"; // <-- FIX: Import the 'admin' namespace
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { startOfDay, format, parseISO } from 'date-fns';
-import { ADMIN_EMAIL } from '@/config/site';
+import { getFirestore } from 'firebase-admin/firestore';
+import { startOfDay } from 'date-fns';
 
 // Initialize Firebase Admin SDK
 initAdmin();
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const today = startOfDay(new Date());
 
     const [
-        allConfirmedBookingsSnapshot, // Fetch all and filter in code
+        allConfirmedBookingsSnapshot,
         pendingTestimonialsSnapshot,
         newInquiriesSnapshot,
         totalStudentsSnapshot,
@@ -64,7 +64,6 @@ export async function GET(request: NextRequest) {
     const upcomingBookingsCount = allConfirmedBookingsSnapshot.docs.filter(doc => {
         const bookingDate = doc.data().date;
         if (!bookingDate || typeof bookingDate !== 'string') return false;
-        // The check is now >= today, correctly including today's bookings.
         return new Date(bookingDate) >= today;
     }).length;
 
@@ -83,6 +82,7 @@ export async function GET(request: NextRequest) {
       averageRating: averageRating,
     };
 
+    // FIX: Create a robust serialization helper function
     const serializeTimestamp = (docs: admin.firestore.QueryDocumentSnapshot[]) => 
       docs.map(doc => {
           const data = doc.data();
