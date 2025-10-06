@@ -174,19 +174,27 @@ export default function StudentDashboardPage() {
       setIsLoadingBookings(true);
       try {
         const bookingsCol = collection(db, "bookings");
+        // FIX: Removed the orderBy clause to prevent composite index errors.
+        // Sorting will be handled client-side after fetching.
         const q = query(
           bookingsCol,
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
+          where("userId", "==", user.uid)
         );
     
         const querySnapshot = await getDocs(q);
-        const fetchedBookings = querySnapshot.docs.map((doc) => ({
+        let fetchedBookings = querySnapshot.docs.map((doc) => ({
             ...(doc.data() as BookingType),
             id: doc.id,
             hasReview: false,
             duration: doc.data().duration || 60
         }));
+
+        // FIX: Sort bookings by creation date on the client.
+        fetchedBookings.sort((a, b) => {
+            const dateA = a.createdAt?.toDate()?.getTime() || 0;
+            const dateB = b.createdAt?.toDate()?.getTime() || 0;
+            return dateB - dateA;
+        });
   
         const reviewChecks = fetchedBookings.map(async (booking) => {
           if (booking.status === 'completed') {
@@ -210,7 +218,7 @@ export default function StudentDashboardPage() {
         console.error("CRITICAL ERROR fetching data in dashboard:", error);
         toast({
           title: "Error Loading Dashboard",
-          description: "Could not load booking information. Please check your connection.",
+          description: "Could not load booking information. This may be due to a missing database index. Please contact support.",
           variant: "destructive",
           duration: 9000,
         });
@@ -401,18 +409,21 @@ export default function StudentDashboardPage() {
   // This hook filters and sorts upcoming lessons for display.
   const upcomingBookings = useMemo(() => {
     // Defines the sort order for statuses. Confirmed lessons get higher priority.
-    const statusOrder = { confirmed: 1, 'awaiting-payment': 2 };
+    const statusOrder: { [key: string]: number } = { confirmed: 1, 'awaiting-payment': 2, 'payment-pending-confirmation': 2 };
 
     return bookings
       .filter(
         (b) =>
-          (b.status === "confirmed" || b.status === "awaiting-payment") &&
+          (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") &&
           b.date !== 'N/A_PACKAGE' &&
+          b.time &&
           !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
       )
       .sort((a, b) => {
         // Primary sort: by status using the predefined order.
-        const statusComparison = statusOrder[a.status] - statusOrder[b.status];
+        const statusA = a.status as keyof typeof statusOrder;
+        const statusB = b.status as keyof typeof statusOrder;
+        const statusComparison = (statusOrder[statusA] || 99) - (statusOrder[statusB] || 99);
         if (statusComparison !== 0) {
           return statusComparison;
         }
@@ -425,17 +436,23 @@ export default function StudentDashboardPage() {
   // END: NEW FEATURE CODE
   
   const pastBookings = useMemo(() => bookings.filter(
-    (b) => b.status === "completed" || b.status === "cancelled" || (b.date !== 'N/A_PACKAGE' && (b.status === "confirmed" || b.status === "awaiting-payment") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
-  ).sort((a,b) => new Date(b.date + ' ' + (b.time || "00:00")).getTime() - new Date(a.date + ' ' + (a.time || "00:00")).getTime()), [bookings]);
+    (b) => b.status === "completed" || b.status === "cancelled" || (b.date !== 'N/A_PACKAGE' && b.time && (b.status === "confirmed" || b.status === "awaiting-payment") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
+  ).sort((a,b) => {
+        if (!a.date || !a.time || !b.date || !b.time) return 0;
+        return new Date(b.date + ' ' + (b.time || "00:00")).getTime() - new Date(a.date + ' ' + (a.time || "00:00")).getTime()
+    }), [bookings]);
   
-  const upcomingLessonsCount = useMemo(() => upcomingBookings.filter(b => b.status === 'confirmed' || b.status === 'awaiting-payment').length, [upcomingBookings]);
+  const upcomingLessonsCount = useMemo(() => upcomingBookings.filter(b => b.status === 'confirmed' || b.status === 'awaiting-payment' || b.status === 'payment-pending-confirmation').length, [upcomingBookings]);
   const completedBookingsCount = useMemo(() => bookings.filter((b) => b.status === "completed").length, [bookings]);
   const totalHours = useMemo(() => bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 60), 0) / 60, [bookings]);
   
   const mostRecentLessonToReview = useMemo(() => {
     return bookings
-      .filter(b => b.status === 'completed' && !b.hasReview)
-      .sort((a, b) => parse(b.date, 'yyyy-MM-dd', new Date()).getTime() - parse(a.date, 'yyyy-MM-dd', new Date()).getTime())
+      .filter(b => b.status === 'completed' && !b.hasReview && b.date)
+      .sort((a, b) => {
+        if (!a.date || !b.date) return 0;
+        return parse(b.date, 'yyyy-MM-dd', new Date()).getTime() - parse(a.date, 'yyyy-MM-dd', new Date()).getTime()
+      })
       [0];
   }, [bookings]);
 
@@ -540,7 +557,7 @@ export default function StudentDashboardPage() {
                 <CardContent>
                   <div className="text-2xl font-bold">{upcomingLessonsCount}</div>
                   <p className="text-xs text-muted-foreground">
-                    {upcomingBookings.filter(b => b.status === 'awaiting-payment').length} pending
+                    {upcomingBookings.filter(b => b.status === 'awaiting-payment' || b.status === 'payment-pending-confirmation').length} pending
                   </p>
                 </CardContent>
               </Card>
@@ -639,7 +656,7 @@ export default function StudentDashboardPage() {
                              {/* START: NEW FEATURE CODE - Enhanced Badge */}
                              <Badge
                                 variant={booking.status === "confirmed" ? "default" : "secondary"}
-                                className={booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}
+                                className={booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}
                             >
                                {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
@@ -649,7 +666,7 @@ export default function StudentDashboardPage() {
                                 <JoinLessonButton booking={booking} />
                             ) : booking.status === 'confirmed' && !booking.zoomLink ? (
                                 <p className="text-xs text-muted-foreground text-right">Zoom link will appear here soon.</p>
-                            ) : booking.status === 'awaiting-payment' ? (
+                            ) : (booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation') ? (
                                 <p className="text-xs text-muted-foreground text-right">Awaiting payment confirmation.</p>
                             ) : null}
                              {booking.status === 'confirmed' && (
@@ -721,13 +738,13 @@ export default function StudentDashboardPage() {
                             <div>
                               <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Amharic Lesson"}</h3>
                               <p className="text-sm text-muted-foreground">
-                                {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}
+                                {booking.date !== "N/A_PACKAGE" ? `${format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at ${booking.time}` : 'Package Lesson'}
                               </p>
                               <p className="text-sm text-muted-foreground">{booking.duration || 60} minutes with {booking.tutorName}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
-                             <Badge variant={booking.status === "completed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"} className={booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}>
+                             <Badge variant={booking.status === "completed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"} className={booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}>
                                {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
                             {booking.status === 'completed' && (
@@ -914,3 +931,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
