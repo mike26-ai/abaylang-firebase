@@ -46,7 +46,7 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { format, startOfDay } from "date-fns";
+import { format, startOfDay, isAfter } from "date-fns";
 import { Logo } from "@/components/layout/logo";
 import type { Booking, Testimonial, ContactMessage, UserProfile } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
@@ -103,14 +103,16 @@ export default function AdminDashboardPage() {
     const fetchDashboardData = async () => {
       setIsLoadingStats(true);
       try {
-        const today = format(startOfDay(new Date()), "yyyy-MM-dd");
+        const today = startOfDay(new Date());
 
-        // --- OPTIMIZATION: Run queries in parallel ---
-        const upcomingBookingsQuery = query(collection(db, "bookings"), where("date", ">=", today), where("status", "==", "confirmed"));
+        // --- QUERIES ---
+        // FIX: Simplified the upcomingBookingsQuery to remove the composite index requirement.
+        // We fetch all non-past bookings and then filter for 'confirmed' status in the client code.
+        const upcomingBookingsQuery = query(collection(db, "bookings"), where("date", ">=", format(today, "yyyy-MM-dd")));
         const pendingTestimonialsQuery = query(collection(db, "testimonials"), where("status", "==", "pending"));
         const newInquiriesQuery = query(collection(db, "contactMessages"), where("read", "==", false));
         const totalStudentsQuery = query(collection(db, "users"), where("role", "==", "student"));
-        const newBookingsQuery = query(collection(db, "bookings"), where("status", "==", "payment-pending-confirmation")); // New query
+        const newBookingsQuery = query(collection(db, "bookings"), where("status", "==", "payment-pending-confirmation"));
         
         const recentBookingsQuery = query(collection(db, "bookings"), orderBy("createdAt", "desc"), limit(5));
         const recentMessagesQuery = query(collection(db, "contactMessages"), orderBy("createdAt", "desc"), limit(5));
@@ -122,24 +124,25 @@ export default function AdminDashboardPage() {
           pendingTestimonialsSnapshot,
           newInquiriesSnapshot,
           totalStudentsSnapshot,
-          newBookingsSnapshot, // New snapshot
+          newBookingsSnapshot,
           recentBookingsDocs,
           recentMessagesDocs,
           recentStudentsDocs,
           latestPendingTestimonialsDocs,
         ] = await Promise.all([
-          getCountFromServer(upcomingBookingsQuery),
+          getDocs(upcomingBookingsQuery), // Changed from getCountFromServer to getDocs to allow client-side filtering
           getCountFromServer(pendingTestimonialsQuery),
           getCountFromServer(newInquiriesQuery),
           getCountFromServer(totalStudentsQuery),
-          getCountFromServer(newBookingsQuery), // New getCountFromServer
+          getCountFromServer(newBookingsQuery),
           getDocs(recentBookingsQuery),
           getDocs(recentMessagesQuery),
           getDocs(recentStudentsQuery),
           getDocs(latestPendingTestimonialsQuery)
         ]);
-        // --- END OPTIMIZATION ---
-
+        
+        // FIX: Perform the filtering on the client-side
+        const confirmedUpcomingCount = upcomingBookingsSnapshot.docs.filter(doc => doc.data().status === 'confirmed').length;
 
         setPendingTestimonials(latestPendingTestimonialsDocs.docs.map(d => ({ id: d.id, ...d.data() } as Testimonial)));
         setRecentBookings(recentBookingsDocs.docs.map(d => ({ id: d.id, ...d.data() } as Booking)));
@@ -148,11 +151,11 @@ export default function AdminDashboardPage() {
         
 
         setStats({
-          upcomingBookings: upcomingBookingsSnapshot.data().count,
+          upcomingBookings: confirmedUpcomingCount,
           pendingTestimonialsCount: pendingTestimonialsSnapshot.data().count,
           newInquiries: newInquiriesSnapshot.data().count,
           totalStudents: totalStudentsSnapshot.data().count,
-          newBookingsCount: newBookingsSnapshot.data().count, // Set new stat
+          newBookingsCount: newBookingsSnapshot.data().count,
           totalRevenue: 1250, // Placeholder
           averageRating: 4.9, // Placeholder
         });
@@ -493,3 +496,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
