@@ -1,3 +1,4 @@
+
 // File: src/components/bookings/time-slot.tsx
 "use client";
 
@@ -29,7 +30,7 @@ export function TimeSlot({
   isSelected = false,
 }: TimeSlotProps) {
   
-  const isClickable = status !== 'booked';
+  const isClickable = status === 'available';
   
   const getButtonContent = () => {
     switch (status) {
@@ -50,12 +51,12 @@ export function TimeSlot({
 
   const button = (
     <Button
-      variant={status === 'available' ? 'outline' : 'secondary'}
+      variant={isSelected ? 'default' : status === 'available' ? 'outline' : 'secondary'}
       className={cn(
         "w-full",
         status === 'available' && "hover:bg-accent",
-        status === 'blocked' && "bg-muted text-muted-foreground hover:bg-muted/80",
-        status === 'booked' && "bg-blue-600/10 text-blue-800 dark:text-blue-300 border-blue-600/20 hover:bg-blue-600/20 cursor-not-allowed"
+        status === 'blocked' && "bg-muted text-muted-foreground hover:bg-muted/80 cursor-not-allowed",
+        status === 'booked' && "bg-blue-600/10 text-blue-800 dark:text-blue-300 border-blue-600/20 hover:bg-blue-600/20 cursor-not-allowed line-through"
       )}
       disabled={!isClickable}
       onClick={() => isClickable && onClick && onClick(value)}
@@ -64,7 +65,7 @@ export function TimeSlot({
     </Button>
   );
 
-  if (!isClickable) {
+  if (status !== 'available') {
     return (
       <TooltipProvider delayDuration={100}>
         <Tooltip>
@@ -85,7 +86,7 @@ export function TimeSlot({
                  <div>
                     <p className="font-semibold">Slot Already Booked</p>
                     <p className="text-xs text-muted-foreground">
-                      {bookedMeta?.userName ? `Lesson with ${bookedMeta.userName}` : 'This time is no longer available.'}
+                      This time is no longer available.
                     </p>
                  </div>
               </div>
@@ -98,3 +99,5 @@ export function TimeSlot({
 
   return button;
 }
+
+    

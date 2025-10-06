@@ -23,13 +23,15 @@ import { paddleHostedLinks } from "@/config/paddle";
 // Import the new services
 import { getAvailability } from "@/services/availabilityService";
 import { createBooking } from "@/services/bookingService";
+import { TimeSlot } from "@/components/bookings/time-slot"
 
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
   const refDate = new Date();
   for (let h = 0; h < 24; h++) { // Generate times for all 24 hours
-    times.push(format(new Date(refDate.setHours(h, 0, 0, 0)), 'HH:mm'));
-    times.push(format(new Date(refDate.setHours(h, 30, 0, 0)), 'HH:mm'));
+    for (let m = 0; m < 60; m += 30) {
+      times.push(format(new Date(refDate.setHours(h, m, 0, 0)), 'HH:mm'));
+    }
   }
   return times;
 };
@@ -139,11 +141,10 @@ export default function BookLessonPage() {
     }
   };
 
-  // Refactored logic to merge bookings and timeOff
   const displayTimeSlots = useMemo(() => {
     if (!selectedDate || !selectedLessonDetails || selectedLessonDetails.type === 'package') return [];
     
-    const slots: { display: string; value: string; status: 'available' | 'booked' | 'blocked' }[] = [];
+    const slots: { display: string; value: string; status: 'available' | 'booked' | 'blocked', bookedMeta?: BookingType, blockedMeta?: TimeOff }[] = [];
     const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number;
     const slotDate = startOfDay(selectedDate);
 
@@ -152,6 +153,8 @@ export default function BookLessonPage() {
         const potentialEndTime = addMinutes(potentialStartTime, userDurationMinutes);
 
         let currentStatus: 'available' | 'booked' | 'blocked' = 'available';
+        let bookingMeta: BookingType | undefined;
+        let timeOffMeta: TimeOff | undefined;
 
         // Check for conflicts with existing bookings
         for (const booking of dailyBookedSlots) {
@@ -160,6 +163,7 @@ export default function BookLessonPage() {
                 const bookingEnd = new Date(booking.endTime as any);
                 if (potentialStartTime < bookingEnd && potentialEndTime > bookingStart) {
                     currentStatus = 'booked';
+                    bookingMeta = booking;
                     break;
                 }
             }
@@ -169,6 +173,7 @@ export default function BookLessonPage() {
                 display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
                 value: startTimeString,
                 status: 'booked',
+                bookedMeta: bookingMeta,
             });
             continue;
         }
@@ -179,6 +184,7 @@ export default function BookLessonPage() {
             const blockEnd = new Date(block.endISO);
             if (potentialStartTime < blockEnd && potentialEndTime > blockStart) {
                 currentStatus = 'blocked';
+                timeOffMeta = block;
                 break;
             }
         }
@@ -187,6 +193,7 @@ export default function BookLessonPage() {
             display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
             value: startTimeString,
             status: currentStatus,
+            blockedMeta: timeOffMeta,
         });
     }
     return slots;
@@ -412,17 +419,12 @@ export default function BookLessonPage() {
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {displayTimeSlots.map((slot) => (
-                            <Button
-                            key={slot.value + slot.display}
-                            variant={selectedTime === slot.value ? "default" : "outline"}
-                            onClick={() => setSelectedTime(slot.value)}
-                            disabled={slot.status !== 'available'}
-                            className={slot.status !== 'available' ? "bg-destructive/20 text-destructive-foreground line-through hover:bg-destructive/20 cursor-not-allowed" : ""}
-                            >
-                            {slot.display}
-                            {slot.status === 'booked' && <span className="text-xs ml-1">(Booked)</span>}
-                            {slot.status === 'blocked' && <span className="text-xs ml-1">(Unavailable)</span>}
-                            </Button>
+                            <TimeSlot
+                                key={slot.value}
+                                {...slot}
+                                isSelected={selectedTime === slot.value}
+                                onClick={() => setSelectedTime(slot.value)}
+                             />
                         ))}
                         </div>
                     )}
