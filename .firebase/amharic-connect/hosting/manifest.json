@@ -1,0 +1,21 @@
+{
+  "name": "ABYLANG",
+  "short_name": "ABYLANG",
+  "description": "Learn Amharic with a Native Tutor",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF6E3",
+  "theme_color": "#CC7722",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

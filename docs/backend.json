@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["student", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "country": { "type": "string" },
+        "amharicLevel": { "type": "string" },
+        "nativeLanguage": { "type": "string" },
+        "showFirstLessonFeedbackPrompt": { "type": "boolean" },
+        "hasSubmittedFirstLessonFeedback": { "type": "boolean" }
+      },
+      "required": ["uid", "name", "email", "role", "createdAt"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Represents a scheduled lesson booking.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string", "format": "time" },
+        "status": { "type": "string", "enum": ["awaiting-payment", "confirmed", "cancelled", "completed"] },
+        "tutorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "date", "time", "status", "tutorId", "createdAt"]
+    },
+    "TimeOffBlock": {
+      "title": "Time Off Block",
+      "description": "Represents a block of time when a tutor is unavailable.",
+      "type": "object",
+      "properties": {
+        "tutorId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string", "description": "The slot value, e.g., '09:00'" },
+        "startISO": { "type": "string", "format": "date-time", "description": "Optional ISO datetime for the start of the block." },
+        "endISO": { "type": "string", "format": "date-time", "description": "Optional ISO datetime for the end of the block." },
+        "blockedById": { "type": "string", "description": "The UID of the admin who blocked the time." },
+        "blockedByEmail": { "type": "string", "format": "email", "description": "The email of the admin for convenience." },
+        "note": { "type": "string", "description": "An optional note from the admin." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tutorId", "date", "time", "blockedById", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["email-password", "google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores individual user profiles."
+    },
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "Stores all lesson booking documents."
+    },
+    "/timeOff/{timeOffId}": {
+      "schema": { "$ref": "#/entities/TimeOffBlock" },
+      "description": "Stores blocks of time when tutors are marked as unavailable."
+    }
+  }
+}

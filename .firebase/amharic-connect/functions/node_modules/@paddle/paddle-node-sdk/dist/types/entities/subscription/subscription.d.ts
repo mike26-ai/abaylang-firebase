@@ -1,0 +1,31 @@
+import { BillingDetails, type CustomData, ImportMeta, NextTransaction, SubscriptionDiscount, SubscriptionItem, SubscriptionManagement, SubscriptionScheduledChange, SubscriptionTimePeriod, TimePeriod, TransactionDetailsPreview } from '../index';
+import { type CollectionMode, type CurrencyCode, type SubscriptionStatus } from '../../enums';
+import { type ISubscriptionResponse } from '../../types';
+export declare class Subscription {
+    readonly id: string;
+    readonly status: SubscriptionStatus;
+    readonly customerId: string;
+    readonly addressId: string;
+    readonly businessId: string | null;
+    readonly currencyCode: CurrencyCode;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+    readonly startedAt: string | null;
+    readonly firstBilledAt: string | null;
+    readonly nextBilledAt: string | null;
+    readonly pausedAt: string | null;
+    readonly canceledAt: string | null;
+    readonly discount: SubscriptionDiscount | null;
+    readonly collectionMode: CollectionMode;
+    readonly billingDetails: BillingDetails | null;
+    readonly currentBillingPeriod: SubscriptionTimePeriod | null;
+    readonly billingCycle: TimePeriod;
+    readonly scheduledChange: SubscriptionScheduledChange | null;
+    readonly managementUrls: SubscriptionManagement | null;
+    readonly items: SubscriptionItem[];
+    readonly customData: CustomData | null;
+    readonly importMeta: ImportMeta | null;
+    readonly nextTransaction: NextTransaction | null;
+    readonly recurringTransactionDetails: TransactionDetailsPreview | null;
+    constructor(subscription: ISubscriptionResponse);
+}

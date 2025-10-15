@@ -1,0 +1,35 @@
+import { type CustomData, BillingDetails, TransactionsTimePeriod, TransactionItem, TransactionDetails, TransactionPaymentAttempt, TransactionCheckout, Address, TransactionAdjustment, AdjustmentTotals, Business, Customer, Discount } from '../index';
+import { type TransactionStatus, type CurrencyCode, type TransactionOrigin, type CollectionMode, type AvailablePaymentMethod } from '../../enums';
+import { type ITransactionResponse } from '../../types';
+export declare class Transaction {
+    readonly id: string;
+    readonly status: TransactionStatus;
+    readonly customerId: string | null;
+    readonly addressId: string | null;
+    readonly businessId: string | null;
+    readonly customData: CustomData | null;
+    readonly currencyCode: CurrencyCode;
+    readonly origin: TransactionOrigin;
+    readonly subscriptionId: string | null;
+    readonly invoiceId: string | null;
+    readonly invoiceNumber: string | null;
+    readonly collectionMode: CollectionMode;
+    readonly discountId: string | null;
+    readonly billingDetails: BillingDetails | null;
+    readonly billingPeriod: TransactionsTimePeriod | null;
+    readonly items: TransactionItem[];
+    readonly details: TransactionDetails | null;
+    readonly payments: TransactionPaymentAttempt[];
+    readonly checkout: TransactionCheckout | null;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+    readonly billedAt: string | null;
+    readonly address: Address | null;
+    readonly adjustments: TransactionAdjustment[] | null;
+    readonly adjustmentsTotals: AdjustmentTotals | null;
+    readonly business: Business | null;
+    readonly customer: Customer | null;
+    readonly discount: Discount | null;
+    readonly availablePaymentMethods: AvailablePaymentMethod[] | null;
+    constructor(transaction: ITransactionResponse);
+}

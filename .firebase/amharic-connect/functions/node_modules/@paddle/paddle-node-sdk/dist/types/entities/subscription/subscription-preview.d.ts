@@ -1,0 +1,32 @@
+import { type ISubscriptionPreviewResponse } from '../../types';
+import { BillingDetails, type CustomData, ImportMeta, NextTransaction, SubscriptionDiscount, SubscriptionItem, SubscriptionManagement, SubscriptionPreviewUpdateSummary, SubscriptionScheduledChange, SubscriptionTimePeriod, TimePeriod, TransactionDetailsPreview } from '../index';
+import { type CollectionMode, type CurrencyCode, type SubscriptionStatus } from '../../enums';
+export declare class SubscriptionPreview {
+    readonly status: SubscriptionStatus;
+    readonly customerId: string;
+    readonly addressId: string;
+    readonly businessId: string | null;
+    readonly currencyCode: CurrencyCode;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+    readonly startedAt: string | null;
+    readonly firstBilledAt: string | null;
+    readonly nextBilledAt: string | null;
+    readonly pausedAt: string | null;
+    readonly canceledAt: string | null;
+    readonly discount: SubscriptionDiscount | null;
+    readonly collectionMode: CollectionMode;
+    readonly billingDetails: BillingDetails | null;
+    readonly currentBillingPeriod: SubscriptionTimePeriod | null;
+    readonly billingCycle: TimePeriod | null;
+    readonly scheduledChange: SubscriptionScheduledChange | null;
+    readonly managementUrls: SubscriptionManagement | null;
+    readonly items: SubscriptionItem[];
+    readonly customData: CustomData | null;
+    readonly immediateTransaction: NextTransaction | null;
+    readonly nextTransaction: NextTransaction | null;
+    readonly recurringTransactionDetails: TransactionDetailsPreview | null;
+    readonly updateSummary: SubscriptionPreviewUpdateSummary | null;
+    readonly importMeta: ImportMeta | null;
+    constructor(subscriptionPreview: ISubscriptionPreviewResponse);
+}

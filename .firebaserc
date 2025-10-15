@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "amharic-connect",
+    "dev": "amharic-connect"
+  },
+  "targets": {},
+  "etags": {}
+}
