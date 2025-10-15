@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST='{"app/accent-improvement/page.tsx -> @/components/ai/AccentRecorder":{"id":48788,"files":["static/chunks/6758.5d5d8de4873015ef.js","static/chunks/8788.823639bf4e7b683c.js"]}}';
