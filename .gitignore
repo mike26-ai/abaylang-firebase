@@ -47,3 +47,7 @@ firestore-debug.lognode_modules/
 bfg.jar
 repo-mirror/
 .firebase/
+.firebase/
+*.tar.gz
+node_modules/
+.next/
