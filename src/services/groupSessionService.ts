@@ -1,4 +1,3 @@
-
 // File: src/services/groupSessionService.ts
 import { auth } from "@/lib/firebase";
 import type { GroupSession } from "@/lib/types";
@@ -7,7 +6,7 @@ import { Timestamp } from "firebase/firestore";
 const API_BASE_URL = '/api';
 
 interface CreateGroupSessionPayload {
-  sessionType: string; // The value, e.g., 'quick-group'
+  sessionType: string;
   startTime: Date;
   maxStudents: number;
   tutorId: string;
@@ -24,6 +23,8 @@ export async function createGroupSession(payload: CreateGroupSessionPayload): Pr
   }
   const idToken = await user.getIdToken();
 
+  // The 'payload' now correctly matches what the frontend component sends.
+  // The backend API will handle deriving the title, description, etc., from the sessionType.
   const response = await fetch(`${API_BASE_URL}/group-sessions/create`, {
     method: 'POST',
     headers: {
@@ -39,7 +40,7 @@ export async function createGroupSession(payload: CreateGroupSessionPayload): Pr
   const result = await response.json();
   if (!response.ok || !result.success) {
     // FIX: Check if result.error is an object (from Zod) or a string
-    let errorMessage = 'Failed to create group session.';
+    let errorMessage = result.details || 'Failed to create group session.';
     if (typeof result.error === 'string') {
         errorMessage = result.error;
     } else if (typeof result.error === 'object' && result.error !== null) {
