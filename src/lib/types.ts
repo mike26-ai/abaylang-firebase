@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from "firebase/firestore";
 
 export interface Booking {
@@ -25,6 +24,7 @@ export interface Booking {
   cancellationReason?: string; // For reschedule/cancellation data
   paymentNote?: string; // Note from student (e.g., transaction ID)
   zoomLink?: string; // NEW: For the lesson's Zoom link
+  groupSessionId?: string; // NEW: For group session bookings
 }
 
 export interface TimeOff {
@@ -36,6 +36,24 @@ export interface TimeOff {
   blockedByEmail?: string;
   note?: string;
   createdAt: Timestamp;
+}
+
+export interface GroupSession {
+  id: string;
+  title: string;
+  description: string;
+  startTime: Timestamp;
+  endTime: Timestamp;
+  duration: number; // in minutes
+  price: number;
+  tutorId: string;
+  tutorName: string;
+  maxStudents: number;
+  participantCount: number;
+  participantIds: string[];
+  status: "scheduled" | "cancelled" | "completed";
+  createdAt: Timestamp;
+  zoomLink?: string;
 }
 
 
@@ -162,3 +180,4 @@ export interface LessonMaterial {
   uploaderId: string; // Admin's UID
   // Could add categories, levels, etc.
 }
+

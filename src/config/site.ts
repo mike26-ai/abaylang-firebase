@@ -1,6 +1,6 @@
 
 import type React from "react";
-import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, Users, FileText, BookOpen, Package, HelpCircle, MessageSquare, Award, CalendarDays, GanttChartSquare } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, Users, FileText, BookOpen, Package, HelpCircle, MessageSquare, Award, CalendarDays, GanttChartSquare, ClipboardList } from "lucide-react";
 
 export type NavItem = {
   title: string;
@@ -44,6 +44,7 @@ export const siteConfig = {
     { title: "Admin Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { title: "Manage Bookings", href: "/admin/bookings", icon: CalendarDays },
     { title: "Manage Availability", href: "/admin/manage-availability", icon: GanttChartSquare },
+    { title: "Manage Group Sessions", href: "/admin/manage-group-sessions", icon: ClipboardList },
     { title: "Manage Students", href: "/admin/students", icon: Users },
     { title: "Manage Testimonials", href: "/admin/testimonials", icon: Award },
     { title: "View Inquiries", href: "/admin/inquiries", icon: MessageSquare },

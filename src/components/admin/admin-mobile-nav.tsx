@@ -15,7 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import type { NavItem } from "@/config/site";
 
 // Re-using the same icon mapping from the desktop sidebar for consistency
-import { LayoutDashboard, CalendarDays, MessageSquareText, Award, Users } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquareText, Award, Users, ClipboardList } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Admin Dashboard": LayoutDashboard,
@@ -23,6 +23,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Manage Testimonials": Award,
   "View Inquiries": MessageSquareText,
   "Manage Students": Users,
+  "Manage Group Sessions": ClipboardList,
 };
 
 

@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -21,7 +22,7 @@
     },
     "Booking": {
       "title": "Booking",
-      "description": "Represents a scheduled lesson booking.",
+      "description": "Represents a scheduled lesson booking. This can be for a private lesson or a group session.",
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
@@ -30,7 +31,8 @@
         "time": { "type": "string", "format": "time" },
         "status": { "type": "string", "enum": ["awaiting-payment", "confirmed", "cancelled", "completed"] },
         "tutorId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "groupSessionId": { "type": "string", "description": "If this is a booking for a group session, this ID links to the groupSessions collection." }
       },
       "required": ["userId", "userName", "date", "time", "status", "tutorId", "createdAt"]
     },
@@ -50,6 +52,28 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["tutorId", "date", "time", "blockedById", "createdAt"]
+    },
+    "GroupSession": {
+      "title": "Group Session",
+      "description": "Represents a scheduled group class that multiple students can register for.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "duration": { "type": "number", "description": "Duration in minutes." },
+        "price": { "type": "number" },
+        "tutorId": { "type": "string" },
+        "tutorName": { "type": "string" },
+        "maxStudents": { "type": "number" },
+        "participantCount": { "type": "number" },
+        "participantIds": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["scheduled", "cancelled", "completed"] },
+        "zoomLink": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "startTime", "endTime", "duration", "price", "tutorId", "maxStudents"]
     }
   },
   "auth": {
@@ -67,6 +91,10 @@
     "/timeOff/{timeOffId}": {
       "schema": { "$ref": "#/entities/TimeOffBlock" },
       "description": "Stores blocks of time when tutors are marked as unavailable."
+    },
+    "/groupSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/GroupSession" },
+      "description": "Stores all scheduled group session documents."
     }
   }
 }
