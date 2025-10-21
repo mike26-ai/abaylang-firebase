@@ -1,8 +1,9 @@
+
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, initAdmin } from '@/lib/firebase-admin';
 import { z } from 'zod';
-import { _createBooking } from './service';
+import { _createBooking } from '@/app/api/bookings/service';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 
 // Initialize Firebase Admin SDK
