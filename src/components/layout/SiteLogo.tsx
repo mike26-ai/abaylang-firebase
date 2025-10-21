@@ -1,17 +1,15 @@
 // File: src/components/layout/SiteLogo.tsx
 import Link from 'next/link';
-import { siteConfig } from '@/config/site';
 
 /**
  * The single, official logo component for the application.
- * This is a text-only version to ensure stability and prevent image-related errors.
+ * This now uses a standard <img> tag pointing to the static SVG in /public
+ * for maximum reliability and to prevent build-time SVG processing errors.
  */
 export function SiteLogo() {
   return (
     <Link href="/" className="flex items-center group" aria-label="Back to homepage">
-      <span className="text-2xl font-bold text-foreground transition-colors group-hover:text-primary">
-        {siteConfig.name}
-      </span>
+       <img src="/logo-header.svg" alt="ABYLANG logo" style={{ height: 40, width: 'auto' }} />
     </Link>
   );
 }

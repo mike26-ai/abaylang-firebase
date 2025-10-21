@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="abyHeaderTitle">
+  <title id="abyHeaderTitle">ABYLANG header mark</title>
+
+  <g id="mark" transform="translate(12,10)">
+    <path d="M44 4
+             C20 4 4 20 4 44
+             L4 84
+             C4 98 18 110 32 114
+             L36 116
+             L36 60
+             C36 52 42 48 50 48
+             H90
+             L90 4
+             Z"
+          fill="#F28C28"/>
+    <path d="M100 4
+             H124
+             C130 4 132 8 133 18
+             L133 156
+             C133 176 120 188 104 188
+             C84 188 76 176 76 156
+             L76 12
+             C76 6 80 4 88 4
+             Z"
+          fill="#0D1117"/>
+  </g>
+</svg>

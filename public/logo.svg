@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" role="img" aria-labelledby="abyLogoTitle">
+  <title id="abyLogoTitle">ABYLANG logo</title>
+
+  <!-- Mark group: left = orange semicircle-like A, right = white L -->
+  <g id="mark" transform="translate(150,120)">
+    <!-- Left: simplified 'A' / semicircle block -->
+    <path d="M150 0
+             C60 0 0 60 0 150
+             L0 360
+             C0 420 48 468 108 480
+             L120 484
+             L120 180
+             C120 162 134 150 152 150
+             H300
+             L300 0
+             Z"
+          fill="#F28C28" />
+
+    <!-- Right: simplified 'L' block, now white for footer -->
+    <path d="M380 0
+             H480
+             C510 0 518 10 522 34
+             L522 480
+             C522 540 480 584 420 600
+             C340 622 300 580 300 520
+             L300 34
+             C300 18 314 10 334 10
+             Z"
+          fill="#FFFFFF" />
+  </g>
+
+  <!-- Wordmark: ABY (orange) + LANG (white) centered below -->
+  <g id="wordmark" transform="translate(150,760)">
+    <text x="0" y="0" font-family="Inter, system-ui, Arial" font-weight="700" font-size="120" fill="#F28C28">ABY</text>
+    <text x="360" y="0" font-family="Inter, system-ui, Arial" font-weight="700" font-size="120" fill="#FFFFFF">LANG</text>
+  </g>
+</svg>
