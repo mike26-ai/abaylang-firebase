@@ -219,7 +219,7 @@ export function GroupSessionManager() {
                                         <h4 className="font-semibold text-foreground">{session.title}</h4>
                                         <p className="text-sm text-muted-foreground flex items-center gap-2">
                                             <CalendarDays className="w-4 h-4"/>
-                                            {format(new Date(session.startTime as any), 'PPP, p')}
+                                            {format((session.startTime as any).toDate(), 'PPP, p')}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-4">
