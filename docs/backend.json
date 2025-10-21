@@ -74,6 +74,27 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "startTime", "endTime", "duration", "price", "tutorId", "maxStudents"]
+    },
+    "UserCredits": {
+      "title": "User Credits",
+      "description": "Represents the lesson credits a user has purchased in a package.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "credits": { 
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lessonType": { "type": "string", "description": "e.g., 'quick-practice' or 'comprehensive-lesson'" },
+              "count": { "type": "number", "description": "Number of credits for this lesson type." }
+            },
+            "required": ["lessonType", "count"]
+          }
+        },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "credits", "lastUpdated"]
     }
   },
   "auth": {
@@ -95,6 +116,10 @@
     "/groupSessions/{sessionId}": {
       "schema": { "$ref": "#/entities/GroupSession" },
       "description": "Stores all scheduled group session documents."
+    },
+    "/userCredits/{userId}": {
+      "schema": { "$ref": "#/entities/UserCredits" },
+      "description": "Stores the lesson credit balance for each user who has purchased a package."
     }
   }
 }

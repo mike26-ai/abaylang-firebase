@@ -25,6 +25,7 @@ export interface Booking {
   paymentNote?: string; // Note from student (e.g., transaction ID)
   zoomLink?: string; // NEW: For the lesson's Zoom link
   groupSessionId?: string; // NEW: For group session bookings
+  wasRedeemedWithCredit?: boolean; // NEW: To track if a credit was used
 }
 
 export interface TimeOff {
@@ -181,3 +182,12 @@ export interface LessonMaterial {
   // Could add categories, levels, etc.
 }
 
+// NEW: Represents a user's credit balance for packages
+export interface UserCredit {
+    userId: string;
+    credits: Array<{
+      lessonType: string; // Corresponds to lesson 'value', e.g., 'quick-practice-bundle'
+      count: number;
+    }>;
+    lastUpdated: Timestamp;
+}
