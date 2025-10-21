@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
-import type { Booking as BookingType, TimeOff } from "@/lib/types";
+import type { Booking as BookingType, TimeOff, GroupSession } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo"
 import { paddlePriceIds } from "@/config/paddle";
 
@@ -24,6 +24,7 @@ import { getAvailability } from "@/services/availabilityService";
 import { createBooking } from "@/services/bookingService";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
+import { getGroupSessions } from "@/services/groupSessionService"
 
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
@@ -102,8 +103,17 @@ export default function BookLessonPage() {
   const [dailyTimeOff, setDailyTimeOff] = useState<TimeOff[]>([]);
 
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+  
+  const [groupSessions, setGroupSessions] = useState<GroupSession[]>([]);
+  const [isFetchingGroupSessions, setIsFetchingGroupSessions] = useState(false);
+  const [selectedGroupSession, setSelectedGroupSession] = useState<string | undefined>(undefined);
+
 
   const selectedLessonDetails = lessonTypes.find((type) => type.value === selectedType);
+  
+  const isIndividualLesson = selectedLessonDetails?.type === 'individual';
+  const isGroupLesson = selectedLessonDetails?.type === 'group';
+  const isPackagePurchase = selectedLessonDetails?.type === 'package';
 
   const fetchAvailability = async (date: Date) => {
     setIsFetchingSlots(true);
@@ -120,15 +130,34 @@ export default function BookLessonPage() {
     });
   }
 
+  const fetchGroupSessions = async () => {
+    setIsFetchingGroupSessions(true);
+    try {
+        const sessions = await getGroupSessions();
+        setGroupSessions(sessions.filter(s => s.status === 'scheduled' && s.startTime.toDate() > new Date()));
+    } catch(error: any) {
+        toast({ title: "Error", description: error.message || "Could not fetch group sessions.", variant: "destructive" });
+    } finally {
+        setIsFetchingGroupSessions(false);
+    }
+  }
+
+
   useEffect(() => {
-    if (!selectedDate || !isValid(selectedDate)) {
+    if (isIndividualLesson && selectedDate && isValid(selectedDate)) {
+        fetchAvailability(selectedDate);
+    } else {
       setDailyBookedSlots([]);
       setDailyTimeOff([]);
-      return;
     }
-    fetchAvailability(selectedDate);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, toast]);
+  }, [selectedDate, isIndividualLesson, toast]);
+  
+  useEffect(() => {
+    if(isGroupLesson) {
+        fetchGroupSessions();
+    }
+  }, [isGroupLesson]);
 
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -141,7 +170,7 @@ export default function BookLessonPage() {
   };
 
   const displayTimeSlots = useMemo(() => {
-    if (!selectedDate || !selectedLessonDetails || selectedLessonDetails.type === 'package') return [];
+    if (!selectedDate || !isIndividualLesson) return [];
     
     const slots: TimeSlotProps[] = [];
     const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number;
@@ -200,7 +229,7 @@ export default function BookLessonPage() {
         });
     }
     return slots;
-}, [selectedDate, selectedLessonDetails, dailyBookedSlots, dailyTimeOff]);
+}, [selectedDate, isIndividualLesson, selectedLessonDetails, dailyBookedSlots, dailyTimeOff]);
 
 
   const handleBooking = async () => {
@@ -214,8 +243,12 @@ export default function BookLessonPage() {
       toast({ title: "Selection Incomplete", description: "Please select a lesson type.", variant: "destructive" });
       return;
     }
-    if (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) {
+    if (isIndividualLesson && (!selectedDate || !selectedTime)) {
       toast({ title: "Selection Incomplete", description: "Please select a date and time for your lesson.", variant: "destructive" });
+      return;
+    }
+    if (isGroupLesson && !selectedGroupSession) {
+      toast({ title: "Selection Incomplete", description: "Please select a group session to join.", variant: "destructive" });
       return;
     }
 
@@ -229,11 +262,24 @@ export default function BookLessonPage() {
           : typeof selectedLessonDetails.duration === 'number'
           ? selectedLessonDetails.duration
           : 60;
+          
+      let finalDate = 'N/A_PACKAGE';
+      let finalTime = 'N/A_PACKAGE';
+      if (isIndividualLesson && selectedDate) {
+        finalDate = format(selectedDate, 'yyyy-MM-dd');
+        finalTime = selectedTime || 'N/A';
+      } else if (isGroupLesson && selectedGroupSession) {
+        const session = groupSessions.find(s => s.id === selectedGroupSession);
+        if(session) {
+            finalDate = format(session.startTime.toDate(), 'yyyy-MM-dd');
+            finalTime = format(session.startTime.toDate(), 'HH:mm');
+        }
+      }
 
       // Step 1: Create the booking document in Firestore first via the secure API route.
       const bookingPayload = {
-        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
-        time: selectedTime || 'N/A_PACKAGE',
+        date: finalDate,
+        time: finalTime,
         duration: unitDuration,
         lessonType: selectedLessonDetails.label,
         price: selectedLessonDetails.price,
@@ -242,7 +288,8 @@ export default function BookLessonPage() {
         userName: user.displayName || "User",
         userEmail: user.email || "No Email",
         ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
-        isFreeTrial
+        isFreeTrial,
+        ...(isGroupLesson && { groupSessionId: selectedGroupSession }),
       };
 
       const { bookingId } = await createBooking(bookingPayload);
@@ -309,7 +356,6 @@ export default function BookLessonPage() {
     }
   };
 
-  const isPackageSelected = selectedLessonDetails?.type === 'package';
   const isPaidLesson = (selectedLessonDetails?.price || 0) > 0;
 
   return (
@@ -342,7 +388,7 @@ export default function BookLessonPage() {
                 <CardDescription>Select the format that best fits your learning goals</CardDescription>
               </CardHeader>
               <CardContent>
-                <RadioGroup value={selectedType} onValueChange={(value) => {setSelectedType(value); setSelectedTime(undefined); setSelectedDateState(undefined);}}>
+                <RadioGroup value={selectedType} onValueChange={(value) => {setSelectedType(value); setSelectedTime(undefined); setSelectedDateState(undefined); setSelectedGroupSession(undefined)}}>
                   <div className="space-y-6">
                     {["individual", "group", "package"].map(lessonGroupType => (
                        <div key={lessonGroupType}>
@@ -400,7 +446,7 @@ export default function BookLessonPage() {
               </CardContent>
             </Card>
 
-            {!isPackageSelected && (
+            {isIndividualLesson && (
               <>
                 <Card className="shadow-lg">
                       <CardHeader>
@@ -450,21 +496,52 @@ export default function BookLessonPage() {
               </>
             )}
 
-            {isPackageSelected && (
+            {isGroupLesson && (
                  <Card className="shadow-lg">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-xl text-foreground">
-                        <Calendar className="w-5 h-5 text-primary" />
-                        Package Start Date (Optional)
+                            <Users className="w-5 h-5 text-primary" />
+                            Select a Group Session
                         </CardTitle>
-                        <CardDescription>Select a preferred start date for your first lesson in the package. Subsequent lessons can be scheduled from your dashboard.</CardDescription>
+                        <CardDescription>Join a pre-scheduled group class.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <DateSelection
-                          selectedDate={selectedDate}
-                          onDateSelect={handleDateSelect}
-                        />
+                        {isFetchingGroupSessions ? (
+                            <div className="flex justify-center items-center h-24"><Spinner /></div>
+                        ) : groupSessions.length === 0 ? (
+                            <p className="text-muted-foreground text-center py-4">No upcoming group sessions are scheduled. Please check back later.</p>
+                        ) : (
+                             <RadioGroup value={selectedGroupSession} onValueChange={setSelectedGroupSession} className="space-y-3">
+                                {groupSessions.map((session) => (
+                                    <div key={session.id} className="flex items-start space-x-3">
+                                        <RadioGroupItem value={session.id} id={session.id} className="mt-1" />
+                                        <Label htmlFor={session.id} className="flex-1 cursor-pointer">
+                                            <div className={`p-3 border rounded-lg ${selectedGroupSession === session.id ? "bg-accent border-primary ring-1 ring-primary" : ""}`}>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-semibold text-foreground">{session.title}</span>
+                                                    <Badge variant="outline">{session.duration} min</Badge>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground">{format(session.startTime.toDate(), 'PPP, p')}</p>
+                                                <p className="text-xs text-muted-foreground">{session.participantCount} / {session.maxStudents} students</p>
+                                            </div>
+                                        </Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        )}
                     </CardContent>
+                </Card>
+            )}
+
+            {isPackagePurchase && (
+                 <Card className="shadow-lg bg-accent border-primary/50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-xl text-foreground">
+                        <Package className="w-5 h-5 text-primary" />
+                        Ready to Purchase Package?
+                        </CardTitle>
+                        <CardDescription>Click &quot;Proceed to Payment&quot; to buy this package. You can schedule your individual lessons from your dashboard after purchase.</CardDescription>
+                    </CardHeader>
                 </Card>
             )}
 
@@ -534,13 +611,13 @@ export default function BookLessonPage() {
                           <span className="font-medium text-foreground">{selectedLessonDetails.duration} minutes</span>
                         </div>
                       )}
-                       {selectedLessonDetails.type === 'package' && (
+                       {isPackagePurchase && (
                          <div className="flex justify-between">
                           <span className="text-muted-foreground">Contains:</span>
                           <span className="font-medium text-foreground">{selectedLessonDetails.duration}</span>
                         </div>
                        )}
-                         {selectedLessonDetails.type === 'package' && typeof selectedLessonDetails.totalLessons === 'number' && (
+                         {isPackagePurchase && typeof selectedLessonDetails.totalLessons === 'number' && (
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Lessons:</span>
                                 <span className="font-medium text-foreground">{selectedLessonDetails.totalLessons}</span>
@@ -548,7 +625,7 @@ export default function BookLessonPage() {
                         )}
                     </div>
                   )}
-                  {selectedDate && !isPackageSelected && (
+                  {selectedDate && isIndividualLesson && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date:</span>
                       <span className="font-medium text-foreground">
@@ -557,20 +634,20 @@ export default function BookLessonPage() {
                     </div>
 
                   )}
-                   {selectedDate && isPackageSelected && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Start Date:</span>
-                      <span className="font-medium text-foreground">
-                        {format(selectedDate, "PPP")}
-                      </span>
-                    </div>
-                  )}
-                  {selectedTime && !isPackageSelected && (
+                  {selectedTime && isIndividualLesson && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
                       <span className="font-medium text-foreground">
                         {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), (selectedLessonDetails?.unitDuration || selectedLessonDetails?.duration) as number), 'HH:mm')}`}
                       </span>
+                    </div>
+                  )}
+                   {isGroupLesson && selectedGroupSession && groupSessions.find(s => s.id === selectedGroupSession) && (
+                     <div className="flex justify-between">
+                        <span className="text-muted-foreground">Date:</span>
+                        <span className="font-medium text-foreground">
+                            {format(groupSessions.find(s => s.id === selectedGroupSession)!.startTime.toDate(), 'PPP, p')}
+                        </span>
                     </div>
                   )}
                 </div>
@@ -579,7 +656,7 @@ export default function BookLessonPage() {
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between text-lg font-bold">
                       <span className="text-foreground">Total:</span>
-                      <span className="text-primary">$${selectedLessonDetails.price}</span>
+                      <span className="text-primary">${selectedLessonDetails.price}</span>
                     </div>
                      {isPaidLesson && (
                         <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">
@@ -594,7 +671,7 @@ export default function BookLessonPage() {
                   <Button
                     className="w-full"
                     onClick={handleBooking}
-                    disabled={isProcessing || !selectedLessonDetails || (selectedLessonDetails.type !== 'package' && (!selectedDate || !selectedTime)) || (selectedLessonDetails.type === 'package' && !selectedDate && !paymentNote) }
+                    disabled={isProcessing || !selectedLessonDetails || (isIndividualLesson && (!selectedDate || !selectedTime)) || (isGroupLesson && !selectedGroupSession)}
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
                     {isProcessing ? "Processing..." : isPaidLesson ? "Proceed to Payment" : "Confirm Free Trial"}

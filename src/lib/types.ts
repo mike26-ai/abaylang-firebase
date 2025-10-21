@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from "firebase/firestore";
 
 export interface Booking {
@@ -107,6 +108,8 @@ export interface UserProfile {
   // New fields for one-time feedback system
   showFirstLessonFeedbackPrompt?: boolean; // Defaults to false
   hasSubmittedFirstLessonFeedback?: boolean; // Defaults to false
+  // NEW: Field for credits
+  credits?: UserCredit[];
 }
 
 export interface ChatMessage {
@@ -184,10 +187,6 @@ export interface LessonMaterial {
 
 // NEW: Represents a user's credit balance for packages
 export interface UserCredit {
-    userId: string;
-    credits: Array<{
-      lessonType: string; // Corresponds to lesson 'value', e.g., 'quick-practice-bundle'
-      count: number;
-    }>;
-    lastUpdated: Timestamp;
+  lessonType: string; // Corresponds to lesson 'value', e.g., 'quick-practice-bundle'
+  count: number;
 }

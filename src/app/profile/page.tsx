@@ -29,6 +29,7 @@ import {
   RefreshCw,
   Info,
   Video,
+  Ticket,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -268,7 +269,7 @@ export default function StudentDashboardPage() {
 
       toast({
         title: "Profile Updated",
-        description: "Your profile has been saved.",
+        description: "Your changes have been saved.",
       });
       setIsEditingProfile(false);
     } catch (error) {
@@ -472,6 +473,8 @@ export default function StudentDashboardPage() {
       })
       [0];
   }, [bookings]);
+  
+  const credits = userProfileData?.credits || [];
 
   if (authLoading || (!userProfileData && isLoadingProfile && !user)) {
     return (
@@ -564,6 +567,30 @@ export default function StudentDashboardPage() {
                 </CardContent>
               </Card>
             )}
+            
+            {credits.length > 0 && (
+                <Card className="shadow-lg mb-8">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Ticket className="w-5 h-5 text-primary"/>
+                            My Lesson Credits
+                        </CardTitle>
+                        <CardDescription>You can use these credits to book lessons directly.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {credits.map((credit, index) => (
+                            <div key={index} className="p-4 bg-accent/50 rounded-lg border border-primary/20 flex justify-between items-center">
+                                <div>
+                                    <p className="font-semibold text-foreground">{credit.lessonType.replace(/-/g, ' ').replace('bundle', ' Bundle').replace('pack', ' Pack')}</p>
+                                    <p className="text-sm text-muted-foreground">Remaining Credits</p>
+                                </div>
+                                <p className="text-3xl font-bold text-primary">{credit.count}</p>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
+
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <Card className="shadow-lg">
