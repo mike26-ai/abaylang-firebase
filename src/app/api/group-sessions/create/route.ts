@@ -6,12 +6,17 @@ import { addMinutes, isBefore } from 'date-fns';
 
 initAdmin();
 
+// Define the shape of the predefined lesson types on the server for validation
+const groupLessonTypes = [
+    { value: 'quick-group', label: 'Quick Group Conversation', duration: 30, price: 7, description: 'A 30-minute session for practicing conversation with fellow learners.' },
+    { value: 'immersive-group', label: 'Immersive Conversation Practice', duration: 60, price: 12, description: 'A 60-minute session for deeper conversation and cultural insights.' }
+];
+
+// FIX: Updated schema to match the new frontend logic.
+// Title and description are no longer sent from the client.
 const CreateGroupSessionSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters long."),
-  description: z.string().min(10, "Description must be at least 10 characters long."),
+  sessionType: z.string().min(1, "Session type is required."),
   startTime: z.string().datetime("Invalid start time format."),
-  duration: z.number().int().positive("Duration must be a positive number."),
-  price: z.number().min(0, "Price cannot be negative."),
   maxStudents: z.number().int().min(2, "Maximum students must be at least 2."),
   tutorId: z.string().min(1),
   tutorName: z.string().min(1),
@@ -35,21 +40,25 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json({ success: false, error: validation.error.flatten().fieldErrors }, { status: 400 });
     }
-    const { startTime, duration, ...restOfData } = validation.data;
     
+    const { startTime, maxStudents, tutorId, tutorName, sessionType } = validation.data;
+
+    // FIX: Find the session details on the server based on the type sent from the client.
+    const sessionTypeDetails = groupLessonTypes.find(t => t.value === sessionType);
+    if (!sessionTypeDetails) {
+        return NextResponse.json({ success: false, error: "Invalid session type provided." }, { status: 400 });
+    }
+
     const startDateTime = new Date(startTime);
     if (isBefore(startDateTime, new Date())) {
       return NextResponse.json({ success: false, error: "Cannot schedule a session in the past." }, { status: 400 });
     }
-    const endDateTime = addMinutes(startDateTime, duration);
+    const endDateTime = addMinutes(startDateTime, sessionTypeDetails.duration);
 
-    // Run a transaction to check for conflicts
     const newSessionId = await adminDb.runTransaction(async (transaction) => {
-      const tutorId = restOfData.tutorId;
       const startTimestamp = Timestamp.fromDate(startDateTime);
       const endTimestamp = Timestamp.fromDate(endDateTime);
 
-      // 1. Check for conflicting private bookings
       const bookingsRef = adminDb.collection('bookings');
       const bookingConflictQuery = bookingsRef
           .where('tutorId', '==', tutorId)
@@ -61,7 +70,6 @@ export async function POST(request: NextRequest) {
           throw new Error('A private lesson is already booked in this time slot.');
       }
 
-      // 2. Check for conflicting group sessions
       const groupSessionsRef = adminDb.collection('groupSessions');
       const groupSessionConflictQuery = groupSessionsRef
           .where('tutorId', '==', tutorId)
@@ -73,7 +81,6 @@ export async function POST(request: NextRequest) {
           throw new Error('Another group session is already scheduled in this time slot.');
       }
 
-      // 3. Check for conflicting time-off blocks
       const timeOffRef = adminDb.collection('timeOff');
       const timeOffConflictQuery = timeOffRef
           .where('tutorId', '==', tutorId)
@@ -84,13 +91,17 @@ export async function POST(request: NextRequest) {
           throw new Error('The tutor has blocked off this time as unavailable.');
       }
       
-      // If no conflicts, create the new session
       const newSessionRef = adminDb.collection('groupSessions').doc();
       const newSessionData = {
-        ...restOfData,
+        title: sessionTypeDetails.label,
+        description: sessionTypeDetails.description,
+        price: sessionTypeDetails.price,
+        duration: sessionTypeDetails.duration,
+        maxStudents,
+        tutorId,
+        tutorName,
         startTime: startTimestamp,
         endTime: endTimestamp,
-        duration,
         participantCount: 0,
         participantIds: [],
         status: "scheduled" as "scheduled" | "cancelled" | "completed",
@@ -105,7 +116,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('API Error (/group-sessions/create):', error);
-    // Return specific conflict errors to the client
     if (error.message.includes('already booked') || error.message.includes('already scheduled') || error.message.includes('unavailable')) {
         return NextResponse.json({ success: false, error: `Scheduling conflict: ${error.message}` }, { status: 409 });
     }
