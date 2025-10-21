@@ -72,3 +72,29 @@ export async function getGroupSessions(): Promise<GroupSession[]> {
         throw error;
     }
 }
+
+/**
+ * Cancels a group session. Admin only.
+ */
+export async function cancelGroupSession(sessionId: string): Promise<{ message: string }> {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("Authentication required.");
+  }
+  const idToken = await user.getIdToken();
+
+  const response = await fetch(`${API_BASE_URL}/group-sessions/cancel`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ sessionId }),
+  });
+
+  const result = await response.json();
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || 'Failed to cancel group session.');
+  }
+  return result;
+}

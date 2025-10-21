@@ -6,18 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, PlusCircle, Check, X, Trash2, Users, CalendarDays } from 'lucide-react';
+import { Calendar as CalendarIcon, PlusCircle, X, Trash2, Users, CalendarDays } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
-import { createGroupSession, getGroupSessions } from '@/services/groupSessionService';
+import { createGroupSession, getGroupSessions, cancelGroupSession } from '@/services/groupSessionService';
 import type { GroupSession } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
 import {
   AlertDialog,
@@ -28,23 +26,26 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
+const groupLessonTypes = [
+    { value: 'quick-group', label: 'Quick Group Conversation', duration: 30, price: 7, description: 'A 30-minute session for practicing conversation with fellow learners.' },
+    { value: 'immersive-group', label: 'Immersive Conversation Practice', duration: 60, price: 12, description: 'A 60-minute session for deeper conversation and cultural insights.' }
+];
 
 export function GroupSessionManager() {
   const { user } = useAuth();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [selectedType, setSelectedType] = useState('');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState('');
-  const [duration, setDuration] = useState(60);
   const [maxStudents, setMaxStudents] = useState(6);
-  const [price, setPrice] = useState(12);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [sessions, setSessions] = useState<GroupSession[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [sessionToCancel, setSessionToCancel] = useState<GroupSession | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const { toast } = useToast();
 
@@ -52,7 +53,7 @@ export function GroupSessionManager() {
     setIsLoadingSessions(true);
     try {
         const fetchedSessions = await getGroupSessions();
-        setSessions(fetchedSessions);
+        setSessions(fetchedSessions.sort((a, b) => b.startTime.toDate().getTime() - a.startTime.toDate().getTime()));
     } catch (error: any) {
         toast({ title: 'Error fetching sessions', description: error.message, variant: 'destructive' });
     } finally {
@@ -67,8 +68,9 @@ export function GroupSessionManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!date || !time || !user) {
-      toast({ title: 'Missing Information', description: 'Please select a date and time, and ensure you are logged in.', variant: 'destructive' });
+    const sessionTypeDetails = groupLessonTypes.find(t => t.value === selectedType);
+    if (!date || !time || !user || !sessionTypeDetails) {
+      toast({ title: 'Missing Information', description: 'Please select a session type, date, and time.', variant: 'destructive' });
       return;
     }
     
@@ -78,28 +80,41 @@ export function GroupSessionManager() {
         const startDateTime = new Date(`${format(date, 'yyyy-MM-dd')}T${time}`);
         
         await createGroupSession({
-            title,
-            description,
+            title: sessionTypeDetails.label,
+            description: sessionTypeDetails.description,
             startTime: startDateTime,
-            duration,
+            duration: sessionTypeDetails.duration,
             maxStudents,
-            price,
+            price: sessionTypeDetails.price,
             tutorId: 'MahderNegashMamo', // Hardcoded for now
             tutorName: 'Mahder N. Mamo',
         });
 
       toast({ title: 'Success', description: 'Group session has been created.' });
       // Reset form
-      setTitle('');
-      setDescription('');
+      setSelectedType('');
       setDate(undefined);
       setTime('');
-      // Refetch sessions
       fetchSessions();
     } catch (error: any) {
       toast({ title: 'Error Creating Session', description: error.message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelSession = async () => {
+    if (!sessionToCancel) return;
+    setIsCancelling(true);
+    try {
+        await cancelGroupSession(sessionToCancel.id);
+        toast({ title: 'Session Cancelled', description: `The session "${sessionToCancel.title}" has been cancelled.` });
+        fetchSessions();
+        setSessionToCancel(null);
+    } catch(error: any) {
+        toast({ title: 'Cancellation Failed', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsCancelling(false);
     }
   };
 
@@ -116,13 +131,18 @@ export function GroupSessionManager() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <Label htmlFor="title">Session Title</Label>
-                <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Intermediate Conversation" required />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="description">Description</Label>
-                <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g., Focus on travel phrases" required />
+               <div className="space-y-1">
+                <Label htmlFor="session-type">Session Type</Label>
+                 <Select value={selectedType} onValueChange={setSelectedType} required>
+                    <SelectTrigger id="session-type">
+                        <SelectValue placeholder="Select a session type..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {groupLessonTypes.map(type => (
+                            <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -156,20 +176,20 @@ export function GroupSessionManager() {
                   <Input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="duration">Duration (min)</Label>
-                  <Input id="duration" type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} required />
-                </div>
-                 <div className="space-y-1">
-                  <Label htmlFor="price">Price ($)</Label>
-                  <Input id="price" type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} required />
+                  <Input id="duration" type="number" value={groupLessonTypes.find(t => t.value === selectedType)?.duration || ''} readOnly disabled />
                 </div>
                 <div className="space-y-1">
+                  <Label htmlFor="price">Price ($)</Label>
+                  <Input id="price" type="number" value={groupLessonTypes.find(t => t.value === selectedType)?.price || ''} readOnly disabled />
+                </div>
+              </div>
+               <div className="space-y-1">
                   <Label htmlFor="maxStudents">Max Students</Label>
                   <Input id="maxStudents" type="number" value={maxStudents} onChange={(e) => setMaxStudents(Number(e.target.value))} required />
                 </div>
-              </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting && <Spinner size="sm" className="mr-2" />}
                 Create Session
@@ -212,26 +232,10 @@ export function GroupSessionManager() {
                                             {session.participantCount || 0} / {session.maxStudents}
                                         </Badge>
                                         <Badge variant={session.status === 'scheduled' ? 'default' : 'destructive'}>{session.status}</Badge>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button size="sm" variant="destructive" disabled={session.status === 'cancelled'}>
-                                                    <X className="w-4 h-4 mr-1" />
-                                                    Cancel
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This will cancel the session &quot;{session.title}&quot;. This action cannot be undone and you will need to manually refund any registered students.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Go Back</AlertDialogCancel>
-                                                    <AlertDialogAction className="bg-destructive hover:bg-destructive/80" onClick={() => {toast({title: "Coming Soon!", description: "Session cancellation logic is being implemented."})}}>Confirm Cancellation</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <Button size="sm" variant="destructive" onClick={() => setSessionToCancel(session)} disabled={session.status === 'cancelled' || session.status === 'completed'}>
+                                            <X className="w-4 h-4 mr-1" />
+                                            Cancel
+                                        </Button>
                                     </div>
                                 </div>
                             </CardContent>
@@ -242,7 +246,24 @@ export function GroupSessionManager() {
            </CardContent>
          </Card>
       </div>
+
+       <AlertDialog open={!!sessionToCancel} onOpenChange={() => setSessionToCancel(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will cancel the session &quot;{sessionToCancel?.title}&quot;. This action cannot be undone and you will need to manually refund any registered students.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Go Back</AlertDialogCancel>
+                    <AlertDialogAction className="bg-destructive hover:bg-destructive/80" onClick={handleCancelSession} disabled={isCancelling}>
+                        {isCancelling && <Spinner size="sm" className="mr-2" />}
+                        Confirm Cancellation
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }
-

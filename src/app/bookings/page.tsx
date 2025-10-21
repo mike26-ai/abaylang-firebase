@@ -104,7 +104,7 @@ export default function BookLessonPage() {
 
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
   
-  const [groupSessions, setGroupSessions] = useState<GroupSession[]>([]);
+  const [allGroupSessions, setAllGroupSessions] = useState<GroupSession[]>([]);
   const [isFetchingGroupSessions, setIsFetchingGroupSessions] = useState(false);
   const [selectedGroupSession, setSelectedGroupSession] = useState<string | undefined>(undefined);
 
@@ -134,7 +134,7 @@ export default function BookLessonPage() {
     setIsFetchingGroupSessions(true);
     try {
         const sessions = await getGroupSessions();
-        setGroupSessions(sessions.filter(s => s.status === 'scheduled' && s.startTime.toDate() > new Date()));
+        setAllGroupSessions(sessions.filter(s => s.status === 'scheduled' && s.startTime.toDate() > new Date()));
     } catch(error: any) {
         toast({ title: "Error", description: error.message || "Could not fetch group sessions.", variant: "destructive" });
     } finally {
@@ -232,6 +232,12 @@ export default function BookLessonPage() {
 }, [selectedDate, isIndividualLesson, selectedLessonDetails, dailyBookedSlots, dailyTimeOff]);
 
 
+  const filteredGroupSessions = useMemo(() => {
+    if (!isGroupLesson || !selectedLessonDetails) return [];
+    return allGroupSessions.filter(s => s.duration === selectedLessonDetails.duration);
+  }, [allGroupSessions, isGroupLesson, selectedLessonDetails]);
+
+
   const handleBooking = async () => {
     if (!user) {
       toast({ title: "Login Required", description: "Please log in to book a lesson.", variant: "destructive" });
@@ -257,11 +263,17 @@ export default function BookLessonPage() {
     try {
       const isFreeTrial = selectedLessonDetails.price === 0;
 
-      const unitDuration = typeof selectedLessonDetails.unitDuration === 'number'
-          ? selectedLessonDetails.unitDuration
-          : typeof selectedLessonDetails.duration === 'number'
-          ? selectedLessonDetails.duration
-          : 60;
+      let unitDuration: number;
+        if (isGroupLesson && selectedGroupSession) {
+            const session = allGroupSessions.find(s => s.id === selectedGroupSession);
+            unitDuration = session?.duration || 60;
+        } else {
+            unitDuration = typeof selectedLessonDetails.unitDuration === 'number'
+                ? selectedLessonDetails.unitDuration
+                : typeof selectedLessonDetails.duration === 'number'
+                ? selectedLessonDetails.duration
+                : 60;
+        }
           
       let finalDate = 'N/A_PACKAGE';
       let finalTime = 'N/A_PACKAGE';
@@ -269,7 +281,7 @@ export default function BookLessonPage() {
         finalDate = format(selectedDate, 'yyyy-MM-dd');
         finalTime = selectedTime || 'N/A';
       } else if (isGroupLesson && selectedGroupSession) {
-        const session = groupSessions.find(s => s.id === selectedGroupSession);
+        const session = allGroupSessions.find(s => s.id === selectedGroupSession);
         if(session) {
             finalDate = format(session.startTime.toDate(), 'yyyy-MM-dd');
             finalTime = format(session.startTime.toDate(), 'HH:mm');
@@ -320,10 +332,12 @@ export default function BookLessonPage() {
             return;
         }
 
-        const passthroughData = { booking_id: bookingId };
+        const passthroughData = isPackagePurchase
+          ? { user_id: user.uid, package_type: selectedLessonDetails.value, credits_to_add: selectedLessonDetails.totalLessons }
+          : { booking_id: bookingId };
         
         // Construct the correct Hosted Checkout URL.
-        const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
+        const checkoutUrl = `https://sandbox.paddle.com/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
 
         // Redirect the user.
         window.location.href = checkoutUrl;
@@ -508,15 +522,15 @@ export default function BookLessonPage() {
                     <CardContent>
                         {isFetchingGroupSessions ? (
                             <div className="flex justify-center items-center h-24"><Spinner /></div>
-                        ) : groupSessions.length === 0 ? (
-                            <p className="text-muted-foreground text-center py-4">No upcoming group sessions are scheduled. Please check back later.</p>
+                        ) : filteredGroupSessions.length === 0 ? (
+                            <p className="text-muted-foreground text-center py-4">No upcoming {selectedLessonDetails?.duration} minute group sessions are scheduled. Please check back later.</p>
                         ) : (
                              <RadioGroup value={selectedGroupSession} onValueChange={setSelectedGroupSession} className="space-y-3">
-                                {groupSessions.map((session) => (
+                                {filteredGroupSessions.map((session) => (
                                     <div key={session.id} className="flex items-start space-x-3">
                                         <RadioGroupItem value={session.id} id={session.id} className="mt-1" />
                                         <Label htmlFor={session.id} className="flex-1 cursor-pointer">
-                                            <div className={`p-3 border rounded-lg ${selectedGroupSession === session.id ? "bg-accent border-primary ring-1 ring-primary" : ""}`}>
+                                            <div className={`p-3 border rounded-lg hover:bg-accent/50 ${selectedGroupSession === session.id ? "bg-accent border-primary ring-1 ring-primary" : ""}`}>
                                                 <div className="flex justify-between items-center">
                                                     <span className="font-semibold text-foreground">{session.title}</span>
                                                     <Badge variant="outline">{session.duration} min</Badge>
@@ -642,11 +656,11 @@ export default function BookLessonPage() {
                       </span>
                     </div>
                   )}
-                   {isGroupLesson && selectedGroupSession && groupSessions.find(s => s.id === selectedGroupSession) && (
+                   {isGroupLesson && selectedGroupSession && allGroupSessions.find(s => s.id === selectedGroupSession) && (
                      <div className="flex justify-between">
                         <span className="text-muted-foreground">Date:</span>
                         <span className="font-medium text-foreground">
-                            {format(groupSessions.find(s => s.id === selectedGroupSession)!.startTime.toDate(), 'PPP, p')}
+                            {format(allGroupSessions.find(s => s.id === selectedGroupSession)!.startTime.toDate(), 'PPP, p')}
                         </span>
                     </div>
                   )}
