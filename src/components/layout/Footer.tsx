@@ -5,7 +5,7 @@ export function Footer() {
   return (
     <footer className="border-t bg-foreground text-background py-12 px-4">
       <div className="container mx-auto">
-        <div className="text-center mb-8">
+        <div style={{ textAlign: 'center', padding: '28px 0' }}>
             <a href="/" aria-label="ABYLANG home" style={{ display: 'inline-block' }}>
                 <img src="/logo.svg" alt="ABYLANG logo" style={{ height: 150, width: 'auto', display: 'block', margin: '0 auto' }} />
             </a>
