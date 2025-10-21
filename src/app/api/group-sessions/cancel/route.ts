@@ -1,6 +1,7 @@
+
 // File: src/app/api/group-sessions/cancel/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth, initAdmin, Timestamp } from '@/lib/firebase-admin';
+import { adminDb, adminAuth, initAdmin } from '@/lib/firebase-admin';
 import { z } from 'zod';
 
 initAdmin();
@@ -36,9 +37,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: "Session not found." }, { status: 404 });
     }
 
-    // TODO: In a future version, you could add logic here to notify registered users via email.
-    // For now, we just update the status as planned.
-
     await sessionRef.update({
         status: 'cancelled',
     });
@@ -50,3 +48,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Failed to cancel group session.', details: error.message }, { status: 500 });
   }
 }
+
+    

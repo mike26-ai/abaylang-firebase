@@ -24,8 +24,6 @@ export async function createGroupSession(payload: CreateGroupSessionPayload): Pr
   }
   const idToken = await user.getIdToken();
 
-  // The 'payload' now correctly matches what the frontend component sends.
-  // The backend API will handle deriving the title, description, etc., from the sessionType.
   const response = await fetch(`${API_BASE_URL}/group-sessions/create`, {
     method: 'POST',
     headers: {
@@ -40,15 +38,7 @@ export async function createGroupSession(payload: CreateGroupSessionPayload): Pr
 
   const result = await response.json();
   if (!response.ok || !result.success) {
-    // FIX: Check if result.error is an object (from Zod) or a string
-    let errorMessage = result.details || 'Failed to create group session.';
-    if (typeof result.error === 'string') {
-        errorMessage = result.error;
-    } else if (typeof result.error === 'object' && result.error !== null) {
-        // Attempt to serialize Zod-like error objects for better debugging
-        errorMessage = Object.values(result.error).flat().join(', ');
-    }
-    throw new Error(errorMessage);
+    throw new Error(result.error || 'Failed to create group session.');
   }
   return result;
 }
@@ -105,3 +95,5 @@ export async function cancelGroupSession(sessionId: string): Promise<{ message: 
   }
   return result;
 }
+
+    

@@ -8,8 +8,8 @@ import { addMinutes, isBefore } from 'date-fns';
 initAdmin();
 
 const groupLessonTypes = [
-    { value: 'quick-group', label: 'Quick Group Conversation', duration: 30, price: 7, description: 'A 30-minute session for practicing conversation with fellow learners.' },
-    { value: 'immersive-group', label: 'Immersive Conversation Practice', duration: 60, price: 12, description: 'A 60-minute session for deeper conversation and cultural insights.' }
+    { value: 'quick-group-conversation', label: 'Quick Group Conversation', duration: 30, price: 7, description: 'A 30-minute session for practicing conversation with fellow learners.' },
+    { value: 'immersive-conversation-practice', label: 'Immersive Conversation Practice', duration: 60, price: 12, description: 'A 60-minute session for deeper conversation and cultural insights.' }
 ];
 
 const CreateGroupSessionSchema = z.object({
@@ -57,11 +57,10 @@ export async function POST(request: NextRequest) {
       const endTimestamp = Timestamp.fromDate(endDateTime);
 
       const bookingsRef = adminDb.collection('bookings');
-      // FIX: Added a filter for `startTime` not being null to avoid checking against package bookings.
+      // Check for conflicts with private lessons
       const bookingConflictQuery = bookingsRef
           .where('tutorId', '==', tutorId)
           .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-          .where('startTime', '!=', null) // This is the fix
           .where('startTime', '<', endTimestamp)
           .where('endTime', '>', startTimestamp);
       const conflictingBookings = await transaction.get(bookingConflictQuery);
@@ -69,6 +68,7 @@ export async function POST(request: NextRequest) {
           throw new Error('A private lesson is already booked in this time slot.');
       }
 
+      // Check for conflicts with other group sessions
       const groupSessionsRef = adminDb.collection('groupSessions');
       const groupSessionConflictQuery = groupSessionsRef
           .where('tutorId', '==', tutorId)
@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
           throw new Error('Another group session is already scheduled in this time slot.');
       }
 
+      // Check for conflicts with time-off blocks
       const timeOffRef = adminDb.collection('timeOff');
       const timeOffConflictQuery = timeOffRef
           .where('tutorId', '==', tutorId)
@@ -121,3 +122,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Failed to create group session.', details: error.message }, { status: 500 });
   }
 }
+
+    

@@ -25,6 +25,7 @@ import { createBooking } from "@/services/bookingService";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
 import { getGroupSessions } from "@/services/groupSessionService"
+import { Timestamp } from "firebase/firestore"
 
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
@@ -134,7 +135,11 @@ export default function BookLessonPage() {
     setIsFetchingGroupSessions(true);
     try {
         const sessions = await getGroupSessions();
-        setAllGroupSessions(sessions.filter(s => s.status === 'scheduled' && s.startTime.toDate() > new Date()));
+        const upcomingSessions = sessions.filter(s => {
+            const startTime = (s.startTime as unknown as Timestamp).toDate();
+            return startTime > new Date();
+        });
+        setAllGroupSessions(upcomingSessions);
     } catch(error: any) {
         toast({ title: "Error", description: error.message || "Could not fetch group sessions.", variant: "destructive" });
     } finally {
@@ -283,8 +288,9 @@ export default function BookLessonPage() {
       } else if (isGroupLesson && selectedGroupSession) {
         const session = allGroupSessions.find(s => s.id === selectedGroupSession);
         if(session) {
-            finalDate = format(session.startTime.toDate(), 'yyyy-MM-dd');
-            finalTime = format(session.startTime.toDate(), 'HH:mm');
+            const startTimeDate = (session.startTime as unknown as Timestamp).toDate();
+            finalDate = format(startTimeDate, 'yyyy-MM-dd');
+            finalTime = format(startTimeDate, 'HH:mm');
         }
       }
 
@@ -535,7 +541,7 @@ export default function BookLessonPage() {
                                                     <span className="font-semibold text-foreground">{session.title}</span>
                                                     <Badge variant="outline">{session.duration} min</Badge>
                                                 </div>
-                                                <p className="text-sm text-muted-foreground">{format(session.startTime.toDate(), 'PPP, p')}</p>
+                                                <p className="text-sm text-muted-foreground">{format((session.startTime as unknown as Timestamp).toDate(), 'PPP, p')}</p>
                                                 <p className="text-xs text-muted-foreground">{session.participantCount} / {session.maxStudents} students</p>
                                             </div>
                                         </Label>
@@ -660,7 +666,7 @@ export default function BookLessonPage() {
                      <div className="flex justify-between">
                         <span className="text-muted-foreground">Date:</span>
                         <span className="font-medium text-foreground">
-                            {format(allGroupSessions.find(s => s.id === selectedGroupSession)!.startTime.toDate(), 'PPP, p')}
+                            {format((allGroupSessions.find(s => s.id === selectedGroupSession)!.startTime as unknown as Timestamp).toDate(), 'PPP, p')}
                         </span>
                     </div>
                   )}
@@ -703,3 +709,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    

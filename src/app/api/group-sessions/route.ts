@@ -23,9 +23,9 @@ export async function GET() {
           ...data,
           id: doc.id,
           // Convert Timestamps to a serializable format (ISO strings)
-          startTime: data.startTime.toDate().toISOString(),
-          endTime: data.endTime.toDate().toISOString(),
-          createdAt: data.createdAt.toDate().toISOString(),
+          startTime: (data.startTime as Timestamp).toDate().toISOString(),
+          endTime: (data.endTime as Timestamp).toDate().toISOString(),
+          createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
         };
       })
       .filter(session => new Date(session.startTime) > now) // Filter for upcoming sessions
@@ -37,3 +37,5 @@ export async function GET() {
     return NextResponse.json({ success: false, error: 'Failed to fetch group sessions.' }, { status: 500 });
   }
 }
+
+    

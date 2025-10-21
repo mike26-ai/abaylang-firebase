@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, PlusCircle, X, Trash2, Users, CalendarDays } from 'lucide-react';
+import { Calendar as CalendarIcon, PlusCircle, X, Users, CalendarDays } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -28,10 +28,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Timestamp } from 'firebase/firestore';
 
 const groupLessonTypes = [
-    { value: 'quick-group', label: 'Quick Group Conversation', duration: 30, price: 7, description: 'A 30-minute session for practicing conversation with fellow learners.' },
-    { value: 'immersive-group', label: 'Immersive Conversation Practice', duration: 60, price: 12, description: 'A 60-minute session for deeper conversation and cultural insights.' }
+    { value: 'quick-group-conversation', label: 'Quick Group Conversation', duration: 30, price: 7, description: 'A 30-minute session for practicing conversation with fellow learners.' },
+    { value: 'immersive-conversation-practice', label: 'Immersive Conversation Practice', duration: 60, price: 12, description: 'A 60-minute session for deeper conversation and cultural insights.' }
 ];
 
 export function GroupSessionManager() {
@@ -53,7 +54,13 @@ export function GroupSessionManager() {
     setIsLoadingSessions(true);
     try {
         const fetchedSessions = await getGroupSessions();
-        setSessions(fetchedSessions.sort((a, b) => new Date(b.startTime as any).getTime() - new Date(a.startTime as any).getTime()));
+        // Sort by start time, most recent first
+        const sortedSessions = fetchedSessions.sort((a, b) => {
+          const timeA = (a.startTime as unknown as Timestamp).toDate().getTime();
+          const timeB = (b.startTime as unknown as Timestamp).toDate().getTime();
+          return timeB - timeA;
+        });
+        setSessions(sortedSessions);
     } catch (error: any) {
         toast({ title: 'Error fetching sessions', description: error.message, variant: 'destructive' });
     } finally {
@@ -219,7 +226,7 @@ export function GroupSessionManager() {
                                         <h4 className="font-semibold text-foreground">{session.title}</h4>
                                         <p className="text-sm text-muted-foreground flex items-center gap-2">
                                             <CalendarDays className="w-4 h-4"/>
-                                            {format((session.startTime as any).toDate(), 'PPP, p')}
+                                            {format((session.startTime as unknown as Timestamp).toDate(), 'PPP, p')}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-4">
@@ -263,3 +270,5 @@ export function GroupSessionManager() {
     </div>
   );
 }
+
+    
