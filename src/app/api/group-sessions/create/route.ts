@@ -6,14 +6,11 @@ import { addMinutes, isBefore } from 'date-fns';
 
 initAdmin();
 
-// Define the shape of the predefined lesson types on the server for validation
 const groupLessonTypes = [
     { value: 'quick-group', label: 'Quick Group Conversation', duration: 30, price: 7, description: 'A 30-minute session for practicing conversation with fellow learners.' },
     { value: 'immersive-group', label: 'Immersive Conversation Practice', duration: 60, price: 12, description: 'A 60-minute session for deeper conversation and cultural insights.' }
 ];
 
-// FIX: Updated schema to match the new frontend logic.
-// Title and description are no longer sent from the client.
 const CreateGroupSessionSchema = z.object({
   sessionType: z.string().min(1, "Session type is required."),
   startTime: z.string().datetime("Invalid start time format."),
@@ -43,7 +40,6 @@ export async function POST(request: NextRequest) {
     
     const { startTime, maxStudents, tutorId, tutorName, sessionType } = validation.data;
 
-    // FIX: Find the session details on the server based on the type sent from the client.
     const sessionTypeDetails = groupLessonTypes.find(t => t.value === sessionType);
     if (!sessionTypeDetails) {
         return NextResponse.json({ success: false, error: "Invalid session type provided." }, { status: 400 });
@@ -60,9 +56,11 @@ export async function POST(request: NextRequest) {
       const endTimestamp = Timestamp.fromDate(endDateTime);
 
       const bookingsRef = adminDb.collection('bookings');
+      // FIX: Added a filter for `startTime` not being null to avoid checking against package bookings.
       const bookingConflictQuery = bookingsRef
           .where('tutorId', '==', tutorId)
           .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
+          .where('startTime', '!=', null) // This is the fix
           .where('startTime', '<', endTimestamp)
           .where('endTime', '>', startTimestamp);
       const conflictingBookings = await transaction.get(bookingConflictQuery);
