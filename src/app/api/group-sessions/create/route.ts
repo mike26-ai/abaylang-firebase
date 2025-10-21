@@ -1,4 +1,3 @@
-
 // File: src/app/api/group-sessions/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, initAdmin, Timestamp } from '@/lib/firebase-admin';
@@ -58,9 +57,11 @@ export async function POST(request: NextRequest) {
 
       const bookingsRef = adminDb.collection('bookings');
       // Check for conflicts with private lessons
+      // THE FIX: Added .where('startTime', '!=', null) to exclude package bookings
       const bookingConflictQuery = bookingsRef
           .where('tutorId', '==', tutorId)
           .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
+          .where('startTime', '!=', null)
           .where('startTime', '<', endTimestamp)
           .where('endTime', '>', startTimestamp);
       const conflictingBookings = await transaction.get(bookingConflictQuery);
@@ -122,5 +123,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Failed to create group session.', details: error.message }, { status: 500 });
   }
 }
-
-    
