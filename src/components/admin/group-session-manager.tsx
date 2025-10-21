@@ -53,7 +53,7 @@ export function GroupSessionManager() {
     setIsLoadingSessions(true);
     try {
         const fetchedSessions = await getGroupSessions();
-        setSessions(fetchedSessions.sort((a, b) => b.startTime.toDate().getTime() - a.startTime.toDate().getTime()));
+        setSessions(fetchedSessions.sort((a, b) => new Date(b.startTime as any).getTime() - new Date(a.startTime as any).getTime()));
     } catch (error: any) {
         toast({ title: 'Error fetching sessions', description: error.message, variant: 'destructive' });
     } finally {
@@ -68,8 +68,7 @@ export function GroupSessionManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const sessionTypeDetails = groupLessonTypes.find(t => t.value === selectedType);
-    if (!date || !time || !user || !sessionTypeDetails) {
+    if (!date || !time || !user || !selectedType) {
       toast({ title: 'Missing Information', description: 'Please select a session type, date, and time.', variant: 'destructive' });
       return;
     }
@@ -80,12 +79,9 @@ export function GroupSessionManager() {
         const startDateTime = new Date(`${format(date, 'yyyy-MM-dd')}T${time}`);
         
         await createGroupSession({
-            title: sessionTypeDetails.label,
-            description: sessionTypeDetails.description,
+            sessionType: selectedType,
             startTime: startDateTime,
-            duration: sessionTypeDetails.duration,
             maxStudents,
-            price: sessionTypeDetails.price,
             tutorId: 'MahderNegashMamo', // Hardcoded for now
             tutorName: 'Mahder N. Mamo',
         });
@@ -223,7 +219,7 @@ export function GroupSessionManager() {
                                         <h4 className="font-semibold text-foreground">{session.title}</h4>
                                         <p className="text-sm text-muted-foreground flex items-center gap-2">
                                             <CalendarDays className="w-4 h-4"/>
-                                            {format(session.startTime.toDate(), 'PPP, p')}
+                                            {format(new Date(session.startTime as any), 'PPP, p')}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-4">
