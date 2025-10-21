@@ -1,3 +1,4 @@
+
 // File: src/services/groupSessionService.ts
 import { auth } from "@/lib/firebase";
 import type { GroupSession } from "@/lib/types";

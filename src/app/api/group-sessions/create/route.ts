@@ -1,3 +1,4 @@
+
 // File: src/app/api/group-sessions/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, initAdmin, Timestamp } from '@/lib/firebase-admin';
