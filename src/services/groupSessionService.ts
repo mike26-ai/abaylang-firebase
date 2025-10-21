@@ -7,11 +7,8 @@ import { Timestamp } from "firebase/firestore";
 const API_BASE_URL = '/api';
 
 interface CreateGroupSessionPayload {
-  title: string;
-  description: string;
+  sessionType: string; // The value, e.g., 'quick-group'
   startTime: Date;
-  duration: number;
-  price: number;
   maxStudents: number;
   tutorId: string;
   tutorName: string;
@@ -35,13 +32,21 @@ export async function createGroupSession(payload: CreateGroupSessionPayload): Pr
     },
     body: JSON.stringify({
       ...payload,
-      startTime: payload.startTime.toISOString(),
+      startTime: payload.startTime.toISOString(), // Send as ISO string
     }),
   });
 
   const result = await response.json();
   if (!response.ok || !result.success) {
-    throw new Error(result.error || 'Failed to create group session.');
+    // FIX: Check if result.error is an object (from Zod) or a string
+    let errorMessage = 'Failed to create group session.';
+    if (typeof result.error === 'string') {
+        errorMessage = result.error;
+    } else if (typeof result.error === 'object' && result.error !== null) {
+        // Attempt to serialize Zod-like error objects for better debugging
+        errorMessage = Object.values(result.error).flat().join(', ');
+    }
+    throw new Error(errorMessage);
   }
   return result;
 }
