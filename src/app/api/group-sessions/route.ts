@@ -9,25 +9,28 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const now = Timestamp.now();
+    const now = new Date();
+    // Fetch all scheduled sessions instead of using a complex query
     const sessionsSnapshot = await adminDb.collection('groupSessions')
       .where('status', '==', 'scheduled')
-      .where('startTime', '>', now)
-      .orderBy('startTime', 'asc')
       .get();
       
-    const sessions = sessionsSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        ...data,
-        id: doc.id,
-        // Convert Timestamps to a serializable format (ISO strings)
-        startTime: data.startTime.toDate().toISOString(),
-        endTime: data.endTime.toDate().toISOString(),
-        createdAt: data.createdAt.toDate().toISOString(),
-      };
-    });
-    
+    // Filter and sort in the code to avoid needing a composite index
+    const sessions = sessionsSnapshot.docs
+      .map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          // Convert Timestamps to a serializable format (ISO strings)
+          startTime: data.startTime.toDate().toISOString(),
+          endTime: data.endTime.toDate().toISOString(),
+          createdAt: data.createdAt.toDate().toISOString(),
+        };
+      })
+      .filter(session => new Date(session.startTime) > now) // Filter for upcoming sessions
+      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()); // Sort by start time
+
     return NextResponse.json({ success: true, data: sessions });
   } catch (error: any) {
     console.error('API Error (/api/group-sessions):', error);
