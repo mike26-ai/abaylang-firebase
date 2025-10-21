@@ -1,9 +1,10 @@
 // File: src/app/api/availability/unblock/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, initAdmin } from '@/lib/firebase-admin';
-import { getAuth } from 'firebase-admin/auth';
+import { adminAuth, initAdmin } from '@/lib/firebase-admin';
+import type { DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
-import { ADMIN_EMAIL } from '@/config/site';
+import { _unblockSlot } from '../service';
+
 
 // Initialize Firebase Admin SDK
 try {
@@ -11,7 +12,6 @@ try {
 } catch (error) {
   console.error("CRITICAL: Failed to initialize Firebase Admin SDK in unblock/route.ts", error);
 }
-const auth = getAuth();
 
 // Zod schema for input validation
 const UnblockTimeSchema = z.object({
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'No authentication token provided.' }, { status: 401 });
     }
-    const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken: DecodedIdToken = await adminAuth.verifyIdToken(idToken);
 
     // 2. Validate Input Body
     const body = await request.json();
@@ -39,29 +39,8 @@ export async function POST(request: NextRequest) {
     }
     const { timeOffId } = validationResult.data;
 
-    // 3. Perform Firestore transaction
-    const result = await adminDb.runTransaction(async (transaction) => {
-        const timeOffDocRef = adminDb.collection('timeOff').doc(timeOffId);
-        const docSnap = await transaction.get(timeOffDocRef);
-
-        if (!docSnap.exists) {
-            const error = new Error('not_found');
-            throw error;
-        }
-
-        const timeOffData = docSnap.data();
-        const isAdmin = decodedToken.admin === true || decodedToken.email === ADMIN_EMAIL;
-        const isOwner = timeOffData?.blockedById === decodedToken.uid;
-
-        // Authorization check: Must be admin or the user who created the block
-        if (!isAdmin && !isOwner) {
-            const error = new Error('unauthorized');
-            throw error;
-        }
-        
-        transaction.delete(timeOffDocRef);
-        return { message: 'Time off block successfully deleted.' };
-    });
+    // 3. Perform Firestore transaction via the service function
+    const result = await _unblockSlot(timeOffId, decodedToken);
 
     // 4. Return success response
     return NextResponse.json({ success: true, data: result }, { status: 200 });

@@ -1,4 +1,3 @@
-
 // File: src/app/api/availability/service.ts
 /**
  * This file contains the core, testable business logic for the availability endpoints.
@@ -7,7 +6,6 @@ import { adminDb, Timestamp, initAdmin } from '@/lib/firebase-admin';
 import { startOfDay, endOfDay, parse } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { ADMIN_EMAIL } from '@/config/site';
-import type { firestore as adminFirestore } from 'firebase-admin';
 
 // Ensure Firebase Admin is initialized
 try {
@@ -44,9 +42,9 @@ export async function _getAvailability(tutorId: string, date: string) {
       bookings = bookingsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        startTime: (doc.data().startTime as adminFirestore.Timestamp)?.toDate().toISOString(),
-        endTime: (doc.data().endTime as adminFirestore.Timestamp)?.toDate().toISOString(),
-        createdAt: (doc.data().createdAt as adminFirestore.Timestamp)?.toDate().toISOString(),
+        startTime: doc.data().startTime?.toDate().toISOString(),
+        endTime: doc.data().endTime?.toDate().toISOString(),
+        createdAt: doc.data().createdAt?.toDate().toISOString(),
       }));
     } catch (error: any) {
       console.error("API Service Error: Failed to fetch bookings:", error.message);
@@ -64,7 +62,7 @@ export async function _getAvailability(tutorId: string, date: string) {
       timeOff = timeOffSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-          createdAt: (doc.data().createdAt as adminFirestore.Timestamp)?.toDate().toISOString(),
+          createdAt: doc.data().createdAt?.toDate().toISOString(),
       }));
     } catch (error: any) {
         console.error("API Service Error: Failed to fetch timeOff blocks:", error.message);
@@ -88,22 +86,16 @@ export async function _blockSlot(payload: { tutorId: string; startISO: string; e
   return await adminDb.runTransaction(async (transaction) => {
     const bookingsRef = adminDb.collection('bookings');
     
-    // Simplified conflict query
-    const potentialConflictsQuery = bookingsRef
+    // Check for conflicting confirmed bookings
+    const bookingConflictQuery = bookingsRef
         .where('tutorId', '==', tutorId)
         .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-        .where('startTime', '<', Timestamp.fromDate(endTime));
-    
-    const potentialConflictsSnapshot = await transaction.get(potentialConflictsQuery);
+        .where('startTime', '<', Timestamp.fromDate(endTime))
+        .where('endTime', '>', Timestamp.fromDate(startTime));
+        
+    const conflictingBookingsSnapshot = await transaction.get(bookingConflictQuery);
 
-    const conflictingBooking = potentialConflictsSnapshot.docs.find(doc => {
-        const booking = doc.data();
-        if (!booking.endTime) return false;
-        const bookingEnd = (booking.endTime as adminFirestore.Timestamp).toDate();
-        return bookingEnd > startTime;
-    });
-
-    if (conflictingBooking) {
+    if (!conflictingBookingsSnapshot.empty) {
         throw new Error('slot_already_booked');
     }
 
@@ -112,7 +104,7 @@ export async function _blockSlot(payload: { tutorId: string; startISO: string; e
         tutorId,
         startISO,
         endISO,
-        note: note || '',
+        note: note || 'Admin Block',
         blockedById: decodedToken.uid,
         blockedByEmail: decodedToken.email,
         createdAt: Timestamp.now(),
@@ -140,9 +132,8 @@ export async function _unblockSlot(timeOffId: string, decodedToken: DecodedIdTok
 
     const timeOffData = docSnap.data();
     const isAdmin = decodedToken.admin === true || decodedToken.email === ADMIN_EMAIL;
-    const isOwner = timeOffData?.blockedById === decodedToken.uid;
-
-    if (!isAdmin && !isOwner) {
+    // An admin should be able to delete any block, not just their own
+    if (!isAdmin) {
         throw new Error('unauthorized');
     }
     

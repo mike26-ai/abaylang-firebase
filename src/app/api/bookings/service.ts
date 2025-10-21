@@ -4,10 +4,26 @@
  */
 import { getFirestore, Timestamp, FieldValue, Transaction } from 'firebase-admin/firestore';
 import { addMinutes, parse } from 'date-fns';
+import type { DecodedIdToken } from 'firebase-admin/auth';
 
 const db = getFirestore();
 
-export async function _createBooking(bookingData: any, decodedToken: any) {
+interface BookingPayload {
+  date: string;
+  time: string;
+  duration: number;
+  lessonType: string;
+  price: number;
+  tutorId: string;
+  isFreeTrial: boolean;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  paymentNote?: string;
+}
+
+
+export async function _createBooking(bookingData: BookingPayload, decodedToken: DecodedIdToken) {
     // Security check: Ensure the user ID from the token matches the payload
     if (decodedToken.uid !== bookingData.userId) {
         const error = new Error('unauthorized');
@@ -33,7 +49,7 @@ export async function _createBooking(bookingData: any, decodedToken: any) {
             // Check for conflicting confirmed bookings
             const bookingConflictQuery = bookingsRef
                 .where('tutorId', '==', bookingData.tutorId)
-                .where('status', 'in', ['confirmed', 'awaiting-payment'])
+                .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
                 .where('startTime', '<', endTime)
                 .where('endTime', '>', startTime);
             const conflictingBookings = await transaction.get(bookingConflictQuery);

@@ -1,13 +1,10 @@
 // File: src/app/api/availability/block/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, Timestamp, initAdmin } from '@/lib/firebase-admin';
-import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
+import { adminAuth, initAdmin } from '@/lib/firebase-admin';
+import type { DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { ADMIN_EMAIL } from '@/config/site';
-import { parseISO } from 'date-fns';
-
-// Import the specific Timestamp type from the admin SDK
-import type { firestore as adminFirestore } from 'firebase-admin';
+import { _blockSlot } from '../service';
 
 // Initialize Firebase Admin SDK
 try {
@@ -15,7 +12,6 @@ try {
 } catch (error) {
   console.error("CRITICAL: Failed to initialize Firebase Admin SDK in block/route.ts", error);
 }
-const auth = getAuth();
 
 // Zod schema for input validation
 const BlockTimeSchema = z.object({
@@ -30,8 +26,7 @@ const BlockTimeSchema = z.object({
 
 /**
  * POST handler to block a time slot for a tutor.
- * Uses a Firestore transaction to ensure atomicity and prevent race conditions.
- * The conflict check query is simplified to avoid needing a composite index.
+ * This route handler is now a thin wrapper around the testable business logic.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'No authentication token provided.' }, { status: 401 });
     }
-    const decodedToken: DecodedIdToken = await auth.verifyIdToken(idToken);
+    const decodedToken: DecodedIdToken = await adminAuth.verifyIdToken(idToken);
     
     // 2. Verify Authorization (Admin Check)
     const isAdmin = decodedToken.email === ADMIN_EMAIL || decodedToken.admin === true;
@@ -55,60 +50,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid input', details: validationResult.error.flatten().fieldErrors }, { status: 400 });
     }
     
-    // 4. Perform Firestore transaction
-    const { tutorId, startISO, endISO, note } = validationResult.data;
-    const startTime = parseISO(startISO);
-    const endTime = parseISO(endISO);
-
-
-    const timeOffDocData = await adminDb.runTransaction(async (transaction) => {
-        const bookingsRef = adminDb.collection('bookings');
-        
-        // --- FIX: SIMPLIFIED QUERY ---
-        // Fetch bookings for the tutor that *could* conflict and filter in memory.
-        // This query avoids needing a composite index because it only has one range filter on `startTime`.
-        const potentialConflictsQuery = bookingsRef
-            .where('tutorId', '==', tutorId)
-            .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-            .where('startTime', '<', Timestamp.fromDate(endTime)); // Get all bookings starting before the block ends
-      
-        const potentialConflictsSnapshot = await transaction.get(potentialConflictsQuery);
-
-        // Now, filter in memory to find true overlaps
-        const conflictingBooking = potentialConflictsSnapshot.docs.find(doc => {
-            const booking = doc.data();
-            // Ensure endTime exists before creating a Date from it.
-            if (!booking.endTime) return false;
-            
-            const bookingEnd = (booking.endTime as adminFirestore.Timestamp).toDate();
-            // A true conflict exists if the booking's end time is after our block's start time.
-            return bookingEnd > startTime;
-        });
-
-        if (conflictingBooking) {
-            console.warn("Conflict found:", {
-                blockStart: startTime,
-                blockEnd: endTime,
-                bookingStart: (conflictingBooking.data().startTime as adminFirestore.Timestamp).toDate(),
-                bookingEnd: (conflictingBooking.data().endTime as adminFirestore.Timestamp).toDate(),
-            })
-            throw new Error('slot_already_booked');
-        }
-
-        const newTimeOffRef = adminDb.collection('timeOff').doc();
-        const timeOffDoc = {
-            tutorId,
-            startISO,
-            endISO,
-            note: note || '',
-            blockedById: decodedToken.uid,
-            blockedByEmail: decodedToken.email,
-            createdAt: Timestamp.now(),
-        };
-      
-        transaction.set(newTimeOffRef, timeOffDoc);
-        return { id: newTimeOffRef.id, ...timeOffDoc };
-    });
+    // 4. Perform Firestore transaction by calling the service
+    const timeOffDocData = await _blockSlot({ ...validationResult.data, decodedToken });
 
     // 5. Return success response
     return NextResponse.json({ success: true, data: timeOffDocData }, { status: 201 });
