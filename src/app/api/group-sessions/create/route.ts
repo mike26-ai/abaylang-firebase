@@ -55,19 +55,23 @@ export async function POST(request: NextRequest) {
       const startTimestamp = Timestamp.fromDate(startDateTime);
       const endTimestamp = Timestamp.fromDate(endDateTime);
 
+      // --- DEEP ANALYSIS FIX: Replace single complex query with multiple simple queries ---
       const bookingsRef = adminDb.collection('bookings');
-      // Check for conflicts with private lessons
-      // THE FIX: Added .where('startTime', '!=', null) to exclude package bookings
-      const bookingConflictQuery = bookingsRef
+      const statusesToCheck: ("confirmed" | "awaiting-payment" | "payment-pending-confirmation")[] = ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'];
+      
+      for (const status of statusesToCheck) {
+        const bookingConflictQuery = bookingsRef
           .where('tutorId', '==', tutorId)
-          .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-          .where('startTime', '!=', null)
+          .where('status', '==', status)
           .where('startTime', '<', endTimestamp)
           .where('endTime', '>', startTimestamp);
-      const conflictingBookings = await transaction.get(bookingConflictQuery);
-      if (!conflictingBookings.empty) {
+        
+        const conflictingBookings = await transaction.get(bookingConflictQuery);
+        if (!conflictingBookings.empty) {
           throw new Error('A private lesson is already booked in this time slot.');
+        }
       }
+      // --- END OF FIX ---
 
       // Check for conflicts with other group sessions
       const groupSessionsRef = adminDb.collection('groupSessions');
