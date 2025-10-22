@@ -7,13 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, PlusCircle, X, Users, CalendarDays, AlertTriangle } from 'lucide-react';
+import { Calendar as CalendarIcon, PlusCircle, X, Users, CalendarDays, AlertTriangle, Edit } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format, isBefore, differenceInHours } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
-import { createGroupSession, getGroupSessions, cancelGroupSession } from '@/services/groupSessionService';
+import { createGroupSession, getGroupSessions, cancelGroupSession, updateGroupSession } from '@/services/groupSessionService';
 import type { GroupSession } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '../ui/badge';
@@ -27,8 +27,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Timestamp } from 'firebase/firestore';
+import { Textarea } from '../ui/textarea';
 
 const groupLessonTypes = [
     { value: 'quick-group-conversation', label: 'Quick Group Conversation', duration: 30, price: 7, description: 'A 30-minute session for practicing conversation with fellow learners.' },
@@ -48,6 +50,12 @@ export function GroupSessionManager() {
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [sessionToCancel, setSessionToCancel] = useState<GroupSession | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  // New state for editing
+  const [sessionToEdit, setSessionToEdit] = useState<GroupSession | null>(null);
+  const [editFormData, setEditFormData] = useState({ title: '', description: '', zoomLink: '', minStudents: 2, maxStudents: 6 });
+  const [isUpdating, setIsUpdating] = useState(false);
+
 
   const { toast } = useToast();
 
@@ -120,6 +128,37 @@ export function GroupSessionManager() {
         setIsCancelling(false);
     }
   };
+
+  const handleOpenEditDialog = (session: GroupSession) => {
+    setSessionToEdit(session);
+    setEditFormData({
+        title: session.title,
+        description: session.description,
+        zoomLink: session.zoomLink || '',
+        minStudents: session.minStudents || 2,
+        maxStudents: session.maxStudents
+    });
+  };
+
+  const handleUpdateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sessionToEdit) return;
+    setIsUpdating(true);
+    try {
+        await updateGroupSession({
+            sessionId: sessionToEdit.id,
+            ...editFormData,
+        });
+        toast({ title: 'Session Updated', description: 'The session details have been saved.' });
+        setSessionToEdit(null);
+        fetchSessions();
+    } catch (error: any) {
+        toast({ title: 'Update Failed', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsUpdating(false);
+    }
+  };
+
 
   const isRegistrationClosed = (session: GroupSession) => {
       const registrationDeadline = new Date((session.startTime as unknown as Timestamp).toDate().getTime() - 3 * 60 * 60 * 1000);
@@ -241,16 +280,19 @@ export function GroupSessionManager() {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         <Badge variant="outline" className="flex items-center gap-2">
                                             <Users className="w-4 h-4" />
                                             {session.participantCount || 0} / {session.maxStudents} (min {session.minStudents})
                                         </Badge>
                                         <Badge variant={session.status === 'scheduled' ? 'default' : 'destructive'}>{session.status}</Badge>
                                         
-                                        {deadlinePassed && minimumNotMet && session.status === 'scheduled' ? (
-                                           <Button size="sm" variant="outline">Proceed</Button>
-                                        ) : null}
+                                        {session.status === 'scheduled' && (
+                                            <Button size="sm" variant="outline" onClick={() => handleOpenEditDialog(session)}>
+                                                <Edit className="w-4 h-4 mr-1" />
+                                                Edit
+                                            </Button>
+                                        )}
 
                                         <Button size="sm" variant="destructive" onClick={() => setSessionToCancel(session)} disabled={session.status === 'cancelled' || session.status === 'completed'}>
                                             <X className="w-4 h-4 mr-1" />
@@ -285,8 +327,52 @@ export function GroupSessionManager() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        {/* Edit Session Dialog */}
+        <Dialog open={!!sessionToEdit} onOpenChange={() => setSessionToEdit(null)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Group Session</DialogTitle>
+                    <DialogDescription>Modify the details for this session.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleUpdateSession} className="space-y-4 py-4">
+                    <div className="p-3 bg-muted rounded-md border text-sm">
+                        <p className="font-semibold">Date & Time (Read-only)</p>
+                        <p className="text-muted-foreground">{sessionToEdit ? format((sessionToEdit.startTime as unknown as Timestamp).toDate(), 'PPP, p') : ''}</p>
+                        <p className="text-xs text-muted-foreground mt-1">To change the time, please cancel and create a new session to avoid conflicts with existing student bookings.</p>
+                    </div>
+                    <div className="space-y-1">
+                        <Label htmlFor="edit-title">Session Title</Label>
+                        <Input id="edit-title" value={editFormData.title} onChange={(e) => setEditFormData(prev => ({...prev, title: e.target.value}))} />
+                    </div>
+                    <div className="space-y-1">
+                        <Label htmlFor="edit-description">Description</Label>
+                        <Textarea id="edit-description" value={editFormData.description} onChange={(e) => setEditFormData(prev => ({...prev, description: e.target.value}))} />
+                    </div>
+                     <div className="space-y-1">
+                        <Label htmlFor="edit-zoomLink">Zoom Link</Label>
+                        <Input id="edit-zoomLink" value={editFormData.zoomLink} onChange={(e) => setEditFormData(prev => ({...prev, zoomLink: e.target.value}))} placeholder="https://zoom.us/j/..." />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <Label htmlFor="edit-minStudents">Min Students</Label>
+                            <Input id="edit-minStudents" type="number" value={editFormData.minStudents} onChange={(e) => setEditFormData(prev => ({...prev, minStudents: Number(e.target.value)}))} min="1" />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="edit-maxStudents">Max Students</Label>
+                            <Input id="edit-maxStudents" type="number" value={editFormData.maxStudents} onChange={(e) => setEditFormData(prev => ({...prev, maxStudents: Number(e.target.value)}))} min={sessionToEdit?.participantCount || editFormData.minStudents} />
+                        </div>
+                    </div>
+                     <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setSessionToEdit(null)}>Cancel</Button>
+                        <Button type="submit" disabled={isUpdating}>
+                            {isUpdating && <Spinner size="sm" className="mr-2" />}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
-
-    

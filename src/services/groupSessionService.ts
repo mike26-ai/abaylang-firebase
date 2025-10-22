@@ -96,3 +96,38 @@ export async function cancelGroupSession(sessionId: string): Promise<{ message: 
   }
   return result;
 }
+
+interface UpdateGroupSessionPayload {
+    sessionId: string;
+    title: string;
+    description: string;
+    zoomLink?: string;
+    minStudents: number;
+    maxStudents: number;
+}
+
+/**
+ * Updates the details of an existing group session. Admin only.
+ */
+export async function updateGroupSession(payload: UpdateGroupSessionPayload): Promise<{ success: boolean; message: string }> {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error("Authentication required.");
+    }
+    const idToken = await user.getIdToken();
+
+    const response = await fetch(`${API_BASE_URL}/group-sessions/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update group session.');
+    }
+    return result;
+}
