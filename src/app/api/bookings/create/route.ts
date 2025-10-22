@@ -1,4 +1,5 @@
 
+
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, initAdmin } from '@/lib/firebase-admin';
@@ -18,12 +19,11 @@ const CreateBookingSchema = z.object({
   price: z.number().min(0),
   tutorId: z.string().min(1),
   isFreeTrial: z.boolean(),
-  // User data will be taken from the verified token, not the payload, for security
-  // but we keep them here to validate the incoming shape before ignoring them.
   userId: z.string().min(1), 
   userName: z.string().optional(),
   userEmail: z.string().email().optional(),
   paymentNote: z.string().optional(),
+  groupSessionId: z.string().optional(),
 });
 
 /**
@@ -60,6 +60,12 @@ export async function POST(request: NextRequest) {
     }
     if (error.message === 'tutor_unavailable') {
         return NextResponse.json({ success: false, message: 'The tutor is unavailable at this time due to a scheduled break.' }, { status: 409 });
+    }
+     if (error.message === 'group_session_full') {
+        return NextResponse.json({ success: false, message: 'This group session is now full.' }, { status: 409 });
+    }
+    if (error.message === 'group_session_registration_closed') {
+        return NextResponse.json({ success: false, message: 'Registration for this group session has closed.' }, { status: 409 });
     }
     if (error.message === 'unauthorized') {
         return NextResponse.json({ success: false, message: 'Unauthorized action.' }, { status: 403 });

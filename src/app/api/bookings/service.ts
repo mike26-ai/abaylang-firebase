@@ -1,10 +1,11 @@
 
+
 // File: src/app/api/bookings/service.ts
 /**
  * This file contains the core, testable business logic for the bookings endpoints.
  */
 import { getFirestore, Timestamp, FieldValue, Transaction } from 'firebase-admin/firestore';
-import { addMinutes, parse } from 'date-fns';
+import { addMinutes, parse, differenceInHours } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 
 const db = getFirestore();
@@ -26,7 +27,6 @@ interface BookingPayload {
 
 
 export async function _createBooking(bookingData: BookingPayload, decodedToken: DecodedIdToken) {
-    // Security check: Ensure the user ID from the token matches the payload
     if (decodedToken.uid !== bookingData.userId) {
         const error = new Error('unauthorized');
         (error as any).status = 403;
@@ -38,19 +38,45 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
     let endTime: Timestamp | null = null;
   
     if (isSpecificTimeBooking) {
-        // Use the duration from the payload for accurate end time calculation
         const startDateTime = parse(`${bookingData.date} ${bookingData.time}`, 'yyyy-MM-dd HH:mm', new Date());
         startTime = Timestamp.fromDate(startDateTime);
         endTime = Timestamp.fromDate(addMinutes(startDateTime, bookingData.duration));
     }
 
     return await db.runTransaction(async (transaction: Transaction) => {
-        if (isSpecificTimeBooking && startTime && endTime) {
+        // If it is a group session booking, perform group-specific checks
+        if (bookingData.groupSessionId) {
+            const groupSessionRef = db.collection('groupSessions').doc(bookingData.groupSessionId);
+            const groupSessionDoc = await transaction.get(groupSessionRef);
+            if (!groupSessionDoc.exists) {
+                throw new Error('Group session not found.');
+            }
+            const groupSessionData = groupSessionDoc.data()!;
+
+            // Check if registration is closed (e.g., 3 hours before start)
+            const registrationDeadline = new Date(groupSessionData.startTime.toDate().getTime() - 3 * 60 * 60 * 1000);
+            if (new Date() > registrationDeadline) {
+                throw new Error('group_session_registration_closed');
+            }
+
+            // Check if the session is full
+            if (groupSessionData.participantCount >= groupSessionData.maxStudents) {
+                throw new Error('group_session_full');
+            }
+            
+            // Increment participant count
+            transaction.update(groupSessionRef, { 
+                participantCount: FieldValue.increment(1),
+                participantIds: FieldValue.arrayUnion(bookingData.userId)
+            });
+
+        } else if (isSpecificTimeBooking && startTime && endTime) {
+            // This is a private lesson, check for conflicts
             const bookingsRef = db.collection('bookings');
             const timeOffRef = db.collection('timeOff');
             const groupSessionsRef = db.collection('groupSessions');
 
-            // Check for conflicting confirmed bookings
+            // Conflict checks for private lessons
             const bookingConflictQuery = bookingsRef
                 .where('tutorId', '==', bookingData.tutorId)
                 .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
@@ -61,8 +87,7 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
                 throw new Error('slot_already_booked');
             }
 
-            // Check for conflicting group sessions
-             const groupSessionConflictQuery = groupSessionsRef
+            const groupSessionConflictQuery = groupSessionsRef
                 .where('tutorId', '==', bookingData.tutorId)
                 .where('status', '==', 'scheduled')
                 .where('startTime', '<', endTime)
@@ -72,8 +97,6 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
                  throw new Error('slot_already_booked');
             }
 
-
-            // Check for conflicting time-off blocks
             const timeOffConflictQuery = timeOffRef
                 .where('tutorId', '==', bookingData.tutorId)
                 .where('startISO', '<', endTime.toDate().toISOString())
@@ -97,5 +120,3 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
         return { bookingId: newBookingRef.id };
     });
 }
-
-    

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarIcon, PlusCircle, X, Users, CalendarDays, AlertTriangle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { format, isBefore } from 'date-fns';
+import { format, isBefore, differenceInHours } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
@@ -55,7 +56,6 @@ export function GroupSessionManager() {
     setIsLoadingSessions(true);
     try {
         const fetchedSessions = await getGroupSessions();
-        // Sort by start time, most recent first
         const sortedSessions = fetchedSessions.sort((a, b) => {
           const timeA = (a.startTime as unknown as Timestamp).toDate().getTime();
           const timeB = (b.startTime as unknown as Timestamp).toDate().getTime();
@@ -91,12 +91,11 @@ export function GroupSessionManager() {
             startTime: startDateTime,
             minStudents,
             maxStudents,
-            tutorId: 'MahderNegashMamo', // Hardcoded for now
+            tutorId: 'MahderNegashMamo',
             tutorName: 'Mahder N. Mamo',
         });
 
       toast({ title: 'Success', description: 'Group session has been created.' });
-      // Reset form
       setSelectedType('');
       setDate(undefined);
       setTime('');
@@ -123,10 +122,11 @@ export function GroupSessionManager() {
     }
   };
 
-  const isDeadlinePassed = (session: GroupSession) => {
-    const deadline = new Date((session.startTime as unknown as Timestamp).toDate().getTime() - 3 * 60 * 60 * 1000);
-    return new Date() > deadline;
+  const isRegistrationClosed = (session: GroupSession) => {
+      const registrationDeadline = new Date((session.startTime as unknown as Timestamp).toDate().getTime() - 3 * 60 * 60 * 1000);
+      return new Date() > registrationDeadline;
   };
+
 
   return (
     <div className="grid md:grid-cols-3 gap-8">
@@ -231,10 +231,10 @@ export function GroupSessionManager() {
                                             <CalendarDays className="w-4 h-4"/>
                                             {format((session.startTime as unknown as Timestamp).toDate(), 'PPP, p')}
                                         </p>
-                                        {isDeadlinePassed(session) && session.status === 'scheduled' && session.participantCount < session.minStudents && (
+                                        {isRegistrationClosed(session) && session.status === 'scheduled' && session.participantCount < session.minStudents && (
                                             <div className="mt-2 text-xs flex items-center gap-1 text-destructive">
                                                 <AlertTriangle className="w-4 h-4"/>
-                                                Minimum not met. Please cancel or proceed.
+                                                Minimum not met. Decide whether to cancel or proceed.
                                             </div>
                                         )}
                                     </div>
