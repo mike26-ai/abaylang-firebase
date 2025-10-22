@@ -9,6 +9,7 @@ const API_BASE_URL = '/api';
 interface CreateGroupSessionPayload {
   sessionType: string;
   startTime: Date;
+  minStudents: number;
   maxStudents: number;
   tutorId: string;
   tutorName: string;
@@ -95,5 +96,3 @@ export async function cancelGroupSession(sessionId: string): Promise<{ message: 
   }
   return result;
 }
-
-    

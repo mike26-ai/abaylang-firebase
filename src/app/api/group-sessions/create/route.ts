@@ -1,3 +1,4 @@
+
 // File: src/app/api/group-sessions/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, initAdmin, Timestamp } from '@/lib/firebase-admin';
@@ -14,9 +15,13 @@ const groupLessonTypes = [
 const CreateGroupSessionSchema = z.object({
   sessionType: z.string().min(1, "Session type is required."),
   startTime: z.string().datetime("Invalid start time format."),
+  minStudents: z.number().int().min(1, "Minimum students must be at least 1."),
   maxStudents: z.number().int().min(2, "Maximum students must be at least 2."),
   tutorId: z.string().min(1),
   tutorName: z.string().min(1),
+}).refine(data => data.maxStudents >= data.minStudents, {
+    message: "Maximum students must be greater than or equal to minimum students.",
+    path: ["maxStudents"],
 });
 
 export async function POST(request: NextRequest) {
@@ -38,7 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: validation.error.flatten().fieldErrors }, { status: 400 });
     }
     
-    const { startTime, maxStudents, tutorId, tutorName, sessionType } = validation.data;
+    const { startTime, minStudents, maxStudents, tutorId, tutorName, sessionType } = validation.data;
 
     const sessionTypeDetails = groupLessonTypes.find(t => t.value === sessionType);
     if (!sessionTypeDetails) {
@@ -55,25 +60,18 @@ export async function POST(request: NextRequest) {
       const startTimestamp = Timestamp.fromDate(startDateTime);
       const endTimestamp = Timestamp.fromDate(endDateTime);
 
-      // --- DEEP ANALYSIS FIX: Replace single complex query with multiple simple queries ---
       const bookingsRef = adminDb.collection('bookings');
-      const statusesToCheck: ("confirmed" | "awaiting-payment" | "payment-pending-confirmation")[] = ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'];
-      
-      for (const status of statusesToCheck) {
-        const bookingConflictQuery = bookingsRef
+      const bookingConflictQuery = bookingsRef
           .where('tutorId', '==', tutorId)
-          .where('status', '==', status)
+          .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
           .where('startTime', '<', endTimestamp)
           .where('endTime', '>', startTimestamp);
         
-        const conflictingBookings = await transaction.get(bookingConflictQuery);
-        if (!conflictingBookings.empty) {
-          throw new Error('A private lesson is already booked in this time slot.');
-        }
+      const conflictingBookings = await transaction.get(bookingConflictQuery);
+      if (!conflictingBookings.empty) {
+        throw new Error('A private lesson is already booked in this time slot.');
       }
-      // --- END OF FIX ---
-
-      // Check for conflicts with other group sessions
+      
       const groupSessionsRef = adminDb.collection('groupSessions');
       const groupSessionConflictQuery = groupSessionsRef
           .where('tutorId', '==', tutorId)
@@ -85,7 +83,6 @@ export async function POST(request: NextRequest) {
           throw new Error('Another group session is already scheduled in this time slot.');
       }
 
-      // Check for conflicts with time-off blocks
       const timeOffRef = adminDb.collection('timeOff');
       const timeOffConflictQuery = timeOffRef
           .where('tutorId', '==', tutorId)
@@ -102,6 +99,7 @@ export async function POST(request: NextRequest) {
         description: sessionTypeDetails.description,
         price: sessionTypeDetails.price,
         duration: sessionTypeDetails.duration,
+        minStudents,
         maxStudents,
         tutorId,
         tutorName,

@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from "firebase/firestore";
 
 export interface Booking {
@@ -50,6 +49,7 @@ export interface GroupSession {
   price: number;
   tutorId: string;
   tutorName: string;
+  minStudents: number; // NEW
   maxStudents: number;
   participantCount: number;
   participantIds: string[];

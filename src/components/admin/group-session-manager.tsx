@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, PlusCircle, X, Users, CalendarDays } from 'lucide-react';
+import { Calendar as CalendarIcon, PlusCircle, X, Users, CalendarDays, AlertTriangle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, isBefore } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
@@ -40,6 +40,7 @@ export function GroupSessionManager() {
   const [selectedType, setSelectedType] = useState('');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState('');
+  const [minStudents, setMinStudents] = useState(3);
   const [maxStudents, setMaxStudents] = useState(6);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -88,6 +89,7 @@ export function GroupSessionManager() {
         await createGroupSession({
             sessionType: selectedType,
             startTime: startDateTime,
+            minStudents,
             maxStudents,
             tutorId: 'MahderNegashMamo', // Hardcoded for now
             tutorName: 'Mahder N. Mamo',
@@ -119,6 +121,11 @@ export function GroupSessionManager() {
     } finally {
         setIsCancelling(false);
     }
+  };
+
+  const isDeadlinePassed = (session: GroupSession) => {
+    const deadline = new Date((session.startTime as unknown as Timestamp).toDate().getTime() - 3 * 60 * 60 * 1000);
+    return new Date() > deadline;
   };
 
   return (
@@ -181,18 +188,14 @@ export function GroupSessionManager() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <Label htmlFor="duration">Duration (min)</Label>
-                  <Input id="duration" type="number" value={groupLessonTypes.find(t => t.value === selectedType)?.duration || ''} readOnly disabled />
+                  <Label htmlFor="minStudents">Min Students</Label>
+                  <Input id="minStudents" type="number" value={minStudents} onChange={(e) => setMinStudents(Number(e.target.value))} required min="1" />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="price">Price ($)</Label>
-                  <Input id="price" type="number" value={groupLessonTypes.find(t => t.value === selectedType)?.price || ''} readOnly disabled />
+                  <Label htmlFor="maxStudents">Max Students</Label>
+                  <Input id="maxStudents" type="number" value={maxStudents} onChange={(e) => setMaxStudents(Number(e.target.value))} required min={minStudents} />
                 </div>
               </div>
-               <div className="space-y-1">
-                  <Label htmlFor="maxStudents">Max Students</Label>
-                  <Input id="maxStudents" type="number" value={maxStudents} onChange={(e) => setMaxStudents(Number(e.target.value))} required />
-                </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting && <Spinner size="sm" className="mr-2" />}
                 Create Session
@@ -219,7 +222,7 @@ export function GroupSessionManager() {
              ) : (
                 <div className="space-y-4">
                     {sessions.map(session => (
-                        <Card key={session.id} className="shadow-sm">
+                        <Card key={session.id} className={cn("shadow-sm", session.status === 'cancelled' && 'bg-muted/50')}>
                             <CardContent className="p-4">
                                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                                     <div>
@@ -228,11 +231,17 @@ export function GroupSessionManager() {
                                             <CalendarDays className="w-4 h-4"/>
                                             {format((session.startTime as unknown as Timestamp).toDate(), 'PPP, p')}
                                         </p>
+                                        {isDeadlinePassed(session) && session.status === 'scheduled' && session.participantCount < session.minStudents && (
+                                            <div className="mt-2 text-xs flex items-center gap-1 text-destructive">
+                                                <AlertTriangle className="w-4 h-4"/>
+                                                Minimum not met. Please cancel or proceed.
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <Badge variant="outline" className="flex items-center gap-2">
                                             <Users className="w-4 h-4" />
-                                            {session.participantCount || 0} / {session.maxStudents}
+                                            {session.participantCount || 0} / {session.maxStudents} (min {session.minStudents})
                                         </Badge>
                                         <Badge variant={session.status === 'scheduled' ? 'default' : 'destructive'}>{session.status}</Badge>
                                         <Button size="sm" variant="destructive" onClick={() => setSessionToCancel(session)} disabled={session.status === 'cancelled' || session.status === 'completed'}>
