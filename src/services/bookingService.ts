@@ -1,3 +1,4 @@
+
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
 
@@ -16,6 +17,7 @@ interface CreateBookingPayload {
     userName: string;
     userEmail: string;
     paymentNote?: string;
+    groupSessionId?: string; // Add this line
 }
 
 /**

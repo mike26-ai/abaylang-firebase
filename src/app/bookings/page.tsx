@@ -135,11 +135,7 @@ export default function BookLessonPage() {
     setIsFetchingGroupSessions(true);
     try {
         const sessions = await getGroupSessions();
-        const upcomingSessions = sessions.filter(s => {
-            const startTime = (s.startTime as unknown as Timestamp).toDate();
-            return startTime > new Date();
-        });
-        setAllGroupSessions(upcomingSessions);
+        setAllGroupSessions(sessions);
     } catch(error: any) {
         toast({ title: "Error", description: error.message || "Could not fetch group sessions.", variant: "destructive" });
     } finally {
@@ -156,7 +152,7 @@ export default function BookLessonPage() {
       setDailyTimeOff([]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, isIndividualLesson, toast]);
+  }, [selectedDate, isIndividualLesson]);
   
   useEffect(() => {
     if(isGroupLesson) {
@@ -175,10 +171,10 @@ export default function BookLessonPage() {
   };
 
   const displayTimeSlots = useMemo(() => {
-    if (!selectedDate || !isIndividualLesson) return [];
+    if (!selectedDate || !isIndividualLesson || !selectedLessonDetails) return [];
     
     const slots: TimeSlotProps[] = [];
-    const userDurationMinutes = selectedLessonDetails.unitDuration || selectedLessonDetails.duration as number;
+    const userDurationMinutes = selectedLessonDetails.duration as number; // Individual lessons always have number duration
     const slotDate = startOfDay(selectedDate);
     const now = new Date();
     const isToday = isEqual(slotDate, startOfDay(now));
@@ -197,8 +193,8 @@ export default function BookLessonPage() {
 
         for (const booking of dailyBookedSlots) {
             if (booking.startTime && booking.endTime) {
-                const bookingStart = new Date(booking.startTime as any);
-                const bookingEnd = new Date(booking.endTime as any);
+                const bookingStart = (booking.startTime as any).toDate();
+                const bookingEnd = (booking.endTime as any).toDate();
                 if (potentialStartTime < bookingEnd && potentialEndTime > bookingStart) {
                     currentStatus = 'booked';
                     bookingMeta = booking;
@@ -239,8 +235,17 @@ export default function BookLessonPage() {
 
   const filteredGroupSessions = useMemo(() => {
     if (!isGroupLesson || !selectedLessonDetails) return [];
-    return allGroupSessions.filter(s => s.duration === selectedLessonDetails.duration);
-  }, [allGroupSessions, isGroupLesson, selectedLessonDetails]);
+    const relevantSessions = allGroupSessions.filter(s => s.duration === selectedLessonDetails.duration);
+    if (!selectedDate) {
+        return relevantSessions; // Return all if no date is selected
+    }
+    // Filter by selected date
+    const startOfSelected = startOfDay(selectedDate);
+    return relevantSessions.filter(s => {
+        const sessionDate = (s.startTime as unknown as Timestamp).toDate();
+        return isEqual(startOfDay(sessionDate), startOfSelected);
+    });
+  }, [allGroupSessions, isGroupLesson, selectedLessonDetails, selectedDate]);
 
 
   const handleBooking = async () => {
@@ -282,6 +287,8 @@ export default function BookLessonPage() {
           
       let finalDate = 'N/A_PACKAGE';
       let finalTime = 'N/A_PACKAGE';
+      let bookingIdForPassthrough = '';
+
       if (isIndividualLesson && selectedDate) {
         finalDate = format(selectedDate, 'yyyy-MM-dd');
         finalTime = selectedTime || 'N/A';
@@ -294,32 +301,30 @@ export default function BookLessonPage() {
         }
       }
 
-      // Step 1: Create the booking document in Firestore first via the secure API route.
-      const bookingPayload = {
-        date: finalDate,
-        time: finalTime,
-        duration: unitDuration,
-        lessonType: selectedLessonDetails.label,
-        price: selectedLessonDetails.price,
-        tutorId: "MahderNegashMamo",
-        userId: user.uid,
-        userName: user.displayName || "User",
-        userEmail: user.email || "No Email",
-        ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
-        isFreeTrial,
-        ...(isGroupLesson && { groupSessionId: selectedGroupSession }),
-      };
+      // For non-package purchases, create the booking document first to get an ID.
+      if (!isPackagePurchase) {
+          const bookingPayload = {
+            date: finalDate,
+            time: finalTime,
+            duration: unitDuration,
+            lessonType: selectedLessonDetails.label,
+            price: selectedLessonDetails.price,
+            tutorId: "MahderNegashMamo",
+            userId: user.uid,
+            userName: user.displayName || "User",
+            userEmail: user.email || "No Email",
+            ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
+            isFreeTrial,
+            ...(isGroupLesson && { groupSessionId: selectedGroupSession }),
+          };
+          const { bookingId } = await createBooking(bookingPayload);
+          bookingIdForPassthrough = bookingId;
+          console.log('✅ Booking document created successfully.', { id: bookingId });
+      }
 
-      const { bookingId } = await createBooking(bookingPayload);
-      
-      console.log('✅ Booking document created successfully.', { id: bookingId });
-
-      // Step 2: Handle the next action based on payment requirement.
       if (isFreeTrial) {
-        // For free trials, redirect directly to the success page.
-        router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
+        router.push(`/bookings/success?booking_id=${bookingIdForPassthrough}&free_trial=true`);
       } else {
-        // For paid lessons, use direct redirection to Paddle Hosted Checkout
         const lessonValue = selectedLessonDetails.value;
         const lessonKey = Object.keys(paddlePriceIds).find(key => 
           key.toLowerCase().replace(/_/g, '') === lessonValue.toLowerCase().replace(/-/g, '')
@@ -330,7 +335,7 @@ export default function BookLessonPage() {
         if (!priceId || priceId.includes('YOUR_') || priceId.includes('price_free_trial')) {
             toast({
                 title: "Payment Link Not Configured",
-                description: "The payment link for this product has not been set up by the site administrator. Please contact support.",
+                description: "The payment link for this product has not been set up. Please contact support.",
                 variant: "destructive",
                 duration: 9000,
             });
@@ -340,18 +345,14 @@ export default function BookLessonPage() {
 
         const passthroughData = isPackagePurchase
           ? { user_id: user.uid, package_type: selectedLessonDetails.value, credits_to_add: selectedLessonDetails.totalLessons }
-          : { booking_id: bookingId };
+          : { booking_id: bookingIdForPassthrough };
         
-        // Construct the correct Hosted Checkout URL.
         const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
-
-        // Redirect the user.
         window.location.href = checkoutUrl;
       }
 
     } catch (error: any) {
       console.error("❌ Booking process failed:", error);
-      // Check if the error message indicates a booking conflict
       if (error.message.includes("slot_already_booked") || error.message.includes("tutor_unavailable")) {
           toast({
               title: "Booking Conflict",
@@ -359,12 +360,10 @@ export default function BookLessonPage() {
               variant: "destructive",
               duration: 9000,
           });
-          // Refresh the availability for the selected date to show the user the updated schedule
           if (selectedDate) {
               fetchAvailability(selectedDate);
           }
       } else {
-          // For all other errors, show a generic message
           toast({
               title: "Booking Failed",
               description: error.message || "Could not complete your booking. Please try again.",
@@ -523,15 +522,21 @@ export default function BookLessonPage() {
                             <Users className="w-5 h-5 text-primary" />
                             Select a Group Session
                         </CardTitle>
-                        <CardDescription>Join a pre-scheduled group class.</CardDescription>
+                        <CardDescription>Choose a date to see available group classes.</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                     <CardContent className="space-y-4">
+                        <DateSelection
+                            selectedDate={selectedDate}
+                            onDateSelect={handleDateSelect}
+                        />
                         {isFetchingGroupSessions ? (
                             <div className="flex justify-center items-center h-24"><Spinner /></div>
                         ) : filteredGroupSessions.length === 0 ? (
-                            <p className="text-muted-foreground text-center py-4">No upcoming {selectedLessonDetails?.duration} minute group sessions are scheduled. Please check back later.</p>
+                            <p className="text-muted-foreground text-center py-4">
+                                {selectedDate ? `No upcoming ${selectedLessonDetails?.duration} minute group sessions are scheduled for this date.` : "Select a date to see scheduled sessions."}
+                            </p>
                         ) : (
-                             <RadioGroup value={selectedGroupSession} onValueChange={setSelectedGroupSession} className="space-y-3">
+                             <RadioGroup value={selectedGroupSession} onValueChange={setSelectedGroupSession} className="space-y-3 pt-4 border-t">
                                 {filteredGroupSessions.map((session) => (
                                     <div key={session.id} className="flex items-start space-x-3">
                                         <RadioGroupItem value={session.id} id={session.id} className="mt-1" />
@@ -645,7 +650,7 @@ export default function BookLessonPage() {
                         )}
                     </div>
                   )}
-                  {selectedDate && isIndividualLesson && (
+                  {selectedDate && (isIndividualLesson || isGroupLesson) && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date:</span>
                       <span className="font-medium text-foreground">
@@ -658,15 +663,15 @@ export default function BookLessonPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
                       <span className="font-medium text-foreground">
-                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), (selectedLessonDetails?.unitDuration || selectedLessonDetails?.duration) as number), 'HH:mm')}`}
+                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), (selectedLessonDetails?.duration) as number), 'HH:mm')}`}
                       </span>
                     </div>
                   )}
                    {isGroupLesson && selectedGroupSession && allGroupSessions.find(s => s.id === selectedGroupSession) && (
                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Date:</span>
+                        <span className="text-muted-foreground">Time:</span>
                         <span className="font-medium text-foreground">
-                            {format((allGroupSessions.find(s => s.id === selectedGroupSession)!.startTime as unknown as Timestamp).toDate(), 'PPP, p')}
+                            {format((allGroupSessions.find(s => s.id === selectedGroupSession)!.startTime as unknown as Timestamp).toDate(), 'p')}
                         </span>
                     </div>
                   )}

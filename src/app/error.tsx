@@ -4,7 +4,7 @@
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertTriangle } from "lucide-react"
+import { TriangleAlert } from "lucide-react"
 
 export default function Error({
   error,
@@ -23,7 +23,7 @@ export default function Error({
       <Card className="w-full max-w-lg text-center shadow-xl">
         <CardHeader>
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 mb-4">
-            <AlertTriangle className="h-10 w-10 text-destructive" />
+            <TriangleAlert className="h-10 w-10 text-destructive" />
           </div>
           <CardTitle className="text-3xl">Something went wrong</CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
