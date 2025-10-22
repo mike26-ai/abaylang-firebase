@@ -575,19 +575,27 @@ export default function StudentDashboardPage() {
                             <Ticket className="w-5 h-5 text-primary"/>
                             My Lesson Credits
                         </CardTitle>
-                        <CardDescription>You can use these credits to book lessons directly.</CardDescription>
+                        <CardDescription>You can use these credits to book the corresponding individual lessons.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {credits.map((credit, index) => (
                             <div key={index} className="p-4 bg-accent/50 rounded-lg border border-primary/20 flex justify-between items-center">
                                 <div>
-                                    <p className="font-semibold text-foreground">{credit.lessonType.replace(/-/g, ' ').replace('bundle', ' Bundle').replace('pack', ' Pack')}</p>
+                                    <p className="font-semibold text-foreground capitalize">{credit.lessonType.replace(/-/g, ' ')}</p>
                                     <p className="text-sm text-muted-foreground">Remaining Credits</p>
                                 </div>
                                 <p className="text-3xl font-bold text-primary">{credit.count}</p>
                             </div>
                         ))}
                     </CardContent>
+                     <CardFooter>
+                        <Button asChild variant="outline">
+                            <Link href="/bookings">
+                                <Plus className="w-4 h-4 mr-2" />
+                                Use Credits to Book a Lesson
+                            </Link>
+                        </Button>
+                    </CardFooter>
                 </Card>
             )}
 
@@ -1005,3 +1013,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
