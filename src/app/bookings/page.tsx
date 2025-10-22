@@ -393,7 +393,7 @@ export default function BookLessonPage() {
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
-          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with {tutorInfo.name}</p>
+          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with ${tutorInfo.name}</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -714,3 +714,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
