@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/service.ts
 /**
  * This file contains the core, testable business logic for the bookings endpoints.
@@ -20,6 +21,7 @@ interface BookingPayload {
   userName?: string;
   userEmail?: string;
   paymentNote?: string;
+  groupSessionId?: string;
 }
 
 
@@ -36,6 +38,7 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
     let endTime: Timestamp | null = null;
   
     if (isSpecificTimeBooking) {
+        // Use the duration from the payload for accurate end time calculation
         const startDateTime = parse(`${bookingData.date} ${bookingData.time}`, 'yyyy-MM-dd HH:mm', new Date());
         startTime = Timestamp.fromDate(startDateTime);
         endTime = Timestamp.fromDate(addMinutes(startDateTime, bookingData.duration));
@@ -45,6 +48,7 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
         if (isSpecificTimeBooking && startTime && endTime) {
             const bookingsRef = db.collection('bookings');
             const timeOffRef = db.collection('timeOff');
+            const groupSessionsRef = db.collection('groupSessions');
 
             // Check for conflicting confirmed bookings
             const bookingConflictQuery = bookingsRef
@@ -56,6 +60,18 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
             if (!conflictingBookings.empty) {
                 throw new Error('slot_already_booked');
             }
+
+            // Check for conflicting group sessions
+             const groupSessionConflictQuery = groupSessionsRef
+                .where('tutorId', '==', bookingData.tutorId)
+                .where('status', '==', 'scheduled')
+                .where('startTime', '<', endTime)
+                .where('endTime', '>', startTime);
+            const conflictingGroupSessions = await transaction.get(groupSessionConflictQuery);
+            if (!conflictingGroupSessions.empty) {
+                 throw new Error('slot_already_booked');
+            }
+
 
             // Check for conflicting time-off blocks
             const timeOffConflictQuery = timeOffRef
@@ -81,3 +97,5 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
         return { bookingId: newBookingRef.id };
     });
 }
+
+    
