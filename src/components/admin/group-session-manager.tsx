@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -221,7 +220,11 @@ export function GroupSessionManager() {
                 </div>
              ) : (
                 <div className="space-y-4">
-                    {sessions.map(session => (
+                    {sessions.map(session => {
+                      const minimumNotMet = session.participantCount < session.minStudents;
+                      const deadlinePassed = isRegistrationClosed(session);
+                      
+                      return (
                         <Card key={session.id} className={cn("shadow-sm", session.status === 'cancelled' && 'bg-muted/50')}>
                             <CardContent className="p-4">
                                 <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -231,7 +234,7 @@ export function GroupSessionManager() {
                                             <CalendarDays className="w-4 h-4"/>
                                             {format((session.startTime as unknown as Timestamp).toDate(), 'PPP, p')}
                                         </p>
-                                        {isRegistrationClosed(session) && session.status === 'scheduled' && session.participantCount < session.minStudents && (
+                                        {deadlinePassed && minimumNotMet && session.status === 'scheduled' && (
                                             <div className="mt-2 text-xs flex items-center gap-1 text-destructive">
                                                 <AlertTriangle className="w-4 h-4"/>
                                                 Minimum not met. Decide whether to cancel or proceed.
@@ -244,6 +247,11 @@ export function GroupSessionManager() {
                                             {session.participantCount || 0} / {session.maxStudents} (min {session.minStudents})
                                         </Badge>
                                         <Badge variant={session.status === 'scheduled' ? 'default' : 'destructive'}>{session.status}</Badge>
+                                        
+                                        {deadlinePassed && minimumNotMet && session.status === 'scheduled' ? (
+                                           <Button size="sm" variant="outline">Proceed</Button>
+                                        ) : null}
+
                                         <Button size="sm" variant="destructive" onClick={() => setSessionToCancel(session)} disabled={session.status === 'cancelled' || session.status === 'completed'}>
                                             <X className="w-4 h-4 mr-1" />
                                             Cancel
@@ -252,7 +260,8 @@ export function GroupSessionManager() {
                                 </div>
                             </CardContent>
                         </Card>
-                    ))}
+                      )
+                    })}
                 </div>
              )}
            </CardContent>
@@ -279,3 +288,5 @@ export function GroupSessionManager() {
     </div>
   );
 }
+
+    
