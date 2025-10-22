@@ -1,8 +1,6 @@
-
-
 // File: src/services/bookingService.ts
 import { auth, db } from "@/lib/firebase";
-import { doc, runTransaction, serverTimestamp, collection, writeBatch } from "firebase/firestore";
+import { doc, runTransaction, serverTimestamp, collection, writeBatch, Timestamp, addDoc } from "firebase/firestore";
 import type { UserCredit } from "@/lib/types";
 
 const API_BASE_URL = '/api';
@@ -39,12 +37,11 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
         throw new Error("User mismatch. Cannot create booking for another user.");
     }
 
-    // If redeeming with credit, perform a client-side transaction
     if (bookingPayload.wasRedeemedWithCredit && bookingPayload.creditType) {
         const userRef = doc(db, "users", user.uid);
-        const newBookingRef = doc(collection(db, "bookings"));
-
+        
         try {
+            let bookingId = '';
             await runTransaction(db, async (transaction) => {
                 const userDoc = await transaction.get(userRef);
                 if (!userDoc.exists()) {
@@ -59,27 +56,31 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
                     throw new Error("You do not have sufficient credits for this lesson type.");
                 }
 
-                // Decrement the credit count
                 credits[creditIndex].count -= 1;
-                
-                // Set the new booking document
+
+                const newBookingRef = doc(collection(db, "bookings"));
+                bookingId = newBookingRef.id;
+
                 transaction.set(newBookingRef, {
                     ...bookingPayload,
-                    status: 'confirmed', // Credit bookings are confirmed immediately
+                    status: 'confirmed',
                     createdAt: serverTimestamp(),
                 });
 
-                // Update the user's credits
                 transaction.update(userRef, { credits: credits });
             });
-            return { bookingId: newBookingRef.id };
+            
+            if (!bookingId) {
+                throw new Error("Failed to create booking document during transaction.");
+            }
+            return { bookingId };
+
         } catch (error) {
             console.error("Credit redemption transaction failed:", error);
             throw error;
         }
 
     } else {
-        // For paid bookings, use the existing secure API route
         const idToken = await user.getIdToken();
         try {
             const response = await fetch(`${API_BASE_URL}/bookings/create`, {

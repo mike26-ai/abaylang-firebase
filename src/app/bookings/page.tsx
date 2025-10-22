@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -124,19 +125,17 @@ export default function BookLessonPage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
-  // State for Private Group Bookings
-  const [privateGroupMembers, setPrivateGroupMembers] = useState<{ name: string; email: string; }[]>([
-    { name: user?.displayName || '', email: user?.email || '' },
-    { name: '', email: '' }
-  ]);
+  const [privateGroupMembers, setPrivateGroupMembers] = useState<{ name: string; email: string; }[]>([]);
   
   useEffect(() => {
-    if (user && privateGroupMembers.length > 0) {
-      const updatedMembers = [...privateGroupMembers];
-      if (!updatedMembers[0].name && !updatedMembers[0].email) {
-          updatedMembers[0] = { name: user.displayName || '', email: user.email || '' };
-          setPrivateGroupMembers(updatedMembers);
-      }
+    if (user && privateGroupMembers.length === 0) {
+        setPrivateGroupMembers([{ name: user.displayName || '', email: user.email || '' }, { name: '', email: '' }]);
+    } else if (user && privateGroupMembers.length > 0) {
+        const updatedMembers = [...privateGroupMembers];
+        if (!updatedMembers[0].name && !updatedMembers[0].email) {
+            updatedMembers[0] = { name: user.displayName || '', email: user.email || '' };
+            setPrivateGroupMembers(updatedMembers);
+        }
     }
   }, [user, privateGroupMembers]);
 
@@ -349,12 +348,57 @@ export default function BookLessonPage() {
       return;
     }
     
+    setIsProcessing(true);
+
     if (isPrivateGroupSelected) {
-        toast({ title: "Coming Soon", description: "Private group booking backend is not yet implemented.", variant: "default" });
+        // Handle Private Group Booking
+        const leader = privateGroupMembers[0];
+        const members = privateGroupMembers.slice(1).filter(m => m.name && m.email);
+
+        if (!leader?.email || members.some(m => !m.name || !m.email)) {
+             toast({ title: "Group Incomplete", description: "Please provide a name and email for all group members.", variant: "destructive" });
+             setIsProcessing(false);
+             return;
+        }
+
+        try {
+            const idToken = await user.getIdToken();
+            const response = await fetch('/api/bookings/create-private-group', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({
+                    date: format(selectedDate, 'yyyy-MM-dd'),
+                    time: selectedTime,
+                    duration: selectedLessonDetails.unitDuration,
+                    lessonType: selectedLessonDetails.label,
+                    pricePerStudent: selectedLessonDetails.price,
+                    tutorId: "MahderNegashMamo",
+                    leader: { name: leader.name, email: leader.email },
+                    members: members,
+                }),
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.message || "Failed to create private group session.");
+            }
+
+            // TODO: Redirect to a multi-item Paddle checkout or handle payment
+            toast({ title: "Private Group Created!", description: "Next step is payment (not yet implemented)." });
+            console.log("Private group created, leader booking ID:", result.bookingId);
+            setIsProcessing(false);
+
+
+        } catch (error: any) {
+            console.error("Private group booking failed:", error);
+            toast({ title: "Booking Failed", description: error.message, variant: "destructive" });
+            setIsProcessing(false);
+        }
         return;
     }
-
-    setIsProcessing(true);
 
     try {
       const isFreeTrial = selectedLessonDetails.price === 0;
@@ -404,14 +448,13 @@ export default function BookLessonPage() {
             return;
         }
 
-        const customData = {
-          booking_id: bookingId,
-          ...(isPackagePurchase && {
-            user_id: user.uid,
-            package_type: lessonValue,
-            credits_to_add: selectedLessonDetails.totalLessons?.toString()
-          }),
-        };
+        const customData: any = { booking_id: bookingId };
+        
+        if (isPackagePurchase) {
+          customData.user_id = user.uid;
+          customData.package_type = lessonValue;
+          customData.credits_to_add = selectedLessonDetails.totalLessons?.toString();
+        }
         
         const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(customData))}`;
         window.location.href = checkoutUrl;
@@ -835,7 +878,7 @@ export default function BookLessonPage() {
                   <Button
                     className="w-full"
                     onClick={handleBooking}
-                    disabled={isProcessing || !selectedLessonDetails || (!isPackagePurchase && !isIndividualLesson && !isGroupLesson && !isPrivateGroup) || (isIndividualLesson && (!selectedDate || !selectedTime)) || (isGroupLesson && !selectedGroupSession) || (isPrivateGroup && (!selectedDate || !selectedTime)) }
+                    disabled={isProcessing || !selectedLessonDetails || (!isPackagePurchase && !isIndividualLesson && !isGroupLesson && !isPrivateGroup) || ((isIndividualLesson || isPrivateGroup) && (!selectedDate || !selectedTime)) || (isGroupLesson && !selectedGroupSession) }
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
                     {isProcessing ? "Processing..." : isBookingWithCredit ? "Book with 1 Credit" : isPaidLesson ? "Proceed to Payment" : "Confirm Free Trial"}
@@ -853,5 +896,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
