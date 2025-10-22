@@ -343,7 +343,7 @@ export default function BookLessonPage() {
           : { booking_id: bookingId };
         
         // Construct the correct Hosted Checkout URL.
-        const checkoutUrl = `https://sandbox.paddle.com/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
+        const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
 
         // Redirect the user.
         window.location.href = checkoutUrl;
