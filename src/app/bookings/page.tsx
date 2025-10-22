@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket } from "lucide-react"
+import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket, Info, PlusCircle, MinusCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
@@ -28,6 +28,7 @@ import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
 import { getGroupSessions } from "@/services/groupSessionService"
 import { Timestamp } from "firebase/firestore"
+import { Input } from "@/components/ui/input"
 
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
@@ -77,6 +78,11 @@ export default function BookLessonPage() {
       value: "immersive-conversation-practice", label: "Immersive Conversation Practice", duration: 60, price: 12, description: "Deeper conversation and cultural insights",
       features: ["Extended conversation time", "In-depth cultural topics", "Collaborative learning"], type: "group", minStudents: 3, maxStudents: 6, unitDuration: 60
     },
+    // Private Group
+    {
+      value: "private-group-lesson", label: "Private Group Lesson", duration: 60, price: 10, description: "Book a private session for your own group",
+      features: ["Your own private group", "Flexible for families or friends", "Personalized to your group's level"], type: "private-group", unitDuration: 60
+    },
     // Packages
     {
       value: "quick-practice-bundle", label: "Quick Practice Bundle", duration: "10 x 30-min", price: 50, originalPrice: 70, totalLessons: 10, unitDuration: 30,
@@ -118,6 +124,43 @@ export default function BookLessonPage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
+  // State for Private Group Bookings
+  const [privateGroupMembers, setPrivateGroupMembers] = useState<{ name: string; email: string; }[]>([
+    { name: user?.displayName || '', email: user?.email || '' },
+    { name: '', email: '' }
+  ]);
+  
+  useEffect(() => {
+    if (user && privateGroupMembers.length > 0) {
+      const updatedMembers = [...privateGroupMembers];
+      if (!updatedMembers[0].name && !updatedMembers[0].email) {
+          updatedMembers[0] = { name: user.displayName || '', email: user.email || '' };
+          setPrivateGroupMembers(updatedMembers);
+      }
+    }
+  }, [user, privateGroupMembers]);
+
+
+  const handlePrivateGroupMemberChange = (index: number, field: 'name' | 'email', value: string) => {
+    const updatedMembers = [...privateGroupMembers];
+    updatedMembers[index][field] = value;
+    setPrivateGroupMembers(updatedMembers);
+  };
+
+  const addPrivateGroupMember = () => {
+    if (privateGroupMembers.length < 6) {
+        setPrivateGroupMembers([...privateGroupMembers, { name: '', email: '' }]);
+    }
+  };
+
+  const removePrivateGroupMember = (index: number) => {
+    if (privateGroupMembers.length > 2) {
+      const updatedMembers = privateGroupMembers.filter((_, i) => i !== index);
+      setPrivateGroupMembers(updatedMembers);
+    }
+  };
+
+
   useEffect(() => {
     if (user && !authLoading) {
       const fetchUserProfile = async () => {
@@ -152,6 +195,8 @@ export default function BookLessonPage() {
   const isIndividualLesson = selectedLessonDetails?.type === 'individual';
   const isGroupLesson = selectedLessonDetails?.type === 'group';
   const isPackagePurchase = selectedLessonDetails?.type === 'package';
+  const isPrivateGroup = selectedLessonDetails?.type === 'private-group';
+
 
   const fetchAvailability = async (date: Date) => {
     setIsFetchingSlots(true);
@@ -181,13 +226,13 @@ export default function BookLessonPage() {
   }
 
   useEffect(() => {
-    if (isIndividualLesson && selectedDate && isValid(selectedDate)) {
+    if ((isIndividualLesson || isPrivateGroup) && selectedDate && isValid(selectedDate)) {
         fetchAvailability(selectedDate);
     } else {
       setDailyBookedSlots([]);
       setDailyTimeOff([]);
     }
-  }, [selectedDate, isIndividualLesson]);
+  }, [selectedDate, isIndividualLesson, isPrivateGroup]);
   
   useEffect(() => {
     if(isGroupLesson) {
@@ -207,7 +252,7 @@ export default function BookLessonPage() {
   };
 
   const displayTimeSlots = useMemo(() => {
-    if (!selectedDate || !isIndividualLesson || !selectedLessonDetails) return [];
+    if (!selectedDate || (!isIndividualLesson && !isPrivateGroup) || !selectedLessonDetails) return [];
     
     const slots: TimeSlotProps[] = [];
     const userDurationMinutes = selectedLessonDetails.duration as number;
@@ -266,7 +311,7 @@ export default function BookLessonPage() {
         });
     }
     return slots;
-}, [selectedDate, isIndividualLesson, selectedLessonDetails, dailyBookedSlots, dailyTimeOff]);
+}, [selectedDate, isIndividualLesson, isPrivateGroup, selectedLessonDetails, dailyBookedSlots, dailyTimeOff]);
 
 
   const filteredGroupSessions = useMemo(() => {
@@ -297,10 +342,16 @@ export default function BookLessonPage() {
 
     const isGroupSessionSelected = isGroupLesson && selectedGroupSession;
     const isIndividualSessionSelected = isIndividualLesson && selectedDate && selectedTime;
+    const isPrivateGroupSelected = isPrivateGroup && selectedDate && selectedTime;
 
-    if (!isPackagePurchase && !isGroupSessionSelected && !isIndividualSessionSelected) {
+    if (!isPackagePurchase && !isGroupSessionSelected && !isIndividualSessionSelected && !isPrivateGroupSelected) {
       toast({ title: "Selection Incomplete", description: "Please select a date and time, or a group session.", variant: "destructive" });
       return;
+    }
+    
+    if (isPrivateGroupSelected) {
+        toast({ title: "Coming Soon", description: "Private group booking backend is not yet implemented.", variant: "default" });
+        return;
     }
 
     setIsProcessing(true);
@@ -381,6 +432,7 @@ export default function BookLessonPage() {
 
   const isBookingWithCredit = !!availableCreditsForSelectedType;
   const isPaidLesson = (selectedLessonDetails?.price || 0) > 0 && !isBookingWithCredit;
+  const privateGroupPrice = isPrivateGroup ? (selectedLessonDetails?.price || 0) * privateGroupMembers.length : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
@@ -433,9 +485,11 @@ export default function BookLessonPage() {
               <CardContent>
                 <RadioGroup value={selectedType} onValueChange={(value) => {setSelectedType(value); setSelectedTime(undefined); setSelectedDateState(undefined);}}>
                   <div className="space-y-6">
-                    {["individual", "group", "package"].map(lessonGroupType => (
+                    {["individual", "group", "private-group", "package"].map(lessonGroupType => (
                        <div key={lessonGroupType}>
-                        <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">{lessonGroupType === 'individual' ? 'Individual' : lessonGroupType} Lessons</h3>
+                        <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">
+                            {lessonGroupType.replace('-', ' ')} Lessons
+                        </h3>
                         <div className="space-y-4">
                             {lessonTypes
                             .filter((lesson) => lesson.type === lessonGroupType)
@@ -456,10 +510,12 @@ export default function BookLessonPage() {
                                             {lesson.label}
                                             {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
                                             {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group ({lesson.minStudents}-{lesson.maxStudents} people)</Badge>}
+                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
+                                            {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
                                             {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
+                                            {lesson.type === 'private-group' && ' (per person)'}
                                         </div>
                                         </div>
                                         <div className="text-right">
@@ -489,7 +545,50 @@ export default function BookLessonPage() {
               </CardContent>
             </Card>
 
-            {isIndividualLesson && (
+            {isPrivateGroup && (
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-xl text-foreground">
+                          <Users className="w-5 h-5 text-primary" />
+                          Enter Your Group's Details
+                        </CardTitle>
+                        <CardDescription>Add the names and emails of all participants (2 to 6 people).</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {privateGroupMembers.map((member, index) => (
+                            <div key={index} className="flex items-center gap-3">
+                               <div className="grid grid-cols-2 gap-3 flex-grow">
+                                  <Input 
+                                    placeholder={`Student ${index + 1} Name`} 
+                                    value={member.name}
+                                    onChange={(e) => handlePrivateGroupMemberChange(index, 'name', e.target.value)}
+                                    disabled={index === 0 && !!user}
+                                  />
+                                  <Input 
+                                    type="email"
+                                    placeholder={`Student ${index + 1} Email`}
+                                    value={member.email}
+                                    onChange={(e) => handlePrivateGroupMemberChange(index, 'email', e.target.value)}
+                                    disabled={index === 0 && !!user}
+                                  />
+                               </div>
+                               {index > 1 && (
+                                  <Button variant="ghost" size="icon" onClick={() => removePrivateGroupMember(index)}>
+                                    <MinusCircle className="w-5 h-5 text-destructive" />
+                                  </Button>
+                               )}
+                            </div>
+                        ))}
+                        {privateGroupMembers.length < 6 && (
+                            <Button variant="outline" onClick={addPrivateGroupMember} className="w-full">
+                                <PlusCircle className="w-4 h-4 mr-2" /> Add Another Student
+                            </Button>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {(isIndividualLesson || isPrivateGroup) && (
               <>
                 <Card className="shadow-lg">
                       <CardHeader>
@@ -544,7 +643,7 @@ export default function BookLessonPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-xl text-foreground">
                     <Calendar className="w-5 h-5 text-primary" />
-                    Select Group Session
+                    Select Public Group Session
                     </CardTitle>
                     <CardDescription>Choose from the available upcoming group sessions.</CardDescription>
                 </CardHeader>
@@ -657,7 +756,7 @@ export default function BookLessonPage() {
                         <span className="text-muted-foreground">Selected:</span>
                         <span className="font-medium text-right text-foreground">{selectedLessonDetails.label}</span>
                       </div>
-                      {(isIndividualLesson || isGroupLesson) && (
+                      {(isIndividualLesson || isGroupLesson || isPrivateGroup) && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Duration:</span>
                           <span className="font-medium text-foreground">{selectedLessonDetails.duration} minutes</span>
@@ -667,6 +766,12 @@ export default function BookLessonPage() {
                          <div className="flex justify-between">
                           <span className="text-muted-foreground">Contains:</span>
                           <span className="font-medium text-foreground">{selectedLessonDetails.duration}</span>
+                        </div>
+                       )}
+                       {isPrivateGroup && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Participants:</span>
+                          <span className="font-medium text-foreground">{privateGroupMembers.length}</span>
                         </div>
                        )}
                     </div>
@@ -680,7 +785,7 @@ export default function BookLessonPage() {
                     </div>
 
                   )}
-                  {selectedTime && isIndividualLesson && (
+                  {selectedTime && (isIndividualLesson || isPrivateGroup) && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
                       <span className="font-medium text-foreground">
@@ -715,7 +820,7 @@ export default function BookLessonPage() {
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between text-lg font-bold">
                       <span className="text-foreground">Total:</span>
-                      <span className="text-primary">${selectedLessonDetails.price}</span>
+                      <span className="text-primary">${isPrivateGroup ? privateGroupPrice : selectedLessonDetails.price}</span>
                     </div>
                      {isPaidLesson && (
                         <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">
@@ -730,7 +835,7 @@ export default function BookLessonPage() {
                   <Button
                     className="w-full"
                     onClick={handleBooking}
-                    disabled={isProcessing || !selectedLessonDetails || (!isPackagePurchase && !isIndividualLesson && !isGroupLesson) || (isIndividualLesson && (!selectedDate || !selectedTime)) || (isGroupLesson && !selectedGroupSession)}
+                    disabled={isProcessing || !selectedLessonDetails || (!isPackagePurchase && !isIndividualLesson && !isGroupLesson && !isPrivateGroup) || (isIndividualLesson && (!selectedDate || !selectedTime)) || (isGroupLesson && !selectedGroupSession) || (isPrivateGroup && (!selectedDate || !selectedTime)) }
                   >
                     {isProcessing ? <Spinner size="sm" className="mr-2" /> : null}
                     {isProcessing ? "Processing..." : isBookingWithCredit ? "Book with 1 Credit" : isPaidLesson ? "Proceed to Payment" : "Confirm Free Trial"}
