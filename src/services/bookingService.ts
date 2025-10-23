@@ -60,7 +60,8 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
 
                 const newBookingRef = doc(collection(db, "bookings"));
                 bookingId = newBookingRef.id;
-
+                
+                // When redeeming a credit, the booking is confirmed immediately
                 transaction.set(newBookingRef, {
                     ...bookingPayload,
                     status: 'confirmed',
@@ -81,6 +82,7 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
         }
 
     } else {
+        // Handle paid lessons and free trials via the secure API route
         const idToken = await user.getIdToken();
         try {
             const response = await fetch(`${API_BASE_URL}/bookings/create`, {
@@ -89,7 +91,7 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${idToken}`,
                 },
-                body: JSON.stringify(bookingPayload),
+                body: JSON.stringify(bookingPayload), // The full payload is passed
             });
 
             const data = await response.json();

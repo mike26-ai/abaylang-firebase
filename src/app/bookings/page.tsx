@@ -424,40 +424,42 @@ export default function BookLessonPage() {
         const { bookingId } = await createBooking(bookingPayload);
         toast({ title: "Booking Confirmed!", description: "Your lesson has been booked using one of your credits." });
         router.push(`/profile`);
-      } else if (isFreeTrial) {
-        const { bookingId } = await createBooking(bookingPayload);
-        router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
       } else {
+        // This 'else' block now correctly handles both free trials and paid lessons
         const { bookingId } = await createBooking(bookingPayload);
         
-        const lessonValue = selectedLessonDetails.value;
-        const lessonKey = Object.keys(paddlePriceIds).find(key => 
-          key.toLowerCase().replace(/_/g, '') === lessonValue.toLowerCase().replace(/-/g, '')
-        ) as keyof typeof paddlePriceIds;
+        if (isFreeTrial) {
+          router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
+        } else {
+            const lessonValue = selectedLessonDetails.value;
+            const lessonKey = Object.keys(paddlePriceIds).find(key => 
+              key.toLowerCase().replace(/_/g, '') === lessonValue.toLowerCase().replace(/-/g, '')
+            ) as keyof typeof paddlePriceIds;
 
-        const priceId = lessonKey ? paddlePriceIds[lessonKey] : undefined;
-        
-        if (!priceId || priceId.includes('YOUR_') || priceId.includes('price_free_trial')) {
-            toast({
-                title: "Payment Link Not Configured",
-                description: "The payment link for this product has not been set up. Please contact support.",
-                variant: "destructive",
-                duration: 9000,
-            });
-            setIsProcessing(false);
-            return;
-        }
+            const priceId = lessonKey ? paddlePriceIds[lessonKey] : undefined;
+            
+            if (!priceId || priceId.includes('YOUR_') || priceId.includes('price_free_trial')) {
+                toast({
+                    title: "Payment Link Not Configured",
+                    description: "The payment link for this product has not been set up. Please contact support.",
+                    variant: "destructive",
+                    duration: 9000,
+                });
+                setIsProcessing(false);
+                return;
+            }
 
-        const customData: any = { booking_id: bookingId };
-        
-        if (isPackagePurchase) {
-          customData.user_id = user.uid;
-          customData.package_type = lessonValue;
-          customData.credits_to_add = selectedLessonDetails.totalLessons?.toString();
+            const customData: any = { booking_id: bookingId };
+            
+            if (isPackagePurchase) {
+              customData.user_id = user.uid;
+              customData.package_type = lessonValue;
+              customData.credits_to_add = selectedLessonDetails.totalLessons?.toString();
+            }
+            
+            const checkoutUrl = `https://sandbox.pay.paddle.io/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(customData))}`;
+            window.location.href = checkoutUrl;
         }
-        
-        const checkoutUrl = `https://sandbox.pay.paddle.io/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(customData))}`;
-        window.location.href = checkoutUrl;
       }
     } catch (error: any) {
       console.error("Booking process failed:", error);
@@ -475,7 +477,7 @@ export default function BookLessonPage() {
 
   const isBookingWithCredit = !!availableCreditsForSelectedType;
   const isPaidLesson = (selectedLessonDetails?.price || 0) > 0 && !isBookingWithCredit;
-  const privateGroupPrice = isPrivateGroup ? (selectedLessonDetails?.price || 0) * privateGroupMembers.length : 0;
+  const privateGroupPrice = isPrivateGroup ? (privateGroupMembers.length > 1 ? (selectedLessonDetails?.price || 0) * privateGroupMembers.length : (selectedLessonDetails?.price || 0)) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
@@ -814,7 +816,7 @@ export default function BookLessonPage() {
                        {isPrivateGroup && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Participants:</span>
-                          <span className="font-medium text-foreground">{privateGroupMembers.length}</span>
+                          <span className="font-medium text-foreground">{privateGroupMembers.length > 1 ? privateGroupMembers.length : 1}</span>
                         </div>
                        )}
                     </div>
