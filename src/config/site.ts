@@ -1,6 +1,6 @@
 
 import type React from "react";
-import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, Users, FileText, BookOpen, Package, HelpCircle, MessageSquare, Award, CalendarDays, GanttChartSquare, ClipboardList, Ticket } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, Users, FileText, BookOpen, Package, HelpCircle, MessageSquare, Award, CalendarDays, GanttChartSquare, ClipboardList, Ticket, User, History } from "lucide-react";
 
 export type NavItem = {
   title: string;
@@ -37,7 +37,9 @@ export const siteConfig = {
     { title: "Contact", href: "/contact", icon: Mail },
   ] satisfies NavItem[],
   userNav: [ // For logged-in user dropdown
-    { title: "My Dashboard", href: "/profile", authRequired: true, icon: LayoutDashboard },
+    { title: "Dashboard", href: "/profile", authRequired: true, icon: LayoutDashboard },
+    { title: "My Profile", href: "/profile/settings", authRequired: true, icon: User },
+    { title: "My Credits & History", href: "/credits", authRequired: true, icon: History },
     { title: "Book New Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
   ] satisfies NavItem[],
   adminNav: [
