@@ -1,4 +1,3 @@
-
 // File: src/app/api/admin/dashboard-stats/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
@@ -61,7 +60,7 @@ export async function GET(request: NextRequest) {
         adminDb.collection('users').where('role', '==', 'student').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('testimonials').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('testimonials').where('status', '==', 'approved').get(),
-        adminDb.collection('bookings').where('status', 'in', ['cancellation-requested', 'resolution-requested']).get(),
+        adminDb.collection('bookings').where('status', '==', 'cancellation-requested').get(),
     ]);
 
     // 3. Process the results in-memory to avoid complex index requirements

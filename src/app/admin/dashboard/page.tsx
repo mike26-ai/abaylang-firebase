@@ -123,7 +123,8 @@ export default function AdminDashboardPage() {
         setIsLoading(false);
     }
     loadData();
-  }, [user, isAdmin, authLoading, router, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isAdmin, authLoading, router]);
 
   const handleTestimonialAction = async (id: string, action: "approved" | "rejected") => {
     if (!dashboardData) return;
@@ -589,5 +590,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
