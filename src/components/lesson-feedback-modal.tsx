@@ -14,7 +14,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { Star, Send, CheckCircle } from "lucide-react";
 import { Spinner } from "./ui/spinner";
-import { format as formatDate, parseISO } from "date-fns";
+import { format as formatDate, parseISO, parse } from "date-fns";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 interface LessonFeedbackModalProps {
   lessonId: string;
@@ -22,13 +26,7 @@ interface LessonFeedbackModalProps {
   lessonDate: string;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (feedback: {
-    lessonId: string;
-    rating: number;
-    feedbackText: string;
-    specificRatings: Record<string, number>;
-    date: string;
-  }) => Promise<any>;
+  onSubmit: () => Promise<any>;
 }
 
 export default function LessonFeedbackModal({
@@ -39,6 +37,8 @@ export default function LessonFeedbackModal({
   onClose,
   onSubmit,
 }: LessonFeedbackModalProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [feedback, setFeedback] = useState("");
@@ -52,10 +52,8 @@ export default function LessonFeedbackModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Reset state when the modal is closed or the lessonId changes
   useEffect(() => {
     if (!isOpen) {
-      // Use a timeout to avoid visual state change before modal closes
       setTimeout(() => {
         setIsSubmitted(false);
         setRating(0);
@@ -83,33 +81,47 @@ export default function LessonFeedbackModal({
   };
 
   const handleSubmit = async () => {
+    if (!user) {
+      toast({ title: "Not Authenticated", description: "You must be logged in to submit feedback.", variant: "destructive" });
+      return;
+    }
+    if (rating === 0) {
+      toast({ title: "Rating Required", description: "Please provide an overall rating.", variant: "destructive" });
+      return;
+    }
+
     setIsSubmitting(true);
-    const feedbackData = {
-      lessonId,
-      rating,
-      feedbackText: feedback,
-      specificRatings: specificFeedback,
-      date: new Date().toISOString(),
-    };
-    
     try {
-      await onSubmit(feedbackData);
+      await addDoc(collection(db, "testimonials"), {
+        userId: user.uid,
+        name: user.displayName,
+        userEmail: user.email,
+        rating,
+        comment: feedback,
+        specificRatings: specificFeedback,
+        status: "pending",
+        createdAt: serverTimestamp(),
+        lessonId,
+        lessonType,
+        date: lessonDate,
+      });
+
       setIsSubmitted(true);
+      await onSubmit(); // Notify parent to refetch data
       setTimeout(() => {
         onClose();
       }, 2000);
+
     } catch (error) {
-       // Error toast is handled by parent component
+      console.error("Error submitting feedback:", error);
+      toast({ title: "Submission Failed", description: "Could not submit your feedback. Please try again.", variant: "destructive" });
     } finally {
         setIsSubmitting(false);
     }
   };
   
-  // FIX: Create a valid Date object that works across browsers.
-  // The 'T00:00:00' part ensures the date is parsed in the local timezone, avoiding UTC conversion issues.
-  const parsedDate = new Date(`${lessonDate}T00:00:00`);
+  const parsedDate = lessonDate ? parse(lessonDate, 'yyyy-MM-dd', new Date()) : new Date();
   const formattedLessonDate = !isNaN(parsedDate.getTime()) ? formatDate(parsedDate, "PPP") : "a recent lesson";
-
 
   if (isSubmitted) {
     return (

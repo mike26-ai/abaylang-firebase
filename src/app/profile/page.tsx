@@ -77,12 +77,13 @@ export default function StudentDashboardPage() {
         duration: doc.data().duration || 60,
       }));
 
+      // Check for existing reviews for completed lessons
       const reviewChecks = fetchedBookings.map(async (booking) => {
         if (booking.status === "completed") {
           const reviewQuery = query(
             collection(db, "testimonials"),
             where("userId", "==", currentUser.uid),
-            where("lessonId", "==", booking.id),
+            where("lessonId", "==", booking.id), // Check for review linked to this specific lesson
             limit(1)
           );
           const reviewSnapshot = await getDocs(reviewQuery);
@@ -124,16 +125,11 @@ export default function StudentDashboardPage() {
     });
   };
 
-  const handleFeedbackSubmit = async (feedbackData: {
-    lessonId: string;
-    rating: number;
-    feedbackText: string;
-    specificRatings: Record<string, number>;
-    date: string;
-  }) => {
-    // This function remains for the modal, but the submission logic
-    // might be better centralized if reused elsewhere.
-    // For now, it is self-contained.
+  const handleFeedbackSubmit = async () => {
+    // Re-fetch data to update the UI after submission
+    if(user) {
+      fetchDashboardData(user);
+    }
   };
 
   const upcomingBookings = useMemo(
