@@ -48,7 +48,8 @@ export async function GET(request: NextRequest) {
         recentMessagesSnapshot,
         recentStudentsSnapshot,
         latestPendingTestimonialsSnapshot,
-        approvedTestimonialsSnapshot
+        approvedTestimonialsSnapshot,
+        pendingResolutionsSnapshot,
     ] = await Promise.all([
         adminDb.collection('bookings').where('status', '==', 'confirmed').get(),
         adminDb.collection('testimonials').where('status', '==', 'pending').count().get(),
@@ -60,13 +61,13 @@ export async function GET(request: NextRequest) {
         adminDb.collection('users').where('role', '==', 'student').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('testimonials').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('testimonials').where('status', '==', 'approved').get(),
+        adminDb.collection('bookings').where('status', '==', 'cancellation-requested').get(),
     ]);
 
     // 3. Process the results in-memory to avoid complex index requirements
     const upcomingBookingsCount = allConfirmedBookingsSnapshot.docs.filter(doc => {
         const bookingDate = doc.data().date;
         if (!bookingDate || typeof bookingDate !== 'string') return false;
-        // Check if the booking date is today or in the future
         const date = new Date(bookingDate);
         return isNaN(date.getTime()) ? false : date >= today;
     }).length;
@@ -82,11 +83,11 @@ export async function GET(request: NextRequest) {
       newInquiries: newInquiriesSnapshot.data().count,
       totalStudents: totalStudentsSnapshot.data().count,
       newBookingsCount: newBookingsSnapshot.data().count,
+      pendingResolutionsCount: pendingResolutionsSnapshot.size,
       totalRevenue: 1250, // Placeholder
       averageRating: averageRating,
     };
 
-    // Helper function to safely serialize Firestore documents
     const serializeTimestamp = (docs: admin.firestore.QueryDocumentSnapshot[]) => 
       docs.map(doc => {
           const data = doc.data();
@@ -107,9 +108,9 @@ export async function GET(request: NextRequest) {
         pendingTestimonials: serializeTimestamp(latestPendingTestimonialsSnapshot.docs),
         recentMessages: serializeTimestamp(recentMessagesSnapshot.docs),
         recentStudents: serializeTimestamp(recentStudentsSnapshot.docs),
+        pendingResolutions: serializeTimestamp(pendingResolutionsSnapshot.docs),
     };
 
-    // 4. Return the combined data
     return NextResponse.json(data);
 
   } catch (error: any) {
@@ -123,3 +124,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch dashboard statistics.', details: error.message }, { status: 500 });
   }
 }
+
+    

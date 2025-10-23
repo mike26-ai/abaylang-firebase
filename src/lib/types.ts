@@ -9,7 +9,7 @@ export interface Booking {
   userEmail: string;
   date: string; // YYYY-MM-DD format
   time: string;
-  status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed";
+  status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed" | "cancellation-requested" | "refunded" | "credit-issued";
   tutorId: string;
   tutorName: string;
   createdAt: Timestamp;
@@ -27,6 +27,7 @@ export interface Booking {
   zoomLink?: string; // NEW: For the lesson's Zoom link
   groupSessionId?: string; // NEW: For group session bookings
   wasRedeemedWithCredit?: boolean; // NEW: To track if a credit was used
+  requestedResolution?: 'refund' | 'credit'; // For cancellation flow
 }
 
 export interface TimeOff {
@@ -191,3 +192,5 @@ export interface UserCredit {
   lessonType: string; // Corresponds to lesson 'value', e.g., 'quick-practice-bundle'
   count: number;
 }
+
+    

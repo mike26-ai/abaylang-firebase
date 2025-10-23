@@ -104,6 +104,11 @@ export default function StudentDashboardPage() {
   const [rescheduleReason, setRescheduleReason] = useState("");
   const [otherRescheduleReason, setOtherRescheduleReason] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
+  
+  const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
+  const [selectedBookingForCancellation, setSelectedBookingForCancellation] = useState<BookingType | null>(null);
+  const [cancellationChoice, setCancellationChoice] = useState<'refund' | 'credit' | ''>('');
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const [feedbackModal, setFeedbackModal] = useState<{
     isOpen: boolean;
@@ -179,8 +184,6 @@ export default function StudentDashboardPage() {
       setIsLoadingBookings(true);
       try {
         const bookingsCol = collection(db, "bookings");
-        // FIX: Removed the orderBy clause to prevent composite index errors.
-        // Sorting will be handled client-side after fetching.
         const q = query(
           bookingsCol,
           where("userId", "==", user.uid)
@@ -194,7 +197,6 @@ export default function StudentDashboardPage() {
             duration: doc.data().duration || 60
         }));
 
-        // FIX: Sort bookings by creation date on the client.
         fetchedBookings.sort((a, b) => {
             const dateA = a.createdAt?.toDate()?.getTime() || 0;
             const dateB = b.createdAt?.toDate()?.getTime() || 0;
@@ -219,7 +221,7 @@ export default function StudentDashboardPage() {
         const bookingsWithReviewStatus = await Promise.all(reviewChecks);
         setBookings(bookingsWithReviewStatus);
     
-      } catch (error: any) {
+      } catch (error: any) => {
         console.error("CRITICAL ERROR fetching data in dashboard:", error);
         toast({
           title: "Error Loading Dashboard",
@@ -338,24 +340,35 @@ export default function StudentDashboardPage() {
     }
   };
   
-  const handleCancelBooking = async (bookingId: string) => {
-    const newStatus = "cancelled";
+  const openCancellationDialog = (booking: BookingType) => {
+    setSelectedBookingForCancellation(booking);
+    setCancellationChoice('');
+    setCancellationDialogOpen(true);
+  };
+
+  const handleCancellationRequest = async () => {
+    if (!selectedBookingForCancellation || !cancellationChoice) return;
+    setIsCancelling(true);
     try {
-      const bookingDocRef = doc(db, "bookings", bookingId);
+      const bookingDocRef = doc(db, "bookings", selectedBookingForCancellation.id);
       await updateDoc(bookingDocRef, {
-        status: newStatus,
+        status: 'cancellation-requested',
+        requestedResolution: cancellationChoice,
         statusHistory: arrayUnion({
-          status: newStatus,
+          status: 'cancellation-requested',
           changedAt: serverTimestamp(),
           changedBy: 'student',
-          reason: "Cancelled by student from dashboard"
-        })
+          reason: `Requested ${cancellationChoice}`,
+        }),
       });
-      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: newStatus} : b));
-      toast({ title: "Booking Cancelled", description: "Your lesson has been cancelled." });
+      setBookings(prev => prev.map(b => b.id === selectedBookingForCancellation.id ? {...b, status: 'cancellation-requested'} : b));
+      toast({ title: "Cancellation Request Sent", description: "Your request has been sent to the admin for approval." });
+      setCancellationDialogOpen(false);
     } catch (error) {
-      console.error("Error cancelling booking:", error);
-      toast({ title: "Cancellation Failed", description: "Could not cancel your booking.", variant: "destructive" });
+      console.error("Error requesting cancellation:", error);
+      toast({ title: "Request Failed", description: "Could not send your cancellation request.", variant: "destructive" });
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -416,26 +429,44 @@ export default function StudentDashboardPage() {
     }
   };
 
-  const getStatusText = (status: BookingType['status']) => {
-    if (status === 'awaiting-payment' || status === 'payment-pending-confirmation') {
+  const getStatusText = (booking: BookingType) => {
+    const { status } = booking;
+    if (status === 'awaiting-payment') {
       return 'Awaiting Confirmation';
+    }
+    if (status === 'payment-pending-confirmation') {
+      return 'Pending Confirmation';
+    }
+    if (status === 'cancellation-requested') {
+      return 'Cancellation Pending';
     }
     return status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const isRescheduleAllowed = (booking: BookingType) => {
-    if (booking.date === 'N/A_PACKAGE') return false;
+    if (booking.date === 'N/A_PACKAGE') return false; // Can't reschedule package markers
+    if (booking.groupSessionId) {
+      // Group sessions have a stricter 3-hour policy
+      const session = upcomingBookings.find(b => b.id === booking.id);
+      if (!session || !session.startTime) return false;
+      const lessonDateTime = (session.startTime as Timestamp).toDate();
+      return differenceInHours(lessonDateTime, new Date()) >= 3;
+    }
+    // Private lessons have a 12-hour policy
     const lessonDateTime = parse(`${booking.date} ${booking.time}`, 'yyyy-MM-dd HH:mm', new Date());
     return differenceInHours(lessonDateTime, new Date()) >= 12;
   };
+  
+  const isCancellationAllowed = isRescheduleAllowed;
+
 
   const upcomingBookings = useMemo(() => {
-    const statusOrder: { [key: string]: number } = { confirmed: 1, 'awaiting-payment': 2, 'payment-pending-confirmation': 3 };
+    const statusOrder: { [key: string]: number } = { confirmed: 1, 'awaiting-payment': 2, 'payment-pending-confirmation': 3, 'cancellation-requested': 4 };
 
     return bookings
       .filter(
         (b) =>
-          (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation") &&
+          (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation" || b.status === 'cancellation-requested') &&
           b.date !== 'N/A_PACKAGE' &&
           b.time &&
           !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
@@ -705,9 +736,9 @@ export default function StudentDashboardPage() {
                           <div className="flex flex-col items-start md:items-end gap-2 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto">
                              <Badge
                                 variant={booking.status === "confirmed" ? "default" : "secondary"}
-                                className={booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30" : ""}
+                                className={booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30" : booking.status === 'cancellation-requested' ? 'bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30' : ""}
                             >
-                               {getStatusText(booking.status)}
+                               {getStatusText(booking)}
                             </Badge>
 
                             {booking.status === 'confirmed' && booking.zoomLink ? (
@@ -716,11 +747,11 @@ export default function StudentDashboardPage() {
                                 <p className="text-xs text-muted-foreground text-right">Zoom link will appear here soon.</p>
                             ) : booking.status === 'awaiting-payment' ? (
                                 <Button size="sm" onClick={() => handlePaymentSubmitted(booking.id)}>Payment Submitted</Button>
-                            ) : booking.status === 'payment-pending-confirmation' ? (
-                                <p className="text-xs text-muted-foreground text-right">Awaiting Tutor Confirmation</p>
+                            ) : booking.status === 'payment-pending-confirmation' || booking.status === 'cancellation-requested' ? (
+                                <p className="text-xs text-muted-foreground text-right">Awaiting Admin Action</p>
                             ) : null}
 
-                             {booking.status === 'confirmed' && (
+                             {(booking.status === 'confirmed' || booking.status === 'awaiting-payment') && (
                               <div className="flex items-center gap-2">
                                 <TooltipProvider>
                                   <Tooltip>
@@ -733,34 +764,28 @@ export default function StudentDashboardPage() {
                                     </TooltipTrigger>
                                     {!isRescheduleAllowed(booking) && (
                                       <TooltipContent>
-                                        <p>Cannot reschedule within 12 hours of the lesson.</p>
+                                        <p>Cannot reschedule within {booking.groupSessionId ? '3' : '12'} hours of the lesson.</p>
                                       </TooltipContent>
                                     )}
                                   </Tooltip>
                                 </TooltipProvider>
 
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs">
-                                      <XCircle className="mr-1 h-3 w-3" /> Cancel
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Cancel Lesson?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Are you sure you want to cancel your lesson on {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}?
-                                        (Please check our 12-hour cancellation policy).
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Keep Lesson</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleCancelBooking(booking.id)} className="bg-destructive hover:bg-destructive/90">
-                                        Yes, Cancel Lesson
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <div>
+                                                <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs" onClick={() => openCancellationDialog(booking)} disabled={!isCancellationAllowed(booking)}>
+                                                    <XCircle className="mr-1 h-3 w-3" /> Cancel
+                                                </Button>
+                                            </div>
+                                        </TooltipTrigger>
+                                        {!isCancellationAllowed(booking) && (
+                                        <TooltipContent>
+                                            <p>Cannot cancel within {booking.groupSessionId ? '3' : '12'} hours of the lesson.</p>
+                                        </TooltipContent>
+                                        )}
+                                    </Tooltip>
+                                </TooltipProvider>
                               </div>
                             )}
                           </div>
@@ -796,7 +821,7 @@ export default function StudentDashboardPage() {
                           </div>
                           <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
                              <Badge variant={booking.status === "completed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"} className={booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}>
-                               {getStatusText(booking.status)}
+                               {getStatusText(booking)}
                             </Badge>
                             {booking.status === 'completed' && (
                               booking.hasReview ? (
@@ -930,6 +955,47 @@ export default function StudentDashboardPage() {
         onSubmit={handleFeedbackSubmit}
       />
 
+      <AlertDialog open={cancellationDialogOpen} onOpenChange={setCancellationDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Request Lesson Cancellation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please choose how you would like to be compensated for this cancellation. Your request will be sent to the administrator for approval.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-4">
+              <p className="text-sm text-muted-foreground">Your lesson on {selectedBookingForCancellation ? format(parse(selectedBookingForCancellation.date, 'yyyy-MM-dd', new Date()), 'PPP') : ''} is eligible for cancellation.</p>
+              <div className="flex gap-4">
+                  <Button
+                      variant={cancellationChoice === 'refund' ? 'default' : 'outline'}
+                      className="flex-1"
+                      onClick={() => setCancellationChoice('refund')}
+                  >
+                      Request Full Refund
+                  </Button>
+                  <Button
+                      variant={cancellationChoice === 'credit' ? 'default' : 'outline'}
+                      className="flex-1"
+                      onClick={() => setCancellationChoice('credit')}
+                  >
+                      Request Lesson Credit
+                  </Button>
+              </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCancellationRequest}
+              disabled={!cancellationChoice || isCancelling}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {isCancelling && <Spinner size="sm" className="mr-2" />}
+              Submit Request
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1013,3 +1079,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
