@@ -21,6 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
@@ -46,7 +47,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/comp
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useRouter } from "next/navigation";
+
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -66,7 +67,7 @@ export default function StudentDashboardPage() {
     lessonDate: "",
   });
 
-  // State for dialogs moved from /credits to here
+  // State for dialogs
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<BookingType | null>(null);
   const [rescheduleReason, setRescheduleReason] = useState("");
@@ -76,6 +77,8 @@ export default function StudentDashboardPage() {
   const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
   const [selectedBookingForCancellation, setSelectedBookingForCancellation] = useState<BookingType | null>(null);
   const [cancellationChoice, setCancellationChoice] = useState<'refund' | 'credit' | ''>('');
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [otherCancellationReason, setOtherCancellationReason] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
   const router = useRouter();
 
@@ -194,26 +197,39 @@ export default function StudentDashboardPage() {
       })[0];
   }, [bookings]);
 
-  // Cancellation and Reschedule Logic moved here
+  // Cancellation and Reschedule Logic
   const openCancellationDialog = (booking: BookingType) => {
     setSelectedBookingForCancellation(booking);
     setCancellationChoice('');
+    setCancellationReason('');
+    setOtherCancellationReason('');
     setCancellationDialogOpen(true);
   };
 
   const handleCancellationRequest = async () => {
-    if (!selectedBookingForCancellation || !cancellationChoice) return;
+    if (!selectedBookingForCancellation || !cancellationChoice || !cancellationReason) {
+        toast({ title: "Incomplete", description: "Please select a compensation type and a reason.", variant: "destructive" });
+        return;
+    }
+    if (cancellationReason === 'Other' && !otherCancellationReason.trim()) {
+        toast({ title: "Incomplete", description: "Please specify your reason for cancellation.", variant: "destructive" });
+        return;
+    }
+
     setIsCancelling(true);
     try {
+      const finalReason = cancellationReason === 'Other' ? `Other: ${otherCancellationReason.trim()}` : cancellationReason;
       const bookingDocRef = doc(db, "bookings", selectedBookingForCancellation.id);
+      
       await updateDoc(bookingDocRef, {
         status: 'cancellation-requested',
         requestedResolution: cancellationChoice,
+        cancellationReason: finalReason, // Add the reason
         statusHistory: arrayUnion({
           status: 'cancellation-requested',
           changedAt: serverTimestamp(),
           changedBy: 'student',
-          reason: `Requested ${cancellationChoice}`,
+          reason: `Requested ${cancellationChoice}. Reason: ${finalReason}`,
         }),
       });
 
@@ -460,33 +476,65 @@ export default function StudentDashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Request Lesson Cancellation</AlertDialogTitle>
             <AlertDialogDescription>
-              Please choose how you would like to be compensated for this cancellation. Your request will be sent to the administrator for approval.
+              Please choose how you would like to be compensated for this cancellation and provide a reason. Your request will be sent to the administrator for review.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-4">
               <p className="text-sm text-muted-foreground">Your lesson on {selectedBookingForCancellation && selectedBookingForCancellation.date ? format(parse(selectedBookingForCancellation.date, 'yyyy-MM-dd', new Date()), 'PPP') : ''} is eligible for cancellation.</p>
-              <div className="flex gap-4">
-                  <Button
-                      variant={cancellationChoice === 'refund' ? 'default' : 'outline'}
-                      className="flex-1"
-                      onClick={() => setCancellationChoice('refund')}
-                  >
-                      Request Full Refund
-                  </Button>
-                  <Button
-                      variant={cancellationChoice === 'credit' ? 'default' : 'outline'}
-                      className="flex-1"
-                      onClick={() => setCancellationChoice('credit')}
-                  >
-                      Request Lesson Credit
-                  </Button>
+              
+              <div>
+                <Label>Compensation Choice</Label>
+                <div className="flex gap-4 mt-2">
+                    <Button
+                        variant={cancellationChoice === 'refund' ? 'default' : 'outline'}
+                        className="flex-1"
+                        onClick={() => setCancellationChoice('refund')}
+                    >
+                        Request Full Refund
+                    </Button>
+                    <Button
+                        variant={cancellationChoice === 'credit' ? 'default' : 'outline'}
+                        className="flex-1"
+                        onClick={() => setCancellationChoice('credit')}
+                    >
+                        Request Lesson Credit
+                    </Button>
+                </div>
               </div>
+
+              <div>
+                <Label htmlFor="cancellation-reason">Reason for Cancelling</Label>
+                 <Select value={cancellationReason} onValueChange={setCancellationReason}>
+                    <SelectTrigger id="cancellation-reason">
+                        <SelectValue placeholder="Select a reason..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Scheduling Conflict">Scheduling Conflict</SelectItem>
+                        <SelectItem value="Technical Issues">Technical Issues</SelectItem>
+                        <SelectItem value="Personal Reasons">Personal Reasons</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                </Select>
+              </div>
+
+              {cancellationReason === 'Other' && (
+                <div>
+                    <Label htmlFor="other-cancellation-reason">Please specify</Label>
+                    <Textarea 
+                        id="other-cancellation-reason"
+                        value={otherCancellationReason}
+                        onChange={(e) => setOtherCancellationReason(e.target.value)}
+                        placeholder="Please provide a brief reason for cancelling..."
+                    />
+                </div>
+              )}
+
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Go Back</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleCancellationRequest}
-              disabled={!cancellationChoice || isCancelling}
+              disabled={!cancellationChoice || !cancellationReason || (cancellationReason === 'Other' && !otherCancellationReason.trim()) || isCancelling}
             >
               {isCancelling && <Spinner size="sm" className="mr-2" />}
               Submit Request
@@ -547,3 +595,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
