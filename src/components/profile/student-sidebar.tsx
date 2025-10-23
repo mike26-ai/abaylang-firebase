@@ -63,3 +63,5 @@ export function StudentSidebar({ isMobile = false }: StudentSidebarProps) {
     </aside>
   );
 }
+
+export default StudentSidebar;
