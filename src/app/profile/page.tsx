@@ -17,6 +17,8 @@ import {
   Plus,
   Star,
   Megaphone,
+  RefreshCw,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -29,12 +31,21 @@ import {
   getDocs,
   orderBy,
   limit,
+  doc,
+  updateDoc,
+  arrayUnion,
+  serverTimestamp,
 } from "firebase/firestore";
 import type { Booking as BookingType } from "@/lib/types";
-import { format, parse } from "date-fns";
+import { format, parse, differenceInHours, isValid } from "date-fns";
 import { Spinner } from "@/components/ui/spinner";
 import LessonFeedbackModal from "@/components/lesson-feedback-modal";
 import { JoinLessonButton } from "@/components/bookings/join-lesson-button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -47,17 +58,25 @@ export default function StudentDashboardPage() {
   const [bookings, setBookings] = useState<DashboardBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [feedbackModal, setFeedbackModal] = useState<{
-    isOpen: boolean;
-    lessonId: string;
-    lessonType: string;
-    lessonDate: string;
-  }>({
+  const [feedbackModal, setFeedbackModal] = useState({
     isOpen: false,
     lessonId: "",
     lessonType: "",
     lessonDate: "",
   });
+
+  // State for dialogs moved from /credits to here
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<BookingType | null>(null);
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const [otherRescheduleReason, setOtherRescheduleReason] = useState("");
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  
+  const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
+  const [selectedBookingForCancellation, setSelectedBookingForCancellation] = useState<BookingType | null>(null);
+  const [cancellationChoice, setCancellationChoice] = useState<'refund' | 'credit' | ''>('');
+  const [isCancelling, setIsCancelling] = useState(false);
+  const router = useRouter();
 
   const fetchDashboardData = async (currentUser: any) => {
     setIsLoading(true);
@@ -83,7 +102,7 @@ export default function StudentDashboardPage() {
           const reviewQuery = query(
             collection(db, "testimonials"),
             where("userId", "==", currentUser.uid),
-            where("lessonId", "==", booking.id), // Check for review linked to this specific lesson
+            where("lessonId", "==", booking.id),
             limit(1)
           );
           const reviewSnapshot = await getDocs(reviewQuery);
@@ -126,8 +145,7 @@ export default function StudentDashboardPage() {
   };
 
   const handleFeedbackSubmit = async () => {
-    // Re-fetch data to update the UI after submission
-    if(user) {
+    if (user) {
       fetchDashboardData(user);
     }
   };
@@ -142,14 +160,15 @@ export default function StudentDashboardPage() {
             ) && b.date !== "N/A_PACKAGE"
         )
         .sort((a, b) => {
-          if (!a.date || !a.time || !b.date || !b.time) return 0;
-          return (
-            new Date(a.date + " " + (a.time || "00:00")).getTime() -
-            new Date(b.date + " " + (b.time || "00:00")).getTime()
-          );
+          if (!a.date || !a.time) return -1;
+          if (!b.date || !b.time) return 1;
+          const dateA = parse(`${a.date} ${a.time}`, 'yyyy-MM-dd HH:mm', new Date());
+          const dateB = parse(`${b.date} ${b.time}`, 'yyyy-MM-dd HH:mm', new Date());
+          return dateA.getTime() - dateB.getTime();
         }),
     [bookings]
   );
+  
   const completedBookingsCount = useMemo(
     () => bookings.filter((b) => b.status === "completed").length,
     [bookings]
@@ -173,6 +192,98 @@ export default function StudentDashboardPage() {
         );
       })[0];
   }, [bookings]);
+
+  // Cancellation and Reschedule Logic moved here
+  const openCancellationDialog = (booking: BookingType) => {
+    setSelectedBookingForCancellation(booking);
+    setCancellationChoice('');
+    setCancellationDialogOpen(true);
+  };
+
+  const handleCancellationRequest = async () => {
+    if (!selectedBookingForCancellation || !cancellationChoice) return;
+    setIsCancelling(true);
+    try {
+      const bookingDocRef = doc(db, "bookings", selectedBookingForCancellation.id);
+      await updateDoc(bookingDocRef, {
+        status: 'cancellation-requested',
+        requestedResolution: cancellationChoice,
+        statusHistory: arrayUnion({
+          status: 'cancellation-requested',
+          changedAt: serverTimestamp(),
+          changedBy: 'student',
+          reason: `Requested ${cancellationChoice}`,
+        }),
+      });
+
+      toast({ 
+          title: "Cancellation Request Sent", 
+          description: "Your request has been sent to the administrator for review.", 
+      });
+      if(user) fetchDashboardData(user);
+      setCancellationDialogOpen(false);
+    } catch (error) {
+      console.error("Error requesting cancellation:", error);
+      toast({ title: "Request Failed", description: "Could not send your cancellation request.", variant: "destructive" });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const openRescheduleDialog = (booking: BookingType) => {
+    setSelectedBookingForReschedule(booking);
+    setRescheduleReason("");
+    setOtherRescheduleReason("");
+    setRescheduleDialogOpen(true);
+  };
+
+  const handleConfirmReschedule = async () => {
+    if (!selectedBookingForReschedule || !rescheduleReason) return;
+    if (rescheduleReason === 'Other' && !otherRescheduleReason.trim()) return;
+    
+    setIsRescheduling(true);
+    const newStatus = "cancelled";
+    try {
+      const finalReason = rescheduleReason === 'Other' ? `Other: ${otherRescheduleReason.trim()}` : rescheduleReason;
+      const bookingDocRef = doc(db, "bookings", selectedBookingForReschedule.id);
+      await updateDoc(bookingDocRef, { 
+        status: newStatus,
+        cancellationReason: `Rescheduled: ${finalReason}`,
+        statusHistory: arrayUnion({
+            status: newStatus,
+            changedAt: serverTimestamp(),
+            changedBy: 'student',
+            reason: `Rescheduled: ${finalReason}`
+        })
+      });
+      toast({ 
+        title: "Lesson Cancelled for Rescheduling", 
+        description: "Please choose a new time for your lesson on the booking page.",
+      });
+      if(user) fetchDashboardData(user);
+      setRescheduleDialogOpen(false);
+      router.push('/bookings');
+    } catch (error) {
+      console.error("Error during reschedule (cancellation step):", error);
+      toast({ 
+        title: "Reschedule Failed", 
+        description: "Could not cancel your current lesson. Please try again.", 
+        variant: "destructive" 
+      });
+    } finally {
+        setIsRescheduling(false);
+    }
+  };
+
+  const isRescheduleAllowed = (booking: BookingType) => {
+    if (booking.date === 'N/A_PACKAGE' || !booking.time) return false; 
+    const hours = booking.groupSessionId ? 3 : 12;
+    const lessonDateTime = parse(`${booking.date} ${booking.time}`, 'yyyy-MM-dd HH:mm', new Date());
+    return differenceInHours(lessonDateTime, new Date()) >= hours;
+  };
+  
+  const isCancellationAllowed = isRescheduleAllowed;
+
 
   if (isLoading) {
     return (
@@ -200,11 +311,10 @@ export default function StudentDashboardPage() {
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   How was your &apos;{mostRecentLessonToReview.lessonType}&apos; on{" "}
-                  {format(
-                    parse(mostRecentLessonToReview.date, "yyyy-MM-dd", new Date()),
-                    "PPP"
-                  )}
-                  ?
+                  {mostRecentLessonToReview.date && isValid(parse(mostRecentLessonToReview.date, "yyyy-MM-dd", new Date())) 
+                      ? format(parse(mostRecentLessonToReview.date, "yyyy-MM-dd", new Date()), "PPP")
+                      : "a recent date"
+                  }?
                 </p>
               </div>
             </div>
@@ -226,9 +336,7 @@ export default function StudentDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{upcomingBookings.length}</div>
-            <Link href="/credits" className="text-xs text-muted-foreground hover:underline">
-              View and manage lessons
-            </Link>
+            <p className="text-xs text-muted-foreground">View and manage lessons below</p>
           </CardContent>
         </Card>
         <Card className="shadow-lg">
@@ -259,19 +367,70 @@ export default function StudentDashboardPage() {
 
       <Card>
         <CardHeader>
-            <CardTitle>Next Upcoming Lesson</CardTitle>
-            <CardDescription>Get ready for your next session.</CardDescription>
+            <CardTitle>Upcoming & Actionable Lessons</CardTitle>
+            <CardDescription>Manage your scheduled lessons that have not yet been completed.</CardDescription>
         </CardHeader>
         <CardContent>
             {upcomingBookings.length > 0 ? (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg bg-card">
-                    <div className="space-y-1">
-                        <h4 className="font-semibold text-foreground">{upcomingBookings[0].lessonType}</h4>
-                        <p className="text-sm text-muted-foreground">
-                            {format(parse(upcomingBookings[0].date, 'yyyy-MM-dd', new Date()), 'eeee, MMMM d')} at {upcomingBookings[0].time}
-                        </p>
-                    </div>
-                     <JoinLessonButton booking={upcomingBookings[0]} />
+                <div className="space-y-4">
+                  {upcomingBookings.map((booking) => (
+                      <Card key={booking.id} className="shadow-sm">
+                        <CardContent className="p-4 flex flex-col md:flex-row items-start justify-between gap-4">
+                            <div className="flex items-center gap-3 md:gap-4 flex-grow">
+                                <div>
+                                <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Amharic Lesson"}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    {booking.date && isValid(parse(booking.date, 'yyyy-MM-dd', new Date())) ? format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP") : 'Date not set'} at {booking.time}
+                                </p>
+                                </div>
+                            </div>
+                             <div className="flex flex-col items-start md:items-end gap-2 self-start md:self-center w-full md:w-auto">
+                                <p className="text-xs text-muted-foreground capitalize">{booking.status.replace(/-/g, ' ')}</p>
+                                {booking.status === 'confirmed' && booking.zoomLink ? (
+                                    <JoinLessonButton booking={booking} />
+                                ) : booking.status === 'confirmed' && !booking.zoomLink ? (
+                                    <p className="text-xs text-muted-foreground text-right">Zoom link coming soon.</p>
+                                ) : null}
+                                {(booking.status === 'confirmed' || booking.status === 'awaiting-payment') && (
+                                <div className="flex items-center gap-2">
+                                    <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                        <div>
+                                            <Button variant="outline" size="sm" className="text-xs" onClick={() => openRescheduleDialog(booking)} disabled={!isRescheduleAllowed(booking)}>
+                                            <RefreshCw className="mr-1 h-3 w-3" /> Reschedule
+                                            </Button>
+                                        </div>
+                                        </TooltipTrigger>
+                                        {!isRescheduleAllowed(booking) && (
+                                        <TooltipContent>
+                                            <p>Cannot reschedule within {booking.groupSessionId ? '3' : '12'} hours of the lesson.</p>
+                                        </TooltipContent>
+                                        )}
+                                    </Tooltip>
+                                    </TooltipProvider>
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div>
+                                                    <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive text-xs" onClick={() => openCancellationDialog(booking)} disabled={!isCancellationAllowed(booking)}>
+                                                        <XCircle className="mr-1 h-3 w-3" /> Cancel
+                                                    </Button>
+                                                </div>
+                                            </TooltipTrigger>
+                                            {!isCancellationAllowed(booking) && (
+                                            <TooltipContent>
+                                                <p>Cannot cancel within {booking.groupSessionId ? '3' : '12'} hours of the lesson.</p>
+                                            </TooltipContent>
+                                            )}
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                )}
+                             </div>
+                        </CardContent>
+                      </Card>
+                  ))}
                 </div>
             ) : (
                 <div className="text-center py-10">
@@ -286,7 +445,6 @@ export default function StudentDashboardPage() {
         </CardContent>
       </Card>
       
-
       <LessonFeedbackModal
         lessonId={feedbackModal.lessonId}
         lessonType={feedbackModal.lessonType}
@@ -295,6 +453,96 @@ export default function StudentDashboardPage() {
         onClose={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
         onSubmit={handleFeedbackSubmit}
       />
+
+       <AlertDialog open={cancellationDialogOpen} onOpenChange={setCancellationDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Request Lesson Cancellation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please choose how you would like to be compensated for this cancellation. Your request will be sent to the administrator for approval.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-4">
+              <p className="text-sm text-muted-foreground">Your lesson on {selectedBookingForCancellation && selectedBookingForCancellation.date ? format(parse(selectedBookingForCancellation.date, 'yyyy-MM-dd', new Date()), 'PPP') : ''} is eligible for cancellation.</p>
+              <div className="flex gap-4">
+                  <Button
+                      variant={cancellationChoice === 'refund' ? 'default' : 'outline'}
+                      className="flex-1"
+                      onClick={() => setCancellationChoice('refund')}
+                  >
+                      Request Full Refund
+                  </Button>
+                  <Button
+                      variant={cancellationChoice === 'credit' ? 'default' : 'outline'}
+                      className="flex-1"
+                      onClick={() => setCancellationChoice('credit')}
+                  >
+                      Request Lesson Credit
+                  </Button>
+              </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCancellationRequest}
+              disabled={!cancellationChoice || isCancelling}
+            >
+              {isCancelling && <Spinner size="sm" className="mr-2" />}
+              Submit Request
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reschedule Lesson?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will cancel your current lesson. You will then be redirected to the booking page to choose a new time. Please select a reason for rescheduling.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-4">
+              <div>
+                <Label htmlFor="reschedule-reason" className="mb-2 block">Reason for Rescheduling</Label>
+                <Select value={rescheduleReason} onValueChange={setRescheduleReason}>
+                    <SelectTrigger id="reschedule-reason">
+                        <SelectValue placeholder="Select a reason..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Scheduling Conflict">Scheduling Conflict</SelectItem>
+                        <SelectItem value="Found a Better Time">Found a Better Time</SelectItem>
+                        <SelectItem value="Technical Issues">Technical Issues</SelectItem>
+                        <SelectItem value="Personal Reasons">Personal Reasons</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                </Select>
+              </div>
+              {rescheduleReason === 'Other' && (
+                <div>
+                    <Label htmlFor="other-reason" className="mb-2 block">Please specify your reason</Label>
+                    <Textarea 
+                        id="other-reason"
+                        value={otherRescheduleReason}
+                        onChange={(e) => setOtherRescheduleReason(e.target.value)}
+                        placeholder="Please provide a brief reason for rescheduling..."
+                    />
+                </div>
+              )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmReschedule}
+              disabled={!rescheduleReason || (rescheduleReason === 'Other' && !otherRescheduleReason.trim()) || isRescheduling}
+            >
+              {isRescheduling && <Spinner size="sm" className="mr-2" />}
+              Proceed to Reschedule
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
