@@ -41,7 +41,7 @@ export default function CreditsPage() {
   
   const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
   const [selectedBookingForCancellation, setSelectedBookingForCancellation] = useState<Booking | null>(null);
-  const [cancellationChoice, setCancellationChoice] = <'refund' | 'credit' | ''>>useState('');
+  const [cancellationChoice, setCancellationChoice] = useState<'refund' | 'credit' | ''>('');
   const [isCancelling, setIsCancelling] = useState(false);
 
 
