@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { History, Star } from "lucide-react";
+import { History, Star, CheckCircle } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { Booking } from "@/lib/types";
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
