@@ -1,4 +1,5 @@
 
+
 // File: src/app/api/group-sessions/cancel/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, initAdmin } from '@/lib/firebase-admin';
@@ -30,23 +31,37 @@ export async function POST(request: NextRequest) {
     }
     
     const { sessionId } = validation.data;
-    const sessionRef = adminDb.collection('groupSessions').doc(sessionId);
-    const sessionDoc = await sessionRef.get();
+    
+    // Use a transaction to ensure atomicity
+    await adminDb.runTransaction(async (transaction) => {
+        const sessionRef = adminDb.collection('groupSessions').doc(sessionId);
+        const sessionDoc = await transaction.get(sessionRef);
 
-    if (!sessionDoc.exists) {
-        return NextResponse.json({ success: false, error: "Session not found." }, { status: 404 });
-    }
+        if (!sessionDoc.exists) {
+            throw new Error("Session not found.");
+        }
+        
+        // 1. Update the group session status
+        transaction.update(sessionRef, { status: 'cancelled' });
 
-    await sessionRef.update({
-        status: 'cancelled',
+        // 2. Find all bookings associated with this group session
+        const bookingsRef = adminDb.collection('bookings');
+        const bookingsQuery = bookingsRef.where('groupSessionId', '==', sessionId);
+        const bookingsSnapshot = await transaction.get(bookingsQuery);
+        
+        // 3. Update the status of each associated booking to 'cancelled-by-admin'
+        bookingsSnapshot.docs.forEach(doc => {
+            transaction.update(doc.ref, { 
+                status: 'cancelled-by-admin',
+                cancellationReason: 'The group session was cancelled by the administrator.'
+            });
+        });
     });
 
-    return NextResponse.json({ success: true, message: 'Session successfully cancelled.' }, { status: 200 });
+    return NextResponse.json({ success: true, message: 'Session and all associated bookings have been cancelled.' }, { status: 200 });
 
   } catch (error: any) {
     console.error('API Error (/group-sessions/cancel):', error);
     return NextResponse.json({ success: false, error: 'Failed to cancel group session.', details: error.message }, { status: 500 });
   }
 }
-
-    

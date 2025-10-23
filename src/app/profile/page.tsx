@@ -30,6 +30,8 @@ import {
   Info,
   Video,
   Ticket,
+  AlertTriangle,
+  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -123,119 +125,84 @@ export default function StudentDashboardPage() {
   });
 
   const [paymentConfirmDialog, setPaymentConfirmDialog] = useState(false);
+  
+  // New state for resolution requests from admin-cancelled lessons
+  const [resolutionRequest, setResolutionRequest] = useState<{ booking: BookingType, choice: 'refund' | 'credit' } | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+
+  const fetchBookingsAndProfile = async (currentUser: any) => {
+      setIsLoadingBookings(true);
+      setIsLoadingProfile(true);
+
+      try {
+        // Fetch profile
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+            const profile = userDocSnap.data() as UserProfile;
+            setUserProfileData(profile);
+            setEditFormData({
+                name: profile.name || currentUser.displayName || "",
+                nativeLanguage: profile.nativeLanguage || "",
+                country: profile.country || "",
+                amharicLevel: profile.amharicLevel || "beginner",
+            });
+        } else {
+            const basicProfile: UserProfile = {
+                uid: currentUser.uid, email: currentUser.email || "", name: currentUser.displayName || "New User",
+                role: "student", createdAt: Timestamp.now(), photoURL: currentUser.photoURL || null,
+                country: "", amharicLevel: "beginner", nativeLanguage: "",
+                showFirstLessonFeedbackPrompt: false, hasSubmittedFirstLessonFeedback: false,
+            };
+            await setDoc(doc(db, "users", currentUser.uid), basicProfile);
+            setUserProfileData(basicProfile);
+            setEditFormData({ name: basicProfile.name, nativeLanguage: "", country: "", amharicLevel: "beginner" });
+        }
+        setIsLoadingProfile(false);
+
+        // Fetch bookings
+        const bookingsCol = collection(db, "bookings");
+        const q = query(bookingsCol, where("userId", "==", currentUser.uid));
+        const querySnapshot = await getDocs(q);
+        
+        let fetchedBookings = querySnapshot.docs.map((doc) => ({
+            ...(doc.data() as BookingType), id: doc.id, hasReview: false, duration: doc.data().duration || 60
+        }));
+
+        fetchedBookings.sort((a, b) => (b.createdAt?.toDate()?.getTime() || 0) - (a.createdAt?.toDate()?.getTime() || 0));
+
+        const reviewChecks = fetchedBookings.map(async (booking) => {
+            if (booking.status === 'completed') {
+                const reviewQuery = query(collection(db, "testimonials"), where("userId", "==", currentUser.uid), where("lessonId", "==", booking.id), limit(1));
+                const reviewSnapshot = await getDocs(reviewQuery);
+                return { ...booking, hasReview: !reviewSnapshot.empty };
+            }
+            return booking;
+        });
+
+        const bookingsWithReviewStatus = await Promise.all(reviewChecks);
+        setBookings(bookingsWithReviewStatus);
+
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        toast({ title: "Error", description: "Could not load your dashboard data.", variant: "destructive" });
+      } finally {
+        setIsLoadingBookings(false);
+        setIsLoadingProfile(false);
+      }
+  };
+
 
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-
+    if (authLoading) return;
     if (!user) {
       setIsLoadingBookings(false);
       setIsLoadingProfile(false);
       return;
     }
-
-    const fetchUserProfile = async () => {
-      setIsLoadingProfile(true);
-      try {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (userDocSnap.exists()) {
-          const profile = userDocSnap.data() as UserProfile;
-          setUserProfileData(profile);
-          setEditFormData({
-            name: profile.name || user.displayName || "",
-            nativeLanguage: profile.nativeLanguage || "",
-            country: profile.country || "",
-            amharicLevel: profile.amharicLevel || "beginner",
-          });
-        } else {
-          const basicProfile: UserProfile = {
-            uid: user.uid,
-            email: user.email || "",
-            name: user.displayName || "New User",
-            role: "student",
-            createdAt: Timestamp.now(),
-            photoURL: user.photoURL || null,
-            country: "",
-            amharicLevel: "beginner",
-            nativeLanguage: "",
-            showFirstLessonFeedbackPrompt: false,
-            hasSubmittedFirstLessonFeedback: false,
-          };
-          await setDoc(doc(db, "users", user.uid), basicProfile);
-          setUserProfileData(basicProfile);
-          setEditFormData({ name: basicProfile.name, nativeLanguage: "", country: "", amharicLevel: "beginner" });
-        }
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-        toast({
-          title: "Error",
-          description: "Could not load your profile data.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingProfile(false);
-      }
-    };
-    
-    const fetchBookings = async () => {
-      setIsLoadingBookings(true);
-      try {
-        const bookingsCol = collection(db, "bookings");
-        const q = query(
-          bookingsCol,
-          where("userId", "==", user.uid)
-        );
-    
-        const querySnapshot = await getDocs(q);
-        let fetchedBookings = querySnapshot.docs.map((doc) => ({
-            ...(doc.data() as BookingType),
-            id: doc.id,
-            hasReview: false,
-            duration: doc.data().duration || 60
-        }));
-
-        fetchedBookings.sort((a, b) => {
-            const dateA = a.createdAt?.toDate()?.getTime() || 0;
-            const dateB = b.createdAt?.toDate()?.getTime() || 0;
-            return dateB - dateA;
-        });
-  
-        const reviewChecks = fetchedBookings.map(async (booking) => {
-          if (booking.status === 'completed') {
-            const testimonialsCol = collection(db, "testimonials");
-            const reviewQuery = query(
-                testimonialsCol, 
-                where("userId", "==", user.uid), 
-                where("lessonId", "==", booking.id),
-                limit(1)
-            );
-            const reviewSnapshot = await getDocs(reviewQuery);
-            return { ...booking, hasReview: !reviewSnapshot.empty };
-          }
-          return booking;
-        });
-  
-        const bookingsWithReviewStatus = await Promise.all(reviewChecks);
-        setBookings(bookingsWithReviewStatus);
-    
-      } catch (error: any) => {
-        console.error("CRITICAL ERROR fetching data in dashboard:", error);
-        toast({
-          title: "Error Loading Dashboard",
-          description: "Could not load booking information. This may be due to a missing database index. Please contact support.",
-          variant: "destructive",
-          duration: 9000,
-        });
-      } finally {
-        setIsLoadingBookings(false);
-      }
-    };
-
-    fetchUserProfile();
-    fetchBookings();
+    fetchBookingsAndProfile(user);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, toast]); 
 
   const handleProfileEditInputChange = (
@@ -361,7 +328,7 @@ export default function StudentDashboardPage() {
           reason: `Requested ${cancellationChoice}`,
         }),
       });
-      setBookings(prev => prev.map(b => b.id === selectedBookingForCancellation.id ? {...b, status: 'cancellation-requested'} : b));
+      if(user) await fetchBookingsAndProfile(user);
       toast({ title: "Cancellation Request Sent", description: "Your request has been sent to the admin for approval." });
       setCancellationDialogOpen(false);
     } catch (error) {
@@ -402,7 +369,7 @@ export default function StudentDashboardPage() {
         title: "Lesson Cancelled", 
         description: "Please choose a new time for your lesson.",
       });
-      setBookings(prev => prev.map(b => b.id === selectedBookingForReschedule.id ? {...b, status: newStatus} : b));
+      if(user) await fetchBookingsAndProfile(user);
       setRescheduleDialogOpen(false);
       router.push('/bookings');
     } catch (error) {
@@ -421,40 +388,48 @@ export default function StudentDashboardPage() {
     try {
       const bookingDocRef = doc(db, "bookings", bookingId);
       await updateDoc(bookingDocRef, { status: "payment-pending-confirmation" });
-      setBookings(prev => prev.map(b => b.id === bookingId ? {...b, status: "payment-pending-confirmation" } : b));
+      if(user) await fetchBookingsAndProfile(user);
       setPaymentConfirmDialog(true);
     } catch (error) {
       console.error("Error updating booking status:", error);
       toast({ title: "Update Failed", description: "Could not update booking status.", variant: "destructive" });
     }
   };
+  
+  const handleResolutionRequest = async (booking: BookingType, choice: 'refund' | 'credit') => {
+      setResolutionRequest({ booking, choice });
+      setIsResolving(true);
+      try {
+        const bookingDocRef = doc(db, "bookings", booking.id);
+        await updateDoc(bookingDocRef, {
+            status: 'resolution-requested',
+            requestedResolution: choice,
+        });
+        if(user) await fetchBookingsAndProfile(user);
+        toast({ title: "Request Sent", description: `Your request for a ${choice} has been sent to the admin.` });
+      } catch (error) {
+        console.error("Error sending resolution request:", error);
+        toast({ title: "Error", description: "Could not send your request.", variant: "destructive" });
+      } finally {
+          setIsResolving(false);
+          setResolutionRequest(null);
+      }
+  };
+
 
   const getStatusText = (booking: BookingType) => {
     const { status } = booking;
-    if (status === 'awaiting-payment') {
-      return 'Awaiting Confirmation';
-    }
-    if (status === 'payment-pending-confirmation') {
-      return 'Pending Confirmation';
-    }
-    if (status === 'cancellation-requested') {
-      return 'Cancellation Pending';
-    }
+    if (status === 'awaiting-payment') return 'Awaiting Tutor Confirmation';
+    if (status === 'payment-pending-confirmation') return 'Pending Confirmation';
+    if (status === 'cancellation-requested' || status === 'resolution-requested') return 'Request Pending';
     return status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const isRescheduleAllowed = (booking: BookingType) => {
-    if (booking.date === 'N/A_PACKAGE') return false; // Can't reschedule package markers
-    if (booking.groupSessionId) {
-      // Group sessions have a stricter 3-hour policy
-      const session = upcomingBookings.find(b => b.id === booking.id);
-      if (!session || !session.startTime) return false;
-      const lessonDateTime = (session.startTime as Timestamp).toDate();
-      return differenceInHours(lessonDateTime, new Date()) >= 3;
-    }
-    // Private lessons have a 12-hour policy
+    if (booking.date === 'N/A_PACKAGE') return false; 
+    const hours = booking.groupSessionId ? 3 : 12;
     const lessonDateTime = parse(`${booking.date} ${booking.time}`, 'yyyy-MM-dd HH:mm', new Date());
-    return differenceInHours(lessonDateTime, new Date()) >= 12;
+    return differenceInHours(lessonDateTime, new Date()) >= hours;
   };
   
   const isCancellationAllowed = isRescheduleAllowed;
@@ -466,7 +441,7 @@ export default function StudentDashboardPage() {
     return bookings
       .filter(
         (b) =>
-          (b.status === "confirmed" || b.status === "awaiting-payment" || b.status === "payment-pending-confirmation" || b.status === 'cancellation-requested') &&
+          !['completed', 'cancelled', 'cancelled-by-admin', 'refunded', 'credit-issued'].includes(b.status) &&
           b.date !== 'N/A_PACKAGE' &&
           b.time &&
           !isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date()))
@@ -475,9 +450,7 @@ export default function StudentDashboardPage() {
         const statusA = a.status as keyof typeof statusOrder;
         const statusB = b.status as keyof typeof statusOrder;
         const statusComparison = (statusOrder[statusA] || 99) - (statusOrder[statusB] || 99);
-        if (statusComparison !== 0) {
-          return statusComparison;
-        }
+        if (statusComparison !== 0) return statusComparison;
         const dateA = new Date(a.date + ' ' + (a.time || "00:00")).getTime();
         const dateB = new Date(b.date + ' ' + (b.time || "00:00")).getTime();
         return dateA - dateB;
@@ -485,13 +458,15 @@ export default function StudentDashboardPage() {
   }, [bookings]);
   
   const pastBookings = useMemo(() => bookings.filter(
-    (b) => b.status === "completed" || b.status === "cancelled" || (b.date !== 'N/A_PACKAGE' && b.time && (b.status === "confirmed" || b.status === "awaiting-payment") && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
+    (b) => ['completed', 'cancelled', 'refunded', 'credit-issued'].includes(b.status) || (b.date !== 'N/A_PACKAGE' && b.time && !['cancelled-by-admin', 'cancellation-requested'].includes(b.status) && isPast(parse(b.date + ' ' + (b.time || "00:00"), 'yyyy-MM-dd HH:mm', new Date())))
   ).sort((a,b) => {
         if (!a.date || !a.time || !b.date || !b.time) return 0;
         return new Date(b.date + ' ' + (b.time || "00:00")).getTime() - new Date(a.date + ' ' + (a.time || "00:00")).getTime()
     }), [bookings]);
+
+  const actionRequiredBookings = useMemo(() => bookings.filter(b => b.status === 'cancelled-by-admin'), [bookings]);
   
-  const upcomingLessonsCount = useMemo(() => upcomingBookings.filter(b => b.status === 'confirmed' || b.status === 'awaiting-payment' || b.status === 'payment-pending-confirmation').length, [upcomingBookings]);
+  const upcomingLessonsCount = useMemo(() => upcomingBookings.filter(b => ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'].includes(b.status)).length, [upcomingBookings]);
   const completedBookingsCount = useMemo(() => bookings.filter((b) => b.status === "completed").length, [bookings]);
   const totalHours = useMemo(() => bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.duration || 60), 0) / 60, [bookings]);
   
@@ -559,24 +534,32 @@ export default function StudentDashboardPage() {
             <div className="flex justify-center items-center h-40"><Spinner size="lg" /> <p className="ml-3 text-muted-foreground">Loading dashboard data...</p></div>
         ) : (
           <>
-            {userProfileData?.showFirstLessonFeedbackPrompt && mostRecentLessonToReview && (
-              <Card className="shadow-lg mb-8 bg-gradient-to-r from-blue-500/10 to-accent/50 border-blue-500/20">
-                <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <Megaphone className="w-8 h-8 text-blue-600" />
-                    <div>
-                      <h3 className="font-semibold text-lg text-foreground">How was your first lesson?</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Your feedback is important! Please take a moment to share your experience.
-                      </p>
-                    </div>
-                  </div>
-                  <Button onClick={() => handleRateLesson(mostRecentLessonToReview)} className="bg-blue-600 hover:bg-blue-700">
-                    <Star className="w-4 h-4 mr-2" />
-                    Leave Feedback
-                  </Button>
-                </CardContent>
-              </Card>
+            {actionRequiredBookings.length > 0 && (
+                <Card className="shadow-lg mb-8 bg-gradient-to-r from-destructive/10 to-accent/50 border-destructive/20">
+                    <CardContent className="p-6">
+                        <h3 className="font-semibold text-lg text-destructive mb-3 flex items-center gap-2">
+                           <AlertTriangle className="w-5 h-5"/> Action Required: Lesson Cancellation
+                        </h3>
+                        {actionRequiredBookings.map(booking => (
+                            <div key={booking.id} className="p-4 bg-background/50 rounded-lg border border-destructive/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div>
+                                    <p className="font-medium text-foreground">Your {booking.lessonType} lesson on {format(parse(booking.date, 'yyyy-MM-dd', new Date()), 'PPP')} was cancelled by the tutor.</p>
+                                    <p className="text-sm text-muted-foreground">Please choose how you would like to be compensated.</p>
+                                </div>
+                                <div className="flex gap-2 self-start sm:self-center flex-shrink-0">
+                                    <Button size="sm" onClick={() => handleResolutionRequest(booking, 'credit')} disabled={isResolving && resolutionRequest?.booking.id === booking.id}>
+                                      {isResolving && resolutionRequest?.choice === 'credit' && resolutionRequest?.booking.id === booking.id ? <Spinner size="sm" className="mr-2"/> : <Ticket className="w-4 h-4 mr-2"/>}
+                                      Request Credit
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => handleResolutionRequest(booking, 'refund')} disabled={isResolving && resolutionRequest?.booking.id === booking.id}>
+                                       {isResolving && resolutionRequest?.choice === 'refund' && resolutionRequest?.booking.id === booking.id ? <Spinner size="sm" className="mr-2"/> : <CreditCard className="w-4 h-4 mr-2"/>}
+                                       Request Refund
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
             )}
 
             {mostRecentLessonToReview && !userProfileData?.showFirstLessonFeedbackPrompt && (
@@ -606,7 +589,7 @@ export default function StudentDashboardPage() {
                             <Ticket className="w-5 h-5 text-primary"/>
                             My Lesson Credits
                         </CardTitle>
-                        <CardDescription>You can use these credits to book the corresponding individual lessons.</CardDescription>
+                        <CardDescription>You can use these credits to book the corresponding individual lessons on the booking page.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {credits.map((credit, index) => (
@@ -736,7 +719,7 @@ export default function StudentDashboardPage() {
                           <div className="flex flex-col items-start md:items-end gap-2 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto">
                              <Badge
                                 variant={booking.status === "confirmed" ? "default" : "secondary"}
-                                className={booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30" : booking.status === 'cancellation-requested' ? 'bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30' : ""}
+                                className={booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30" : booking.status === 'cancellation-requested' || booking.status === 'resolution-requested' ? 'bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30' : ""}
                             >
                                {getStatusText(booking)}
                             </Badge>
@@ -747,7 +730,7 @@ export default function StudentDashboardPage() {
                                 <p className="text-xs text-muted-foreground text-right">Zoom link will appear here soon.</p>
                             ) : booking.status === 'awaiting-payment' ? (
                                 <Button size="sm" onClick={() => handlePaymentSubmitted(booking.id)}>Payment Submitted</Button>
-                            ) : booking.status === 'payment-pending-confirmation' || booking.status === 'cancellation-requested' ? (
+                            ) : booking.status === 'payment-pending-confirmation' || booking.status === 'cancellation-requested' || booking.status === 'resolution-requested' ? (
                                 <p className="text-xs text-muted-foreground text-right">Awaiting Admin Action</p>
                             ) : null}
 
@@ -820,7 +803,7 @@ export default function StudentDashboardPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 md:gap-3 self-start md:self-center mt-2 md:mt-0 w-full md:w-auto justify-end">
-                             <Badge variant={booking.status === "completed" ? "default" : booking.status === "cancelled" ? "destructive" : "secondary"} className={booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}>
+                             <Badge variant={booking.status === "completed" ? "default" : booking.status.includes("cancel") ? "destructive" : "secondary"} className={booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" : ""}>
                                {getStatusText(booking)}
                             </Badge>
                             {booking.status === 'completed' && (
@@ -1079,5 +1062,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    

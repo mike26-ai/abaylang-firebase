@@ -1,4 +1,5 @@
 
+
 // File: src/services/groupSessionService.ts
 import { auth } from "@/lib/firebase";
 import type { GroupSession } from "@/lib/types";
@@ -72,7 +73,7 @@ export async function getGroupSessions(): Promise<GroupSession[]> {
 }
 
 /**
- * Cancels a group session. Admin only.
+ * Cancels a group session and all associated student bookings. Admin only.
  */
 export async function cancelGroupSession(sessionId: string): Promise<{ message: string }> {
   const user = auth.currentUser;

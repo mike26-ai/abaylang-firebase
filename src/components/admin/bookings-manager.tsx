@@ -228,7 +228,7 @@ export function BookingsManager() {
                     variant={
                       booking.status === "confirmed" ? "default" 
                       : booking.status === "completed" ? "secondary"
-                      : booking.status === "cancelled" ? "destructive" 
+                      : booking.status === "cancelled" || booking.status === 'cancelled-by-admin' ? "destructive" 
                       : "secondary"
                     }
                     className={
@@ -263,8 +263,8 @@ export function BookingsManager() {
                         <DropdownMenuItem onClick={() => updateBookingStatus(booking, "completed")} disabled={booking.status === 'completed'}>
                           <CheckCircle className="mr-2 h-4 w-4 text-blue-500" /> Mark as Completed
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateBookingStatus(booking, "cancelled")} disabled={booking.status === 'cancelled'}>
-                          <XCircle className="mr-2 h-4 w-4 text-red-500" /> Mark as Cancelled
+                        <DropdownMenuItem onClick={() => updateBookingStatus(booking, "cancelled-by-admin")} disabled={booking.status.includes('cancelled')}>
+                          <XCircle className="mr-2 h-4 w-4 text-red-500" /> Cancel Lesson
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600 hover:!text-red-600 focus:!text-red-600" onClick={() => setDeleteConfirmation(booking)}>
@@ -293,7 +293,7 @@ export function BookingsManager() {
                     variant={
                       booking.status === "confirmed" ? "default" 
                       : booking.status === "completed" ? "secondary"
-                      : booking.status === "cancelled" ? "destructive" 
+                      : booking.status === "cancelled" || booking.status === 'cancelled-by-admin' ? "destructive" 
                       : "secondary"
                     }
                     className={
@@ -330,8 +330,8 @@ export function BookingsManager() {
                     <Button onClick={() => updateBookingStatus(booking, "completed")} disabled={booking.status === 'completed'} variant="outline" size="sm">
                         <CheckCircle className="mr-2 h-4 w-4" /> Completed
                     </Button>
-                     <Button onClick={() => updateBookingStatus(booking, "cancelled")} disabled={booking.status === 'cancelled'} variant="outline" size="sm">
-                        <XCircle className="mr-2 h-4 w-4" /> Cancelled
+                     <Button onClick={() => updateBookingStatus(booking, "cancelled-by-admin")} disabled={booking.status.includes('cancelled')} variant="outline" size="sm">
+                        <XCircle className="mr-2 h-4 w-4" /> Cancel
                     </Button>
                  </div>
                  <Button onClick={() => setZoomLinkData({ isOpen: true, booking, link: booking.zoomLink || '', isSaving: false })} variant="outline" size="sm" className="w-full">

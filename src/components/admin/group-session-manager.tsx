@@ -119,7 +119,7 @@ export function GroupSessionManager() {
     setIsCancelling(true);
     try {
         await cancelGroupSession(sessionToCancel.id);
-        toast({ title: 'Session Cancelled', description: `The session "${sessionToCancel.title}" has been cancelled.` });
+        toast({ title: 'Session Cancelled', description: `Students will be notified and can request credits/refunds.` });
         fetchSessions();
         setSessionToCancel(null);
     } catch(error: any) {
@@ -315,7 +315,7 @@ export function GroupSessionManager() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will cancel the session &quot;{sessionToCancel?.title}&quot;. This action cannot be undone and you will need to manually refund any registered students.
+                        This will cancel the session &quot;{sessionToCancel?.title}&quot; and notify all registered students so they can request a refund or credit. This action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
