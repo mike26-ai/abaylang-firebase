@@ -6,13 +6,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Ticket, History, Plus, FileClock, CheckCircle, XCircle, Calendar, RefreshCw, Video, AlertTriangle } from "lucide-react";
+import { Ticket, Plus, XCircle, Calendar, RefreshCw } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { UserProfile, Booking } from "@/lib/types";
 import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
-import { format, parse, parseISO, differenceInHours, isValid } from "date-fns";
+import { format, parse, differenceInHours, isValid } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -41,7 +41,7 @@ export default function CreditsPage() {
   
   const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
   const [selectedBookingForCancellation, setSelectedBookingForCancellation] = useState<Booking | null>(null);
-  const [cancellationChoice, setCancellationChoice] = useState<'refund' | 'credit'>('');
+  const [cancellationChoice, setCancellationChoice] = useState<'refund' | 'credit' | ''>('');
   const [isCancelling, setIsCancelling] = useState(false);
 
 
@@ -49,14 +49,12 @@ export default function CreditsPage() {
       if (!user) return;
       setIsLoading(true);
       try {
-        // Fetch user profile
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {
           setUserProfileData(userDocSnap.data() as UserProfile);
         }
 
-        // Fetch all bookings for history and upcoming list
         const bookingsQuery = query(
             collection(db, "bookings"),
             where("userId", "==", user.uid),
@@ -84,69 +82,18 @@ export default function CreditsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, router]);
 
-  const history = useMemo(() => bookings, [bookings]);
-  
   const upcomingBookings = useMemo(() => {
     return bookings
-      .filter(b => !['completed', 'cancelled', 'cancelled-by-admin', 'refunded', 'credit-issued'].includes(b.status) && b.date !== 'N/A_PACKAGE')
+      .filter(b => !['completed', 'cancelled', 'cancelled-by-admin', 'refunded', 'credit-issued', 'cancellation-requested'].includes(b.status) && b.date !== 'N/A_PACKAGE')
       .sort((a,b) => {
           if (!a.date || !a.time || !b.date || !b.time) return 0;
-          return new Date(a.date + ' ' + (a.time || "00:00")).getTime() - new Date(b.date + ' ' + (b.time || "00:00")).getTime();
+          const dateA = parse(`${a.date} ${a.time}`, 'yyyy-MM-dd HH:mm', new Date());
+          const dateB = parse(`${b.date} ${b.time}`, 'yyyy-MM-dd HH:mm', new Date());
+          return dateA.getTime() - dateB.getTime();
       });
   }, [bookings]);
 
 
-  const getHistoryItem = (item: Booking) => {
-    if (item.date === 'N/A_PACKAGE') {
-      return {
-        description: `Purchased '${item.lessonType}' package`,
-        amount: `+${item.price && item.price > 20 ? '10' : '5'} credits`, // Simplified logic
-        icon: <Plus className="w-4 h-4 text-primary" />
-      }
-    }
-    if (item.wasRedeemedWithCredit) {
-      return {
-        description: `Used 1 credit for '${item.lessonType}'`,
-        amount: "-1 credit",
-        icon: <CheckCircle className="w-4 h-4 text-green-600" />
-      }
-    }
-    if (item.status === 'credit-issued') {
-        return {
-            description: `Credit issued for cancelled lesson`,
-            amount: `+1 credit`,
-            icon: <Plus className="w-4 h-4 text-primary" />
-        }
-    }
-    if (item.status === 'cancellation-requested') {
-        return {
-            description: `Cancellation requested for '${item.lessonType}'`,
-            amount: "Pending",
-            icon: <FileClock className="w-4 h-4 text-yellow-600" />
-        }
-    }
-     if (item.status === 'refunded') {
-        return {
-            description: `Refund processed for '${item.lessonType}'`,
-            amount: `$${item.price}`,
-            icon: <CheckCircle className="w-4 h-4 text-green-600" />
-        }
-    }
-    if (item.status === 'completed' && !item.wasRedeemedWithCredit) {
-         return {
-            description: `Completed '${item.lessonType}' (Paid)`,
-            amount: `-$${item.price}`,
-            icon: <CheckCircle className="w-4 h-4 text-green-600" />
-        }
-    }
-    // Default for other statuses like cancelled, etc.
-    return {
-      description: `Booking for '${item.lessonType}'`,
-      amount: item.status.replace(/-/g, ' '),
-      icon: <XCircle className="w-4 h-4 text-destructive" />
-    };
-  }
-  
   const openCancellationDialog = (booking: Booking) => {
     setSelectedBookingForCancellation(booking);
     setCancellationChoice('');
@@ -171,7 +118,7 @@ export default function CreditsPage() {
 
       toast({ 
           title: "Cancellation Request Sent", 
-          description: "Your request has been logged. View your history for details.", 
+          description: "Your request has been sent to the administrator for review.", 
       });
       fetchData(); // Re-fetch data to update UI
       setCancellationDialogOpen(false);
@@ -250,27 +197,21 @@ export default function CreditsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl py-12">
-      <header className="mb-10">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-          My Credits & History
-        </h1>
-        <p className="mt-3 text-lg text-muted-foreground">
-          View your available lesson credits, manage upcoming lessons, and track your history.
-        </p>
+    <div className="space-y-8">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">My Credits</h1>
+        <p className="text-muted-foreground">Manage your credits and upcoming lessons.</p>
       </header>
-
+      
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-
-          {/* Upcoming Lessons Section */}
            <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-primary" />
-                Upcoming Lessons
+                Upcoming & Actionable Lessons
               </CardTitle>
-              <CardDescription>Manage your scheduled lessons here.</CardDescription>
+              <CardDescription>Manage your scheduled lessons that have not yet been completed.</CardDescription>
             </CardHeader>
             <CardContent>
               {upcomingBookings.length > 0 ? (
@@ -339,54 +280,14 @@ export default function CreditsPage() {
                 </div>
               ) : (
                  <div className="text-center py-10 text-muted-foreground">
-                    <p>You have no upcoming lessons scheduled.</p>
-                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <History className="w-5 h-5 text-primary" />
-                Transaction History
-              </CardTitle>
-              <CardDescription>A log of all your credit and booking activities.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {history.length > 0 ? (
-                <div className="space-y-4">
-                    {history.map(item => {
-                      const { description, amount, icon } = getHistoryItem(item);
-                      return (
-                        <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                {icon}
-                                <div>
-                                    <p className="font-medium text-foreground">{description}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {item.createdAt ? format(item.createdAt.toDate(), "PPP") : "Recent"}
-                                    </p>
-                                </div>
-                            </div>
-                            <Badge variant={amount.startsWith('+') ? 'default' : amount.startsWith('-') ? 'destructive' : 'secondary'} className={amount === 'Pending' ? 'bg-yellow-400/20 text-yellow-700' : ''}>
-                                {amount}
-                            </Badge>
-                        </div>
-                      )
-                    })}
-                </div>
-              ) : (
-                 <div className="text-center py-10 text-muted-foreground">
-                    <p>No transaction history yet.</p>
+                    <p>You have no upcoming lessons to manage.</p>
                  </div>
               )}
             </CardContent>
           </Card>
         </div>
-
         <div className="lg:col-span-1 space-y-6">
-          <Card className="shadow-lg sticky top-24">
+           <Card className="shadow-lg sticky top-24">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Ticket className="w-5 h-5 text-primary" />
@@ -411,13 +312,13 @@ export default function CreditsPage() {
               )}
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
-              <Button asChild className="w-full">
+              <Button asChild className="w-full" variant="outline">
                 <Link href="/bookings">
                   <Plus className="w-4 h-4 mr-2" />
-                  Book a Lesson
+                  Book with Credit
                 </Link>
               </Button>
-               <Button asChild variant="outline" className="w-full">
+               <Button asChild className="w-full">
                 <Link href="/packages">
                   <Ticket className="w-4 h-4 mr-2" />
                   Buy More Credits
@@ -427,7 +328,7 @@ export default function CreditsPage() {
           </Card>
         </div>
       </div>
-
+      
        <AlertDialog open={cancellationDialogOpen} onOpenChange={setCancellationDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

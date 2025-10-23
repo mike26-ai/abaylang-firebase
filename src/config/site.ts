@@ -38,8 +38,9 @@ export const siteConfig = {
   ] satisfies NavItem[],
   userNav: [ // For logged-in user dropdown
     { title: "Dashboard", href: "/profile", authRequired: true, icon: LayoutDashboard },
+    { title: "My Credits", href: "/credits", authRequired: true, icon: Ticket },
+    { title: "Booking History", href: "/profile/history", authRequired: true, icon: History },
     { title: "My Profile", href: "/profile/settings", authRequired: true, icon: User },
-    { title: "My Credits & History", href: "/credits", authRequired: true, icon: History },
     { title: "Book New Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
   ] satisfies NavItem[],
   adminNav: [
