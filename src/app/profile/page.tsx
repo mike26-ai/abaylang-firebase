@@ -330,7 +330,6 @@ export default function StudentDashboardPage() {
         }),
       });
 
-      if(user) await fetchBookingsAndProfile(user);
       toast({ 
           title: "Cancellation Request Sent", 
           description: "Your request has been logged. View your history for details.", 
@@ -373,7 +372,7 @@ export default function StudentDashboardPage() {
       });
       toast({ 
         title: "Lesson Cancelled", 
-        description: "Please choose a new time for your lesson.",
+        description: "Please choose a new time for your lesson on the booking page.",
       });
       if(user) await fetchBookingsAndProfile(user);
       setRescheduleDialogOpen(false);
@@ -1060,3 +1059,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
