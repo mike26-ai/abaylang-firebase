@@ -458,7 +458,7 @@ export default function BookLessonPage() {
               customData.credits_to_add = selectedLessonDetails.totalLessons?.toString();
             }
             
-            const checkoutUrl = `https://sandbox.pay.paddle.io/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(customData))}`;
+            const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(customData))}`;
             window.location.href = checkoutUrl;
         }
       }
