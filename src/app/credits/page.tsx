@@ -12,7 +12,7 @@ import type { UserProfile, Booking } from "@/lib/types";
 import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
-import { format, parse, parseISO, differenceInHours } from "date-fns";
+import { format, parse, parseISO, differenceInHours, isValid } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -41,7 +41,7 @@ export default function CreditsPage() {
   
   const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
   const [selectedBookingForCancellation, setSelectedBookingForCancellation] = useState<Booking | null>(null);
-  const [cancellationChoice, setCancellationChoice] = useState<'refund' | 'credit' | ''>('');
+  const [cancellationChoice, setCancellationChoice] = useState<'refund' | 'credit'>('');
   const [isCancelling, setIsCancelling] = useState(false);
 
 
@@ -282,7 +282,7 @@ export default function CreditsPage() {
                                 <div>
                                 <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Amharic Lesson"}</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    {format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP")} at {booking.time}
+                                    {booking.date && isValid(parse(booking.date, 'yyyy-MM-dd', new Date())) ? format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP") : 'Date not set'} at {booking.time}
                                 </p>
                                 </div>
                             </div>
@@ -437,7 +437,7 @@ export default function CreditsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-4">
-              <p className="text-sm text-muted-foreground">Your lesson on {selectedBookingForCancellation ? format(parse(selectedBookingForCancellation.date, 'yyyy-MM-dd', new Date()), 'PPP') : ''} is eligible for cancellation.</p>
+              <p className="text-sm text-muted-foreground">Your lesson on {selectedBookingForCancellation && selectedBookingForCancellation.date ? format(parse(selectedBookingForCancellation.date, 'yyyy-MM-dd', new Date()), 'PPP') : ''} is eligible for cancellation.</p>
               <div className="flex gap-4">
                   <Button
                       variant={cancellationChoice === 'refund' ? 'default' : 'outline'}
