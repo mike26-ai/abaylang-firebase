@@ -13,7 +13,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 
-// Mockup of a transaction ledger for the UI structure
+// Mockup of a transaction ledger for the UI structure - this will be implemented in the next phase
 const mockHistory = [
   { id: 1, date: "2023-10-26", description: "Used 1 credit for 'Comprehensive Lesson'", amount: -1 },
   { id: 2, date: "2023-10-25", description: "Credit issued for cancelled lesson", amount: 1 },
