@@ -1,5 +1,4 @@
 
-
 // File: src/app/api/bookings/service.ts
 /**
  * This file contains the core, testable business logic for the bookings endpoints.
@@ -71,12 +70,12 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
             });
 
         } else if (isSpecificTimeBooking && startTime && endTime) {
-            // This is a private lesson, check for conflicts
+            // This is a private lesson, check for conflicts across all relevant collections
             const bookingsRef = db.collection('bookings');
             const timeOffRef = db.collection('timeOff');
             const groupSessionsRef = db.collection('groupSessions');
 
-            // Conflict checks for private lessons
+            // 1. Check for conflicting private bookings
             const bookingConflictQuery = bookingsRef
                 .where('tutorId', '==', bookingData.tutorId)
                 .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
@@ -84,9 +83,11 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
                 .where('endTime', '>', startTime);
             const conflictingBookings = await transaction.get(bookingConflictQuery);
             if (!conflictingBookings.empty) {
+                console.error("Conflict found with existing bookings:", conflictingBookings.docs.map(d => d.data()));
                 throw new Error('slot_already_booked');
             }
 
+            // 2. Check for conflicting group sessions
             const groupSessionConflictQuery = groupSessionsRef
                 .where('tutorId', '==', bookingData.tutorId)
                 .where('status', '==', 'scheduled')
@@ -94,19 +95,23 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
                 .where('endTime', '>', startTime);
             const conflictingGroupSessions = await transaction.get(groupSessionConflictQuery);
             if (!conflictingGroupSessions.empty) {
+                 console.error("Conflict found with existing group sessions:", conflictingGroupSessions.docs.map(d => d.data()));
                  throw new Error('slot_already_booked');
             }
 
+            // 3. Check for conflicting admin time-off blocks
             const timeOffConflictQuery = timeOffRef
                 .where('tutorId', '==', bookingData.tutorId)
                 .where('startISO', '<', endTime.toDate().toISOString())
                 .where('endISO', '>', startTime.toDate().toISOString());
             const conflictingTimeOff = await transaction.get(timeOffConflictQuery);
             if (!conflictingTimeOff.empty) {
+                console.error("Conflict found with existing timeOff blocks:", conflictingTimeOff.docs.map(d => d.data()));
                 throw new Error('tutor_unavailable');
             }
         }
 
+        // If all checks pass, create the new booking document
         const newBookingRef = db.collection('bookings').doc();
         const newBookingDoc = {
             ...bookingData,
@@ -120,3 +125,4 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
         return { bookingId: newBookingRef.id };
     });
 }
+

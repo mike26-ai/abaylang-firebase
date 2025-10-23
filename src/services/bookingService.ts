@@ -1,3 +1,4 @@
+
 // File: src/services/bookingService.ts
 import { auth, db } from "@/lib/firebase";
 import { doc, runTransaction, serverTimestamp, collection, writeBatch, Timestamp, addDoc } from "firebase/firestore";
@@ -68,7 +69,7 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
                     createdAt: serverTimestamp(),
                 });
 
-                transaction.update(userRef, { credits: credits });
+                transaction.update(userRef, { credits: credits.filter(c => c.count > 0) }); // Also filter out empty credit bundles
             });
             
             if (!bookingId) {
@@ -85,9 +86,6 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
         // Handle paid lessons and free trials via the secure API route
         const idToken = await user.getIdToken();
         
-        // Log the payload being sent to the server for verification
-        console.log('Sending to /api/bookings/create:', JSON.stringify(bookingPayload, null, 2));
-
         try {
             const response = await fetch(`${API_BASE_URL}/bookings/create`, {
                 method: 'POST',
@@ -95,7 +93,7 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${idToken}`,
                 },
-                body: JSON.stringify(bookingPayload), // The full payload is passed
+                body: JSON.stringify(bookingPayload),
             });
 
             const data = await response.json();
