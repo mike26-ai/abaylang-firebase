@@ -329,8 +329,13 @@ export default function StudentDashboardPage() {
           reason: `Requested ${cancellationChoice}`,
         }),
       });
+
       if(user) await fetchBookingsAndProfile(user);
-      toast({ title: "Cancellation Request Sent", description: "Your request has been sent to the admin for approval." });
+      toast({ 
+          title: "Cancellation Request Sent", 
+          description: "Your request has been logged. View your history for details.", 
+      });
+      router.push('/credits'); // Redirect to history page
       setCancellationDialogOpen(false);
     } catch (error) {
       console.error("Error requesting cancellation:", error);
@@ -603,14 +608,6 @@ export default function StudentDashboardPage() {
                             </div>
                         ))}
                     </CardContent>
-                     <CardFooter>
-                        <Button asChild variant="outline">
-                            <Link href="/bookings">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Use Credits to Book a Lesson
-                            </Link>
-                        </Button>
-                    </CardFooter>
                 </Card>
             )}
 
@@ -666,7 +663,7 @@ export default function StudentDashboardPage() {
                     <Button asChild variant="outline" className="w-full">
                       <Link href="/credits">
                         <History className="w-4 h-4 mr-2" />
-                        Manage Credits &amp; History
+                        Manage Credits & History
                       </Link>
                     </Button>
                 </CardContent>
