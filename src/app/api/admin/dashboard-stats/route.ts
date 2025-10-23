@@ -60,7 +60,8 @@ export async function GET(request: NextRequest) {
         adminDb.collection('users').where('role', '==', 'student').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('testimonials').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('testimonials').where('status', '==', 'approved').get(),
-        adminDb.collection('bookings').where('status', '==', 'cancellation-requested').get(),
+        // CORRECTED QUERY: Specifically fetch bookings with 'cancellation-requested' status.
+        adminDb.collection('bookings').where('status', '==', 'cancellation-requested').orderBy('createdAt', 'desc').get(),
     ]);
 
     // 3. Process the results in-memory to avoid complex index requirements

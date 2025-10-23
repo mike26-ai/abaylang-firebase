@@ -405,7 +405,7 @@ export default function AdminDashboardPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="capitalize bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30">
-                            {booking.requestedResolution?.replace(/-/g, ' ')}
+                            Request: {booking.requestedResolution}
                           </Badge>
                         </TableCell>
                          <TableCell className="text-right">
