@@ -1,5 +1,3 @@
-
-
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, initAdmin } from '@/lib/firebase-admin';
@@ -18,7 +16,7 @@ const CreateBookingSchema = z.object({
   lessonType: z.string().min(1),
   price: z.number().min(0),
   tutorId: z.string().min(1),
-  isFreeTrial: z.boolean(),
+  isFreeTrial: z.boolean(), // FIX: This field was missing
   userId: z.string().min(1), 
   userName: z.string().optional(),
   userEmail: z.string().email().optional(),

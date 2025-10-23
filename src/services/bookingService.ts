@@ -84,6 +84,10 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
     } else {
         // Handle paid lessons and free trials via the secure API route
         const idToken = await user.getIdToken();
+        
+        // Log the payload being sent to the server for verification
+        console.log('Sending to /api/bookings/create:', JSON.stringify(bookingPayload, null, 2));
+
         try {
             const response = await fetch(`${API_BASE_URL}/bookings/create`, {
                 method: 'POST',
