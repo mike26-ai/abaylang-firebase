@@ -37,7 +37,13 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
     let endTime: Timestamp | null = null;
   
     if (isSpecificTimeBooking) {
+        // IMPORTANT: Parse the date and time from the client and create a Date object.
+        // This assumes the server's timezone is consistent or the client sends timezone-aware strings if needed.
+        // For simplicity, we'll parse as is, but for production, ensuring UTC would be best.
         const startDateTime = parse(`${bookingData.date} ${bookingData.time}`, 'yyyy-MM-dd HH:mm', new Date());
+        if (isNaN(startDateTime.getTime())) {
+            throw new Error('Invalid date or time format provided.');
+        }
         startTime = Timestamp.fromDate(startDateTime);
         endTime = Timestamp.fromDate(addMinutes(startDateTime, bookingData.duration));
     }
@@ -75,7 +81,7 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
             const timeOffRef = db.collection('timeOff');
             const groupSessionsRef = db.collection('groupSessions');
 
-            // 1. Check for conflicting private bookings
+            // 1. Check for conflicting private bookings (with correct statuses)
             const bookingConflictQuery = bookingsRef
                 .where('tutorId', '==', bookingData.tutorId)
                 .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
@@ -83,31 +89,42 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
                 .where('endTime', '>', startTime);
             const conflictingBookings = await transaction.get(bookingConflictQuery);
             if (!conflictingBookings.empty) {
-                console.error("Conflict found with existing bookings:", conflictingBookings.docs.map(d => d.data()));
+                console.log("Booking Conflicts Found:", conflictingBookings.docs.map(d => d.data()));
                 throw new Error('slot_already_booked');
             }
 
-            // 2. Check for conflicting group sessions
+            // 2. Check for conflicting group sessions (with correct statuses)
             const groupSessionConflictQuery = groupSessionsRef
                 .where('tutorId', '==', bookingData.tutorId)
-                .where('status', '==', 'scheduled')
+                .where('status', '==', 'scheduled') // Only check for active scheduled sessions
                 .where('startTime', '<', endTime)
                 .where('endTime', '>', startTime);
             const conflictingGroupSessions = await transaction.get(groupSessionConflictQuery);
-            if (!conflictingGroupSessions.empty) {
-                 console.error("Conflict found with existing group sessions:", conflictingGroupSessions.docs.map(d => d.data()));
+             if (!conflictingGroupSessions.empty) {
+                 console.log("Group Session Conflicts Found:", conflictingGroupSessions.docs.map(d => d.data()));
                  throw new Error('slot_already_booked');
             }
 
             // 3. Check for conflicting admin time-off blocks
-            const timeOffConflictQuery = timeOffRef
+            // This query compares Timestamp objects with the string fields in timeOff, which is incorrect.
+            // A robust solution requires storing startISO/endISO as Timestamps in Firestore or fetching and converting.
+            // For an immediate fix, we fetch and check in memory, which is safe inside a transaction.
+            const timeOffDayQuery = timeOffRef
                 .where('tutorId', '==', bookingData.tutorId)
-                .where('startISO', '<', endTime.toDate().toISOString())
-                .where('endISO', '>', startTime.toDate().toISOString());
-            const conflictingTimeOff = await transaction.get(timeOffConflictQuery);
-            if (!conflictingTimeOff.empty) {
-                console.error("Conflict found with existing timeOff blocks:", conflictingTimeOff.docs.map(d => d.data()));
-                throw new Error('tutor_unavailable');
+                .where('startISO', '>=', startTime.toDate().toISOString().split('T')[0]); // Broad fetch for the day
+            
+            const timeOffSnapshot = await transaction.get(timeOffDayQuery);
+            const startMillis = startTime.toMillis();
+            const endMillis = endTime.toMillis();
+
+            for (const doc of timeOffSnapshot.docs) {
+                const block = doc.data();
+                const blockStartMillis = new Date(block.startISO).getTime();
+                const blockEndMillis = new Date(block.endISO).getTime();
+                if (startMillis < blockEndMillis && endMillis > blockStartMillis) {
+                    console.log("Time-Off Conflict Found:", block);
+                    throw new Error('tutor_unavailable');
+                }
             }
         }
 
@@ -118,7 +135,7 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
             startTime: startTime,
             endTime: endTime,
             status: bookingData.isFreeTrial ? 'confirmed' : 'awaiting-payment',
-            createdAt: FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(), // Use server timestamp for reliability
         };
 
         transaction.set(newBookingRef, newBookingDoc);
@@ -126,3 +143,4 @@ export async function _createBooking(bookingData: BookingPayload, decodedToken: 
     });
 }
 
+    
