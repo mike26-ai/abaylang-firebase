@@ -32,6 +32,7 @@ import {
   Ticket,
   AlertTriangle,
   CreditCard,
+  History,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -655,17 +656,17 @@ export default function StudentDashboardPage() {
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex flex-col gap-2">
                     <Button asChild className="w-full">
                         <Link href="/bookings">
                             <Plus className="w-4 h-4 mr-2" />
                             Book New Lesson
                         </Link>
                     </Button>
-                    <Button asChild variant="outline" className="w-full mt-2">
-                      <Link href="/submit-testimonial">
-                        <FileText className="w-4 h-4 mr-2" />
-                        Write a Testimonial
+                    <Button asChild variant="outline" className="w-full">
+                      <Link href="/credits">
+                        <History className="w-4 h-4 mr-2" />
+                        Manage Credits &amp; History
                       </Link>
                     </Button>
                 </CardContent>
