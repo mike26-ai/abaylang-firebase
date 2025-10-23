@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
         adminDb.collection('users').where('role', '==', 'student').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('testimonials').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('testimonials').where('status', '==', 'approved').get(),
-        adminDb.collection('bookings').where('status', '==', 'cancellation-requested').get(),
+        adminDb.collection('bookings').where('status', 'in', ['cancellation-requested', 'resolution-requested']).get(),
     ]);
 
     // 3. Process the results in-memory to avoid complex index requirements
@@ -124,5 +124,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch dashboard statistics.', details: error.message }, { status: 500 });
   }
 }
-
-    
