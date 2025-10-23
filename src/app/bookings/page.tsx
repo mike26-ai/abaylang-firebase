@@ -231,6 +231,7 @@ export default function BookLessonPage() {
       setDailyBookedSlots([]);
       setDailyTimeOff([]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, isIndividualLesson, isPrivateGroup]);
   
   useEffect(() => {
@@ -273,8 +274,8 @@ export default function BookLessonPage() {
 
         for (const booking of dailyBookedSlots) {
             if (booking.startTime && booking.endTime) {
-                const bookingStart = (booking.startTime as any).toDate();
-                const bookingEnd = (booking.endTime as any).toDate();
+                const bookingStart = new Date(booking.startTime as any);
+                const bookingEnd = new Date(booking.endTime as any);
                 if (potentialStartTime < bookingEnd && potentialEndTime > bookingStart) {
                     currentStatus = 'booked';
                     bookingMeta = booking;
