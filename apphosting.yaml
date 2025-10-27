@@ -47,9 +47,9 @@ env:
   # TODO: Replace these placeholder values with your actual secrets.
   # For production, it is highly recommended to use Secret Manager.
   - variable: PADDLE_API_KEY
-    value: "YOUR_PADDLE_API_KEY_HERE"
+    value: "pdl_sdbx_apikey_01k47qj21fv3xr6fegn7af76kq"
   - variable: PADDLE_WEBHOOK_SECRET
-    value: "YOUR_PADDLE_WEBHOOK_SECRET_HERE"
+    value: "pdl_ntfset_01k455ybkmznxbfq8hf1vzz67c_/pw0l9K796Tp77AX9sqUvA7Y0f3eJ0OB"
   - variable: CLOUDINARY_API_KEY
     value: "YOUR_CLOUDINARY_API_KEY_HERE"
   - variable: CLOUDINARY_API_SECRET
