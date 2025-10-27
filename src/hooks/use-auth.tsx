@@ -29,9 +29,14 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        // Correctly check against the imported ADMIN_EMAIL constant
         const isAdminUser = firebaseUser.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-        setUser({ ...firebaseUser, isAdmin: isAdminUser });
+        
+        // FIX: Directly augment the user object instead of spreading it.
+        // This preserves the original object's prototype and methods (like getIdToken).
+        const userWithAdmin = firebaseUser as UserType;
+        userWithAdmin.isAdmin = isAdminUser;
+
+        setUser(userWithAdmin);
         setIsAdmin(isAdminUser);
       } else {
         setUser(null);
