@@ -17,15 +17,13 @@ import { Spinner } from "@/components/ui/spinner";
 export default function BookingSuccessPage() {
     const searchParams = useSearchParams();
     const isFreeTrial = searchParams.get('free_trial') === 'true';
-    // For paid checkouts, Paddle adds query params. We can use their presence to detect a return.
-    const isPaidReturn = searchParams.has('paddle_session_id') || searchParams.has('paddle_transaction_id');
+    const isSimulatedPayment = searchParams.get('simulated_payment') === 'true';
     const bookingId = searchParams.get('booking_id'); 
 
     const [bookingDetails, setBookingDetails] = useState<Booking | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Only fetch details if we have our internal booking ID (i.e., for free trials or direct returns).
         if (!bookingId) {
             setIsLoading(false);
             return;
@@ -50,17 +48,18 @@ export default function BookingSuccessPage() {
     }, [bookingId]);
 
     const getStatusInfo = () => {
-        if (isFreeTrial) {
+        if (isFreeTrial || isSimulatedPayment) {
             return {
                 icon: <CheckCircle className="h-10 w-10 text-primary" />,
                 bgColor: "bg-primary/10",
-                title: "Free Trial Confirmed!",
-                description: "Your introductory lesson is booked.",
-                message: "You're all set! Your free trial has been scheduled. You can view the details in your dashboard. We look forward to seeing you!",
+                title: isSimulatedPayment ? "Booking Confirmed (Simulated)" : "Free Trial Confirmed!",
+                description: "Your lesson has been successfully scheduled.",
+                message: isSimulatedPayment 
+                    ? "This is a simulated payment confirmation for testing purposes. Your booking has been added to your dashboard."
+                    : "You're all set! Your free trial has been scheduled. You can view the details in your dashboard. We look forward to seeing you!",
             };
         }
         
-        // This is now the universal message for users returning from a paid Paddle checkout.
         return {
             icon: <Clock className="h-10 w-10 text-yellow-600" />,
             bgColor: "bg-yellow-500/10",
@@ -106,7 +105,7 @@ export default function BookingSuccessPage() {
                                 </div>
                             )}
                             <p className="text-xs text-muted-foreground pt-2">
-                                If your booking is not confirmed within a few minutes, please contact us for support.
+                                In a live environment, payment processing would occur here.
                             </p>
                             <Button asChild size="lg" className="mt-4">
                                 <Link href="/profile">Go to My Dashboard</Link>
