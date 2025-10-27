@@ -76,6 +76,7 @@ export default function BookLessonPage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   const selectedProduct = lessonTypes.find((p) => p.id === selectedProductId);
+  // FIX: isTimeRequired is now defined in the main component scope.
   const isTimeRequired = selectedProduct?.type === 'individual' || selectedProduct?.type === 'private-group' || selectedProduct?.type === 'group';
 
   useEffect(() => {
@@ -443,3 +444,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
