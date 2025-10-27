@@ -26,7 +26,6 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     }
 
     // --- SINGLE SOURCE OF TRUTH ---
-    // Look up the product details from the authoritative server-side catalog.
     const product = products[payload.productId];
     if (!product) {
         throw new Error('Invalid product ID provided.');
@@ -34,75 +33,75 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
 
     const isPackage = product.type === 'package';
     const isTimeSpecific = !isPackage && (payload.date && payload.time);
-
-    let startTime: Timestamp | null = null;
-    let endTime: Timestamp | null = null;
-  
-    if (isTimeSpecific) {
-        // Use the SERVER-AUTHORITATIVE duration for calculations.
-        const duration = product.duration as number;
-        const startDateTime = parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date());
-        
-        if (isNaN(startDateTime.getTime())) {
-            throw new Error('Invalid date or time format provided.');
+    
+    // --- PATH 1: PACKAGE PURCHASE ---
+    if (isPackage) {
+        const { paddlePriceId } = product;
+        if (!paddlePriceId || paddlePriceId.includes('YOUR_')) {
+            throw new Error("Payment for this package is not configured.");
         }
 
-        startTime = Timestamp.fromDate(startDateTime);
-        endTime = Timestamp.fromDate(addMinutes(startDateTime, duration));
+        const customData: Record<string, string> = {
+            user_id: payload.userId,
+            package_id: payload.productId,
+        };
+        
+        const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${paddlePriceId}?email=${encodeURIComponent(decodedToken.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(customData))}`;
+        
+        // For packages, we ONLY return a redirect URL. No booking document is created.
+        return { bookingId: null, redirectUrl: checkoutUrl };
     }
+
+    // --- PATH 2: TIME-SPECIFIC LESSON BOOKING ---
+    if (!isTimeSpecific) {
+        throw new Error('A date and time are required for this lesson type.');
+    }
+
+    const duration = product.duration as number;
+    const startDateTime = parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date());
+    
+    if (isNaN(startDateTime.getTime())) {
+        throw new Error('Invalid date or time format provided.');
+    }
+
+    const startTime = Timestamp.fromDate(startDateTime);
+    const endTime = Timestamp.fromDate(addMinutes(startDateTime, duration));
 
     const newBookingRef = db.collection('bookings').doc();
 
-    // Transaction to ensure atomicity
     await db.runTransaction(async (transaction: Transaction) => {
-        if (isTimeSpecific && startTime && endTime) {
-            const bookingsRef = db.collection('bookings');
-            const timeOffRef = db.collection('timeOff');
-            const tutorId = "MahderNegashMamo";
+        const bookingsRef = db.collection('bookings');
+        const timeOffRef = db.collection('timeOff');
+        const tutorId = "MahderNegashMamo";
 
-            // Run all conflict checks using the SERVER-AUTHORITATIVE start and end times.
-            const bookingConflictQuery = bookingsRef
-                .where('tutorId', '==', tutorId)
-                .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-                .where('startTime', '<', endTime)
-                .where('endTime', '>', startTime);
-            
-            const timeOffDayQuery = timeOffRef
-                .where('tutorId', '==', tutorId)
-                .where('startISO', '>=', startTime.toDate().toISOString().split('T')[0]);
+        const bookingConflictQuery = bookingsRef
+            .where('tutorId', '==', tutorId)
+            .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
+            .where('startTime', '<', endTime)
+            .where('endTime', '>', startTime);
+        
+        const timeOffConflictQuery = timeOffRef
+            .where('tutorId', '==', tutorId)
+            .where('startISO', '<', endTime.toDate().toISOString())
+            .where('endISO', '>', startTime.toDate().toISOString());
 
-            const [
-                conflictingBookings,
-                timeOffSnapshot
-            ] = await Promise.all([
-                transaction.get(bookingConflictQuery),
-                transaction.get(timeOffDayQuery)
-            ]);
+        const [conflictingBookings, conflictingTimeOff] = await Promise.all([
+            transaction.get(bookingConflictQuery),
+            transaction.get(timeOffConflictQuery)
+        ]);
 
-            if (!conflictingBookings.empty) throw new Error('slot_already_booked');
-            
-            const startMillis = startTime.toMillis();
-            const endMillis = endTime.toMillis();
-            for (const doc of timeOffSnapshot.docs) {
-                const block = doc.data();
-                const blockStartMillis = new Date(block.startISO).getTime();
-                const blockEndMillis = new Date(block.endISO).getTime();
-                if (startMillis < blockEndMillis && endMillis > blockStartMillis) {
-                    throw new Error('tutor_unavailable');
-                }
-            }
-        }
+        if (!conflictingBookings.empty) throw new Error('slot_already_booked');
+        if (!conflictingTimeOff.empty) throw new Error('tutor_unavailable');
 
-        // All checks passed, create the new booking document
         const newBookingDoc = {
             userId: payload.userId,
             userName: decodedToken.name || 'User',
             userEmail: decodedToken.email || 'No Email',
-            date: payload.date || 'N/A_PACKAGE',
-            time: payload.time || 'N/A_PACKAGE',
+            date: payload.date,
+            time: payload.time,
             startTime: startTime,
             endTime: endTime,
-            duration: typeof product.duration === 'number' ? product.duration : null,
+            duration: duration,
             lessonType: product.label,
             price: product.price,
             productId: payload.productId,
@@ -110,40 +109,30 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             tutorName: "Mahder N. Mamo",
             status: product.price === 0 ? 'confirmed' : 'awaiting-payment',
             createdAt: FieldValue.serverTimestamp(),
-            statusHistory: [
-                {
-                    status: product.price === 0 ? 'confirmed' : 'awaiting-payment',
-                    changedAt: Timestamp.now(),
-                    changedBy: 'system',
-                    reason: 'Booking created.'
-                }
-            ],
+            statusHistory: [{
+                status: product.price === 0 ? 'confirmed' : 'awaiting-payment',
+                changedAt: Timestamp.now(),
+                changedBy: 'system',
+                reason: 'Booking created.'
+            }],
             ...(payload.paymentNote && { paymentNote: payload.paymentNote }),
         };
 
         transaction.set(newBookingRef, newBookingDoc);
     });
 
-    // If it's a paid lesson, construct the Paddle URL
     if (product.price > 0) {
         const { paddlePriceId } = product;
         if (!paddlePriceId || paddlePriceId.includes('YOUR_')) {
             throw new Error("Payment for this product is not configured.");
         }
         
-        const customData: Record<string, string> = {};
-        if (isPackage) {
-          customData.user_id = payload.userId;
-          customData.package_id = payload.productId;
-        } else {
-          customData.booking_id = newBookingRef.id;
-        }
-        
+        const customData = { booking_id: newBookingRef.id };
         const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${paddlePriceId}?email=${encodeURIComponent(decodedToken.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(customData))}`;
         
         return { bookingId: newBookingRef.id, redirectUrl: checkoutUrl };
     }
 
-    // For free trials, return the booking ID for a direct success redirect
+    // For free trials, return a success redirect.
     return { bookingId: newBookingRef.id, redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&free_trial=true` };
 }
