@@ -22,6 +22,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 import { getAvailability } from "@/services/availabilityService";
+import { createBooking } from "@/services/bookingService";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
 import { Timestamp } from "firebase/firestore"

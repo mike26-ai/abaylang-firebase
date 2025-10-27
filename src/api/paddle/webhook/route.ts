@@ -1,18 +1,17 @@
-
 // File: src/app/api/paddle/webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { Paddle, type TransactionCompletedEvent } from '@paddle/paddle-node-sdk';
 import { initAdmin, adminDb } from '@/lib/firebase-admin';
 import { FieldValue, Transaction } from 'firebase-admin/firestore';
-import { products, type ProductId } from '@/config/products'; // Import the new product catalog
+import { products, type ProductId } from '@/config/products';
 
 initAdmin();
 
 interface PaddleCustomData {
-    booking_id?: string;
-    // --- NEW: For package purchases ---
-    user_id?: string;
-    package_id?: ProductId; // Use the strongly-typed ProductId
+    booking_id: string; // This is now mandatory for all transactions
+    user_id: string;
+    product_id: ProductId;
+    product_type: 'individual' | 'group' | 'private-group' | 'package';
 }
 
 const paddleApiKey = process.env.PADDLE_API_KEY;
@@ -22,66 +21,75 @@ if (!paddleApiKey) {
 const paddle = new Paddle(paddleApiKey || '');
 
 
-async function handleSingleLessonConfirmation(bookingId: string, transactionId: string) {
-    console.log(`Webhook: Updating booking ${bookingId} to 'confirmed'.`);
-    const bookingDocRef = adminDb.collection('bookings').doc(bookingId);
-    
-    await bookingDocRef.update({
-        status: 'confirmed',
-        paddleTransactionId: transactionId, // Store Paddle's transaction ID for reference
-        statusHistory: FieldValue.arrayUnion({
-            status: 'confirmed',
-            changedAt: FieldValue.serverTimestamp(),
-            changedBy: 'paddle_webhook',
-            reason: `Payment confirmed via Paddle transaction ID: ${transactionId}`
-        })
-    });
-    console.log(`Webhook: Booking ${bookingId} successfully confirmed.`);
-}
+async function handleTransactionConfirmation(transactionId: string, customData: PaddleCustomData) {
+    const { booking_id, user_id, product_id, product_type } = customData;
+    console.log(`Webhook: Processing transaction ${transactionId} for booking ${booking_id}`);
 
-async function handlePackageCreditAllocation(userId: string, packageId: ProductId) {
-    console.log(`Webhook: Allocating credits for package '${packageId}' to user ${userId}.`);
-    const userDocRef = adminDb.collection('users').doc(userId);
-
-    // Look up package details from the authoritative server-side catalog
-    const product = products[packageId];
-    if (product.type !== 'package' || !product.totalLessons) {
-        console.error(`Webhook Error: Invalid package_id '${packageId}' received or missing totalLessons.`);
-        throw new Error(`Invalid package product ID: ${packageId}`);
-    }
-    const creditsToAdd = product.totalLessons;
-    const creditType = packageId; // The credit type is the product ID of the package
+    const bookingDocRef = adminDb.collection('bookings').doc(booking_id);
+    const userDocRef = adminDb.collection('users').doc(user_id);
 
     await adminDb.runTransaction(async (transaction: Transaction) => {
-        const userDoc = await transaction.get(userDocRef);
-        if (!userDoc.exists) {
-            console.error(`Webhook Error: User with ID ${userId} not found. Cannot allocate credits.`);
-            throw new Error(`User not found for credit allocation.`);
+        const bookingDoc = await transaction.get(bookingDocRef);
+        if (!bookingDoc.exists) {
+            console.error(`Webhook Error: Booking with ID ${booking_id} not found.`);
+            // Don't throw, just log and exit. The transaction might be for something else.
+            return;
         }
 
-        const userData = userDoc.data();
-        const currentCredits = userData?.credits || [];
-        
-        const existingCreditIndex = currentCredits.findIndex((c: any) => c.lessonType === creditType);
-        
-        let newCredits = [];
-        if (existingCreditIndex > -1) {
-            // User already has this type of credit, so increment the count
-            newCredits = currentCredits.map((c: any, index: number) => 
-                index === existingCreditIndex ? { ...c, count: c.count + creditsToAdd } : c
-            );
-        } else {
-            // User does not have this type of credit, so add it
-            newCredits = [...currentCredits, { lessonType: creditType, count: creditsToAdd }];
+        // --- Step 1: Handle credit allocation if it's a package ---
+        if (product_type === 'package') {
+            const product = products[product_id];
+            if (!product || product.type !== 'package' || !product.totalLessons) {
+                console.error(`Webhook Error: Invalid package_id '${product_id}' received.`);
+                return; // Exit transaction
+            }
+            
+            const creditsToAdd = product.totalLessons;
+            const creditType = product_id;
+
+            const userDoc = await transaction.get(userDocRef);
+            if (!userDoc.exists) {
+                console.error(`Webhook Error: User with ID ${user_id} not found. Cannot allocate credits.`);
+                return; // Exit transaction
+            }
+
+            const userData = userDoc.data();
+            const currentCredits = userData?.credits || [];
+            const existingCreditIndex = currentCredits.findIndex((c: any) => c.lessonType === creditType);
+            
+            let newCredits = [];
+            if (existingCreditIndex > -1) {
+                newCredits = currentCredits.map((c: any, index: number) => 
+                    index === existingCreditIndex ? { ...c, count: c.count + creditsToAdd } : c
+                );
+            } else {
+                newCredits = [...currentCredits, { lessonType: creditType, count: creditsToAdd }];
+            }
+
+            transaction.update(userDocRef, {
+                credits: newCredits,
+                lastCreditPurchase: FieldValue.serverTimestamp(),
+            });
+            console.log(`Webhook: Successfully allocated ${creditsToAdd} credits of type '${creditType}' to user ${user_id}.`);
         }
 
-        transaction.update(userDocRef, {
-            credits: newCredits,
-            lastCreditPurchase: FieldValue.serverTimestamp(),
+        // --- Step 2: Update the booking document status ---
+        // For packages, this marks the purchase as 'completed'.
+        // For single lessons, this marks the lesson as 'confirmed'.
+        const finalStatus = product_type === 'package' ? 'completed' : 'confirmed';
+        
+        transaction.update(bookingDocRef, {
+            status: finalStatus,
+            paddleTransactionId: transactionId,
+            statusHistory: FieldValue.arrayUnion({
+                status: finalStatus,
+                changedAt: FieldValue.serverTimestamp(),
+                changedBy: 'paddle_webhook',
+                reason: `Payment confirmed for ${product_type} via Paddle transaction ID: ${transactionId}`
+            })
         });
+        console.log(`Webhook: Booking ${booking_id} status updated to '${finalStatus}'.`);
     });
-    
-    console.log(`Webhook: Successfully allocated ${creditsToAdd} credits of type '${creditType}' to user ${userId}.`);
 }
 
 
@@ -107,19 +115,10 @@ export async function POST(request: NextRequest) {
       const transaction = event.data;
       const customData = transaction.customData as PaddleCustomData | null;
       
-      const bookingId = customData?.booking_id;
-      const userId = customData?.user_id;
-      const packageId = customData?.package_id;
-
-      // --- LOGIC TO DIFFERENTIATE BOOKING VS. PACKAGE ---
-      if (bookingId) {
-        // This is a single lesson or group session booking
-        await handleSingleLessonConfirmation(bookingId, transaction.id);
-      } else if (userId && packageId) {
-        // This is a package purchase
-        await handlePackageCreditAllocation(userId, packageId);
+      if (customData && customData.booking_id && customData.user_id && customData.product_id) {
+        await handleTransactionConfirmation(transaction.id, customData);
       } else {
-        console.warn('Webhook: Received transaction.completed event with insufficient customData.', customData);
+        console.warn('Webhook: Received transaction.completed event with incomplete customData.', customData);
       }
     }
 

@@ -1,4 +1,3 @@
-
 // File: src/config/products.ts
 
 /**
