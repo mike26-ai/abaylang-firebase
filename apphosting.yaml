@@ -1,4 +1,3 @@
-
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
@@ -42,27 +41,24 @@ env:
     value: "YOUR_CLOUD_NAME_HERE" # TODO: Replace with your Cloudinary Cloud Name
   - variable: NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
     value: "YOUR_UPLOAD_PRESET_HERE" # TODO: Replace with your Cloudinary Upload Preset
-#  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-#    secret: FIREBASE_API_KEY # Example for secrets from Secret Manager
-#  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-#    secret: FIREBASE_AUTH_DOMAIN
-#  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-#    secret: FIREBASE_PROJECT_ID
-#  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-#    secret: FIREBASE_STORAGE_BUCKET
-#  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-#    secret: FIREBASE_MESSAGING_SENDER_ID
-#  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-#    secret: FIREBASE_APP_ID
-# It's generally recommended to use Secret Manager for sensitive env vars.
-# For non-sensitive NEXT_PUBLIC_ variables, you can define them here or
-# ensure they are set during the build process if your CI/CD handles it.
-# If NEXT_PUBLIC_ variables are already in your .env files and committed (not recommended for secrets),
-# Next.js might pick them up during the build on App Hosting.
-# For MVP, ensure these are available at runtime for Firebase SDK initialization on the client.
-# If these are not available as secrets, you can set them directly (not recommended for API keys).
-# Example (less secure, use secrets if possible):
-#  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-#    value: "your_actual_api_key_here"
+  
+  # --- SERVER-SIDE SECRETS ---
+  # These are required for server actions to function correctly.
+  # TODO: Replace these placeholder values with your actual secrets.
+  # For production, it is highly recommended to use Secret Manager.
+  - variable: PADDLE_API_KEY
+    value: "YOUR_PADDLE_API_KEY_HERE"
+  - variable: PADDLE_WEBHOOK_SECRET
+    value: "YOUR_PADDLE_WEBHOOK_SECRET_HERE"
+  - variable: CLOUDINARY_API_KEY
+    value: "YOUR_CLOUDINARY_API_KEY_HERE"
+  - variable: CLOUDINARY_API_SECRET
+    value: "YOUR_CLOUDINARY_API_SECRET_HERE"
 
+# It's generally recommended to use Secret Manager for sensitive env vars.
+# Example using secrets:
+#  - variable: PADDLE_API_KEY
+#    secret: PADDLE_API_KEY_SECRET_NAME
+#  - variable: PADDLE_WEBHOOK_SECRET
+#    secret: PADDLE_WEBHOOK_SECRET_NAME
     
