@@ -151,6 +151,7 @@ export default function BookLessonPage() {
   const isGroupLesson = selectedProduct?.type === 'group';
   const isPackagePurchase = selectedProduct?.type === 'package';
   const isPrivateGroup = selectedProduct?.type === 'private-group';
+  const isTimeRequired = !isPackagePurchase && !isGroupLesson;
 
 
   const fetchAvailability = async (date: Date) => {
@@ -283,7 +284,6 @@ export default function BookLessonPage() {
       return;
     }
 
-    const isTimeRequired = !isPackagePurchase && !isGroupLesson;
     if (isTimeRequired && (!selectedDate || !selectedTime)) {
       toast({ title: "Selection Incomplete", description: "Please select a date and time.", variant: "destructive" });
       return;
@@ -534,3 +534,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
