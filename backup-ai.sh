@@ -8,5 +8,9 @@ else
 fi
 git tag "$TAG_NAME"
 echo "✅ Snapshot saved with tag: $TAG_NAME"
-echo "💡 To restore later: git checkout -b restore-from-backup $TAG_NAME"
 
+# Push the commit and tags to the remote repository
+git push --follow-tags
+echo "✅ Changes pushed to remote repository."
+
+echo "💡 To restore later: git checkout -b restore-from-backup $TAG_NAME"
