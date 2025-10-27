@@ -1,146 +1,126 @@
-
 // File: src/app/api/bookings/service.ts
 /**
  * This file contains the core, testable business logic for the bookings endpoints.
+ * It now uses the server-side product catalog as the single source of truth.
  */
 import { getFirestore, Timestamp, FieldValue, Transaction } from 'firebase-admin/firestore';
-import { addMinutes, parse, differenceInHours } from 'date-fns';
+import { addMinutes, parse } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
+import { products, type ProductId } from '@/config/products'; // Import the server-side catalog
 
 const db = getFirestore();
 
 interface BookingPayload {
-  date: string;
-  time: string;
-  duration: number;
-  lessonType: string;
-  price: number;
-  tutorId: string;
-  isFreeTrial: boolean;
+  productId: ProductId;
   userId: string;
-  userName?: string;
-  userEmail?: string;
+  date?: string;
+  time?: string;
   paymentNote?: string;
   groupSessionId?: string;
 }
 
-
-export async function _createBooking(bookingData: BookingPayload, decodedToken: DecodedIdToken) {
-    if (decodedToken.uid !== bookingData.userId) {
-        const error = new Error('unauthorized');
-        (error as any).status = 403;
-        throw error;
+export async function _createBooking(payload: BookingPayload, decodedToken: DecodedIdToken) {
+    if (decodedToken.uid !== payload.userId) {
+        throw new Error('unauthorized');
     }
 
-    const isSpecificTimeBooking = bookingData.date !== 'N/A_PACKAGE' && bookingData.time !== 'N/A_PACKAGE';
+    // --- SINGLE SOURCE OF TRUTH ---
+    // Look up the product details from the authoritative server-side catalog.
+    const product = products[payload.productId];
+    if (!product) {
+        throw new Error('Invalid product ID provided.');
+    }
+
+    const isPackage = product.type === 'package';
+    const isTimeSpecific = payload.date && payload.time && !isPackage;
+
     let startTime: Timestamp | null = null;
     let endTime: Timestamp | null = null;
   
-    if (isSpecificTimeBooking) {
-        // IMPORTANT: Parse the date and time from the client and create a Date object.
-        // This assumes the server's timezone is consistent or the client sends timezone-aware strings if needed.
-        // For simplicity, we'll parse as is, but for production, ensuring UTC would be best.
-        const startDateTime = parse(`${bookingData.date} ${bookingData.time}`, 'yyyy-MM-dd HH:mm', new Date());
+    if (isTimeSpecific) {
+        // Use the SERVER-AUTHORITATIVE duration for calculations.
+        const duration = product.duration as number;
+        const startDateTime = parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date());
+        
         if (isNaN(startDateTime.getTime())) {
             throw new Error('Invalid date or time format provided.');
         }
+
         startTime = Timestamp.fromDate(startDateTime);
-        endTime = Timestamp.fromDate(addMinutes(startDateTime, bookingData.duration));
+        endTime = Timestamp.fromDate(addMinutes(startDateTime, duration));
     }
 
     return await db.runTransaction(async (transaction: Transaction) => {
-        // If it is a group session booking, perform group-specific checks
-        if (bookingData.groupSessionId) {
-            const groupSessionRef = db.collection('groupSessions').doc(bookingData.groupSessionId);
-            const groupSessionDoc = await transaction.get(groupSessionRef);
-            if (!groupSessionDoc.exists) {
-                throw new Error('Group session not found.');
-            }
-            const groupSessionData = groupSessionDoc.data()!;
-
-            // Check if registration is closed (e.g., 3 hours before start)
-            const registrationDeadline = new Date(groupSessionData.startTime.toDate().getTime() - 3 * 60 * 60 * 1000);
-            if (new Date() > registrationDeadline) {
-                throw new Error('group_session_registration_closed');
-            }
-
-            // Check if the session is full
-            if (groupSessionData.participantCount >= groupSessionData.maxStudents) {
-                throw new Error('group_session_full');
-            }
-            
-            // Increment participant count
-            transaction.update(groupSessionRef, { 
-                participantCount: FieldValue.increment(1),
-                participantIds: FieldValue.arrayUnion(bookingData.userId)
-            });
-
-        } else if (isSpecificTimeBooking && startTime && endTime) {
-            // This is a private lesson, check for conflicts across all relevant collections
+        if (isTimeSpecific && startTime && endTime) {
             const bookingsRef = db.collection('bookings');
             const timeOffRef = db.collection('timeOff');
             const groupSessionsRef = db.collection('groupSessions');
 
-            // 1. Check for conflicting private bookings (with correct statuses)
+            const tutorId = "MahderNegashMamo";
+
+            // Run all conflict checks using the SERVER-AUTHORITATIVE start and end times.
             const bookingConflictQuery = bookingsRef
-                .where('tutorId', '==', bookingData.tutorId)
-                .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
+                .where('tutorId', '==', tutorId)
+                .where('status', 'in', ['confirmed', 'awaiting-payment'])
                 .where('startTime', '<', endTime)
                 .where('endTime', '>', startTime);
-            const conflictingBookings = await transaction.get(bookingConflictQuery);
-            if (!conflictingBookings.empty) {
-                console.log("Booking Conflicts Found:", conflictingBookings.docs.map(d => d.data()));
-                throw new Error('slot_already_booked');
-            }
-
-            // 2. Check for conflicting group sessions (with correct statuses)
+                
             const groupSessionConflictQuery = groupSessionsRef
-                .where('tutorId', '==', bookingData.tutorId)
-                .where('status', '==', 'scheduled') // Only check for active scheduled sessions
+                .where('tutorId', '==', tutorId)
+                .where('status', '==', 'scheduled')
                 .where('startTime', '<', endTime)
                 .where('endTime', '>', startTime);
-            const conflictingGroupSessions = await transaction.get(groupSessionConflictQuery);
-             if (!conflictingGroupSessions.empty) {
-                 console.log("Group Session Conflicts Found:", conflictingGroupSessions.docs.map(d => d.data()));
-                 throw new Error('slot_already_booked');
-            }
-
-            // 3. Check for conflicting admin time-off blocks
-            // This query compares Timestamp objects with the string fields in timeOff, which is incorrect.
-            // A robust solution requires storing startISO/endISO as Timestamps in Firestore or fetching and converting.
-            // For an immediate fix, we fetch and check in memory, which is safe inside a transaction.
-            const timeOffDayQuery = timeOffRef
-                .where('tutorId', '==', bookingData.tutorId)
-                .where('startISO', '>=', startTime.toDate().toISOString().split('T')[0]); // Broad fetch for the day
             
-            const timeOffSnapshot = await transaction.get(timeOffDayQuery);
+            const timeOffDayQuery = timeOffRef
+                .where('tutorId', '==', tutorId)
+                .where('startISO', '>=', startTime.toDate().toISOString().split('T')[0]);
+
+            const [
+                conflictingBookings,
+                conflictingGroupSessions,
+                timeOffSnapshot
+            ] = await Promise.all([
+                transaction.get(bookingConflictQuery),
+                transaction.get(groupSessionConflictQuery),
+                transaction.get(timeOffDayQuery)
+            ]);
+
+            if (!conflictingBookings.empty) throw new Error('slot_already_booked');
+            if (!conflictingGroupSessions.empty) throw new Error('slot_already_booked');
+            
             const startMillis = startTime.toMillis();
             const endMillis = endTime.toMillis();
-
             for (const doc of timeOffSnapshot.docs) {
                 const block = doc.data();
-                const blockStartMillis = new Date(block.startISO).getTime();
-                const blockEndMillis = new Date(block.endISO).getTime();
-                if (startMillis < blockEndMillis && endMillis > blockStartMillis) {
-                    console.log("Time-Off Conflict Found:", block);
+                if (startMillis < new Date(block.endISO).getTime() && endMillis > new Date(block.startISO).getTime()) {
                     throw new Error('tutor_unavailable');
                 }
             }
         }
 
-        // If all checks pass, create the new booking document
+        // All checks passed, create the new booking document
         const newBookingRef = db.collection('bookings').doc();
+        
+        // Use authoritative product details for the new booking document
         const newBookingDoc = {
-            ...bookingData,
+            userId: payload.userId,
+            userName: decodedToken.name || 'User',
+            userEmail: decodedToken.email || 'No Email',
+            date: payload.date || 'N/A_PACKAGE',
+            time: payload.time || 'N/A_PACKAGE',
             startTime: startTime,
             endTime: endTime,
-            status: bookingData.isFreeTrial ? 'confirmed' : 'awaiting-payment',
-            createdAt: FieldValue.serverTimestamp(), // Use server timestamp for reliability
+            duration: typeof product.duration === 'number' ? product.duration : null,
+            lessonType: product.label,
+            price: product.price,
+            productId: payload.productId, // Store the product ID for reference
+            tutorId: "MahderNegashMamo",
+            status: product.price === 0 ? 'confirmed' : 'awaiting-payment',
+            createdAt: FieldValue.serverTimestamp(),
+            ...(payload.paymentNote && { paymentNote: payload.paymentNote }),
         };
 
         transaction.set(newBookingRef, newBookingDoc);
         return { bookingId: newBookingRef.id };
     });
 }
-
-    

@@ -1,33 +1,27 @@
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminAuth, initAdmin } from '@/lib/firebase-admin';
+import { initAdmin, adminAuth } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { _createBooking } from '@/app/api/bookings/service';
 import type { DecodedIdToken } from 'firebase-admin/auth';
+import { isValidProductId } from '@/config/products';
 
 // Initialize Firebase Admin SDK
 initAdmin();
 
-// Zod schema for input validation, matching the client payload
-const CreateBookingSchema = z.object({
-  date: z.string(), // "YYYY-MM-DD"
-  time: z.string(), // "HH:mm"
-  duration: z.number().int().positive(),
-  lessonType: z.string().min(1),
-  price: z.number().min(0),
-  tutorId: z.string().min(1),
-  isFreeTrial: z.boolean(), // FIX: This field was missing
-  userId: z.string().min(1), 
-  userName: z.string().optional(),
-  userEmail: z.string().email().optional(),
+// Zod schema for input validation. Now only requires productId.
+const CreateBookingRequestSchema = z.object({
+  productId: z.string().refine(isValidProductId, { message: 'Invalid product ID.' }),
+  userId: z.string().min(1), // Still useful for a cross-check
+  date: z.string().optional(), // "YYYY-MM-DD" - optional for packages
+  time: z.string().optional(), // "HH:mm" - optional for packages
   paymentNote: z.string().optional(),
-  groupSessionId: z.string().optional(),
 });
 
 /**
  * POST handler to create a new booking securely.
- * This route handler is now a thin wrapper around the testable business logic
- * in the accompanying service.ts file.
+ * This route handler is now a thin wrapper around the testable business logic.
+ * It validates the user and the productId, then passes control to the service.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +34,7 @@ export async function POST(request: NextRequest) {
     
     // 2. Validate Input Body
     const body = await request.json();
-    const validationResult = CreateBookingSchema.safeParse(body);
+    const validationResult = CreateBookingRequestSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json({ success: false, message: 'Invalid input', details: validationResult.error.flatten() }, { status: 400 });
     }
@@ -54,7 +48,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error in create booking API route:', error);
     if (error.message === 'slot_already_booked') {
-        return NextResponse.json({ success: false, message: 'slot_already_booked' }, { status: 409 });
+        return NextResponse.json({ success: false, message: 'This time slot has just been booked. Please select another.' }, { status: 409 });
     }
     if (error.message === 'tutor_unavailable') {
         return NextResponse.json({ success: false, message: 'The tutor is unavailable at this time due to a scheduled break.' }, { status: 409 });
@@ -68,6 +62,6 @@ export async function POST(request: NextRequest) {
     if (error.message === 'unauthorized') {
         return NextResponse.json({ success: false, message: 'Unauthorized action.' }, { status: 403 });
     }
-    return NextResponse.json({ success: false, message: 'An internal server error occurred.' }, { status: 500 });
+    return NextResponse.json({ success: false, message: error.message || 'An internal server error occurred.' }, { status: 500 });
   }
 }
