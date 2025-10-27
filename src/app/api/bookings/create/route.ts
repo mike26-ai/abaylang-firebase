@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminAuth } from '@/lib/firebase-admin';
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     const result = await _createBooking(validationResult.data, decodedToken);
 
     // 4. Return success response
-    return NextResponse.json({ success: true, bookingId: result.bookingId }, { status: 201 });
+    return NextResponse.json({ success: true, ...result }, { status: 201 });
 
   } catch (error: any) {
     console.error('Error in create booking API route:', error);

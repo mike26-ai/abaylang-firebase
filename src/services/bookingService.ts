@@ -1,111 +1,14 @@
 
 // File: src/services/bookingService.ts
-import { auth, db } from "@/lib/firebase";
-import { doc, runTransaction, serverTimestamp, collection, writeBatch, Timestamp, addDoc } from "firebase/firestore";
-import type { UserCredit } from "@/lib/types";
+import { auth } from "@/lib/firebase";
 
-const API_BASE_URL = '/api';
-
-interface CreateBookingPayload {
-    date: string;
-    time: string;
-    duration: number;
-    lessonType: string;
-    price: number;
-    tutorId: string;
-    isFreeTrial: boolean;
-    userId: string;
-    userName: string;
-    userEmail: string;
-    paymentNote?: string;
-    groupSessionId?: string;
-    wasRedeemedWithCredit?: boolean;
-    creditType?: string;
-}
-
-/**
- * Creates a new booking via a secure, server-side API endpoint for payments,
- * or directly via a client-side transaction for credit redemption.
- * @param bookingPayload - The data for the new booking.
- * @returns An object containing the new booking's ID.
- */
-export async function createBooking(bookingPayload: CreateBookingPayload): Promise<{ bookingId: string }> {
-    const user = auth.currentUser;
-    if (!user) {
-        throw new Error("Authentication required to create a booking.");
-    }
-    if (user.uid !== bookingPayload.userId) {
-        throw new Error("User mismatch. Cannot create booking for another user.");
-    }
-
-    if (bookingPayload.wasRedeemedWithCredit && bookingPayload.creditType) {
-        const userRef = doc(db, "users", user.uid);
-        
-        try {
-            let bookingId = '';
-            await runTransaction(db, async (transaction) => {
-                const userDoc = await transaction.get(userRef);
-                if (!userDoc.exists()) {
-                    throw new Error("User profile not found.");
-                }
-                const userData = userDoc.data();
-                const credits: UserCredit[] = userData.credits || [];
-                
-                const creditIndex = credits.findIndex(c => c.lessonType === bookingPayload.creditType && c.count > 0);
-                
-                if (creditIndex === -1) {
-                    throw new Error("You do not have sufficient credits for this lesson type.");
-                }
-
-                credits[creditIndex].count -= 1;
-
-                const newBookingRef = doc(collection(db, "bookings"));
-                bookingId = newBookingRef.id;
-                
-                // When redeeming a credit, the booking is confirmed immediately
-                transaction.set(newBookingRef, {
-                    ...bookingPayload,
-                    status: 'confirmed',
-                    createdAt: serverTimestamp(),
-                });
-
-                transaction.update(userRef, { credits: credits.filter(c => c.count > 0) }); // Also filter out empty credit bundles
-            });
-            
-            if (!bookingId) {
-                throw new Error("Failed to create booking document during transaction.");
-            }
-            return { bookingId };
-
-        } catch (error) {
-            console.error("Credit redemption transaction failed:", error);
-            throw error;
-        }
-
-    } else {
-        // Handle paid lessons and free trials via the secure API route
-        const idToken = await user.getIdToken();
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/bookings/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`,
-                },
-                body: JSON.stringify(bookingPayload),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || 'Failed to create booking.');
-            }
-            
-            return data;
-            
-        } catch (err: any) {
-            throw err;
-        }
-    }
+// This file is no longer used for booking creation.
+// The logic has been moved to the /api/bookings/create API route
+// and its corresponding service file to ensure all booking creation
+// logic is handled securely on the server.
+// The client now calls the API route directly.
+// This file is kept to prevent breaking imports but should be considered deprecated.
+export async function createBooking() {
+    console.warn("DEPRECATED: createBooking service on the client is no longer used.");
+    throw new Error("Booking creation must be handled by the server API.");
 }

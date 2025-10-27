@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/service.ts
 /**
  * This file contains the core, testable business logic for the bookings endpoints.
@@ -32,7 +33,7 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     }
 
     const isPackage = product.type === 'package';
-    const isTimeSpecific = payload.date && payload.time && !isPackage;
+    const isTimeSpecific = !isPackage && (payload.date && payload.time);
 
     let startTime: Timestamp | null = null;
     let endTime: Timestamp | null = null;
@@ -50,24 +51,19 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
         endTime = Timestamp.fromDate(addMinutes(startDateTime, duration));
     }
 
-    return await db.runTransaction(async (transaction: Transaction) => {
+    const newBookingRef = db.collection('bookings').doc();
+
+    // Transaction to ensure atomicity
+    await db.runTransaction(async (transaction: Transaction) => {
         if (isTimeSpecific && startTime && endTime) {
             const bookingsRef = db.collection('bookings');
             const timeOffRef = db.collection('timeOff');
-            const groupSessionsRef = db.collection('groupSessions');
-
             const tutorId = "MahderNegashMamo";
 
             // Run all conflict checks using the SERVER-AUTHORITATIVE start and end times.
             const bookingConflictQuery = bookingsRef
                 .where('tutorId', '==', tutorId)
-                .where('status', 'in', ['confirmed', 'awaiting-payment'])
-                .where('startTime', '<', endTime)
-                .where('endTime', '>', startTime);
-                
-            const groupSessionConflictQuery = groupSessionsRef
-                .where('tutorId', '==', tutorId)
-                .where('status', '==', 'scheduled')
+                .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
                 .where('startTime', '<', endTime)
                 .where('endTime', '>', startTime);
             
@@ -77,31 +73,27 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
 
             const [
                 conflictingBookings,
-                conflictingGroupSessions,
                 timeOffSnapshot
             ] = await Promise.all([
                 transaction.get(bookingConflictQuery),
-                transaction.get(groupSessionConflictQuery),
                 transaction.get(timeOffDayQuery)
             ]);
 
             if (!conflictingBookings.empty) throw new Error('slot_already_booked');
-            if (!conflictingGroupSessions.empty) throw new Error('slot_already_booked');
             
             const startMillis = startTime.toMillis();
             const endMillis = endTime.toMillis();
             for (const doc of timeOffSnapshot.docs) {
                 const block = doc.data();
-                if (startMillis < new Date(block.endISO).getTime() && endMillis > new Date(block.startISO).getTime()) {
+                const blockStartMillis = new Date(block.startISO).getTime();
+                const blockEndMillis = new Date(block.endISO).getTime();
+                if (startMillis < blockEndMillis && endMillis > blockStartMillis) {
                     throw new Error('tutor_unavailable');
                 }
             }
         }
 
         // All checks passed, create the new booking document
-        const newBookingRef = db.collection('bookings').doc();
-        
-        // Use authoritative product details for the new booking document
         const newBookingDoc = {
             userId: payload.userId,
             userName: decodedToken.name || 'User',
@@ -113,14 +105,45 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             duration: typeof product.duration === 'number' ? product.duration : null,
             lessonType: product.label,
             price: product.price,
-            productId: payload.productId, // Store the product ID for reference
+            productId: payload.productId,
             tutorId: "MahderNegashMamo",
+            tutorName: "Mahder N. Mamo",
             status: product.price === 0 ? 'confirmed' : 'awaiting-payment',
             createdAt: FieldValue.serverTimestamp(),
+            statusHistory: [
+                {
+                    status: product.price === 0 ? 'confirmed' : 'awaiting-payment',
+                    changedAt: FieldValue.serverTimestamp(),
+                    changedBy: 'system',
+                    reason: 'Booking created.'
+                }
+            ],
             ...(payload.paymentNote && { paymentNote: payload.paymentNote }),
         };
 
         transaction.set(newBookingRef, newBookingDoc);
-        return { bookingId: newBookingRef.id };
     });
+
+    // If it's a paid lesson, construct the Paddle URL
+    if (product.price > 0) {
+        const { paddlePriceId } = product;
+        if (!paddlePriceId || paddlePriceId.includes('YOUR_')) {
+            throw new Error("Payment for this product is not configured.");
+        }
+        
+        const customData: Record<string, string> = {};
+        if (isPackage) {
+          customData.user_id = payload.userId;
+          customData.package_id = payload.productId;
+        } else {
+          customData.booking_id = newBookingRef.id;
+        }
+        
+        const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${paddlePriceId}?email=${encodeURIComponent(decodedToken.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(customData))}`;
+        
+        return { bookingId: newBookingRef.id, redirectUrl: checkoutUrl };
+    }
+
+    // For free trials, return the booking ID for a direct success redirect
+    return { bookingId: newBookingRef.id, redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&free_trial=true` };
 }

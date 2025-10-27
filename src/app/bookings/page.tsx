@@ -13,7 +13,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid, differenceInHours } from 'date-fns';
+import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType, TimeOff, GroupSession, UserProfile, UserCredit } from "@/lib/types";
@@ -22,8 +22,6 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 import { getAvailability } from "@/services/availabilityService";
-import { createBooking } from "@/services/bookingService";
-import { getGroupSessions } from "@/services/groupSessionService"
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
 import { Timestamp } from "firebase/firestore"
@@ -74,47 +72,11 @@ export default function BookLessonPage() {
   const [dailyTimeOff, setDailyTimeOff] = useState<TimeOff[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
   
-  const [allGroupSessions, setAllGroupSessions] = useState<GroupSession[]>([]);
-  const [isFetchingGroupSessions, setIsFetchingGroupSessions] = useState(false);
-  const [selectedGroupSession, setSelectedGroupSession] = useState<string | undefined>(undefined);
-
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
-  const [privateGroupMembers, setPrivateGroupMembers] = useState<{ name: string; email: string; }[]>([]);
-  
-  useEffect(() => {
-    if (user && privateGroupMembers.length === 0) {
-        setPrivateGroupMembers([{ name: user.displayName || '', email: user.email || '' }, { name: '', email: '' }]);
-    } else if (user && privateGroupMembers.length > 0) {
-        const updatedMembers = [...privateGroupMembers];
-        if (!updatedMembers[0].name && !updatedMembers[0].email) {
-            updatedMembers[0] = { name: user.displayName || '', email: user.email || '' };
-            setPrivateGroupMembers(updatedMembers);
-        }
-    }
-  }, [user, privateGroupMembers]);
-
-
-  const handlePrivateGroupMemberChange = (index: number, field: 'name' | 'email', value: string) => {
-    const updatedMembers = [...privateGroupMembers];
-    updatedMembers[index][field] = value;
-    setPrivateGroupMembers(updatedMembers);
-  };
-
-  const addPrivateGroupMember = () => {
-    if (privateGroupMembers.length < 6) {
-        setPrivateGroupMembers([...privateGroupMembers, { name: '', email: '' }]);
-    }
-  };
-
-  const removePrivateGroupMember = (index: number) => {
-    if (privateGroupMembers.length > 2) {
-      const updatedMembers = privateGroupMembers.filter((_, i) => i !== index);
-      setPrivateGroupMembers(updatedMembers);
-    }
-  };
-
+  const selectedProduct = lessonTypes.find((p) => p.id === selectedProductId);
+  const isTimeRequired = selectedProduct?.type === 'individual' || selectedProduct?.type === 'private-group' || selectedProduct?.type === 'group';
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -145,15 +107,6 @@ export default function BookLessonPage() {
     return null;
   }, [userProfile, selectedProductId]);
 
-  const selectedProduct = lessonTypes.find((p) => p.id === selectedProductId);
-  
-  const isIndividualLesson = selectedProduct?.type === 'individual';
-  const isGroupLesson = selectedProduct?.type === 'group';
-  const isPackagePurchase = selectedProduct?.type === 'package';
-  const isPrivateGroup = selectedProduct?.type === 'private-group';
-  const isTimeRequired = !isPackagePurchase && !isGroupLesson;
-
-
   const fetchAvailability = async (date: Date) => {
     setIsFetchingSlots(true);
     try {
@@ -169,34 +122,15 @@ export default function BookLessonPage() {
     }
   }
 
-  const fetchGroupSessions = async () => {
-    setIsFetchingGroupSessions(true);
-    try {
-        const sessions = await getGroupSessions();
-        setAllGroupSessions(sessions);
-    } catch(error: any) {
-        toast({ title: "Error", description: error.message || "Could not fetch group sessions.", variant: "destructive" });
-    } finally {
-        setIsFetchingGroupSessions(false);
-    }
-  }
-
   useEffect(() => {
-    if ((isIndividualLesson || isPrivateGroup) && selectedDate && isValid(selectedDate)) {
+    if (isTimeRequired && selectedDate && isValid(selectedDate)) {
         fetchAvailability(selectedDate);
     } else {
       setDailyBookedSlots([]);
       setDailyTimeOff([]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, isIndividualLesson, isPrivateGroup]);
-  
-  useEffect(() => {
-    if(isGroupLesson) {
-        fetchGroupSessions();
-    }
-  }, [isGroupLesson]);
-
+  }, [selectedDate, isTimeRequired]);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date && isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))) {
@@ -204,12 +138,11 @@ export default function BookLessonPage() {
       setSelectedDateState(undefined);
     } else {
       setSelectedDateState(date);
-      setSelectedGroupSession(undefined); // Reset group selection when date changes
     }
   };
 
   const displayTimeSlots = useMemo(() => {
-    if (!selectedDate || (!isIndividualLesson && !isPrivateGroup) || !selectedProduct) return [];
+    if (!selectedDate || !isTimeRequired || !selectedProduct) return [];
     
     const slots: TimeSlotProps[] = [];
     const userDurationMinutes = selectedProduct.duration as number;
@@ -256,20 +189,7 @@ export default function BookLessonPage() {
         slots.push({ display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`, value: startTimeString, status: currentStatus, blockedMeta: timeOffMeta });
     }
     return slots;
-}, [selectedDate, isIndividualLesson, isPrivateGroup, selectedProduct, dailyBookedSlots, dailyTimeOff]);
-
-
-  const filteredGroupSessions = useMemo(() => {
-    if (!isGroupLesson || !selectedProduct) return [];
-    const relevantSessions = allGroupSessions.filter(s => s.duration === selectedProduct.duration);
-    if (!selectedDate) return relevantSessions;
-    
-    const startOfSelected = startOfDay(selectedDate);
-    return relevantSessions.filter(s => {
-        const sessionDate = (s.startTime as unknown as Timestamp).toDate();
-        return isEqual(startOfDay(sessionDate), startOfSelected);
-    });
-  }, [allGroupSessions, isGroupLesson, selectedProduct, selectedDate]);
+}, [selectedDate, isTimeRequired, selectedProduct, dailyBookedSlots, dailyTimeOff]);
 
 
   const handleBooking = async () => {
@@ -278,56 +198,49 @@ export default function BookLessonPage() {
       router.push('/login?redirect=/bookings');
       return;
     }
-
     if (!selectedProduct) {
       toast({ title: "Selection Incomplete", description: "Please select a lesson type.", variant: "destructive" });
       return;
     }
-
     if (isTimeRequired && (!selectedDate || !selectedTime)) {
       toast({ title: "Selection Incomplete", description: "Please select a date and time.", variant: "destructive" });
-      return;
-    }
-    if(isGroupLesson && !selectedGroupSession) {
-      toast({ title: "Selection Incomplete", description: "Please select a group session.", variant: "destructive" });
       return;
     }
     
     setIsProcessing(true);
 
     try {
-        // --- SECURE PAYLOAD CREATION ---
-        // The client only sends the product ID and user-specific details.
-        // All business logic (price, duration) is handled by the server.
-        const bookingPayload = {
+        const idToken = await user.getIdToken();
+        const payload = {
             productId: selectedProduct.id,
             userId: user.uid,
-            ...(selectedDate && { date: format(selectedDate, 'yyyy-MM-dd') }),
-            ...(selectedTime && { time: selectedTime }),
+            ...(isTimeRequired && { 
+                date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined, 
+                time: selectedTime 
+            }),
             ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
         };
 
-        const { bookingId } = await createBooking(bookingPayload);
-        
-        if (selectedProduct.price === 0) {
-            router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
-        } else {
-            const { paddlePriceId } = products[selectedProduct.id];
-            
-            if (!paddlePriceId || paddlePriceId.includes('YOUR_')) {
-                toast({ title: "Payment Not Configured", description: "This product is not available for purchase yet.", variant: "destructive" });
-                setIsProcessing(false);
-                return;
-            }
+        const response = await fetch('/api/bookings/create', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`,
+            },
+            body: JSON.stringify(payload),
+        });
 
-            const customData: Record<string, string> = { booking_id: bookingId };
-            if (isPackagePurchase) {
-              customData.user_id = user.uid;
-              customData.package_id = selectedProduct.id;
-            }
-            
-            const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${paddlePriceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(customData))}`;
-            window.location.href = checkoutUrl;
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Booking creation failed.');
+        }
+
+        if (data.redirectUrl) {
+            window.location.href = data.redirectUrl;
+        } else {
+            // Should not happen if server logic is correct
+            throw new Error("No redirect URL received from server.");
         }
 
     } catch (error: any) {
@@ -336,18 +249,15 @@ export default function BookLessonPage() {
           title: "Booking Failed",
           description: error.message.includes('slot_already_booked') 
             ? "This slot is no longer available. Please select another." 
-            : "Could not complete your booking. Please try again.",
+            : error.message || "Could not complete your booking. Please try again.",
           variant: "destructive",
       });
       if (selectedDate) fetchAvailability(selectedDate);
-      if (isGroupLesson) fetchGroupSessions();
       setIsProcessing(false);
     }
   };
 
-  const isBookingWithCredit = !!availableCreditsForSelectedType;
-  const isPaidLesson = (selectedProduct?.price || 0) > 0 && !isBookingWithCredit;
-  const privateGroupPrice = isPrivateGroup ? (privateGroupMembers.length > 1 ? (selectedProduct?.price || 0) * privateGroupMembers.length : (selectedProduct?.price || 0)) : 0;
+  const isPaidLesson = (selectedProduct?.price || 0) > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
@@ -427,7 +337,7 @@ export default function BookLessonPage() {
               </CardContent>
             </Card>
 
-            {(isIndividualLesson || isPrivateGroup) && (
+            {isTimeRequired && (
               <>
                 <Card className="shadow-lg">
                       <CardHeader>
@@ -458,8 +368,8 @@ export default function BookLessonPage() {
                 )}
               </>
             )}
-
-            {isPackagePurchase && (
+            
+            {selectedProduct?.type === 'package' && (
                  <Card className="shadow-lg">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-xl text-foreground"> <Package className="w-5 h-5 text-primary" /> Package Details </CardTitle>
@@ -500,24 +410,23 @@ export default function BookLessonPage() {
                   {selectedProduct && (
                     <div className="space-y-2">
                       <div className="flex justify-between"> <span className="text-muted-foreground">Selected:</span> <span className="font-medium text-right text-foreground">{selectedProduct.label}</span> </div>
-                      {(isIndividualLesson || isGroupLesson || isPrivateGroup) && ( <div className="flex justify-between"> <span className="text-muted-foreground">Duration:</span> <span className="font-medium text-foreground">{selectedProduct.duration} minutes</span> </div> )}
-                      {isPackagePurchase && ( <div className="flex justify-between"> <span className="text-muted-foreground">Contains:</span> <span className="font-medium text-foreground">{selectedProduct.duration}</span> </div> )}
+                      {(selectedProduct.type !== 'package') && ( <div className="flex justify-between"> <span className="text-muted-foreground">Duration:</span> <span className="font-medium text-foreground">{selectedProduct.duration} minutes</span> </div> )}
+                      {selectedProduct.type === 'package' && ( <div className="flex justify-between"> <span className="text-muted-foreground">Contains:</span> <span className="font-medium text-foreground">{selectedProduct.duration}</span> </div> )}
                     </div>
                   )}
-                  {selectedDate && !isPackagePurchase && ( <div className="flex justify-between"> <span className="text-muted-foreground">Date:</span> <span className="font-medium text-foreground"> {format(selectedDate, "PPP")} </span> </div> )}
-                  {selectedTime && (isIndividualLesson || isPrivateGroup) && ( <div className="flex justify-between"> <span className="text-muted-foreground">Time:</span> <span className="font-medium text-foreground"> {selectedTime} </span> </div> )}
-                  {selectedGroupSession && isGroupLesson && ( <div className="flex justify-between"> <span className="text-muted-foreground">Session:</span> <span className="font-medium text-foreground"> {format((allGroupSessions.find(s=>s.id === selectedGroupSession)?.startTime as unknown as Timestamp).toDate(), 'p')} </span> </div> )}
+                  {selectedDate && selectedProduct?.type !== 'package' && ( <div className="flex justify-between"> <span className="text-muted-foreground">Date:</span> <span className="font-medium text-foreground"> {format(selectedDate, "PPP")} </span> </div> )}
+                  {selectedTime && isTimeRequired && ( <div className="flex justify-between"> <span className="text-muted-foreground">Time:</span> <span className="font-medium text-foreground"> {selectedTime} </span> </div> )}
                 </div>
                 
                 {selectedProduct && (
                   <div className="border-t border-border pt-4">
-                    <div className="flex justify-between text-lg font-bold"> <span className="text-foreground">Total:</span> <span className="text-primary">${isPrivateGroup ? privateGroupPrice : selectedProduct.price}</span> </div>
+                    <div className="flex justify-between text-lg font-bold"> <span className="text-foreground">Total:</span> <span className="text-primary">${selectedProduct.price}</span> </div>
                     {isPaidLesson && ( <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md"> <ShieldCheck className="w-3 h-3 inline-block mr-1"/> Secure payment processing via Paddle. </p> )}
                   </div>
                 )}
 
                 <div className="space-y-3 pt-2">
-                  <Button className="w-full" onClick={handleBooking} disabled={isProcessing || !selectedProduct || (isTimeRequired && (!selectedDate || !selectedTime)) || (isGroupLesson && !selectedGroupSession)}>
+                  <Button className="w-full" onClick={handleBooking} disabled={isProcessing || !selectedProduct || (isTimeRequired && (!selectedDate || !selectedTime))}>
                     {isProcessing && <Spinner size="sm" className="mr-2" />}
                     {isProcessing ? "Processing..." : isPaidLesson ? "Proceed to Payment" : "Confirm Free Trial"}
                   </Button>
@@ -534,5 +443,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
