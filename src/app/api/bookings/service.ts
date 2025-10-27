@@ -113,7 +113,7 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             statusHistory: [
                 {
                     status: product.price === 0 ? 'confirmed' : 'awaiting-payment',
-                    changedAt: FieldValue.serverTimestamp(),
+                    changedAt: Timestamp.now(),
                     changedBy: 'system',
                     reason: 'Booking created.'
                 }
