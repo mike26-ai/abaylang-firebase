@@ -43,9 +43,9 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             const timeOffRef = db.collection('timeOff');
             const tutorId = "MahderNegashMamo";
 
+            // CORRECTED QUERY: Query for time overlap first, then filter status in code.
             const bookingConflictQuery = bookingsRef
                 .where('tutorId', '==', tutorId)
-                .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
                 .where('startTime', '<', endTime)
                 .where('endTime', '>', startTime);
             
@@ -54,12 +54,16 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
                 .where('startISO', '<', endTime.toDate().toISOString())
                 .where('endISO', '>', startTime.toDate().toISOString());
 
-            const [conflictingBookings, conflictingTimeOff] = await Promise.all([
+            const [conflictingBookingsSnapshot, conflictingTimeOff] = await Promise.all([
                 transaction.get(bookingConflictQuery),
                 transaction.get(timeOffConflictQuery)
             ]);
 
-            if (!conflictingBookings.empty) throw new Error('slot_already_booked');
+            // Now, filter the booking results in the code to check for conflicting statuses.
+            const conflictingStatuses = ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'];
+            const hasBookingConflict = conflictingBookingsSnapshot.docs.some(doc => conflictingStatuses.includes(doc.data().status));
+
+            if (hasBookingConflict) throw new Error('slot_already_booked');
             if (!conflictingTimeOff.empty) throw new Error('tutor_unavailable');
         }
 
