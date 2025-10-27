@@ -3,7 +3,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminAuth } from '@/lib/firebase-admin';
 import { z } from 'zod';
-import { _createBooking } from '@/app/api/bookings/service';
+import { _createBooking } from '../service';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { isValidProductId } from '@/config/products';
 

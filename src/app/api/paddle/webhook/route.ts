@@ -1,3 +1,4 @@
+
 // File: src/app/api/paddle/webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { Paddle, type TransactionCompletedEvent } from '@paddle/paddle-node-sdk';
