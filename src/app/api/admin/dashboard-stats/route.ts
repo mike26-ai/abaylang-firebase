@@ -1,3 +1,4 @@
+
 // File: src/app/api/admin/dashboard-stats/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
