@@ -10,7 +10,7 @@ initAdmin();
 const adminAuth = getAuth();
 const adminDb = getFirestore();
 
-export const dynamic = 'force-dynamic'; // This line is added
+export const dynamic = 'force-dynamic'; // Ensures the route is not cached
 
 /**
  * This API route securely fetches all user profiles.
@@ -43,6 +43,11 @@ export async function GET(request: NextRequest) {
         uid: doc.id,
         // Convert Firestore Timestamps to ISO strings
         createdAt: (data.createdAt as Timestamp)?.toDate().toISOString(),
+        lastCreditPurchase: (data.lastCreditPurchase as Timestamp)?.toDate()?.toISOString() || null,
+        credits: data.credits?.map((credit: any) => ({
+            ...credit,
+            purchasedAt: (credit.purchasedAt as Timestamp)?.toDate()?.toISOString() || null,
+        })) || [],
       };
     });
 

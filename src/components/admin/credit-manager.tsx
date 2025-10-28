@@ -42,27 +42,42 @@ export function CreditManager() {
   const fetchAllUsers = async () => {
     setIsLoading(true);
     try {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef);
-      const querySnapshot = await getDocs(q);
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error("Authentication token not found.");
+
+      const response = await fetch('/api/admin/students', {
+        headers: { 'Authorization': `Bearer ${idToken}` }
+      });
       
-      const fetchedUsers = querySnapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id } as UserProfile));
-      setAllUsers(fetchedUsers.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || "Failed to fetch users from server.");
+      }
+
+      setAllUsers(result.data.sort((a: UserProfile, b: UserProfile) => (a.name || '').localeCompare(b.name || '')));
 
     } catch (error: any) {
       console.error("Error fetching users:", error);
-      toast({ title: "Error", description: "Could not fetch user data.", variant: "destructive" });
+      toast({ title: "Error", description: error.message || "Could not fetch user data.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAllUsers();
+    // Wait for auth to be ready
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        fetchAllUsers();
+      } else {
+        setIsLoading(false);
+      }
+    });
+    return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const getInitials = (name: string | undefined) => {
+  const getInitials = (name: string | undefined | null) => {
     if (!name) return "U";
     const parts = name.split(" ");
     return parts.length > 1 ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase() : name.substring(0, 2).toUpperCase();
@@ -89,7 +104,7 @@ export function CreditManager() {
                 c.lessonType === lessonType ? { ...c, count: newCount } : c
             ).filter(c => c.count > 0); // Remove credit type if count is 0
         } else if (change > 0) {
-            newCredits = [...currentCredits, { lessonType, count: change }];
+            newCredits = [...currentCredits, { lessonType, count: change, purchasedAt: new Date() as any }];
         } else {
             // Trying to decrement a credit that doesn't exist
             toast({ title: "Invalid Operation", description: "User does not have this credit type.", variant: "destructive" });
