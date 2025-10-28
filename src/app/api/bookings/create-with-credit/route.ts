@@ -31,13 +31,11 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
         throw new Error('unauthorized');
     }
     
-    // --- THE FIX: Validate the mapping BEFORE proceeding ---
     const lessonProductId = creditToLessonMap[payload.creditType];
     if (!lessonProductId || !isValidProductId(lessonProductId)) {
         throw new Error('invalid_credit_mapping');
     }
     const lessonDetails = products[lessonProductId];
-    // --- End of Fix ---
 
     const startDateTime = parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date());
     const startTime = Timestamp.fromDate(startDateTime);
@@ -88,7 +86,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
             duration: lessonDetails.duration,
             lessonType: lessonDetails.label,
             price: 0, // Booked with credit
-            productId: lessonDetails.id,
+            productId: lessonProductId, // <-- THE FIX: Use the validated product ID from the map
             tutorId: "MahderNegashMamo",
             tutorName: "Mahder N. Mamo",
             status: 'confirmed', // Directly confirmed as it's paid for
