@@ -12,7 +12,7 @@ initAdmin();
 const adminAuth = getAuth();
 const adminDb = getFirestore();
 
-export const dynamic = 'force-dynamic'; // This line is added
+export const dynamic = 'force-dynamic';
 
 /**
  * This API route securely fetches all necessary data for the admin dashboard.
@@ -61,7 +61,6 @@ export async function GET(request: NextRequest) {
         adminDb.collection('users').where('role', '==', 'student').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('testimonials').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('testimonials').where('status', '==', 'approved').get(),
-        // CORRECTED QUERY: Specifically fetch bookings with 'cancellation-requested' status.
         adminDb.collection('bookings').where('status', '==', 'cancellation-requested').orderBy('createdAt', 'desc').get(),
     ]);
 
