@@ -26,6 +26,7 @@ export interface Booking {
   zoomLink?: string;
   groupSessionId?: string;
   wasRedeemedWithCredit?: boolean;
+  creditTypeUsed?: string;
   requestedResolution?: 'refund' | 'credit'; // For cancellation flow
   productId?: string;
   productType?: 'individual' | 'group' | 'private-group' | 'package';
@@ -188,4 +189,5 @@ export interface LessonMaterial {
 export interface UserCredit {
   lessonType: string; // Corresponds to product 'id', e.g., 'learning-intensive'
   count: number;
+  purchasedAt: Timestamp;
 }

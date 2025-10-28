@@ -14,7 +14,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid } from 'date-fns';
+import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid, addMonths } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType, TimeOff } from "@/lib/types";
@@ -24,6 +24,7 @@ import { getAvailability } from "@/services/availabilityService";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
 import { products, type ProductId } from "@/config/products"; 
+import { creditToLessonMap } from "@/config/creditMapping";
 
 // The lessonTypes array is now derived from the server-side product catalog
 const lessonTypes = Object.entries(products).map(([id, details]) => ({
@@ -51,12 +52,14 @@ export default function BookLessonPage() {
   const searchParams = useSearchParams();
   
   const useCreditType = searchParams.get('useCredit') as ProductId | null;
+  const creditPurchasedAt = searchParams.get('creditPurchasedAt');
+  const creditExpiryDate = creditPurchasedAt ? addMonths(new Date(creditPurchasedAt), 6) : null;
+  
   const initialTypeFromUrl = searchParams.get('type') as ProductId | null;
   
-  // Determine initial selected product ID
   const getInitialProductId = (): ProductId => {
-    if (useCreditType && lessonTypes.some(l => l.id === useCreditType)) {
-      return useCreditType;
+    if (useCreditType && creditToLessonMap[useCreditType]) {
+      return creditToLessonMap[useCreditType] as ProductId;
     }
     if (initialTypeFromUrl && lessonTypes.some(l => l.id === initialTypeFromUrl)) {
       return initialTypeFromUrl;
@@ -77,10 +80,9 @@ export default function BookLessonPage() {
   const selectedProduct = lessonTypes.find((p) => p.id === selectedProductId);
   const isTimeRequired = selectedProduct?.type === 'individual' || selectedProduct?.type === 'group';
 
-  // If using a credit, automatically set the product ID and disable changes.
   useEffect(() => {
-    if (useCreditType && lessonTypes.some(l => l.id === useCreditType)) {
-      setSelectedProductId(useCreditType);
+    if (useCreditType && creditToLessonMap[useCreditType]) {
+      setSelectedProductId(creditToLessonMap[useCreditType] as ProductId);
     }
   }, [useCreditType]);
 
@@ -280,7 +282,10 @@ export default function BookLessonPage() {
                     <Ticket className="w-6 h-6 text-primary"/>
                     <div>
                         <h3 className="font-semibold text-primary">Booking with Credit</h3>
-                        <p className="text-sm text-muted-foreground">You are using one credit from your <span className="font-medium text-foreground">{selectedProduct.label}</span> package.</p>
+                        <p className="text-sm text-muted-foreground">You are using one credit for a <span className="font-medium text-foreground">{selectedProduct.label}</span>.</p>
+                        {creditExpiryDate && (
+                            <p className="text-xs text-muted-foreground mt-1">This credit is valid for booking lessons until {format(creditExpiryDate, 'PPP')}.</p>
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -359,7 +364,11 @@ export default function BookLessonPage() {
                           <CardDescription>Choose an available date for your lesson.</CardDescription>
                       </CardHeader>
                       <CardContent>
-                          <DateSelection selectedDate={selectedDate} onDateSelect={handleDateSelect} />
+                          <DateSelection 
+                            selectedDate={selectedDate} 
+                            onDateSelect={handleDateSelect}
+                            toDate={creditExpiryDate || undefined}
+                          />
                       </CardContent>
                 </Card>
 
@@ -469,4 +478,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-

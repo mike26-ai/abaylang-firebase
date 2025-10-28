@@ -9,16 +9,18 @@ import { Spinner } from '@/components/ui/spinner';
 interface DateSelectionProps {
   selectedDate: Date | undefined;
   onDateSelect: (date: Date | undefined) => void;
+  toDate?: Date | undefined; // Optional upper limit for selectable dates
 }
 
-export function DateSelection({ selectedDate, onDateSelect }: DateSelectionProps) {
+export function DateSelection({ selectedDate, onDateSelect, toDate }: DateSelectionProps) {
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // This effect runs only on the client, after the initial render.
     // This is the safe place to generate date-based UI to avoid hydration mismatches.
-    const dates = Array.from({ length: 90 }, (_, i) => addDays(startOfDay(new Date()), i));
+    const today = startOfDay(new Date());
+    const dates = Array.from({ length: 180 }, (_, i) => addDays(today, i));
     setAvailableDates(dates);
     setIsLoading(false);
   }, []);
@@ -31,6 +33,18 @@ export function DateSelection({ selectedDate, onDateSelect }: DateSelectionProps
     );
   }
 
+  const isDateDisabled = (dateOption: Date) => {
+    // Disable past dates
+    if (isPast(dateOption) && !isEqual(startOfDay(dateOption), startOfDay(new Date()))) {
+      return true;
+    }
+    // Disable dates beyond the `toDate` if it's provided
+    if (toDate && dateOption > toDate) {
+      return true;
+    }
+    return false;
+  };
+
   return (
     <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
       {availableDates.map((dateOption) => (
@@ -39,7 +53,7 @@ export function DateSelection({ selectedDate, onDateSelect }: DateSelectionProps
           variant={selectedDate && isEqual(startOfDay(selectedDate), dateOption) ? "default" : "outline"}
           className="p-4 h-auto flex flex-col"
           onClick={() => onDateSelect(dateOption)}
-          disabled={isPast(dateOption) && !isEqual(startOfDay(dateOption), startOfDay(new Date()))}
+          disabled={isDateDisabled(dateOption)}
         >
           <div className="text-sm">
             {format(dateOption, "E")}
