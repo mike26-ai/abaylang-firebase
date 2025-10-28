@@ -38,77 +38,103 @@ export async function GET(request: NextRequest) {
     // 2. Perform all database queries concurrently using the Admin SDK
     const today = startOfDay(new Date());
 
+    // FIX: Removed complex queries that required composite indexes.
+    // Filtering will now be done in the server-side code after fetching.
     const [
-        allConfirmedBookingsSnapshot,
-        pendingTestimonialsSnapshot,
+        allBookingsSnapshot, // Fetch all bookings to filter in-memory
+        allTestimonialsSnapshot, // Fetch all testimonials to filter in-memory
         newInquiriesSnapshot,
         totalStudentsSnapshot,
-        newBookingsSnapshot,
         recentBookingsSnapshot,
         recentMessagesSnapshot,
         recentStudentsSnapshot,
-        latestPendingTestimonialsSnapshot,
-        approvedTestimonialsSnapshot,
-        pendingResolutionsSnapshot,
     ] = await Promise.all([
-        adminDb.collection('bookings').where('status', '==', 'confirmed').get(),
-        adminDb.collection('testimonials').where('status', '==', 'pending').count().get(),
+        adminDb.collection('bookings').get(),
+        adminDb.collection('testimonials').get(),
         adminDb.collection('contactMessages').where('read', '==', false).count().get(),
         adminDb.collection('users').where('role', '==', 'student').count().get(),
-        adminDb.collection('bookings').where('status', 'in', ['awaiting-payment', 'payment-pending-confirmation']).count().get(),
         adminDb.collection('bookings').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('contactMessages').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('users').where('role', '==', 'student').orderBy('createdAt', 'desc').limit(5).get(),
-        adminDb.collection('testimonials').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(5).get(),
-        adminDb.collection('testimonials').where('status', '==', 'approved').get(),
-        adminDb.collection('bookings').where('status', '==', 'cancellation-requested').orderBy('createdAt', 'desc').get(),
     ]);
 
     // 3. Process the results in-memory to avoid complex index requirements
-    const upcomingBookingsCount = allConfirmedBookingsSnapshot.docs.filter(doc => {
-        const bookingDate = doc.data().date;
+    const allBookings = allBookingsSnapshot.docs.map(doc => doc.data());
+    const allTestimonials = allTestimonialsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    const upcomingBookingsCount = allBookings.filter(doc => {
+        const bookingDate = doc.date;
         if (!bookingDate || typeof bookingDate !== 'string') return false;
         const date = new Date(bookingDate);
-        return isNaN(date.getTime()) ? false : date >= today;
+        return doc.status === 'confirmed' && (isNaN(date.getTime()) ? false : date >= today);
     }).length;
 
-    const approvedRatings = approvedTestimonialsSnapshot.docs.map(doc => doc.data().rating);
+    const newBookingsCount = allBookings.filter(doc => 
+        ['awaiting-payment', 'payment-pending-confirmation'].includes(doc.status)
+    ).length;
+
+    const pendingResolutions = allBookings
+        .filter(doc => doc.status === 'cancellation-requested')
+        .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+
+    const pendingTestimonials = allTestimonials
+        .filter(t => t.status === 'pending')
+        .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+
+    const approvedRatings = allTestimonials
+        .filter(t => t.status === 'approved')
+        .map(t => t.rating);
+
     const averageRating = approvedRatings.length > 0 
         ? approvedRatings.reduce((sum, rating) => sum + rating, 0) / approvedRatings.length 
         : 0;
 
     const stats = {
       upcomingBookings: upcomingBookingsCount,
-      pendingTestimonialsCount: pendingTestimonialsSnapshot.data().count,
+      pendingTestimonialsCount: pendingTestimonials.length,
       newInquiries: newInquiriesSnapshot.data().count,
       totalStudents: totalStudentsSnapshot.data().count,
-      newBookingsCount: newBookingsSnapshot.data().count,
-      pendingResolutionsCount: pendingResolutionsSnapshot.size,
+      newBookingsCount: newBookingsCount,
+      pendingResolutionsCount: pendingResolutions.length,
       totalRevenue: 1250, // Placeholder
       averageRating: averageRating,
     };
 
-    const serializeTimestamp = (docs: admin.firestore.QueryDocumentSnapshot[]) => 
+    const serializeTimestamp = (docs: admin.firestore.DocumentData[]) => 
       docs.map(doc => {
-          const data = doc.data();
+          const data = doc;
           const serializedData: { [key: string]: any } = { id: doc.id };
           for (const key in data) {
               if (data[key] instanceof admin.firestore.Timestamp) {
                   serializedData[key] = data[key].toDate().toISOString();
-              } else {
+              } else if (key !== 'id') { // Avoid duplicating id if it exists on data
                   serializedData[key] = data[key];
               }
           }
           return serializedData;
       });
+      
+    const serializeSnapshot = (docs: admin.firestore.QueryDocumentSnapshot[]) => 
+        docs.map(doc => {
+            const data = doc.data();
+            const serializedData: { [key: string]: any } = { id: doc.id };
+            for (const key in data) {
+                if (data[key] instanceof admin.firestore.Timestamp) {
+                    serializedData[key] = data[key].toDate().toISOString();
+                } else {
+                    serializedData[key] = data[key];
+                }
+            }
+            return serializedData;
+        });
 
     const data = {
         stats,
-        recentBookings: serializeTimestamp(recentBookingsSnapshot.docs),
-        pendingTestimonials: serializeTimestamp(latestPendingTestimonialsSnapshot.docs),
-        recentMessages: serializeTimestamp(recentMessagesSnapshot.docs),
-        recentStudents: serializeTimestamp(recentStudentsSnapshot.docs),
-        pendingResolutions: serializeTimestamp(pendingResolutionsSnapshot.docs),
+        recentBookings: serializeSnapshot(recentBookingsSnapshot.docs),
+        pendingTestimonials: serializeTimestamp(pendingTestimonials.slice(0, 5)),
+        recentMessages: serializeSnapshot(recentMessagesSnapshot.docs),
+        recentStudents: serializeSnapshot(recentStudentsSnapshot.docs),
+        pendingResolutions: serializeTimestamp(pendingResolutions),
     };
 
     return NextResponse.json(data);
