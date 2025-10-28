@@ -1,5 +1,3 @@
-
-
 // File: src/app/bookings/success/page.tsx
 "use client";
 
