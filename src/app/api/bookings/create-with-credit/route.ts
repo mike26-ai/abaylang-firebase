@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/create-with-credit/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminDb, Timestamp, FieldValue } from '@/lib/firebase-admin';
@@ -6,6 +7,7 @@ import { z } from 'zod';
 import { products, isValidProductId } from '@/config/products';
 import { addMinutes, parse } from 'date-fns';
 import type { UserCredit } from '@/lib/types';
+import { creditToLessonMap } from '@/config/creditMapping';
 
 
 // Initialize Firebase Admin SDK
@@ -28,19 +30,17 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
         throw new Error('unauthorized');
     }
     
-    const product = products[payload.creditType as keyof typeof products];
-    if (product.type !== 'package') {
-        throw new Error('invalid_credit_type');
+    // --- NEW: Rule Enforcement ---
+    const lessonProductId = creditToLessonMap[payload.creditType];
+    if (!lessonProductId) {
+        throw new Error('invalid_credit_mapping');
     }
-    
-    const lessonDetails = Object.values(products).find(p => p.type === 'individual' && p.duration === product.unitDuration);
-    if (!lessonDetails) {
-        throw new Error('no_matching_lesson');
-    }
+    const lessonDetails = products[lessonProductId as ProductId];
+    // --- End of New Rule Enforcement ---
 
     const startDateTime = parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date());
     const startTime = Timestamp.fromDate(startDateTime);
-    const endTime = Timestamp.fromDate(addMinutes(startDateTime, lessonDetails.duration));
+    const endTime = Timestamp.fromDate(addMinutes(startDateTime, lessonDetails.duration as number));
     const userRef = adminDb.collection('users').doc(payload.userId);
     
     return await adminDb.runTransaction(async (transaction) => {
@@ -75,6 +75,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
 
         // --- 3. Create Booking Document ---
         const newBookingRef = adminDb.collection('bookings').doc();
+        const productDetails = products[payload.creditType as keyof typeof products];
         const newBookingDoc = {
             userId: payload.userId,
             userName: decodedToken.name || 'User',
@@ -97,7 +98,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
                 status: 'confirmed',
                 changedAt: Timestamp.now(),
                 changedBy: 'system',
-                reason: `Booked using one credit from '${product.label}'.`,
+                reason: `Booked using one credit from '${productDetails.label}'.`,
             }],
             ...(payload.notes && { paymentNote: payload.notes }),
         };
@@ -137,6 +138,7 @@ export async function POST(request: NextRequest) {
     if (error.message === 'slot_already_booked') message = 'This time slot has just been booked. Please select another.';
     if (error.message === 'insufficient_credits') message = 'You do not have enough credits for this lesson type.';
     if (error.message === 'user_not_found') message = 'User profile not found.';
+    if (error.message === 'invalid_credit_mapping') message = 'This credit type cannot be used for this lesson.';
     
     return NextResponse.json({ success: false, message }, { status: 500 });
   }

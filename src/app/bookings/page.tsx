@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -21,10 +20,10 @@ import type { Booking as BookingType, TimeOff } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo"
 
 import { getAvailability } from "@/services/availabilityService";
-import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
-import { DateSelection } from "@/components/bookings/date-selection"
 import { products, type ProductId } from "@/config/products"; 
 import { creditToLessonMap } from "@/config/creditMapping";
+import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
+import { DateSelection } from "@/components/bookings/date-selection"
 
 // The lessonTypes array is now derived from the server-side product catalog
 const lessonTypes = Object.entries(products).map(([id, details]) => ({
@@ -191,26 +190,17 @@ export default function BookLessonPage() {
 
     try {
         const idToken = await user.getIdToken();
-        let response;
-        
-        if (useCreditType) {
-            const payload = {
+        const apiEndpoint = useCreditType ? '/api/bookings/create-with-credit' : '/api/bookings/create';
+
+        const payload = useCreditType 
+            ? {
                 creditType: useCreditType,
                 userId: user.uid,
                 date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
                 time: selectedTime || '',
                 notes: paymentNote.trim(),
-            };
-            response = await fetch('/api/bookings/create-with-credit', {
-                 method: 'POST',
-                 headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`,
-                 },
-                 body: JSON.stringify(payload),
-            });
-        } else {
-             const payload = {
+              }
+            : {
                 productId: selectedProduct.id,
                 userId: user.uid,
                 ...(isTimeRequired && { 
@@ -219,15 +209,15 @@ export default function BookLessonPage() {
                 }),
                 ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
             };
-            response = await fetch('/api/bookings/create', {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${idToken}`,
-                },
-                body: JSON.stringify(payload),
-            });
-        }
+            
+        const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`,
+            },
+            body: JSON.stringify(payload),
+        });
 
         const data = await response.json();
 
@@ -282,7 +272,7 @@ export default function BookLessonPage() {
                     <Ticket className="w-6 h-6 text-primary"/>
                     <div>
                         <h3 className="font-semibold text-primary">Booking with Credit</h3>
-                        <p className="text-sm text-muted-foreground">You are using one credit for a <span className="font-medium text-foreground">{selectedProduct.label}</span>.</p>
+                        <p className="text-sm text-muted-foreground">You are using one credit for a <span className="font-medium text-foreground">{selectedProduct.label}</span>. One credit will be deducted upon confirmation.</p>
                         {creditExpiryDate && (
                             <p className="text-xs text-muted-foreground mt-1">This credit is valid for booking lessons until {format(creditExpiryDate, 'PPP')}.</p>
                         )}
@@ -293,14 +283,15 @@ export default function BookLessonPage() {
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-             {!useCreditType && (
-              <Card className="shadow-lg">
+            <Card className="shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-xl text-foreground">
                     <BookOpen className="w-5 h-5 text-primary" />
                     Choose Your Lesson or Package
                   </CardTitle>
-                  <CardDescription>Select the format that best fits your learning goals</CardDescription>
+                  <CardDescription>
+                    {useCreditType ? "Your lesson type is pre-selected based on your credit." : "Select the format that best fits your learning goals"}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <RadioGroup value={selectedProductId} onValueChange={(value) => {setSelectedProductId(value as ProductId); setSelectedTime(undefined); setSelectedDateState(undefined);}} disabled={!!useCreditType}>
@@ -308,16 +299,16 @@ export default function BookLessonPage() {
                       {["individual", "group", "package"].map(lessonGroupType => (
                          <div key={lessonGroupType}>
                           <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">
-                              {lessonGroupType.replace('-', ' ')} Lessons
+                              {lessonGroupType === 'individual' ? 'Individual' : lessonGroupType} Lessons
                           </h3>
                           <div className="space-y-4">
                               {lessonTypes
                               .filter((lesson) => lesson.type === lessonGroupType)
                               .map((lesson) => (
                                   <div key={lesson.id} className="flex items-start space-x-3">
-                                  <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" />
-                                  <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
-                                      <div className={`p-4 border rounded-lg hover:bg-accent/50 transition-colors ${selectedProductId === lesson.id ? "bg-accent border-primary ring-2 ring-primary" : "border-border"}`}>
+                                  <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType} />
+                                  <Label htmlFor={lesson.id} className={`flex-1 ${!!useCreditType ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                                      <div className={`p-4 border rounded-lg transition-colors ${selectedProductId === lesson.id ? "bg-accent border-primary ring-2 ring-primary" : "border-border"} ${!!useCreditType && selectedProductId !== lesson.id ? 'opacity-50' : 'hover:bg-accent/50'}`}>
                                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
                                           <div className="mb-2 sm:mb-0">
                                           <div className="font-semibold text-lg text-foreground flex items-center gap-2">
@@ -349,8 +340,7 @@ export default function BookLessonPage() {
                     </div>
                   </RadioGroup>
                 </CardContent>
-              </Card>
-             )}
+            </Card>
 
 
             {isTimeRequired && (
