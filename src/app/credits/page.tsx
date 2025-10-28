@@ -141,11 +141,15 @@ export default function CreditsPage() {
   const getCreditDetails = (credit: UserCredit) => {
     const productDetails = products[credit.lessonType as keyof typeof products];
     if (!productDetails) {
-        return { label: credit.lessonType.replace(/-/g, ' '), totalLessons: 'N/A' };
+        return { label: credit.lessonType.replace(/-/g, ' '), duration: 'N/A' };
     }
+    const duration = productDetails.type === 'package' 
+        ? productDetails.duration.split('x')[1]?.trim()?.split('-')[0] + ' min'
+        : `${productDetails.duration} min`;
+    
     return {
         label: productDetails.label,
-        totalLessons: productDetails.totalLessons || 1
+        duration: duration
     };
   };
 
@@ -224,12 +228,11 @@ export default function CreditsPage() {
                       <div key={index} className="p-4 bg-accent/50 rounded-lg border border-primary/20">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <p className="font-semibold text-foreground">{details.label}</p>
+                            <p className="font-semibold text-foreground">{details.label} ({details.duration})</p>
                             <p className="text-sm text-muted-foreground">Remaining Credits</p>
                           </div>
                           <div className="text-right">
                             <p className="text-3xl font-bold text-primary">{credit.count}</p>
-                            <p className="text-xs text-muted-foreground">of {details.totalLessons}</p>
                           </div>
                         </div>
                          <Button asChild size="sm" className="w-full" disabled={credit.count === 0}>
@@ -332,3 +335,5 @@ export default function CreditsPage() {
     </div>
   );
 }
+
+    
