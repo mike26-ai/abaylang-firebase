@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminDb, Timestamp, FieldValue } from '@/lib/firebase-admin';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
-import { products, isValidProductId } from '@/config/products';
+import { products, isValidProductId, type ProductId } from '@/config/products';
 import { addMinutes, parse } from 'date-fns';
 import type { UserCredit } from '@/lib/types';
 import { creditToLessonMap } from '@/config/creditMapping';
@@ -30,13 +30,13 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
         throw new Error('unauthorized');
     }
     
-    // --- NEW: Rule Enforcement ---
+    // --- THE FIX: Validate the mapping BEFORE proceeding ---
     const lessonProductId = creditToLessonMap[payload.creditType];
-    if (!lessonProductId) {
+    if (!lessonProductId || !isValidProductId(lessonProductId)) {
         throw new Error('invalid_credit_mapping');
     }
-    const lessonDetails = products[lessonProductId as ProductId];
-    // --- End of New Rule Enforcement ---
+    const lessonDetails = products[lessonProductId];
+    // --- End of Fix ---
 
     const startDateTime = parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date());
     const startTime = Timestamp.fromDate(startDateTime);
@@ -134,12 +134,28 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error in create-with-credit API route:', error);
     let message = 'An internal server error occurred.';
-    if (error.message === 'unauthorized') message = 'Unauthorized action.';
-    if (error.message === 'slot_already_booked') message = 'This time slot has just been booked. Please select another.';
-    if (error.message === 'insufficient_credits') message = 'You do not have enough credits for this lesson type.';
-    if (error.message === 'user_not_found') message = 'User profile not found.';
-    if (error.message === 'invalid_credit_mapping') message = 'This credit type cannot be used for this lesson.';
+    let status = 500;
+    if (error.message === 'unauthorized') {
+        message = 'Unauthorized action.';
+        status = 403;
+    }
+    if (error.message === 'slot_already_booked') {
+        message = 'This time slot has just been booked. Please select another.';
+        status = 409;
+    }
+    if (error.message === 'insufficient_credits') {
+        message = 'You do not have enough credits for this lesson type.';
+        status = 400;
+    }
+    if (error.message === 'user_not_found') {
+        message = 'User profile not found.';
+        status = 404;
+    }
+    if (error.message === 'invalid_credit_mapping') {
+        message = 'This credit type cannot be used for this lesson.';
+        status = 400;
+    }
     
-    return NextResponse.json({ success: false, message }, { status: 500 });
+    return NextResponse.json({ success: false, message }, { status });
   }
 }
