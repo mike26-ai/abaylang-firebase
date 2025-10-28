@@ -1,3 +1,4 @@
+
 // File: src/app/bookings/success/page.tsx
 "use client";
 
@@ -60,6 +61,7 @@ export default function BookingSuccessPage() {
             };
         }
         
+        // This message is for a real production environment where Paddle redirects back.
         return {
             icon: <Clock className="h-10 w-10 text-yellow-600" />,
             bgColor: "bg-yellow-500/10",
@@ -93,7 +95,7 @@ export default function BookingSuccessPage() {
                                 <div className="text-left bg-muted/50 p-4 rounded-md border text-sm">
                                     <h4 className="font-semibold mb-2 text-foreground">Booking Summary</h4>
                                     <div className="space-y-1">
-                                        <p><span className="font-medium text-muted-foreground">Lesson:</span> {bookingDetails.lessonType}</p>
+                                        <p><span className="font-medium text-muted-foreground">Item:</span> {bookingDetails.lessonType || (bookingDetails.productType === 'package' ? 'Lesson Package' : 'Lesson')}</p>
                                         {bookingDetails.date !== 'N/A_PACKAGE' && bookingDetails.date && bookingDetails.time && (
                                             <p>
                                                 <span className="font-medium text-muted-foreground">Date:</span> 
@@ -104,9 +106,6 @@ export default function BookingSuccessPage() {
                                     </div>
                                 </div>
                             )}
-                            <p className="text-xs text-muted-foreground pt-2">
-                                In a live environment, payment processing would occur here.
-                            </p>
                             <Button asChild size="lg" className="mt-4">
                                 <Link href="/profile">Go to My Dashboard</Link>
                             </Button>
@@ -117,3 +116,4 @@ export default function BookingSuccessPage() {
         </div>
     );
 }
+

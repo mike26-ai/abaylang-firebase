@@ -45,7 +45,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     if (isTimeRequired && (!startTime || !endTime)) {
         throw new Error('A date and time are required for this lesson type.');
     }
-
+    
+    // This transaction now also handles the simulated credit allocation for packages.
     await db.runTransaction(async (transaction: Transaction) => {
         // --- CONFLICT CHECK: Only run for time-based bookings ---
         if (isTimeRequired && startTime && endTime) {
@@ -76,6 +77,41 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             if (!conflictingTimeOff.empty) throw new Error('tutor_unavailable');
         }
 
+        // --- SIMULATED CREDIT ALLOCATION (for packages during testing) ---
+        if (product.type === 'package' && product.totalLessons) {
+            const userRef = db.collection('users').doc(payload.userId);
+            const userDoc = await transaction.get(userRef);
+            if(userDoc.exists) {
+                const userData = userDoc.data()!;
+                const currentCredits = userData.credits || [];
+                const creditType = payload.productId;
+                const creditsToAdd = product.totalLessons;
+                
+                const existingCreditIndex = currentCredits.findIndex((c: any) => c.lessonType === creditType);
+                let newCredits = [];
+                if (existingCreditIndex > -1) {
+                    newCredits = currentCredits.map((c: any, index: number) => 
+                        index === existingCreditIndex ? { ...c, count: c.count + creditsToAdd } : c
+                    );
+                } else {
+                    newCredits = [...currentCredits, { lessonType: creditType, count: creditsToAdd }];
+                }
+                transaction.update(userRef, { credits: newCredits, lastCreditPurchase: FieldValue.serverTimestamp() });
+            }
+        }
+        
+        // --- STATUS SIMULATION ---
+        // For testing, all paid items are immediately 'confirmed' or 'completed'
+        // This bypasses the need for the webhook during development.
+        let simulatedStatus: 'confirmed' | 'completed' = 'confirmed';
+        if (product.type === 'package') {
+            simulatedStatus = 'completed'; // Package purchases are marked completed.
+        } else if (product.price === 0) {
+            simulatedStatus = 'confirmed'; // Free trials are confirmed.
+        } else {
+             simulatedStatus = 'confirmed'; // All other paid lessons are simulated as confirmed.
+        }
+
         // Create the booking document
         const newBookingDoc = {
             userId: payload.userId,
@@ -88,17 +124,17 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             duration: typeof product.duration === 'number' ? product.duration : null,
             lessonType: product.label,
             price: product.price,
-            productId: payload.productId, // Store the product ID for the webhook
-            productType: product.type, // Store the product type for the webhook
+            productId: payload.productId,
+            productType: product.type,
             tutorId: "MahderNegashMamo",
             tutorName: "Mahder N. Mamo",
-            status: 'awaiting-payment', // All bookings start this way
+            status: simulatedStatus, // USE THE SIMULATED STATUS
             createdAt: FieldValue.serverTimestamp(),
             statusHistory: [{
-                status: 'awaiting-payment',
+                status: simulatedStatus,
                 changedAt: Timestamp.now(),
-                changedBy: 'system',
-                reason: 'Booking or package purchase initiated.',
+                changedBy: 'system_simulation',
+                reason: 'Booking confirmed via dev simulation.',
             }],
             ...(payload.paymentNote && { paymentNote: payload.paymentNote }),
         };
@@ -108,7 +144,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
 
     const isFreeTrial = product.price === 0;
 
-    // For free trials, redirect directly to the success page.
+    // **THE FIX**: ALWAYS redirect to the internal success page during simulation.
+    // For free trials, use the `free_trial` flag.
     if (isFreeTrial) {
         return { 
             bookingId: newBookingRef.id, 
@@ -116,15 +153,9 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
         };
     }
     
-    // For paid lessons, prepare the Paddle checkout URL.
-    const customData = {
-        booking_id: newBookingRef.id,
-        user_id: payload.userId,
-        product_id: payload.productId,
-        product_type: product.type,
+    // For ALL other "paid" lessons, use the `simulated_payment` flag.
+    return { 
+        bookingId: newBookingRef.id, 
+        redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&simulated_payment=true` 
     };
-
-    const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${product.paddlePriceId}?email=${encodeURIComponent(decodedToken.email || '')}&passthrough=${encodeURIComponent(JSON.stringify(customData))}`;
-
-    return { bookingId: newBookingRef.id, redirectUrl: checkoutUrl };
 }
