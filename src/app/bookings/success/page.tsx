@@ -1,11 +1,12 @@
 
+
 // File: src/app/bookings/success/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Clock } from "lucide-react";
+import { CheckCircle, Clock, Ticket } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase";
@@ -19,6 +20,7 @@ export default function BookingSuccessPage() {
     const searchParams = useSearchParams();
     const isFreeTrial = searchParams.get('free_trial') === 'true';
     const isSimulatedPayment = searchParams.get('simulated_payment') === 'true';
+    const usedCredit = searchParams.get('used_credit') === 'true';
     const bookingId = searchParams.get('booking_id'); 
 
     const [bookingDetails, setBookingDetails] = useState<Booking | null>(null);
@@ -49,15 +51,33 @@ export default function BookingSuccessPage() {
     }, [bookingId]);
 
     const getStatusInfo = () => {
-        if (isFreeTrial || isSimulatedPayment) {
+        if (isFreeTrial) {
             return {
                 icon: <CheckCircle className="h-10 w-10 text-primary" />,
                 bgColor: "bg-primary/10",
-                title: isSimulatedPayment ? "Booking Confirmed (Simulated)" : "Free Trial Confirmed!",
+                title: "Free Trial Confirmed!",
                 description: "Your lesson has been successfully scheduled.",
-                message: isSimulatedPayment 
-                    ? "This is a simulated payment confirmation for testing purposes. Your booking has been added to your dashboard."
-                    : "You're all set! Your free trial has been scheduled. You can view the details in your dashboard. We look forward to seeing you!",
+                message: "You're all set! Your free trial has been scheduled. You can view the details in your dashboard. We look forward to seeing you!",
+            };
+        }
+        
+        if(usedCredit) {
+             return {
+                icon: <Ticket className="h-10 w-10 text-primary" />,
+                bgColor: "bg-primary/10",
+                title: "Booking Confirmed!",
+                description: "You've successfully used a credit.",
+                message: "Your lesson has been scheduled using one of your credits. You can view the details in your dashboard. We look forward to seeing you!",
+            };
+        }
+        
+         if (isSimulatedPayment) {
+            return {
+                icon: <CheckCircle className="h-10 w-10 text-primary" />,
+                bgColor: "bg-primary/10",
+                title: "Purchase Confirmed (Simulated)",
+                description: "Your purchase has been successfully processed.",
+                message: "This is a simulated payment confirmation for testing purposes. Your purchase has been logged and any credits have been added to your dashboard."
             };
         }
         
@@ -116,4 +136,3 @@ export default function BookingSuccessPage() {
         </div>
     );
 }
-

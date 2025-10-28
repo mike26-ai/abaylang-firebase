@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket } from "lucide-react"
+import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
@@ -22,10 +23,9 @@ import { SiteLogo } from "@/components/layout/SiteLogo"
 import { getAvailability } from "@/services/availabilityService";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
-import { products, type ProductId } from "@/config/products"; // Import new product catalog
+import { products, type ProductId } from "@/config/products"; 
 
 // The lessonTypes array is now derived from the server-side product catalog
-// This ensures the client and server are always in sync.
 const lessonTypes = Object.entries(products).map(([id, details]) => ({
   id: id as ProductId,
   ...details,
@@ -50,10 +50,21 @@ export default function BookLessonPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const initialType = searchParams.get('type') as ProductId | null;
-  const validInitialType = initialType && lessonTypes.some(l => l.id === initialType);
-
-  const [selectedProductId, setSelectedProductId] = useState<ProductId>(validInitialType ? initialType : "comprehensive-lesson");
+  const useCreditType = searchParams.get('useCredit') as ProductId | null;
+  const initialTypeFromUrl = searchParams.get('type') as ProductId | null;
+  
+  // Determine initial selected product ID
+  const getInitialProductId = (): ProductId => {
+    if (useCreditType && lessonTypes.some(l => l.id === useCreditType)) {
+      return useCreditType;
+    }
+    if (initialTypeFromUrl && lessonTypes.some(l => l.id === initialTypeFromUrl)) {
+      return initialTypeFromUrl;
+    }
+    return "comprehensive-lesson";
+  };
+  
+  const [selectedProductId, setSelectedProductId] = useState<ProductId>(getInitialProductId());
   const [selectedDate, setSelectedDateState] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [paymentNote, setPaymentNote] = useState("");
@@ -65,6 +76,14 @@ export default function BookLessonPage() {
 
   const selectedProduct = lessonTypes.find((p) => p.id === selectedProductId);
   const isTimeRequired = selectedProduct?.type === 'individual' || selectedProduct?.type === 'group';
+
+  // If using a credit, automatically set the product ID and disable changes.
+  useEffect(() => {
+    if (useCreditType && lessonTypes.some(l => l.id === useCreditType)) {
+      setSelectedProductId(useCreditType);
+    }
+  }, [useCreditType]);
+
 
   const fetchAvailability = async (date: Date) => {
     setIsFetchingSlots(true);
@@ -170,24 +189,43 @@ export default function BookLessonPage() {
 
     try {
         const idToken = await user.getIdToken();
-        const payload = {
-            productId: selectedProduct.id,
-            userId: user.uid,
-            ...(isTimeRequired && { 
-                date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined, 
-                time: selectedTime 
-            }),
-            ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
-        };
-
-        const response = await fetch('/api/bookings/create', {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${idToken}`,
-            },
-            body: JSON.stringify(payload),
-        });
+        let response;
+        
+        if (useCreditType) {
+            const payload = {
+                creditType: useCreditType,
+                userId: user.uid,
+                date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
+                time: selectedTime || '',
+                notes: paymentNote.trim(),
+            };
+            response = await fetch('/api/bookings/create-with-credit', {
+                 method: 'POST',
+                 headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                 },
+                 body: JSON.stringify(payload),
+            });
+        } else {
+             const payload = {
+                productId: selectedProduct.id,
+                userId: user.uid,
+                ...(isTimeRequired && { 
+                    date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined, 
+                    time: selectedTime 
+                }),
+                ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
+            };
+            response = await fetch('/api/bookings/create', {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify(payload),
+            });
+        }
 
         const data = await response.json();
 
@@ -215,15 +253,15 @@ export default function BookLessonPage() {
     }
   };
 
-  const isPaidLesson = (selectedProduct?.price || 0) > 0;
+  const isPaidLesson = (selectedProduct?.price || 0) > 0 && !useCreditType;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
       <header className="bg-card border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
+          <Link href="/credits" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
             <ArrowLeft className="w-5 h-5" />
-            <span>Back to ABYLANG</span>
+            <span>Back</span>
           </Link>
           <SiteLogo />
         </div>
@@ -233,67 +271,82 @@ export default function BookLessonPage() {
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
-          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with {tutorInfo.name}</p>
+          <p className="text-xl text-muted-foreground">Schedule a lesson with {tutorInfo.name}</p>
         </div>
+
+        {useCreditType && selectedProduct && (
+            <Card className="mb-8 bg-primary/10 border-primary/20">
+                <CardContent className="p-4 flex items-center gap-3">
+                    <Ticket className="w-6 h-6 text-primary"/>
+                    <div>
+                        <h3 className="font-semibold text-primary">Booking with Credit</h3>
+                        <p className="text-sm text-muted-foreground">You are using one credit from your <span className="font-medium text-foreground">{selectedProduct.label}</span> package.</p>
+                    </div>
+                </CardContent>
+            </Card>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl text-foreground">
-                  <BookOpen className="w-5 h-5 text-primary" />
-                  Choose Your Lesson or Package
-                </CardTitle>
-                <CardDescription>Select the format that best fits your learning goals</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup value={selectedProductId} onValueChange={(value) => {setSelectedProductId(value as ProductId); setSelectedTime(undefined); setSelectedDateState(undefined);}}>
-                  <div className="space-y-6">
-                    {["individual", "group", "package"].map(lessonGroupType => (
-                       <div key={lessonGroupType}>
-                        <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">
-                            {lessonGroupType.replace('-', ' ')} Lessons
-                        </h3>
-                        <div className="space-y-4">
-                            {lessonTypes
-                            .filter((lesson) => lesson.type === lessonGroupType)
-                            .map((lesson) => (
-                                <div key={lesson.id} className="flex items-start space-x-3">
-                                <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" />
-                                <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
-                                    <div className={`p-4 border rounded-lg hover:bg-accent/50 transition-colors ${selectedProductId === lesson.id ? "bg-accent border-primary ring-2 ring-primary" : "border-border"}`}>
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
-                                        <div className="mb-2 sm:mb-0">
-                                        <div className="font-semibold text-lg text-foreground flex items-center gap-2">
-                                            {lesson.label}
-                                            {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
-                                            {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
-                                            {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
-                                        </div>
-                                        <div className="text-sm text-muted-foreground">
-                                            {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
-                                        </div>
-                                        </div>
-                                        <div className="text-right">
-                                        <div className="text-2xl font-bold text-primary">${lesson.price}</div>
-                                        {lesson.originalPrice && <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>}
-                                        </div>
-                                    </div>
-                                    <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
-                                        {lesson.features.map((feature, index) => ( <li key={index} className="flex items-center gap-2"> <Check className="w-4 h-4 text-primary flex-shrink-0" /> <span className="text-muted-foreground">{feature}</span> </li> ))}
-                                    </ul>
-                                    </div>
-                                </Label>
-                                </div>
-                            ))}
-                        </div>
-                       </div>
-                    ))}
-                  </div>
-                </RadioGroup>
-              </CardContent>
-            </Card>
+             {!useCreditType && (
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl text-foreground">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                    Choose Your Lesson or Package
+                  </CardTitle>
+                  <CardDescription>Select the format that best fits your learning goals</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup value={selectedProductId} onValueChange={(value) => {setSelectedProductId(value as ProductId); setSelectedTime(undefined); setSelectedDateState(undefined);}} disabled={!!useCreditType}>
+                    <div className="space-y-6">
+                      {["individual", "group", "package"].map(lessonGroupType => (
+                         <div key={lessonGroupType}>
+                          <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">
+                              {lessonGroupType.replace('-', ' ')} Lessons
+                          </h3>
+                          <div className="space-y-4">
+                              {lessonTypes
+                              .filter((lesson) => lesson.type === lessonGroupType)
+                              .map((lesson) => (
+                                  <div key={lesson.id} className="flex items-start space-x-3">
+                                  <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" />
+                                  <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
+                                      <div className={`p-4 border rounded-lg hover:bg-accent/50 transition-colors ${selectedProductId === lesson.id ? "bg-accent border-primary ring-2 ring-primary" : "border-border"}`}>
+                                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
+                                          <div className="mb-2 sm:mb-0">
+                                          <div className="font-semibold text-lg text-foreground flex items-center gap-2">
+                                              {lesson.label}
+                                              {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
+                                              {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
+                                              {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
+                                              {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
+                                          </div>
+                                          <div className="text-sm text-muted-foreground">
+                                              {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
+                                          </div>
+                                          </div>
+                                          <div className="text-right">
+                                          <div className="text-2xl font-bold text-primary">${lesson.price}</div>
+                                          {lesson.originalPrice && <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>}
+                                          </div>
+                                      </div>
+                                      <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
+                                          {lesson.features.map((feature, index) => ( <li key={index} className="flex items-center gap-2"> <Check className="w-4 h-4 text-primary flex-shrink-0" /> <span className="text-muted-foreground">{feature}</span> </li> ))}
+                                      </ul>
+                                      </div>
+                                  </Label>
+                                  </div>
+                              ))}
+                          </div>
+                         </div>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+             )}
+
 
             {isTimeRequired && (
               <>
@@ -342,10 +395,10 @@ export default function BookLessonPage() {
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl text-foreground"> <MessageSquare className="w-5 h-5 text-primary" /> Notes (Optional) </CardTitle>
-                <CardDescription> Add a note for your tutor or a payment reference if needed. </CardDescription>
+                <CardDescription> Add a note for your tutor. </CardDescription>
               </CardHeader>
               <CardContent>
-                <Textarea placeholder={ isPaidLesson ? "e.g., PayPal Transaction ID: 123ABCXYZ" : "e.g., conversational Amharic for family, basic reading/writing..." } value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} rows={4} className="resize-none" />
+                <Textarea placeholder={ "e.g., conversational Amharic for family, basic reading/writing..." } value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} rows={4} className="resize-none" />
               </CardContent>
             </Card>
           </div>
@@ -378,7 +431,11 @@ export default function BookLessonPage() {
                 
                 {selectedProduct && (
                   <div className="border-t border-border pt-4">
-                    <div className="flex justify-between text-lg font-bold"> <span className="text-foreground">Total:</span> <span className="text-primary">${selectedProduct.price}</span> </div>
+                     {useCreditType ? (
+                        <div className="flex justify-between text-lg font-bold"> <span className="text-foreground">Total:</span> <span className="text-primary">1 Credit</span> </div>
+                     ) : (
+                        <div className="flex justify-between text-lg font-bold"> <span className="text-foreground">Total:</span> <span className="text-primary">${selectedProduct.price}</span> </div>
+                     )}
                     {isPaidLesson && ( <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md"> <ShieldCheck className="w-3 h-3 inline-block mr-1"/> Secure payment processing via Paddle. </p> )}
                   </div>
                 )}
@@ -386,9 +443,12 @@ export default function BookLessonPage() {
                 <div className="space-y-3 pt-2">
                   <Button className="w-full" onClick={handleBooking} disabled={isProcessing || !selectedProduct || (isTimeRequired && (!selectedDate || !selectedTime))}>
                     {isProcessing && <Spinner size="sm" className="mr-2" />}
-                    {isProcessing ? "Processing..." : isPaidLesson ? "Proceed to Payment" : "Confirm Free Trial"}
+                    {isProcessing ? "Processing..." 
+                      : useCreditType ? "Confirm with 1 Credit"
+                      : isPaidLesson ? "Proceed to Payment" 
+                      : "Confirm Free Trial"}
                   </Button>
-                   {user && selectedProduct?.type !== 'package' && (
+                   {!useCreditType && user && selectedProduct?.type !== 'package' && (
                         <Button className="w-full" variant="outline" asChild>
                             <Link href="/credits">
                                 <Ticket className="w-4 h-4 mr-2"/>
@@ -409,3 +469,4 @@ export default function BookLessonPage() {
     </div>
   )
 }
+

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -191,12 +192,20 @@ export default function CreditsPage() {
               {credits.length > 0 ? (
                 <div className="space-y-4">
                   {credits.map((credit, index) => (
-                    <div key={index} className="p-4 bg-accent/50 rounded-lg border border-primary/20 flex justify-between items-center">
-                      <div>
-                        <p className="font-semibold text-foreground capitalize">{credit.lessonType.replace(/-/g, ' ')}</p>
-                        <p className="text-sm text-muted-foreground">Remaining Credits</p>
+                    <div key={index} className="p-4 bg-accent/50 rounded-lg border border-primary/20">
+                      <div className="flex justify-between items-center mb-2">
+                        <div>
+                          <p className="font-semibold text-foreground capitalize">{credit.lessonType.replace(/-/g, ' ')}</p>
+                          <p className="text-sm text-muted-foreground">Remaining Credits</p>
+                        </div>
+                        <p className="text-3xl font-bold text-primary">{credit.count}</p>
                       </div>
-                      <p className="text-3xl font-bold text-primary">{credit.count}</p>
+                       <Button asChild size="sm" className="w-full" disabled={credit.count === 0}>
+                        <Link href={`/bookings?useCredit=${credit.lessonType}`}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Book with Credit
+                        </Link>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -205,12 +214,6 @@ export default function CreditsPage() {
               )}
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
-              <Button asChild className="w-full" variant="outline">
-                <Link href="/bookings">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Book with Credit
-                </Link>
-              </Button>
                <Button asChild className="w-full">
                 <Link href="/packages">
                   <Ticket className="w-4 h-4 mr-2" />
