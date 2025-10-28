@@ -14,7 +14,7 @@ import { db } from "@/lib/firebase";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { differenceInHours, parse } from "date-fns";
+import { differenceInHours, parse, addMonths } from "date-fns";
 import { products } from "@/config/products";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -143,10 +143,13 @@ export default function CreditsPage() {
     if (!productDetails) {
         return { label: credit.lessonType.replace(/-/g, ' '), duration: 'N/A' };
     }
-    const duration = productDetails.type === 'package' 
-        ? productDetails.duration.split('x')[1]?.trim()?.split('-')[0] + ' min'
-        : `${productDetails.duration} min`;
     
+    // For packages, duration is a string like "10 x 30-min". We extract the "30-min".
+    // For individual lessons (if they were credits), duration is a number.
+    const duration = typeof productDetails.duration === 'string'
+      ? productDetails.duration.split('x')[1]?.trim() ?? ''
+      : `${productDetails.duration} min`;
+
     return {
         label: productDetails.label,
         duration: duration
@@ -224,6 +227,8 @@ export default function CreditsPage() {
                   {credits.map((credit, index) => {
                     const purchasedAtISO = credit.purchasedAt?.toDate().toISOString() || new Date().toISOString();
                     const details = getCreditDetails(credit);
+                    const creditExpiryDate = credit.purchasedAt ? addMonths(credit.purchasedAt.toDate(), 6) : null;
+
                     return (
                       <div key={index} className="p-4 bg-accent/50 rounded-lg border border-primary/20">
                         <div className="flex justify-between items-start mb-2">
@@ -241,6 +246,9 @@ export default function CreditsPage() {
                             Book with Credit
                           </Link>
                         </Button>
+                         {creditExpiryDate && (
+                            <p className="text-xs text-muted-foreground mt-2 text-center">Expires {format(creditExpiryDate, 'PPP')}</p>
+                        )}
                       </div>
                     );
                   })}
@@ -335,5 +343,3 @@ export default function CreditsPage() {
     </div>
   );
 }
-
-    
