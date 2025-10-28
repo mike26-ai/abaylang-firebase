@@ -1,13 +1,14 @@
 
 // File: src/app/api/bookings/create-with-credit/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin, adminDb, Timestamp, FieldValue } from '@/lib/firebase-admin';
+import { initAdmin, adminDb, Timestamp } from '@/lib/firebase-admin';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
-import { products, isValidProductId, type ProductId } from '@/config/products';
+import { products, isValidProductId } from '@/config/products';
 import { addMinutes, parse } from 'date-fns';
 import type { UserCredit } from '@/lib/types';
 import { creditToLessonMap } from '@/config/creditMapping';
+import { FieldValue } from 'firebase-admin/firestore';
 
 
 // Initialize Firebase Admin SDK
