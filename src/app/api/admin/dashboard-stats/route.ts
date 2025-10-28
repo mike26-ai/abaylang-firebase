@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     // 3. Process the results in-memory to avoid complex index requirements
-    const allBookings = allBookingsSnapshot.docs.map(doc => doc.data());
+    const allBookings = allBookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     const allTestimonials = allTestimonialsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     const upcomingBookingsCount = allBookings.filter(doc => {
