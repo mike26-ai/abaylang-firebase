@@ -54,9 +54,9 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             const timeOffRef = db.collection('timeOff');
             const tutorId = "MahderNegashMamo";
 
-            // CORRECTED QUERY: Query for time overlap first, then filter status in code.
             const bookingConflictQuery = bookingsRef
                 .where('tutorId', '==', tutorId)
+                .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
                 .where('startTime', '<', endTime)
                 .where('endTime', '>', startTime);
             
@@ -70,10 +70,7 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
                 transaction.get(timeOffConflictQuery)
             ]);
 
-            const conflictingStatuses = ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'];
-            const hasBookingConflict = conflictingBookingsSnapshot.docs.some(doc => conflictingStatuses.includes(doc.data().status));
-
-            if (hasBookingConflict) throw new Error('slot_already_booked');
+            if (!conflictingBookingsSnapshot.empty) throw new Error('slot_already_booked');
             if (!conflictingTimeOff.empty) throw new Error('tutor_unavailable');
         }
 
@@ -89,30 +86,34 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
                 
                 const existingCreditIndex = currentCredits.findIndex((c: any) => c.lessonType === creditType);
                 let newCredits = [];
+
+                const newCreditObject = { 
+                    lessonType: creditType, 
+                    count: creditsToAdd, 
+                    purchasedAt: FieldValue.serverTimestamp(), 
+                    packageBookingId: newBookingRef.id // Link credits to this booking
+                };
+                
                 if (existingCreditIndex > -1) {
                     newCredits = currentCredits.map((c: any, index: number) => 
-                        index === existingCreditIndex ? { ...c, count: c.count + creditsToAdd } : c
+                        index === existingCreditIndex ? { ...c, count: c.count + creditsToAdd, purchasedAt: FieldValue.serverTimestamp(), packageBookingId: newBookingRef.id } : c
                     );
                 } else {
-                    newCredits = [...currentCredits, { lessonType: creditType, count: creditsToAdd }];
+                    newCredits = [...currentCredits, newCreditObject];
                 }
                 transaction.update(userRef, { credits: newCredits, lastCreditPurchase: FieldValue.serverTimestamp() });
             }
         }
         
-        // --- STATUS SIMULATION ---
-        // For testing, all paid items are immediately 'confirmed' or 'completed'
-        // This bypasses the need for the webhook during development.
         let simulatedStatus: 'confirmed' | 'completed' = 'confirmed';
         if (product.type === 'package') {
-            simulatedStatus = 'completed'; // Package purchases are marked completed.
+            simulatedStatus = 'completed';
         } else if (product.price === 0) {
-            simulatedStatus = 'confirmed'; // Free trials are confirmed.
+            simulatedStatus = 'confirmed';
         } else {
-             simulatedStatus = 'confirmed'; // All other paid lessons are simulated as confirmed.
+             simulatedStatus = 'confirmed';
         }
 
-        // Create the booking document
         const newBookingDoc = {
             userId: payload.userId,
             userName: decodedToken.name || 'User',
@@ -128,7 +129,7 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             productType: product.type,
             tutorId: "MahderNegashMamo",
             tutorName: "Mahder N. Mamo",
-            status: simulatedStatus, // USE THE SIMULATED STATUS
+            status: simulatedStatus,
             createdAt: FieldValue.serverTimestamp(),
             statusHistory: [{
                 status: simulatedStatus,
@@ -144,8 +145,6 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
 
     const isFreeTrial = product.price === 0;
 
-    // **THE FIX**: ALWAYS redirect to the internal success page during simulation.
-    // For free trials, use the `free_trial` flag.
     if (isFreeTrial) {
         return { 
             bookingId: newBookingRef.id, 
@@ -153,7 +152,6 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
         };
     }
     
-    // For ALL other "paid" lessons, use the `simulated_payment` flag.
     return { 
         bookingId: newBookingRef.id, 
         redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&simulated_payment=true` 

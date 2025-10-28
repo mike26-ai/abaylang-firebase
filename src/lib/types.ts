@@ -32,6 +32,7 @@ export interface Booking {
   productId?: string;
   productType?: 'individual' | 'group' | 'private-group' | 'package';
   paddleTransactionId?: string;
+  parentPackageId?: string; // Links a redeemed lesson to its parent package booking
 }
 
 export interface TimeOff {
@@ -191,4 +192,5 @@ export interface UserCredit {
   lessonType: string; // Corresponds to product 'id', e.g., 'learning-intensive'
   count: number;
   purchasedAt: Timestamp;
+  packageBookingId?: string; // The ID of the booking that granted these credits
 }

@@ -66,6 +66,8 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
         if (!conflictingBookings.empty) {
             throw new Error('slot_already_booked');
         }
+        
+        const parentPackageId = currentCredits[creditIndex].packageBookingId;
 
         // --- 2. Deduct Credit ---
         currentCredits[creditIndex].count -= 1;
@@ -86,12 +88,13 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
             duration: lessonDetails.duration,
             lessonType: lessonDetails.label,
             price: 0, // Booked with credit
-            productId: lessonProductId, // <-- THE FIX: Use the validated product ID from the map
+            productId: lessonProductId,
             tutorId: "MahderNegashMamo",
             tutorName: "Mahder N. Mamo",
             status: 'confirmed', // Directly confirmed as it's paid for
             wasRedeemedWithCredit: true,
             creditTypeUsed: payload.creditType,
+            parentPackageId: parentPackageId || null, // Add the link to the parent package
             createdAt: FieldValue.serverTimestamp(),
             statusHistory: [{
                 status: 'confirmed',
