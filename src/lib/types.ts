@@ -23,13 +23,13 @@ export interface Booking {
   hasReview?: boolean; // Added for student dashboard
   cancellationReason?: string; // For reschedule/cancellation data
   paymentNote?: string; // Note from student (e.g., transaction ID)
-  zoomLink?: string; // NEW: For the lesson's Zoom link
-  groupSessionId?: string; // NEW: For group session bookings
-  wasRedeemedWithCredit?: boolean; // NEW: To track if a credit was used
+  zoomLink?: string;
+  groupSessionId?: string;
+  wasRedeemedWithCredit?: boolean;
   requestedResolution?: 'refund' | 'credit'; // For cancellation flow
-  productId?: string; // For linking to products catalog
+  productId?: string;
   productType?: 'individual' | 'group' | 'private-group' | 'package';
-  paddleTransactionId?: string; // To store Paddle's transaction ID
+  paddleTransactionId?: string;
 }
 
 export interface TimeOff {
@@ -53,7 +53,7 @@ export interface GroupSession {
   price: number;
   tutorId: string;
   tutorName: string;
-  minStudents: number; // NEW
+  minStudents: number;
   maxStudents: number;
   participantCount: number;
   participantIds: string[];
@@ -86,7 +86,7 @@ export interface Testimonial {
   helpful?: number;
   date?: string;
   verified?: boolean;
-  lessonId?: string; // Added for linking testimonial to a lesson
+  lessonId?: string;
 }
 
 export interface ContactMessage {
@@ -109,10 +109,8 @@ export interface UserProfile {
   country?: string;
   amharicLevel?: string;
   photoURL?: string | null;
-  // New fields for one-time feedback system
-  showFirstLessonFeedbackPrompt?: boolean; // Defaults to false
-  hasSubmittedFirstLessonFeedback?: boolean; // Defaults to false
-  // NEW: Field for credits
+  showFirstLessonFeedbackPrompt?: boolean;
+  hasSubmittedFirstLessonFeedback?: boolean;
   credits?: UserCredit[];
   lastCreditPurchase?: Timestamp;
 }
@@ -122,8 +120,8 @@ export interface ChatMessage {
   text: string;
   userId: string;
   userName: string;
-  userAvatar?: string | null; // Optional: user.photoURL
-  timestamp: Timestamp; // Firestore Timestamp
+  userAvatar?: string | null;
+  timestamp: Timestamp;
 }
 
 export interface NewsletterSubscription {
@@ -138,19 +136,16 @@ export interface LearningLesson {
   type: "video" | "interactive" | "quiz" | "reading";
   duration: number; // minutes
   status: "completed" | "in-progress" | "not-started" | "locked";
-  // contentUrl?: string; // URL to video, quiz, etc.
 }
 
 export interface LearningModule {
-  id:string; // Firestore document ID
+  id:string;
   title: string;
   description: string;
-  order: number; // For sequencing modules
-  status: "completed" | "in-progress" | "locked"; // User-specific progress, might be handled differently
-  progress: number; // User-specific progress (0-100), might be handled differently
+  order: number;
+  status: "completed" | "in-progress" | "locked";
+  progress: number;
   lessons: LearningLesson[];
-  // totalLessons?: number; // Calculated or stored
-  // completedLessons?: number; // User-specific, calculated or stored
 }
 
 
@@ -182,15 +177,14 @@ export interface LessonMaterial {
   id: string;
   title: string;
   description: string;
-  fileUrl: string; // URL to the file in Firebase Storage
+  fileUrl: string;
   fileName: string;
-  fileType: string; // e.g., 'application/pdf', 'audio/mpeg'
+  fileType: string;
   createdAt: Timestamp;
-  uploaderId: string; // Admin's UID
-  // Could add categories, levels, etc.
+  uploaderId: string;
 }
 
-// NEW: Represents a user's credit balance for packages
+// Represents a user's credit balance for packages
 export interface UserCredit {
   lessonType: string; // Corresponds to product 'id', e.g., 'learning-intensive'
   count: number;
