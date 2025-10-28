@@ -187,13 +187,11 @@ export default function StudentDashboardPage() {
 
   const mostRecentLessonToReview = useMemo(() => {
     return bookings
-      .filter((b) => b.status === "completed" && !b.hasReview && b.date)
+      .filter((b) => b.status === "completed" && !b.hasReview && b.date !== "N/A_PACKAGE")
       .sort((a, b) => {
-        if (!a.date || !b.date) return 0;
-        return (
-          parse(b.date, "yyyy-MM-dd", new Date()).getTime() -
-          parse(a.date, "yyyy-MM-dd", new Date()).getTime()
-        );
+        const dateA = a.date ? parse(a.date, "yyyy-MM-dd", new Date()).getTime() : 0;
+        const dateB = b.date ? parse(b.date, "yyyy-MM-dd", new Date()).getTime() : 0;
+        return dateB - dateA;
       })[0];
   }, [bookings]);
 
@@ -595,3 +593,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
