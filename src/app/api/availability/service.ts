@@ -1,3 +1,4 @@
+
 // File: src/app/api/availability/service.ts
 /**
  * This file contains the core, testable business logic for the availability endpoints.
