@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket, Info, PlusCircle, MinusCircle } from "lucide-react"
+import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
@@ -16,17 +16,12 @@ import { useToast } from "@/hooks/use-toast"
 import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
-import type { Booking as BookingType, TimeOff, GroupSession, UserProfile, UserCredit } from "@/lib/types";
+import type { Booking as BookingType, TimeOff } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo"
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
 
 import { getAvailability } from "@/services/availabilityService";
-import { createBooking } from "@/services/bookingService";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
-import { Timestamp } from "firebase/firestore"
-import { Input } from "@/components/ui/input"
 import { products, type ProductId } from "@/config/products"; // Import new product catalog
 
 // The lessonTypes array is now derived from the server-side product catalog
@@ -48,14 +43,9 @@ const generateBaseStartTimes = (): string[] => {
 };
 const baseStartTimes = generateBaseStartTimes();
 
-const creditMap: Record<string, string[]> = {
-    "quick-practice": ["quick-practice-bundle", "starter-bundle"],
-    "comprehensive-lesson": ["learning-intensive", "foundation-pack"],
-};
-
 
 export default function BookLessonPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -72,42 +62,9 @@ export default function BookLessonPage() {
   const [dailyBookedSlots, setDailyBookedSlots] = useState<BookingType[]>([]);
   const [dailyTimeOff, setDailyTimeOff] = useState<TimeOff[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
-  
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   const selectedProduct = lessonTypes.find((p) => p.id === selectedProductId);
-  // FIX: isTimeRequired is now defined in the main component scope.
-  const isTimeRequired = selectedProduct?.type === 'individual' || selectedProduct?.type === 'private-group' || selectedProduct?.type === 'group';
-
-  useEffect(() => {
-    if (user && !authLoading) {
-      const fetchUserProfile = async () => {
-        setIsLoadingProfile(true);
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          setUserProfile(userDocSnap.data() as UserProfile);
-        }
-        setIsLoadingProfile(false);
-      };
-      fetchUserProfile();
-    } else if (!user && !authLoading) {
-        setIsLoadingProfile(false);
-    }
-  }, [user, authLoading]);
-
-  const availableCreditsForSelectedType = useMemo(() => {
-    if (!userProfile || !selectedProductId) return null;
-    const applicablePackageTypes = creditMap[selectedProductId as keyof typeof creditMap] || [];
-    for (const packageType of applicablePackageTypes) {
-      const credit = userProfile.credits?.find(c => c.lessonType === packageType && c.count > 0);
-      if (credit) {
-        return credit;
-      }
-    }
-    return null;
-  }, [userProfile, selectedProductId]);
+  const isTimeRequired = selectedProduct?.type === 'individual' || selectedProduct?.type === 'group';
 
   const fetchAvailability = async (date: Date) => {
     setIsFetchingSlots(true);
@@ -144,10 +101,10 @@ export default function BookLessonPage() {
   };
 
   const displayTimeSlots = useMemo(() => {
-    if (!selectedDate || !isTimeRequired || !selectedProduct) return [];
+    if (!selectedDate || !isTimeRequired || !selectedProduct || typeof selectedProduct.duration !== 'number') return [];
     
     const slots: TimeSlotProps[] = [];
-    const userDurationMinutes = selectedProduct.duration as number;
+    const userDurationMinutes = selectedProduct.duration;
     const slotDate = startOfDay(selectedDate);
     const now = new Date();
     const isToday = isEqual(slotDate, startOfDay(now));
@@ -241,7 +198,6 @@ export default function BookLessonPage() {
         if (data.redirectUrl) {
             window.location.href = data.redirectUrl;
         } else {
-            // Should not happen if server logic is correct
             throw new Error("No redirect URL received from server.");
         }
 
@@ -293,7 +249,7 @@ export default function BookLessonPage() {
               <CardContent>
                 <RadioGroup value={selectedProductId} onValueChange={(value) => {setSelectedProductId(value as ProductId); setSelectedTime(undefined); setSelectedDateState(undefined);}}>
                   <div className="space-y-6">
-                    {["individual", "group", "private-group", "package"].map(lessonGroupType => (
+                    {["individual", "group", "package"].map(lessonGroupType => (
                        <div key={lessonGroupType}>
                         <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">
                             {lessonGroupType.replace('-', ' ')} Lessons
@@ -432,6 +388,14 @@ export default function BookLessonPage() {
                     {isProcessing && <Spinner size="sm" className="mr-2" />}
                     {isProcessing ? "Processing..." : isPaidLesson ? "Proceed to Payment" : "Confirm Free Trial"}
                   </Button>
+                   {user && selectedProduct?.type !== 'package' && (
+                        <Button className="w-full" variant="outline" asChild>
+                            <Link href="/credits">
+                                <Ticket className="w-4 h-4 mr-2"/>
+                                Use a Credit
+                            </Link>
+                        </Button>
+                    )}
                 </div>
                 <div className="text-xs text-muted-foreground space-y-1 text-center">
                   <p>• Free cancellation up to 12 hours before.</p>

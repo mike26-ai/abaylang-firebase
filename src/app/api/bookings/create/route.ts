@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     // 3. Call the decoupled, testable logic function
     const result = await _createBooking(validationResult.data, decodedToken);
 
-    // 4. Return success response
+    // 4. Return success response with the Paddle checkout URL
     return NextResponse.json({ success: true, ...result }, { status: 201 });
 
   } catch (error: any) {

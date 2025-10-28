@@ -1,3 +1,4 @@
+
 // File: src/app/api/paddle/webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { Paddle, type TransactionCompletedEvent } from '@paddle/paddle-node-sdk';
@@ -23,7 +24,7 @@ const paddle = new Paddle(paddleApiKey || '');
 
 async function handleTransactionConfirmation(transactionId: string, customData: PaddleCustomData) {
     const { booking_id, user_id, product_id, product_type } = customData;
-    console.log(`Webhook: Processing transaction ${transactionId} for booking ${booking_id}`);
+    console.log(`Webhook: Processing transaction ${transactionId} for booking ${booking_id} of type ${product_type}`);
 
     const bookingDocRef = adminDb.collection('bookings').doc(booking_id);
     const userDocRef = adminDb.collection('users').doc(user_id);
@@ -45,7 +46,7 @@ async function handleTransactionConfirmation(transactionId: string, customData: 
             }
             
             const creditsToAdd = product.totalLessons;
-            const creditType = product_id;
+            const creditType = product_id; // e.g., 'learning-intensive'
 
             const userDoc = await transaction.get(userDocRef);
             if (!userDoc.exists) {

@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from "firebase/firestore";
 
 export interface Booking {
@@ -9,7 +8,7 @@ export interface Booking {
   userEmail: string;
   date: string; // YYYY-MM-DD format
   time: string;
-  status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed" | "cancellation-requested" | "refunded" | "credit-issued";
+  status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed" | "cancellation-requested" | "refunded" | "credit-issued" | "cancelled-by-admin";
   tutorId: string;
   tutorName: string;
   createdAt: Timestamp;
@@ -28,6 +27,9 @@ export interface Booking {
   groupSessionId?: string; // NEW: For group session bookings
   wasRedeemedWithCredit?: boolean; // NEW: To track if a credit was used
   requestedResolution?: 'refund' | 'credit'; // For cancellation flow
+  productId?: string; // For linking to products catalog
+  productType?: 'individual' | 'group' | 'private-group' | 'package';
+  paddleTransactionId?: string; // To store Paddle's transaction ID
 }
 
 export interface TimeOff {
@@ -112,6 +114,7 @@ export interface UserProfile {
   hasSubmittedFirstLessonFeedback?: boolean; // Defaults to false
   // NEW: Field for credits
   credits?: UserCredit[];
+  lastCreditPurchase?: Timestamp;
 }
 
 export interface ChatMessage {
@@ -189,8 +192,6 @@ export interface LessonMaterial {
 
 // NEW: Represents a user's credit balance for packages
 export interface UserCredit {
-  lessonType: string; // Corresponds to lesson 'value', e.g., 'quick-practice-bundle'
+  lessonType: string; // Corresponds to product 'id', e.g., 'learning-intensive'
   count: number;
 }
-
-    
