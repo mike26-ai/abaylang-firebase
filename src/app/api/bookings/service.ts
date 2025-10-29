@@ -105,13 +105,13 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             }
         }
         
-        let simulatedStatus: 'confirmed' | 'completed' = 'confirmed';
+        let initialStatus: 'confirmed' | 'payment-pending-confirmation' | 'completed' = 'confirmed';
         if (product.type === 'package') {
-            simulatedStatus = 'completed';
+            initialStatus = 'completed';
         } else if (product.price === 0) {
-            simulatedStatus = 'confirmed';
+            initialStatus = 'confirmed';
         } else {
-             simulatedStatus = 'confirmed';
+             initialStatus = 'payment-pending-confirmation';
         }
 
         const newBookingDoc = {
@@ -129,13 +129,13 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             productType: product.type,
             tutorId: "MahderNegashMamo",
             tutorName: "Mahder N. Mamo",
-            status: simulatedStatus,
+            status: initialStatus,
             createdAt: FieldValue.serverTimestamp(),
             statusHistory: [{
-                status: simulatedStatus,
+                status: initialStatus,
                 changedAt: Timestamp.now(),
                 changedBy: 'system_simulation',
-                reason: 'Booking confirmed via dev simulation.',
+                reason: 'Booking created.',
             }],
             ...(payload.paymentNote && { paymentNote: payload.paymentNote }),
         };
@@ -148,12 +148,12 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     if (isFreeTrial) {
         return { 
             bookingId: newBookingRef.id, 
-            redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&free_trial=true` 
+            redirectUrl: `/profile?booking_id=${newBookingRef.id}&new_booking=true&type=free_trial` 
         };
     }
     
     return { 
         bookingId: newBookingRef.id, 
-        redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&simulated_payment=true` 
+        redirectUrl: `/profile?booking_id=${newBookingRef.id}&new_booking=true&type=paid` 
     };
 }

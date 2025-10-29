@@ -167,12 +167,6 @@ export function BookingsManager() {
   };
   
   const getStatusText = (status: string) => {
-    if (status === 'awaiting-payment') {
-      return 'Awaiting Tutor Confirmation';
-    }
-    if (status === 'payment-pending-confirmation') {
-      return 'Pending Confirmation';
-    }
     return status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
@@ -232,7 +226,7 @@ export function BookingsManager() {
                       : "secondary"
                     }
                     className={
-                      booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" 
+                      booking.status === 'awaiting-payment' ? "bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30" 
                       : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
                       : ""
                       }
@@ -297,7 +291,7 @@ export function BookingsManager() {
                       : "secondary"
                     }
                     className={
-                      booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" 
+                      booking.status === 'awaiting-payment' ? "bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30" 
                       : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
                       : ""
                       }

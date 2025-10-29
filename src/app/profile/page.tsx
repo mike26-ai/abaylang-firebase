@@ -21,7 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
@@ -47,6 +47,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/comp
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { contactEmail } from "@/config/site";
 
 
 interface DashboardBooking extends BookingType {
@@ -56,6 +57,8 @@ interface DashboardBooking extends BookingType {
 export default function StudentDashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [bookings, setBookings] = useState<DashboardBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,7 +70,7 @@ export default function StudentDashboardPage() {
     lessonDate: "",
   });
 
-  // State for dialogs
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<BookingType | null>(null);
   const [rescheduleReason, setRescheduleReason] = useState("");
@@ -80,7 +83,20 @@ export default function StudentDashboardPage() {
   const [cancellationReason, setCancellationReason] = useState("");
   const [otherCancellationReason, setOtherCancellationReason] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
-  const router = useRouter();
+
+  useEffect(() => {
+    const newBookingId = searchParams.get('booking_id');
+    const isNewBooking = searchParams.get('new_booking') === 'true';
+    const bookingType = searchParams.get('type');
+
+    if (isNewBooking && newBookingId && bookingType === 'paid') {
+      const alreadyShown = localStorage.getItem(`booking_confirmation_shown_${newBookingId}`);
+      if (!alreadyShown) {
+        setShowConfirmation(true);
+        localStorage.setItem(`booking_confirmation_shown_${newBookingId}`, 'true');
+      }
+    }
+  }, [searchParams]);
 
   const fetchDashboardData = async (currentUser: any) => {
     setIsLoading(true);
@@ -100,7 +116,6 @@ export default function StudentDashboardPage() {
         duration: doc.data().duration || 60,
       }));
 
-      // Check for existing reviews for completed lessons
       const reviewChecks = fetchedBookings.map(async (booking) => {
         if (booking.status === "completed") {
           const reviewQuery = query(
@@ -136,8 +151,7 @@ export default function StudentDashboardPage() {
       return;
     }
     fetchDashboardData(user);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading]);
+  }, [user, authLoading, toast]);
 
   const handleRateLesson = (booking: DashboardBooking) => {
     setFeedbackModal({
@@ -195,7 +209,6 @@ export default function StudentDashboardPage() {
       })[0];
   }, [bookings]);
 
-  // Cancellation and Reschedule Logic
   const openCancellationDialog = (booking: BookingType) => {
     setSelectedBookingForCancellation(booking);
     setCancellationChoice('');
@@ -222,7 +235,7 @@ export default function StudentDashboardPage() {
       await updateDoc(bookingDocRef, {
         status: 'cancellation-requested',
         requestedResolution: cancellationChoice,
-        cancellationReason: finalReason, // Add the reason
+        cancellationReason: finalReason,
         statusHistory: arrayUnion({
           status: 'cancellation-requested',
           changedAt: serverTimestamp(),
@@ -590,8 +603,28 @@ export default function StudentDashboardPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Payment Submitted & Awaiting Confirmation</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Your payment has been successfully submitted for processing. Once your payment is confirmed by the tutor, your lesson will be officially confirmed, and a Zoom link will be provided on your dashboard.
+                    <br/><br/>
+                    Confirmation usually takes **2-3 hours**. If your lesson is not confirmed within this timeframe, please contact us for immediate assistance.
+                    <div className="mt-4 text-sm space-y-1">
+                      <p><strong>Email:</strong> <a href={`mailto:${contactEmail}`} className="underline">{contactEmail}</a></p>
+                      <p><strong>WhatsApp:</strong> +251 99 117 6968</p>
+                      <p><Link href="/privacy" className="underline">Review our payment and refund policy</Link></p>
+                    </div>
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogAction onClick={() => setShowConfirmation(false)} className="bg-orange-500 hover:bg-orange-600">
+                    OK, I understand
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-
-    
