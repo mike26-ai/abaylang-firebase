@@ -42,6 +42,7 @@ export const siteConfig = {
     { title: "Booking History", href: "/profile/history", authRequired: true, icon: History },
     { title: "My Profile", href: "/profile/settings", authRequired: true, icon: User },
     { title: "Book New Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
+    { title: "Submit Testimonial", href: "/submit-testimonial", authRequired: true, icon: Award },
   ] satisfies NavItem[],
   adminNav: [
     { title: "Admin Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
