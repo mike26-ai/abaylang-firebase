@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Ticket, Plus, CreditCard, RefreshCw } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { UserProfile, Booking, UserCredit } from "@/lib/types";
-import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { doc, getDoc, collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -61,7 +61,7 @@ export default function CreditsPage() {
         const bookingsQuery = query(
             collection(db, "bookings"),
             where("userId", "==", user.uid),
-            where("status", "in", ["confirmed", "awaiting-payment"])
+            where("status", "in", ["confirmed", "payment-pending-confirmation"])
         );
         const querySnapshot = await getDocs(bookingsQuery);
         const fetchedBookings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
@@ -108,18 +108,27 @@ export default function CreditsPage() {
     setIsCancelling(true);
     try {
       const finalReason = cancellationReason === 'Other' ? `Other: ${otherCancellationReason.trim()}` : cancellationReason;
-      const bookingDocRef = doc(db, "bookings", selectedBookingForCancellation.id);
-      await updateDoc(bookingDocRef, {
-        status: 'cancellation-requested',
-        requestedResolution: cancellationChoice,
-        cancellationReason: finalReason,
-        statusHistory: arrayUnion({
-          status: 'cancellation-requested',
-          changedAt: serverTimestamp(),
-          changedBy: 'student',
-          reason: `Requested ${cancellationChoice}. Reason: ${finalReason}`,
-        }),
+      
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error("Authentication error");
+
+      const response = await fetch('/api/bookings/request-cancellation', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+              bookingId: selectedBookingForCancellation.id,
+              resolutionChoice: cancellationChoice,
+              reason: finalReason,
+          }),
       });
+
+      const result = await response.json();
+      if (!response.ok) {
+          throw new Error(result.error || 'Failed to send cancellation request.');
+      }
 
       toast({ 
           title: "Cancellation Request Sent", 
@@ -127,9 +136,9 @@ export default function CreditsPage() {
       });
       fetchData(); // Re-fetch data to update UI
       setCancellationDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error requesting cancellation:", error);
-      toast({ title: "Request Failed", description: "Could not send your cancellation request.", variant: "destructive" });
+      toast({ title: "Request Failed", description: error.message || "Could not send your cancellation request.", variant: "destructive" });
     } finally {
       setIsCancelling(false);
     }
@@ -166,8 +175,8 @@ export default function CreditsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <header>
+    <div className="container mx-auto max-w-4xl py-12">
+      <header className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">My Credits & Cancellations</h1>
         <p className="text-muted-foreground">Manage your purchased packages and request refunds for eligible lessons.</p>
       </header>

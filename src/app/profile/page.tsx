@@ -24,7 +24,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import {
   collection,
   query,
@@ -32,10 +32,6 @@ import {
   getDocs,
   orderBy,
   limit,
-  doc,
-  updateDoc,
-  arrayUnion,
-  serverTimestamp,
 } from "firebase/firestore";
 import type { Booking as BookingType } from "@/lib/types";
 import { format, parse, differenceInHours, isValid } from "date-fns";
@@ -151,7 +147,8 @@ export default function StudentDashboardPage() {
       return;
     }
     fetchDashboardData(user);
-  }, [user, authLoading, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]);
 
   const handleRateLesson = (booking: DashboardBooking) => {
     setFeedbackModal({
@@ -230,19 +227,27 @@ export default function StudentDashboardPage() {
     setIsCancelling(true);
     try {
       const finalReason = cancellationReason === 'Other' ? `Other: ${otherCancellationReason.trim()}` : cancellationReason;
-      const bookingDocRef = doc(db, "bookings", selectedBookingForCancellation.id);
       
-      await updateDoc(bookingDocRef, {
-        status: 'cancellation-requested',
-        requestedResolution: cancellationChoice,
-        cancellationReason: finalReason,
-        statusHistory: arrayUnion({
-          status: 'cancellation-requested',
-          changedAt: serverTimestamp(),
-          changedBy: 'student',
-          reason: `Requested ${cancellationChoice}. Reason: ${finalReason}`,
-        }),
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error("Authentication error");
+
+      const response = await fetch('/api/bookings/request-cancellation', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+              bookingId: selectedBookingForCancellation.id,
+              resolutionChoice: cancellationChoice,
+              reason: finalReason,
+          }),
       });
+
+      const result = await response.json();
+      if (!response.ok) {
+          throw new Error(result.error || 'Failed to send cancellation request.');
+      }
 
       toast({ 
           title: "Cancellation Request Sent", 
@@ -250,9 +255,9 @@ export default function StudentDashboardPage() {
       });
       if(user) fetchDashboardData(user);
       setCancellationDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error requesting cancellation:", error);
-      toast({ title: "Request Failed", description: "Could not send your cancellation request.", variant: "destructive" });
+      toast({ title: "Request Failed", description: error.message || "Could not send your cancellation request.", variant: "destructive" });
     } finally {
       setIsCancelling(false);
     }
@@ -270,20 +275,30 @@ export default function StudentDashboardPage() {
     if (rescheduleReason === 'Other' && !otherRescheduleReason.trim()) return;
     
     setIsRescheduling(true);
-    const newStatus = "cancelled";
     try {
-      const finalReason = rescheduleReason === 'Other' ? `Other: ${otherRescheduleReason.trim()}` : rescheduleReason;
-      const bookingDocRef = doc(db, "bookings", selectedBookingForReschedule.id);
-      await updateDoc(bookingDocRef, { 
-        status: newStatus,
-        cancellationReason: `Rescheduled: ${finalReason}`,
-        statusHistory: arrayUnion({
-            status: newStatus,
-            changedAt: serverTimestamp(),
-            changedBy: 'student',
-            reason: `Rescheduled: ${finalReason}`
-        })
+       const finalReason = rescheduleReason === 'Other' ? `Other: ${otherRescheduleReason.trim()}` : rescheduleReason;
+      
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error("Authentication error");
+
+       const response = await fetch('/api/bookings/request-cancellation', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+              bookingId: selectedBookingForReschedule.id,
+              resolutionChoice: 'reschedule',
+              reason: finalReason,
+          }),
       });
+
+       const result = await response.json();
+      if (!response.ok) {
+          throw new Error(result.error || 'Failed to process reschedule request.');
+      }
+
       toast({ 
         title: "Lesson Cancelled for Rescheduling", 
         description: "Please choose a new time for your lesson on the booking page.",
@@ -291,11 +306,11 @@ export default function StudentDashboardPage() {
       if(user) fetchDashboardData(user);
       setRescheduleDialogOpen(false);
       router.push('/bookings');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during reschedule (cancellation step):", error);
       toast({ 
         title: "Reschedule Failed", 
-        description: "Could not cancel your current lesson. Please try again.", 
+        description: error.message || "Could not cancel your current lesson. Please try again.", 
         variant: "destructive" 
       });
     } finally {
@@ -419,7 +434,7 @@ export default function StudentDashboardPage() {
                                 ) : booking.status === 'confirmed' && !booking.zoomLink ? (
                                     <p className="text-xs text-muted-foreground text-right">Zoom link coming soon.</p>
                                 ) : null}
-                                {(booking.status === 'confirmed' || booking.status === 'awaiting-payment') && (
+                                {(booking.status === 'confirmed' || booking.status === 'payment-pending-confirmation') && (
                                 <div className="flex items-center gap-2">
                                     <TooltipProvider>
                                     <Tooltip>
@@ -559,7 +574,7 @@ export default function StudentDashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reschedule Lesson?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action will cancel your current lesson. You will then be redirected to the booking page to choose a new time. Please select a reason for rescheduling.
+              This action will cancel your current lesson and redirect you to the booking page to choose a new time. Please select a reason for rescheduling.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-4">
@@ -619,7 +634,7 @@ export default function StudentDashboardPage() {
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogAction onClick={() => setShowConfirmation(false)} className="bg-orange-500 hover:bg-orange-600">
+                <AlertDialogAction onClick={() => setShowConfirmation(false)}>
                     OK, I understand
                 </AlertDialogAction>
             </AlertDialogFooter>
