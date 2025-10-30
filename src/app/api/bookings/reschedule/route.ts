@@ -74,20 +74,31 @@ export async function POST(request: NextRequest) {
             .where('startTime', '<', newEndTime)
             .where('endTime', '>', newStartTime);
 
-        const timeOffConflictQuery = adminDb.collection('timeOff')
+        // CORRECTED CONFLICT CHECK: Firestore does not support range filters on two different fields.
+        // We must perform two separate queries and merge the results.
+        const timeOffConflictQuery1 = adminDb.collection('timeOff')
             .where('tutorId', '==', booking.tutorId)
-            .where('endISO', '>', newStartTime.toDate().toISOString())
             .where('startISO', '<', newEndTime.toDate().toISOString());
         
-        const [bookingConflicts, timeOffConflicts] = await Promise.all([
-            transaction.get(bookingConflictQuery),
-            transaction.get(timeOffConflictQuery)
-        ]);
+        const timeOffConflictQuery2 = adminDb.collection('timeOff')
+            .where('tutorId', '==', booking.tutorId)
+            .where('endISO', '>', newStartTime.toDate().toISOString());
         
-        // Exclude the current booking being rescheduled from the conflict check
+        const [bookingConflicts, timeOffConflicts1, timeOffConflicts2] = await Promise.all([
+            transaction.get(bookingConflictQuery),
+            transaction.get(timeOffConflictQuery1),
+            transaction.get(timeOffConflictQuery2)
+        ]);
+
+        // Manually find the intersection of the two time-off queries
+        const timeOffConflictDocs = timeOffConflicts1.docs.filter(doc1 => 
+            timeOffConflicts2.docs.some(doc2 => doc2.id === doc1.id)
+        );
+        
+        // Exclude the current booking being rescheduled from the booking conflict check
         const hasBookingConflict = bookingConflicts.docs.some(doc => doc.id !== originalBookingId);
         if (hasBookingConflict) throw new Error('conflict');
-        if (!timeOffConflicts.empty) throw new Error('conflict');
+        if (timeOffConflictDocs.length > 0) throw new Error('conflict');
 
 
         // 3. Atomic Update
