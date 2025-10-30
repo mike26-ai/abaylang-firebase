@@ -1,4 +1,3 @@
-
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
 import type { ProductId } from "@/config/products";
@@ -46,5 +45,42 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
         throw new Error(data.message || 'Failed to create booking.');
     }
 
+    return data;
+}
+
+
+interface RescheduleBookingPayload {
+    originalBookingId: string;
+    newDate: string;
+    newTime: string;
+    reason?: string;
+}
+/**
+ * Reschedules an existing booking via a secure, server-side API endpoint.
+ * @param payload - The data for the reschedule request.
+ * @returns The updated booking object.
+ */
+export async function rescheduleBooking(payload: RescheduleBookingPayload): Promise<{ success: boolean; booking: any }> {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error("Authentication required to reschedule a booking.");
+    }
+    const idToken = await user.getIdToken();
+
+    const response = await fetch(`${API_BASE_URL}/bookings/reschedule`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.details || data.error || 'Failed to reschedule booking.');
+    }
+    
     return data;
 }

@@ -34,7 +34,7 @@ import {
   limit,
 } from "firebase/firestore";
 import type { Booking as BookingType } from "@/lib/types";
-import { format, parse, differenceInHours, isValid } from "date-fns";
+import { format, parse, differenceInHours, isValid, parseISO } from "date-fns";
 import { Spinner } from "@/components/ui/spinner";
 import LessonFeedbackModal from "@/components/lesson-feedback-modal";
 import { JoinLessonButton } from "@/components/bookings/join-lesson-button";
@@ -67,11 +67,10 @@ export default function StudentDashboardPage() {
   });
 
   const [showConfirmation, setShowConfirmation] = useState(false);
+  
+  // Reschedule state is now just for the confirmation dialog
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<BookingType | null>(null);
-  const [rescheduleReason, setRescheduleReason] = useState("");
-  const [otherRescheduleReason, setOtherRescheduleReason] = useState("");
-  const [isRescheduling, setIsRescheduling] = useState(false);
   
   const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
   const [selectedBookingForCancellation, setSelectedBookingForCancellation] = useState<BookingType | null>(null);
@@ -170,7 +169,7 @@ export default function StudentDashboardPage() {
       bookings
         .filter(
           (b) =>
-            !["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued"].includes(
+            !["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"].includes(
               b.status
             ) && b.date !== "N/A_PACKAGE"
         )
@@ -262,61 +261,20 @@ export default function StudentDashboardPage() {
       setIsCancelling(false);
     }
   };
-
-  const openRescheduleDialog = (booking: BookingType) => {
-    setSelectedBookingForReschedule(booking);
-    setRescheduleReason("");
-    setOtherRescheduleReason("");
-    setRescheduleDialogOpen(true);
+  
+  // New Reschedule Handlers
+  const handleRescheduleClick = (booking: BookingType) => {
+      setSelectedBookingForReschedule(booking);
+      setRescheduleDialogOpen(true);
   };
 
-  const handleConfirmReschedule = async () => {
-    if (!selectedBookingForReschedule || !rescheduleReason) return;
-    if (rescheduleReason === 'Other' && !otherRescheduleReason.trim()) return;
-    
-    setIsRescheduling(true);
-    try {
-       const finalReason = rescheduleReason === 'Other' ? `Other: ${otherRescheduleReason.trim()}` : rescheduleReason;
-      
-      const idToken = await auth.currentUser?.getIdToken();
-      if (!idToken) throw new Error("Authentication error");
-
-       const response = await fetch('/api/bookings/request-cancellation', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-              bookingId: selectedBookingForReschedule.id,
-              resolutionChoice: 'reschedule',
-              reason: finalReason,
-          }),
-      });
-
-       const result = await response.json();
-      if (!response.ok) {
-          throw new Error(result.error || 'Failed to process reschedule request.');
-      }
-
-      toast({ 
-        title: "Lesson Cancelled for Rescheduling", 
-        description: "Please choose a new time for your lesson on the booking page.",
-      });
-      if(user) fetchDashboardData(user);
-      setRescheduleDialogOpen(false);
-      router.push('/bookings');
-    } catch (error: any) {
-      console.error("Error during reschedule (cancellation step):", error);
-      toast({ 
-        title: "Reschedule Failed", 
-        description: error.message || "Could not cancel your current lesson. Please try again.", 
-        variant: "destructive" 
-      });
-    } finally {
-        setIsRescheduling(false);
-    }
+  const proceedToReschedule = () => {
+    if (!selectedBookingForReschedule) return;
+    const { id, lessonType } = selectedBookingForReschedule;
+    const encodedLessonType = encodeURIComponent(lessonType || 'comprehensive-lesson');
+    router.push(`/bookings?reschedule=true&bookingId=${id}&lessonType=${encodedLessonType}`);
   };
+
 
   const isRescheduleAllowed = (booking: BookingType) => {
     if (booking.date === 'N/A_PACKAGE' || !booking.time) return false; 
@@ -423,7 +381,7 @@ export default function StudentDashboardPage() {
                                 <div>
                                 <h3 className="font-semibold text-foreground text-lg">{booking.lessonType || "Amharic Lesson"}</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    {booking.date && isValid(parse(booking.date, 'yyyy-MM-dd', new Date())) ? format(parse(booking.date, 'yyyy-MM-dd', new Date()), "PPP") : 'Date not set'} at {booking.time}
+                                    {booking.date && isValid(parseISO(booking.date)) ? format(parseISO(booking.date), "PPP") : 'Date not set'} at {booking.time}
                                 </p>
                                 </div>
                             </div>
@@ -440,7 +398,7 @@ export default function StudentDashboardPage() {
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                         <div>
-                                            <Button variant="outline" size="sm" className="text-xs" onClick={() => openRescheduleDialog(booking)} disabled={!isRescheduleAllowed(booking)}>
+                                            <Button variant="outline" size="sm" className="text-xs" onClick={() => handleRescheduleClick(booking)} disabled={!isRescheduleAllowed(booking)}>
                                             <RefreshCw className="mr-1 h-3 w-3" /> Reschedule
                                             </Button>
                                         </div>
@@ -574,45 +532,13 @@ export default function StudentDashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reschedule Lesson?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action will cancel your current lesson and redirect you to the booking page to choose a new time. Please select a reason for rescheduling.
+              This action will take you to the booking page to select a new time for this lesson. Your current spot will be held until you confirm a new time. Are you sure you want to proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4 space-y-4">
-              <div>
-                <Label htmlFor="reschedule-reason" className="mb-2 block">Reason for Rescheduling</Label>
-                <Select value={rescheduleReason} onValueChange={setRescheduleReason}>
-                    <SelectTrigger id="reschedule-reason">
-                        <SelectValue placeholder="Select a reason..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Scheduling Conflict">Scheduling Conflict</SelectItem>
-                        <SelectItem value="Found a Better Time">Found a Better Time</SelectItem>
-                        <SelectItem value="Technical Issues">Technical Issues</SelectItem>
-                        <SelectItem value="Personal Reasons">Personal Reasons</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                </Select>
-              </div>
-              {rescheduleReason === 'Other' && (
-                <div>
-                    <Label htmlFor="other-reason" className="mb-2 block">Please specify your reason</Label>
-                    <Textarea 
-                        id="other-reason"
-                        value={otherRescheduleReason}
-                        onChange={(e) => setOtherRescheduleReason(e.target.value)}
-                        placeholder="Please provide a brief reason for rescheduling..."
-                    />
-                </div>
-              )}
-          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Go Back</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmReschedule}
-              disabled={!rescheduleReason || (rescheduleReason === 'Other' && !otherRescheduleReason.trim()) || isRescheduling}
-            >
-              {isRescheduling && <Spinner size="sm" className="mr-2" />}
-              Proceed to Reschedule
+            <AlertDialogAction onClick={proceedToReschedule}>
+              Yes, Reschedule
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

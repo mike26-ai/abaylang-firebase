@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket, AlertCircle } from "lucide-react"
+import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
@@ -20,12 +20,13 @@ import type { Booking as BookingType, TimeOff } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo"
 
 import { getAvailability } from "@/services/availabilityService";
+import { rescheduleBooking } from "@/services/bookingService";
 import { products, type ProductId } from "@/config/products"; 
 import { creditToLessonMap } from "@/config/creditMapping";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
 
-// The lessonTypes array is now derived from the server-side product catalog
+
 const lessonTypes = Object.entries(products).map(([id, details]) => ({
   id: id as ProductId,
   ...details,
@@ -50,18 +51,25 @@ export default function BookLessonPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
+  // Reschedule Mode state
+  const isRescheduleMode = searchParams.get('reschedule') === 'true';
+  const originalBookingId = searchParams.get('bookingId');
+  const lessonTypeFromUrl = searchParams.get('lessonType') as ProductId | null;
+
   const useCreditType = searchParams.get('useCredit') as ProductId | null;
   const creditPurchasedAt = searchParams.get('creditPurchasedAt');
   const creditExpiryDate = creditPurchasedAt ? addMonths(new Date(creditPurchasedAt), 6) : null;
   
-  const initialTypeFromUrl = searchParams.get('type') as ProductId | null;
   
   const getInitialProductId = (): ProductId => {
+    if (isRescheduleMode && lessonTypeFromUrl) {
+      return lessonTypeFromUrl;
+    }
     if (useCreditType && creditToLessonMap[useCreditType]) {
       return creditToLessonMap[useCreditType] as ProductId;
     }
-    if (initialTypeFromUrl && lessonTypes.some(l => l.id === initialTypeFromUrl)) {
-      return initialTypeFromUrl;
+    if (lessonTypeFromUrl && lessonTypes.some(l => l.id === lessonTypeFromUrl)) {
+      return lessonTypeFromUrl;
     }
     return "comprehensive-lesson";
   };
@@ -140,6 +148,7 @@ export default function BookLessonPage() {
         let timeOffMeta: TimeOff | undefined;
 
         for (const booking of dailyBookedSlots) {
+            if (booking.id === originalBookingId) continue; // Exclude the current booking being rescheduled
             if (booking.startTime && booking.endTime) {
                 const bookingStart = new Date(booking.startTime as any);
                 const bookingEnd = new Date(booking.endTime as any);
@@ -168,10 +177,42 @@ export default function BookLessonPage() {
         slots.push({ display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`, value: startTimeString, status: currentStatus, blockedMeta: timeOffMeta });
     }
     return slots;
-}, [selectedDate, isTimeRequired, selectedProduct, dailyBookedSlots, dailyTimeOff]);
+}, [selectedDate, isTimeRequired, selectedProduct, dailyBookedSlots, dailyTimeOff, originalBookingId]);
+
+
+  const handleReschedule = async () => {
+    if (!originalBookingId || !selectedDate || !selectedTime) {
+      toast({ title: "Incomplete Selection", description: "Please select a new date and time.", variant: "destructive" });
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      await rescheduleBooking({
+        originalBookingId,
+        newDate: format(selectedDate, 'yyyy-MM-dd'),
+        newTime: selectedTime,
+        reason: 'Student rescheduled lesson'
+      });
+      toast({ title: "Reschedule Successful", description: "Your lesson has been moved to the new time." });
+      router.push('/profile');
+    } catch (error: any) {
+      console.error("Reschedule failed:", error);
+      toast({
+        title: "Reschedule Failed",
+        description: error.message || "Could not reschedule your lesson. Please try again or contact support.",
+        variant: "destructive",
+      });
+      if (error.message.includes('conflict')) {
+        if(selectedDate) fetchAvailability(selectedDate);
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
 
   const handleBooking = async () => {
+    // This is now only for new bookings, not rescheduling.
     if (!user) {
       toast({ title: "Login Required", description: "Please log in to book a lesson.", variant: "destructive" });
       router.push('/login?redirect=/bookings');
@@ -187,71 +228,47 @@ export default function BookLessonPage() {
     }
     
     setIsProcessing(true);
+    const bookingPayload = {
+      productId: selectedProduct.id,
+      userId: user.uid,
+      ...(isTimeRequired && { 
+          date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined, 
+          time: selectedTime 
+      }),
+      ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
+    };
 
-    try {
-        const idToken = await user.getIdToken();
-        const apiEndpoint = useCreditType ? '/api/bookings/create-with-credit' : '/api/bookings/create';
-
-        const payload = useCreditType 
-            ? {
-                creditType: useCreditType,
-                userId: user.uid,
-                date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
-                time: selectedTime || '',
-                notes: paymentNote.trim(),
-              }
-            : {
-                productId: selectedProduct.id,
-                userId: user.uid,
-                ...(isTimeRequired && { 
-                    date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined, 
-                    time: selectedTime 
-                }),
-                ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
-            };
-            
-        const response = await fetch(apiEndpoint, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${idToken}`,
-            },
-            body: JSON.stringify(payload),
+    // Lazy load createBooking to avoid circular deps if needed
+    import('@/services/bookingService').then(service => {
+        service.createBooking(bookingPayload).then(data => {
+            if (data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+            } else {
+                throw new Error("No redirect URL received from server.");
+            }
+        }).catch((error: any) => {
+            console.error("Booking process failed:", error);
+            toast({
+                title: "Booking Failed",
+                description: error.message.includes('slot_already_booked') 
+                  ? "This slot is no longer available. Please select another." 
+                  : error.message || "Could not complete your booking. Please try again.",
+                variant: "destructive",
+            });
+            if (selectedDate) fetchAvailability(selectedDate);
+            setIsProcessing(false);
         });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || 'Booking creation failed.');
-        }
-
-        if (data.redirectUrl) {
-            window.location.href = data.redirectUrl;
-        } else {
-            throw new Error("No redirect URL received from server.");
-        }
-
-    } catch (error: any) {
-      console.error("Booking process failed:", error);
-      toast({
-          title: "Booking Failed",
-          description: error.message.includes('slot_already_booked') 
-            ? "This slot is no longer available. Please select another." 
-            : error.message || "Could not complete your booking. Please try again.",
-          variant: "destructive",
-      });
-      if (selectedDate) fetchAvailability(selectedDate);
-      setIsProcessing(false);
-    }
+    });
   };
 
   const isPaidLesson = (selectedProduct?.price || 0) > 0 && !useCreditType;
-
+  const finalActionHandler = isRescheduleMode ? handleReschedule : handleBooking;
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
       <header className="bg-card border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/credits" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
+          <Link href={isRescheduleMode ? "/profile" : "/credits"} className="flex items-center gap-2 text-muted-foreground hover:text-primary">
             <ArrowLeft className="w-5 h-5" />
             <span>Back</span>
           </Link>
@@ -261,12 +278,12 @@ export default function BookLessonPage() {
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-8 text-center">
-          <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
-          <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
-          <p className="text-xl text-muted-foreground">Schedule a lesson with {tutorInfo.name}</p>
+          <Badge className="mb-4 bg-accent text-accent-foreground">{isRescheduleMode ? "Reschedule Lesson" : "Book Your Lesson"}</Badge>
+          <h1 className="text-4xl font-bold text-foreground mb-2">{isRescheduleMode ? "Choose a New Time" : "Start Your Amharic Journey"}</h1>
+          <p className="text-xl text-muted-foreground">{isRescheduleMode ? `Select a new date and time for your '${selectedProduct?.label}' lesson.` : `Schedule a lesson with ${tutorInfo.name}`}</p>
         </div>
 
-        {useCreditType && selectedProduct && (
+        {useCreditType && selectedProduct && !isRescheduleMode && (
             <Card className="mb-8 bg-primary/10 border-primary/20">
                 <CardContent className="p-4 flex items-center gap-3">
                     <Ticket className="w-6 h-6 text-primary"/>
@@ -287,14 +304,14 @@ export default function BookLessonPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-xl text-foreground">
                     <BookOpen className="w-5 h-5 text-primary" />
-                    Choose Your Lesson or Package
+                    {isRescheduleMode ? "Lesson to Reschedule" : "Choose Your Lesson or Package"}
                   </CardTitle>
-                  <CardDescription>
-                    {useCreditType ? "Your lesson type is pre-selected based on your credit." : "Select the format that best fits your learning goals"}
+                   <CardDescription>
+                    {isRescheduleMode ? "Your lesson type is locked. Please select a new time." : "Select the format that best fits your learning goals"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <RadioGroup value={selectedProductId} onValueChange={(value) => {setSelectedProductId(value as ProductId); setSelectedTime(undefined); setSelectedDateState(undefined);}} disabled={!!useCreditType}>
+                  <RadioGroup value={selectedProductId} onValueChange={(value) => {setSelectedProductId(value as ProductId); setSelectedTime(undefined); setSelectedDateState(undefined);}} disabled={!!useCreditType || isRescheduleMode}>
                     <div className="space-y-6">
                       {["individual", "group", "package"].map(lessonGroupType => (
                          <div key={lessonGroupType}>
@@ -306,9 +323,9 @@ export default function BookLessonPage() {
                               .filter((lesson) => lesson.type === lessonGroupType)
                               .map((lesson) => (
                                   <div key={lesson.id} className="flex items-start space-x-3">
-                                  <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType} />
-                                  <Label htmlFor={lesson.id} className={`flex-1 ${!!useCreditType ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                                      <div className={`p-4 border rounded-lg transition-colors ${selectedProductId === lesson.id ? "bg-accent border-primary ring-2 ring-primary" : "border-border"} ${!!useCreditType && selectedProductId !== lesson.id ? 'opacity-50' : 'hover:bg-accent/50'}`}>
+                                  <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType || isRescheduleMode} />
+                                  <Label htmlFor={lesson.id} className={`flex-1 ${(!!useCreditType || isRescheduleMode) ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                                      <div className={`p-4 border rounded-lg transition-colors ${selectedProductId === lesson.id ? "bg-accent border-primary ring-2 ring-primary" : "border-border"} ${(!!useCreditType || isRescheduleMode) && selectedProductId !== lesson.id ? 'opacity-50' : 'hover:bg-accent/50'}`}>
                                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
                                           <div className="mb-2 sm:mb-0">
                                           <div className="font-semibold text-lg text-foreground flex items-center gap-2">
@@ -349,7 +366,7 @@ export default function BookLessonPage() {
                       <CardHeader>
                           <CardTitle className="flex items-center gap-2 text-xl text-foreground">
                           <Calendar className="w-5 h-5 text-primary" />
-                          Select Date
+                          Select New Date
                           </CardTitle>
                           <CardDescription>Choose an available date for your lesson.</CardDescription>
                       </CardHeader>
@@ -365,7 +382,7 @@ export default function BookLessonPage() {
                 {selectedDate && (
                 <Card className="shadow-lg">
                     <CardHeader>
-                    <CardTitle className="text-xl text-foreground flex items-center gap-2"> <Clock className="w-5 h-5 text-primary" /> Select Time Slot </CardTitle>
+                    <CardTitle className="text-xl text-foreground flex items-center gap-2"> <Clock className="w-5 h-5 text-primary" /> Select New Time Slot </CardTitle>
                     <CardDescription>Available slots for {format(selectedDate, 'PPP')}. (Your local time)</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -379,7 +396,7 @@ export default function BookLessonPage() {
               </>
             )}
             
-            {selectedProduct?.type === 'package' && (
+            {selectedProduct?.type === 'package' && !isRescheduleMode && (
                  <Card className="shadow-lg">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-xl text-foreground"> <Package className="w-5 h-5 text-primary" /> Package Details </CardTitle>
@@ -391,15 +408,17 @@ export default function BookLessonPage() {
                 </Card>
             )}
 
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl text-foreground"> <MessageSquare className="w-5 h-5 text-primary" /> Notes (Optional) </CardTitle>
-                <CardDescription> Add a note for your tutor. </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea placeholder={ "e.g., conversational Amharic for family, basic reading/writing..." } value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} rows={4} className="resize-none" />
-              </CardContent>
-            </Card>
+            {!isRescheduleMode && (
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl text-foreground"> <MessageSquare className="w-5 h-5 text-primary" /> Notes (Optional) </CardTitle>
+                  <CardDescription> Add a note for your tutor. </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Textarea placeholder={ "e.g., conversational Amharic for family, basic reading/writing..." } value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} rows={4} className="resize-none" />
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className="lg:col-span-1">
@@ -428,7 +447,7 @@ export default function BookLessonPage() {
                   {selectedTime && isTimeRequired && ( <div className="flex justify-between"> <span className="text-muted-foreground">Time:</span> <span className="font-medium text-foreground"> {selectedTime} </span> </div> )}
                 </div>
                 
-                {selectedProduct && (
+                {selectedProduct && !isRescheduleMode && (
                   <div className="border-t border-border pt-4">
                      {useCreditType ? (
                         <div className="flex justify-between text-lg font-bold"> <span className="text-foreground">Total:</span> <span className="text-primary">1 Credit</span> </div>
@@ -438,16 +457,22 @@ export default function BookLessonPage() {
                     {isPaidLesson && ( <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md"> <ShieldCheck className="w-3 h-3 inline-block mr-1"/> Secure payment processing via Paddle. </p> )}
                   </div>
                 )}
+                 {isRescheduleMode && (
+                    <div className="border-t border-border pt-4">
+                        <div className="flex justify-between text-lg font-bold"> <span className="text-foreground">Total:</span> <span className="text-primary">No Charge</span> </div>
+                    </div>
+                 )}
 
                 <div className="space-y-3 pt-2">
-                  <Button className="w-full" onClick={handleBooking} disabled={isProcessing || !selectedProduct || (isTimeRequired && (!selectedDate || !selectedTime))}>
+                  <Button className="w-full" onClick={finalActionHandler} disabled={isProcessing || !selectedProduct || (isTimeRequired && (!selectedDate || !selectedTime))}>
                     {isProcessing && <Spinner size="sm" className="mr-2" />}
                     {isProcessing ? "Processing..." 
+                      : isRescheduleMode ? "Confirm Reschedule"
                       : useCreditType ? "Confirm with 1 Credit"
                       : isPaidLesson ? "Proceed to Payment" 
                       : "Confirm Free Trial"}
                   </Button>
-                   {!useCreditType && user && selectedProduct?.type !== 'package' && (
+                   {!useCreditType && user && selectedProduct?.type !== 'package' && !isRescheduleMode && (
                         <Button className="w-full" variant="outline" asChild>
                             <Link href="/credits">
                                 <Ticket className="w-4 h-4 mr-2"/>

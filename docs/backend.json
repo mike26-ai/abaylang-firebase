@@ -29,10 +29,23 @@
         "userName": { "type": "string" },
         "date": { "type": "string", "format": "date" },
         "time": { "type": "string", "format": "time" },
-        "status": { "type": "string", "enum": ["awaiting-payment", "confirmed", "cancelled", "completed"] },
+        "status": { "type": "string", "enum": ["awaiting-payment", "payment-pending-confirmation", "confirmed", "cancelled", "completed", "cancellation-requested", "refunded", "credit-issued", "cancelled-by-admin", "rescheduled"] },
         "tutorId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "groupSessionId": { "type": "string", "description": "If this is a booking for a group session, this ID links to the groupSessions collection." }
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "groupSessionId": { "type": "string", "description": "If this is a booking for a group session, this ID links to the groupSessions collection." },
+        "statusHistory": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "status": { "type": "string" },
+                    "changedAt": { "type": "string", "format": "date-time" },
+                    "changedBy": { "type": "string" },
+                    "reason": { "type": "string" }
+                }
+            }
+        }
       },
       "required": ["userId", "userName", "date", "time", "status", "tutorId", "createdAt"]
     },

@@ -9,10 +9,11 @@ export interface Booking {
   userEmail: string;
   date: string; // YYYY-MM-DD format
   time: string;
-  status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed" | "cancellation-requested" | "refunded" | "credit-issued" | "cancelled-by-admin";
+  status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed" | "cancellation-requested" | "refunded" | "credit-issued" | "cancelled-by-admin" | "rescheduled";
   tutorId: string;
   tutorName: string;
   createdAt: Timestamp;
+  updatedAt?: Timestamp; // For tracking updates like rescheduling
   startTime?: Timestamp | null;
   endTime?: Timestamp | null;
   // Optional fields
@@ -33,6 +34,12 @@ export interface Booking {
   productType?: 'individual' | 'group' | 'private-group' | 'package';
   paddleTransactionId?: string;
   parentPackageId?: string; // Links a redeemed lesson to its parent package booking
+  statusHistory?: {
+      status: string;
+      changedAt: Timestamp;
+      changedBy: string; // 'student', 'admin', 'system'
+      reason?: string;
+  }[];
 }
 
 export interface TimeOff {
