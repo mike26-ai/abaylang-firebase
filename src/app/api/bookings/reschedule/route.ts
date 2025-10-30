@@ -5,7 +5,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Booking } from '@/lib/types';
-import { differenceInHours, parseISO } from 'date-fns';
+import { differenceInHours, parseISO, addMinutes } from 'date-fns';
 
 initAdmin();
 const auth = getAuth();
@@ -64,8 +64,9 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. Conflict Check for the new slot
-        const newStartTime = Timestamp.fromDate(new Date(`${newDate}T${newTime}`));
-        const newEndTime = Timestamp.fromDate(new Date(newStartTime.toDate().getTime() + (booking.duration || 60) * 60 * 1000));
+        const newStartDateTime = new Date(`${newDate}T${newTime}`);
+        const newStartTime = Timestamp.fromDate(newStartDateTime);
+        const newEndTime = Timestamp.fromDate(addMinutes(newStartDateTime, booking.duration || 60));
 
         const bookingConflictQuery = adminDb.collection('bookings')
             .where('tutorId', '==', booking.tutorId)
@@ -75,16 +76,19 @@ export async function POST(request: NextRequest) {
 
         const timeOffConflictQuery = adminDb.collection('timeOff')
             .where('tutorId', '==', booking.tutorId)
-            .where('startISO', '<', newEndTime.toDate().toISOString())
-            .where('endISO', '>', newStartTime.toDate().toISOString());
+            .where('endISO', '>', newStartTime.toDate().toISOString())
+            .where('startISO', '<', newEndTime.toDate().toISOString());
         
         const [bookingConflicts, timeOffConflicts] = await Promise.all([
             transaction.get(bookingConflictQuery),
             transaction.get(timeOffConflictQuery)
         ]);
         
-        if (!bookingConflicts.empty) throw new Error('conflict');
+        // Exclude the current booking being rescheduled from the conflict check
+        const hasBookingConflict = bookingConflicts.docs.some(doc => doc.id !== originalBookingId);
+        if (hasBookingConflict) throw new Error('conflict');
         if (!timeOffConflicts.empty) throw new Error('conflict');
+
 
         // 3. Atomic Update
         const updateData = {
