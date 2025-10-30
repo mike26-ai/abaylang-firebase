@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/request-cancellation/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminDb } from '@/lib/firebase-admin';
@@ -81,7 +82,9 @@ export async function POST(request: NextRequest) {
                 lessonType: creditType,
                 count: 1,
                 purchasedAt: booking.createdAt,
-                packageBookingId: booking.id, // Link this credit to the original booking
+                // --- THE FIX ---
+                // Use the `bookingId` from the validated request, NOT from the document data.
+                packageBookingId: bookingId,
             };
 
             transaction.update(userRef, {
