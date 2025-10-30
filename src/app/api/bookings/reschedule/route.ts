@@ -73,13 +73,14 @@ export async function POST(request: NextRequest) {
             .where('status', 'in', ['confirmed', 'payment-pending-confirmation'])
             .where('startTime', '<', newEndTime)
             .where('endTime', '>', newStartTime);
-
-        // CORRECTED CONFLICT CHECK: Firestore does not support range filters on two different fields.
-        // We must perform two separate queries and merge the results.
+        
+        // ** THE FIX **: Replace the single invalid query with two valid queries.
+        // Query 1: Find blocks that start before the new lesson ends.
         const timeOffConflictQuery1 = adminDb.collection('timeOff')
             .where('tutorId', '==', booking.tutorId)
             .where('startISO', '<', newEndTime.toDate().toISOString());
         
+        // Query 2: Find blocks that end after the new lesson starts.
         const timeOffConflictQuery2 = adminDb.collection('timeOff')
             .where('tutorId', '==', booking.tutorId)
             .where('endISO', '>', newStartTime.toDate().toISOString());
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
             transaction.get(timeOffConflictQuery2)
         ]);
 
-        // Manually find the intersection of the two time-off queries
+        // ** THE FIX **: Manually find the intersection of the two time-off queries.
         const timeOffConflictDocs = timeOffConflicts1.docs.filter(doc1 => 
             timeOffConflicts2.docs.some(doc2 => doc2.id === doc1.id)
         );
@@ -98,8 +99,8 @@ export async function POST(request: NextRequest) {
         // Exclude the current booking being rescheduled from the booking conflict check
         const hasBookingConflict = bookingConflicts.docs.some(doc => doc.id !== originalBookingId);
         if (hasBookingConflict) throw new Error('conflict');
+        // Check for conflicts from the manually intersected time-off results
         if (timeOffConflictDocs.length > 0) throw new Error('conflict');
-
 
         // 3. Atomic Update
         const updateData = {
