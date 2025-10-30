@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/reschedule/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminDb, Timestamp } from '@/lib/firebase-admin';
@@ -5,7 +6,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Booking } from '@/lib/types';
-import { differenceInHours, parseISO, addMinutes } from 'date-fns';
+import { differenceInHours, parseISO, addMinutes, parse } from 'date-fns';
 
 initAdmin();
 const auth = getAuth();
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
         }
         
         const hours = booking.groupSessionId ? 3 : 12;
-        const lessonDateTime = parseISO(`${booking.date}T${booking.time}`);
+        const lessonDateTime = parse(`${booking.date} ${booking.time}`, 'yyyy-MM-dd HH:mm', new Date());
         if (differenceInHours(lessonDateTime, new Date()) < hours) {
             throw new Error('reschedule_window_closed');
         }
@@ -74,13 +75,21 @@ export async function POST(request: NextRequest) {
             .where('startTime', '<', newEndTime)
             .where('endTime', '>', newStartTime);
         
+        // This is the invalid query. Firestore does not support range filters on two different fields.
+        // const timeOffConflictQuery = adminDb.collection('timeOff')
+        //     .where('tutorId', '==', booking.tutorId)
+        //     .where('endISO', '>', newStartTime.toDate().toISOString())
+        //     .where('startISO', '<', newEndTime.toDate().toISOString());
+        
         // ** THE FIX **: Replace the single invalid query with two valid queries.
         // Query 1: Find blocks that start before the new lesson ends.
+        // We MUST compare string fields against string values.
         const timeOffConflictQuery1 = adminDb.collection('timeOff')
             .where('tutorId', '==', booking.tutorId)
             .where('startISO', '<', newEndTime.toDate().toISOString());
         
         // Query 2: Find blocks that end after the new lesson starts.
+        // We MUST compare string fields against string values.
         const timeOffConflictQuery2 = adminDb.collection('timeOff')
             .where('tutorId', '==', booking.tutorId)
             .where('endISO', '>', newStartTime.toDate().toISOString());
