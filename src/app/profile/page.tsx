@@ -44,6 +44,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { contactEmail } from "@/config/site";
+import { requestReschedule } from "@/services/bookingService";
 
 
 interface DashboardBooking extends BookingType {
@@ -68,9 +69,10 @@ export default function StudentDashboardPage() {
 
   const [showConfirmation, setShowConfirmation] = useState(false);
   
-  // Reschedule state is now just for the confirmation dialog
+  // Reschedule state is now for the new hybrid flow
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<BookingType | null>(null);
+  const [isProcessingReschedule, setIsProcessingReschedule] = useState(false);
   
   const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
   const [selectedBookingForCancellation, setSelectedBookingForCancellation] = useState<BookingType | null>(null);
@@ -262,24 +264,38 @@ export default function StudentDashboardPage() {
     }
   };
   
-  // New Reschedule Handlers
   const handleRescheduleClick = (booking: BookingType) => {
       setSelectedBookingForReschedule(booking);
       setRescheduleDialogOpen(true);
   };
 
-  const proceedToReschedule = () => {
-    if (!selectedBookingForReschedule) return;
-    const { id, productId } = selectedBookingForReschedule;
-    
-    if (!productId) {
-      toast({title: "Cannot Reschedule", description: "This booking is missing product information and cannot be rescheduled automatically. Please contact support.", variant: "destructive"});
-      return;
+  const proceedToReschedule = async () => {
+    if (!selectedBookingForReschedule || !user) return;
+    setIsProcessingReschedule(true);
+    try {
+      await requestReschedule({
+        bookingId: selectedBookingForReschedule.id,
+        reason: 'Student initiated reschedule',
+      });
+      toast({
+        title: "Credit Issued for Reschedule",
+        description: "Your original lesson was cancelled. You can now use your credit to book a new time.",
+      });
+      setRescheduleDialogOpen(false);
+      // Redirect to the credits page to show the newly issued credit
+      router.push('/credits');
+      
+    } catch (error: any) {
+      console.error("Failed to process reschedule request:", error);
+      toast({
+        title: "Reschedule Failed",
+        description: error.message || "Could not process your reschedule request.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingReschedule(false);
     }
-    
-    router.push(`/bookings?reschedule=true&bookingId=${id}&lessonType=${productId}`);
   };
-
 
   const isRescheduleAllowed = (booking: BookingType) => {
     if (booking.date === 'N/A_PACKAGE' || !booking.time) return false; 
@@ -537,13 +553,14 @@ export default function StudentDashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reschedule Lesson?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action will take you to the booking page to select a new time for this lesson. Your current spot will be held until you confirm a new time. Are you sure you want to proceed?
+              This will cancel your current booking and issue you a credit for the same lesson type. You will then be redirected to your credits page where you can book a new time slot. Are you sure you want to proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Go Back</AlertDialogCancel>
-            <AlertDialogAction onClick={proceedToReschedule}>
-              Yes, Reschedule
+            <AlertDialogAction onClick={proceedToReschedule} disabled={isProcessingReschedule}>
+              {isProcessingReschedule && <Spinner size="sm" className="mr-2" />}
+              Yes, Cancel and Get Credit
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

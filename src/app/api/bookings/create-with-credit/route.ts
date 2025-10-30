@@ -1,4 +1,3 @@
-
 // File: src/app/api/bookings/create-with-credit/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminDb, Timestamp } from '@/lib/firebase-admin';

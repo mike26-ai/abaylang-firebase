@@ -12,6 +12,14 @@ interface CreateBookingPayload {
     paymentNote?: string;
 }
 
+interface CreateWithCreditPayload {
+    creditType: string;
+    userId: string;
+    date: string;
+    time: string;
+    notes?: string;
+}
+
 /**
  * Creates a new booking via a secure, server-side API endpoint.
  * This function uses a transaction on the server to prevent double-bookings.
@@ -48,26 +56,13 @@ export async function createBooking(bookingPayload: CreateBookingPayload): Promi
     return data;
 }
 
-
-interface RescheduleBookingPayload {
-    originalBookingId: string;
-    newDate: string;
-    newTime: string;
-    reason?: string;
-}
-/**
- * Reschedules an existing booking via a secure, server-side API endpoint.
- * @param payload - The data for the reschedule request.
- * @returns The updated booking object.
- */
-export async function rescheduleBooking(payload: RescheduleBookingPayload): Promise<{ success: boolean; booking: any }> {
+export async function createBookingWithCredit(payload: CreateWithCreditPayload): Promise<{ bookingId: string; redirectUrl: string }> {
     const user = auth.currentUser;
-    if (!user) {
-        throw new Error("Authentication required to reschedule a booking.");
-    }
-    const idToken = await user.getIdToken();
+    if (!user) throw new Error("Authentication required.");
+    if (user.uid !== payload.userId) throw new Error("User mismatch.");
 
-    const response = await fetch(`${API_BASE_URL}/bookings/reschedule`, {
+    const idToken = await user.getIdToken();
+    const response = await fetch(`${API_BASE_URL}/bookings/create-with-credit`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -77,10 +72,43 @@ export async function rescheduleBooking(payload: RescheduleBookingPayload): Prom
     });
 
     const data = await response.json();
-
     if (!response.ok) {
-        throw new Error(data.details || data.error || 'Failed to reschedule booking.');
+        throw new Error(data.message || 'Failed to create booking with credit.');
     }
+    return data;
+}
+
+
+interface RescheduleRequestPayload {
+    bookingId: string;
+    reason: string;
+}
+
+/**
+ * Initiates a reschedule by cancelling the old lesson and issuing a credit.
+ * @param payload - The ID of the booking to cancel and the reason.
+ * @returns A success message.
+ */
+export async function requestReschedule(payload: RescheduleRequestPayload): Promise<{ success: boolean; message: string }> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Authentication required.");
     
+    const idToken = await user.getIdToken();
+    const response = await fetch(`${API_BASE_URL}/bookings/request-cancellation`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+            ...payload,
+            resolutionChoice: 'reschedule',
+        }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || 'Failed to process reschedule request.');
+    }
     return data;
 }

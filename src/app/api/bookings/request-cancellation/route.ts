@@ -1,4 +1,3 @@
-
 // File: src/app/api/bookings/request-cancellation/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminDb } from '@/lib/firebase-admin';
@@ -6,6 +5,9 @@ import { getAuth } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { differenceInHours, parse } from 'date-fns';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { creditToLessonMap } from '@/config/creditMapping';
+import type { Booking } from '@/lib/types';
+
 
 initAdmin();
 const auth = getAuth();
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Booking not found.' }, { status: 404 });
     }
 
-    const booking = bookingDoc.data()!;
+    const booking = bookingDoc.data()! as Booking;
 
     // Security Check: Ensure the user owns this booking
     if (booking.userId !== decodedToken.uid) {
@@ -60,25 +62,71 @@ export async function POST(request: NextRequest) {
         newStatus = 'cancelled';
     }
 
-    await bookingRef.update({
-        status: newStatus,
-        requestedResolution: resolutionChoice === 'reschedule' ? null : resolutionChoice,
-        cancellationReason: reason,
-        statusHistory: FieldValue.arrayUnion({
-          status: newStatus,
-          changedAt: Timestamp.now(),
-          changedBy: 'student',
-          reason: `${resolutionChoice === 'reschedule' ? 'Rescheduled' : 'Requested ' + resolutionChoice}. Reason: ${reason}`,
-        }),
-      });
+    // Use a transaction to ensure atomicity for rescheduling
+    if (resolutionChoice === 'reschedule') {
+        const userRef = adminDb.collection('users').doc(booking.userId);
 
-    return NextResponse.json({ success: true, message: `Request to ${resolutionChoice} has been processed.` });
+        await adminDb.runTransaction(async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists) throw new Error("User not found for credit issuance.");
+            
+            const userData = userDoc.data()!;
+            const creditType = Object.keys(creditToLessonMap).find(key => creditToLessonMap[key] === booking.productId) || booking.productId;
+            
+            if (!creditType) {
+              throw new Error("Could not determine credit type for rescheduled lesson.");
+            }
+
+            const newCredit = {
+                lessonType: creditType,
+                count: 1,
+                purchasedAt: booking.createdAt,
+                packageBookingId: booking.id, // Link this credit to the original booking
+            };
+
+            transaction.update(userRef, {
+                credits: FieldValue.arrayUnion(newCredit)
+            });
+
+            transaction.update(bookingRef, {
+                status: newStatus,
+                statusHistory: FieldValue.arrayUnion({
+                  status: newStatus,
+                  changedAt: Timestamp.now(),
+                  changedBy: 'student',
+                  reason: `Lesson cancelled for reschedule. Credit issued. Original reason: ${reason}`,
+                }),
+              });
+        });
+
+        return NextResponse.json({ 
+            success: true, 
+            message: `Lesson cancelled. A credit has been issued for you to reschedule.`,
+        });
+
+    } else {
+        // For standard refund/credit requests that need admin approval
+        await bookingRef.update({
+            status: newStatus,
+            requestedResolution: resolutionChoice,
+            cancellationReason: reason,
+            statusHistory: FieldValue.arrayUnion({
+              status: newStatus,
+              changedAt: Timestamp.now(),
+              changedBy: 'student',
+              reason: `Requested ${resolutionChoice}. Reason: ${reason}`,
+            }),
+          });
+
+        return NextResponse.json({ success: true, message: `Request to ${resolutionChoice} has been submitted.` });
+    }
+
 
   } catch (error: any) {
     console.error('API Error (/bookings/request-cancellation):', error);
     if (error.code === 'auth/id-token-expired') {
         return NextResponse.json({ error: 'Authentication token has expired.' }, { status: 401 });
     }
-    return NextResponse.json({ success: false, error: 'An internal server error occurred.' }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || 'An internal server error occurred.' }, { status: 500 });
   }
 }
