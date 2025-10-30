@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
         }
         const booking = bookingDoc.data() as Booking;
 
-        // 1. Ownership & Eligibility Check
         if (booking.userId !== userId) {
             throw new Error('unauthorized');
         }
@@ -64,8 +63,7 @@ export async function POST(request: NextRequest) {
             throw new Error('reschedule_window_closed');
         }
 
-        // 2. Conflict Check for the new slot
-        const newStartDateTime = new Date(`${newDate}T${newTime}`);
+        const newStartDateTime = parse(`${newDate}T${newTime}`, "yyyy-MM-dd'T'HH:mm", new Date());
         const newStartTime = Timestamp.fromDate(newStartDateTime);
         const newEndTime = Timestamp.fromDate(addMinutes(newStartDateTime, booking.duration || 60));
 
@@ -74,50 +72,27 @@ export async function POST(request: NextRequest) {
             .where('status', 'in', ['confirmed', 'payment-pending-confirmation'])
             .where('startTime', '<', newEndTime)
             .where('endTime', '>', newStartTime);
-        
-        // This is the invalid query. Firestore does not support range filters on two different fields.
-        // const timeOffConflictQuery = adminDb.collection('timeOff')
-        //     .where('tutorId', '==', booking.tutorId)
-        //     .where('endISO', '>', newStartTime.toDate().toISOString())
-        //     .where('startISO', '<', newEndTime.toDate().toISOString());
-        
-        // ** THE FIX **: Replace the single invalid query with two valid queries.
-        // Query 1: Find blocks that start before the new lesson ends.
-        // We MUST compare string fields against string values.
-        const timeOffConflictQuery1 = adminDb.collection('timeOff')
+
+        const timeOffConflictQuery = adminDb.collection('timeOff')
             .where('tutorId', '==', booking.tutorId)
+            .where('endISO', '>', newStartTime.toDate().toISOString())
             .where('startISO', '<', newEndTime.toDate().toISOString());
         
-        // Query 2: Find blocks that end after the new lesson starts.
-        // We MUST compare string fields against string values.
-        const timeOffConflictQuery2 = adminDb.collection('timeOff')
-            .where('tutorId', '==', booking.tutorId)
-            .where('endISO', '>', newStartTime.toDate().toISOString());
-        
-        const [bookingConflicts, timeOffConflicts1, timeOffConflicts2] = await Promise.all([
+        const [bookingConflicts, timeOffConflicts] = await Promise.all([
             transaction.get(bookingConflictQuery),
-            transaction.get(timeOffConflictQuery1),
-            transaction.get(timeOffConflictQuery2)
+            transaction.get(timeOffConflictQuery)
         ]);
 
-        // ** THE FIX **: Manually find the intersection of the two time-off queries.
-        const timeOffConflictDocs = timeOffConflicts1.docs.filter(doc1 => 
-            timeOffConflicts2.docs.some(doc2 => doc2.id === doc1.id)
-        );
-        
-        // Exclude the current booking being rescheduled from the booking conflict check
         const hasBookingConflict = bookingConflicts.docs.some(doc => doc.id !== originalBookingId);
-        if (hasBookingConflict) throw new Error('conflict');
-        // Check for conflicts from the manually intersected time-off results
-        if (timeOffConflictDocs.length > 0) throw new Error('conflict');
-
-        // 3. Atomic Update
+        if (hasBookingConflict) throw new Error('conflict:booking');
+        if (!timeOffConflicts.empty) throw new Error('conflict:timeoff');
+        
         const updateData = {
             date: newDate,
             time: newTime,
             startTime: newStartTime,
             endTime: newEndTime,
-            status: 'confirmed', // Ensure status is confirmed after reschedule
+            status: 'confirmed',
             updatedAt: FieldValue.serverTimestamp(),
             statusHistory: FieldValue.arrayUnion({
                 status: 'rescheduled',
@@ -135,9 +110,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, booking: updatedBooking });
 
   } catch (error: any) {
-    console.error('BOOKING.RESCHEDULE.ERROR', { message: error.message, stack: error.stack });
-    if (error.message === 'not_found') {
+    console.error('BOOKING.RESCHEDULE.ERROR', { message: error.message, code: error.code, stack: error.stack });
+    
+    if (error.code === 5) { // 'NOT_FOUND' for Firestore
         return NextResponse.json({ success: false, error: 'Booking not found.' }, { status: 404 });
+    }
+     if (error.code === 9) { // 'FAILED_PRECONDITION' for missing index
+      return NextResponse.json({ success: false, error: 'database_indexing', details: 'The database is currently creating the required indexes for this feature. Please try again in a few minutes.' }, { status: 409 });
     }
     if (error.message === 'unauthorized') {
         return NextResponse.json({ success: false, error: 'You do not own this booking.' }, { status: 403 });
@@ -148,7 +127,7 @@ export async function POST(request: NextRequest) {
      if (error.message === 'reschedule_window_closed') {
         return NextResponse.json({ success: false, error: 'The 12-hour window for rescheduling has passed.' }, { status: 400 });
     }
-    if (error.message === 'conflict') {
+    if (error.message.startsWith('conflict:')) {
         return NextResponse.json({ success: false, error: 'conflict', details: 'Selected time is unavailable. Please choose another slot.' }, { status: 409 });
     }
     return NextResponse.json({ success: false, error: 'An internal server error occurred.' }, { status: 500 });

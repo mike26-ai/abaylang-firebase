@@ -1,3 +1,4 @@
+
 # Firebase Studio
 
 This is a NextJS starter in Firebase Studio.
@@ -43,12 +44,17 @@ For the application's queries to work efficiently, you will need to manually cre
 
 1.  **Bookings Collection Index:**
     *   **Collection:** `bookings`
-    *   **Fields:** `tutorId` (Ascending), `startTime` (Ascending), `endTime` (Ascending)
+    *   **Fields:** `tutorId` (Ascending), `startTime` (Ascending)
     *   **Query Scope:** Collection
-    *   **Purpose:** This index is essential for efficiently checking for booking conflicts in a transaction, ensuring that a time slot cannot be double-booked.
+    *   **Purpose:** This index is essential for efficiently querying bookings by tutor and start time.
 
-2.  **TimeOff Collection Index:**
-    *   **Collection:** `timeOff`
-    *   **Fields:** `tutorId` (Ascending), `startISO` (Ascending)
-    *   **Query Scope:** Collection
-    *   **Purpose:** This index allows the system to quickly retrieve all the time-off blocks for a tutor on a specific date, which is necessary for displaying the tutor's availability correctly.
+2.  **TimeOff Collection Indexes (for Rescheduling):**
+    *   **Index 1:**
+        *   **Collection:** `timeOff`
+        *   **Fields:** `tutorId` (Ascending), `startISO` (Ascending)
+        *   **Query Scope:** Collection
+    *   **Index 2:**
+        *   **Collection:** `timeOff`
+        *   **Fields:** `tutorId` (Ascending), `endISO` (Ascending)
+        *   **Query Scope:** Collection
+    *   **Purpose:** These two indexes are critical for the lesson reschedule feature. They allow the system to efficiently check for tutor availability conflicts by querying time-off blocks that overlap with a proposed new lesson time.
