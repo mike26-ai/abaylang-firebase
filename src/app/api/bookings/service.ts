@@ -87,31 +87,30 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
                 const existingCreditIndex = currentCredits.findIndex((c: any) => c.lessonType === creditType);
                 let newCredits = [];
 
+                // FIX: Replace FieldValue.serverTimestamp() with Timestamp.now()
                 const newCreditObject = { 
                     lessonType: creditType, 
                     count: creditsToAdd, 
-                    purchasedAt: FieldValue.serverTimestamp(), 
+                    purchasedAt: Timestamp.now(), // Use Timestamp.now()
                     packageBookingId: newBookingRef.id // Link credits to this booking
                 };
                 
                 if (existingCreditIndex > -1) {
                     newCredits = currentCredits.map((c: any, index: number) => 
-                        index === existingCreditIndex ? { ...c, count: c.count + creditsToAdd, purchasedAt: FieldValue.serverTimestamp(), packageBookingId: newBookingRef.id } : c
+                        index === existingCreditIndex ? { ...c, count: c.count + creditsToAdd, purchasedAt: Timestamp.now(), packageBookingId: newBookingRef.id } : c
                     );
                 } else {
                     newCredits = [...currentCredits, newCreditObject];
                 }
-                transaction.update(userRef, { credits: newCredits, lastCreditPurchase: FieldValue.serverTimestamp() });
+                transaction.update(userRef, { credits: newCredits, lastCreditPurchase: Timestamp.now() });
             }
         }
         
-        let initialStatus: 'confirmed' | 'payment-pending-confirmation' | 'completed' = 'confirmed';
+        let initialStatus: 'confirmed' | 'payment-pending-confirmation' | 'completed' = 'payment-pending-confirmation';
         if (product.type === 'package') {
             initialStatus = 'completed';
         } else if (product.price === 0) {
             initialStatus = 'confirmed';
-        } else {
-             initialStatus = 'payment-pending-confirmation';
         }
 
         const newBookingDoc = {
@@ -130,11 +129,11 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             tutorId: "MahderNegashMamo",
             tutorName: "Mahder N. Mamo",
             status: initialStatus,
-            createdAt: FieldValue.serverTimestamp(),
+            createdAt: Timestamp.now(), // Use Timestamp.now() for consistency
             statusHistory: [{
                 status: initialStatus,
                 changedAt: Timestamp.now(),
-                changedBy: 'system_simulation',
+                changedBy: 'system_booking',
                 reason: 'Booking created.',
             }],
             ...(payload.paymentNote && { paymentNote: payload.paymentNote }),
@@ -143,15 +142,18 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
         transaction.set(newBookingRef, newBookingDoc);
     });
 
+    // Determine redirect URL based on payment type
     const isFreeTrial = product.price === 0;
 
     if (isFreeTrial) {
+        // Redirect free trials to the dashboard directly
         return { 
             bookingId: newBookingRef.id, 
             redirectUrl: `/profile?booking_id=${newBookingRef.id}&new_booking=true&type=free_trial` 
         };
     }
     
+    // For paid lessons (including packages), redirect to the dashboard to show the confirmation popup
     return { 
         bookingId: newBookingRef.id, 
         redirectUrl: `/profile?booking_id=${newBookingRef.id}&new_booking=true&type=paid` 
