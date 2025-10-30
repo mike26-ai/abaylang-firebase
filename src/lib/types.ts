@@ -9,7 +9,7 @@ export interface Booking {
   userEmail: string;
   date: string; // YYYY-MM-DD format
   time: string;
-  status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed" | "cancellation-requested" | "refunded" | "credit-issued" | "cancelled-by-admin" | "rescheduled";
+  status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed" | "cancellation-requested" | "refunded" | "credit-issued" | "cancelled-by-admin" | "rescheduled" | "in-progress" | "no-show";
   tutorId: string;
   tutorName: string;
   createdAt: Timestamp;

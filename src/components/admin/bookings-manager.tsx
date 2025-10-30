@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, MessageCircle, Link as LinkIcon, Calendar, Clock, User } from "lucide-react";
+import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, MessageCircle, Link as LinkIcon, Calendar, Clock, User, Check, Ban } from "lucide-react";
 import { format, isValid, parseISO } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "../ui/spinner";
@@ -34,18 +34,15 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card
 const safeFormatDate = (dateInput: any, formatString: string) => {
   if (!dateInput) return 'N/A';
   
-  // Handle Firestore Timestamp objects
   if (dateInput.toDate && typeof dateInput.toDate === 'function') {
     const date = dateInput.toDate();
     return isValid(date) ? format(date, formatString) : 'Invalid Date';
   }
 
-  // Handle ISO strings or string dates
   if (typeof dateInput === 'string') {
       const date = parseISO(dateInput);
       if(isValid(date)) return format(date, formatString);
       
-      // Fallback for YYYY-MM-DD format
       const [year, month, day] = dateInput.split('-').map(Number);
       if(year && month && day) {
         const directDate = new Date(year, month - 1, day);
@@ -53,7 +50,6 @@ const safeFormatDate = (dateInput: any, formatString: string) => {
       }
   }
   
-  // Handle native Date objects
   if (dateInput instanceof Date && isValid(dateInput)) {
     return format(dateInput, formatString);
   }
@@ -170,6 +166,24 @@ export function BookingsManager() {
     return status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const getStatusVariant = (status: Booking['status']): 'default' | 'secondary' | 'destructive' => {
+      switch (status) {
+          case 'confirmed':
+          case 'in-progress':
+              return 'default';
+          case 'completed':
+          case 'payment-pending-confirmation':
+          case 'awaiting-payment':
+              return 'secondary';
+          case 'cancelled':
+          case 'cancelled-by-admin':
+          case 'no-show':
+              return 'destructive';
+          default:
+              return 'secondary';
+      }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>;
   }
@@ -180,7 +194,6 @@ export function BookingsManager() {
 
   return (
     <>
-      {/* Desktop View: Table */}
       <div className="hidden md:block overflow-x-auto">
         <Table>
           <TableHeader>
@@ -219,15 +232,11 @@ export function BookingsManager() {
                 <TableCell>{booking.time !== 'N/A_PACKAGE' ? booking.time : 'N/A'}</TableCell>
                 <TableCell>
                   <Badge
-                    variant={
-                      booking.status === "confirmed" ? "default" 
-                      : booking.status === "completed" ? "secondary"
-                      : booking.status === "cancelled" || booking.status === 'cancelled-by-admin' ? "destructive" 
-                      : "secondary"
-                    }
+                    variant={getStatusVariant(booking.status)}
                     className={
                       booking.status === 'awaiting-payment' ? "bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30" 
                       : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
+                      : booking.status === 'in-progress' ? "bg-green-400/20 text-green-700 dark:text-green-500 border-green-400/30 animate-pulse"
                       : ""
                       }
                   >
@@ -250,12 +259,17 @@ export function BookingsManager() {
                               <CreditCard className="mr-2 h-4 w-4 text-primary" /> Confirm Payment
                           </DropdownMenuItem>
                         )}
+                        {booking.status === 'in-progress' && (
+                            <DropdownMenuItem onClick={() => updateBookingStatus(booking, 'completed')}>
+                                <Check className="mr-2 h-4 w-4 text-green-500" /> Mark as Completed
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => setZoomLinkData({ isOpen: true, booking, link: booking.zoomLink || '', isSaving: false })}>
                           <LinkIcon className="mr-2 h-4 w-4" /> {booking.zoomLink ? "Edit" : "Add"} Zoom Link
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => updateBookingStatus(booking, "completed")} disabled={booking.status === 'completed'}>
-                          <CheckCircle className="mr-2 h-4 w-4 text-blue-500" /> Mark as Completed
+                        <DropdownMenuItem onClick={() => updateBookingStatus(booking, "no-show")} disabled={booking.status === 'no-show'}>
+                            <Ban className="mr-2 h-4 w-4 text-orange-500" /> Mark as No-Show
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => updateBookingStatus(booking, "cancelled-by-admin")} disabled={booking.status.includes('cancelled')}>
                           <XCircle className="mr-2 h-4 w-4 text-red-500" /> Cancel Lesson
@@ -284,17 +298,13 @@ export function BookingsManager() {
                       <p className="text-xs text-muted-foreground">{booking.userEmail}</p>
                   </div>
                   <Badge
-                    variant={
-                      booking.status === "confirmed" ? "default" 
-                      : booking.status === "completed" ? "secondary"
-                      : booking.status === "cancelled" || booking.status === 'cancelled-by-admin' ? "destructive" 
-                      : "secondary"
-                    }
+                    variant={getStatusVariant(booking.status)}
                     className={
-                      booking.status === 'awaiting-payment' ? "bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30" 
-                      : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
-                      : ""
-                      }
+                        booking.status === 'awaiting-payment' ? "bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30" 
+                        : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
+                        : booking.status === 'in-progress' ? "bg-green-400/20 text-green-700 dark:text-green-500 border-green-400/30 animate-pulse"
+                        : ""
+                    }
                   >
                     {getStatusText(booking.status)}
                   </Badge>
@@ -320,9 +330,14 @@ export function BookingsManager() {
                         <CreditCard className="mr-2 h-4 w-4" /> Confirm Payment
                     </Button>
                  )}
+                 {booking.status === 'in-progress' && (
+                    <Button onClick={() => updateBookingStatus(booking, 'completed')} className="w-full" size="sm">
+                        <Check className="mr-2 h-4 w-4" /> Mark as Completed
+                    </Button>
+                 )}
                  <div className="grid grid-cols-2 gap-2 w-full">
-                    <Button onClick={() => updateBookingStatus(booking, "completed")} disabled={booking.status === 'completed'} variant="outline" size="sm">
-                        <CheckCircle className="mr-2 h-4 w-4" /> Completed
+                    <Button onClick={() => updateBookingStatus(booking, "no-show")} disabled={booking.status === 'no-show'} variant="outline" size="sm">
+                        <Ban className="mr-2 h-4 w-4" /> No-Show
                     </Button>
                      <Button onClick={() => updateBookingStatus(booking, "cancelled-by-admin")} disabled={booking.status.includes('cancelled')} variant="outline" size="sm">
                         <XCircle className="mr-2 h-4 w-4" /> Cancel
