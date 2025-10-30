@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import type { Booking, UserProfile } from "@/lib/types";
+import type { Booking, UserCredit, UserProfile } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { JoinLessonButton } from "@/components/bookings/join-lesson-button";
 import { requestReschedule } from "@/services/bookingService";
 import { useAuth } from "@/hooks/use-auth";
 import Link from 'next/link';
+import { RescheduleModal } from "@/components/bookings/RescheduleModal";
 
 // Helper function to safely format dates
 const safeFormatDate = (dateInput: any, formatString: string) => {
@@ -50,31 +51,42 @@ const safeFormatDate = (dateInput: any, formatString: string) => {
 export function StudentBookingsManager() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
-  const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<Booking | null>(null);
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [activeRescheduleCredit, setActiveRescheduleCredit] = useState<UserCredit | null>(null);
   const [isProcessingReschedule, setIsProcessingReschedule] = useState(false);
 
-  const fetchBookings = async () => {
+  const fetchData = async () => {
     if (!user) {
         setIsLoading(false);
         return;
     };
     setIsLoading(true);
     try {
-      const bookingsCol = collection(db, "bookings");
-      const q = query(
-          bookingsCol, 
+      const bookingsQuery = query(
+          db.collection("bookings"), 
           where("userId", "==", user.uid),
           where("status", "not-in", ["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"]),
           orderBy("status"),
           orderBy("createdAt", "desc")
       );
-      const querySnapshot = await getDocs(q);
-      const fetchedBookings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
+      const userProfileRef = db.doc(`users/${user.uid}`);
+
+      const [bookingsSnapshot, userProfileSnap] = await Promise.all([
+          getDocs(bookingsQuery),
+          getDoc(userProfileRef)
+      ]);
+      
+      const fetchedBookings = bookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
       setBookings(fetchedBookings);
+
+      if (userProfileSnap.exists()) {
+          setUserProfile(userProfileSnap.data() as UserProfile);
+      }
+
     } catch (error) {
       console.error("Error fetching bookings:", error);
       toast({ title: "Error", description: "Could not fetch bookings.", variant: "destructive" });
@@ -84,33 +96,37 @@ export function StudentBookingsManager() {
   };
 
   useEffect(() => {
-    fetchBookings();
+    fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, toast]);
 
-  const handleRescheduleClick = (booking: Booking) => {
-      setSelectedBookingForReschedule(booking);
-      setRescheduleDialogOpen(true);
-  };
-
-  const proceedToReschedule = async () => {
-    if (!selectedBookingForReschedule || !user) return;
+  const handleRescheduleClick = async (booking: Booking) => {
     setIsProcessingReschedule(true);
     try {
-      await requestReschedule({
-        bookingId: selectedBookingForReschedule.id,
+      const result = await requestReschedule({
+        bookingId: booking.id,
         reason: 'Student initiated reschedule',
       });
-      toast({
-        title: "Credit Issued for Reschedule",
-        description: "Your original lesson was cancelled. You can now use your credit to book a new time.",
-      });
-      setRescheduleDialogOpen(false);
-      fetchBookings(); // Refresh the bookings list
-      // Optionally, redirect to the credits page
-      // router.push('/credits');
       
+      toast({
+        title: "Credit Issued",
+        description: "Your lesson was cancelled. You can now book a new time.",
+      });
+
+      // Find the newly created credit to pass to the modal
+      const updatedUserSnap = await db.doc(`users/${user!.uid}`).get();
+      const updatedUser = updatedUserSnap.data() as UserProfile;
+      const newCredit = updatedUser.credits?.find(c => c.packageBookingId === booking.id);
+
+      if (newCredit) {
+        setActiveRescheduleCredit(newCredit);
+        setRescheduleModalOpen(true);
+        fetchData(); // Refresh bookings in the background
+      } else {
+        throw new Error("Could not find the reschedule credit.");
+      }
+
     } catch (error: any) {
-      console.error("Failed to process reschedule request:", error);
       toast({
         title: "Reschedule Failed",
         description: error.message || "Could not process your reschedule request.",
@@ -142,7 +158,6 @@ export function StudentBookingsManager() {
 
   return (
     <>
-      {/* Desktop View: Table */}
       <div className="hidden md:block overflow-x-auto">
         <Table>
           <TableHeader>
@@ -173,7 +188,7 @@ export function StudentBookingsManager() {
                     {getStatusText(booking.status)}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right space-x-2">
                     {booking.status === 'confirmed' && <JoinLessonButton booking={booking} />}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -184,10 +199,14 @@ export function StudentBookingsManager() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Lesson Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleRescheduleClick(booking)} disabled={!isRescheduleAllowed(booking)}>
-                            <RefreshCw className="mr-2 h-4 w-4" /> Reschedule
+                        <DropdownMenuItem 
+                          onClick={() => handleRescheduleClick(booking)} 
+                          disabled={!isRescheduleAllowed(booking) || isProcessingReschedule}
+                        >
+                            {isProcessingReschedule ? <Spinner size="sm" className="mr-2"/> : <RefreshCw className="mr-2 h-4 w-4" />}
+                            Reschedule
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
+                        <DropdownMenuItem asChild disabled={!isRescheduleAllowed(booking)}>
                             <Link href="/credits">
                                 <XCircle className="mr-2 h-4 w-4" /> Request Cancellation
                             </Link>
@@ -236,10 +255,11 @@ export function StudentBookingsManager() {
             <CardFooter className="flex flex-col gap-2">
                  {booking.status === 'confirmed' && <JoinLessonButton booking={booking} />}
                  <div className="grid grid-cols-2 gap-2 w-full">
-                    <Button onClick={() => handleRescheduleClick(booking)} disabled={!isRescheduleAllowed(booking)} variant="outline" size="sm">
-                        <RefreshCw className="mr-2 h-4 w-4" /> Reschedule
+                    <Button onClick={() => handleRescheduleClick(booking)} disabled={!isRescheduleAllowed(booking) || isProcessingReschedule} variant="outline" size="sm">
+                        {isProcessingReschedule ? <Spinner size="sm" className="mr-2"/> : <RefreshCw className="mr-2 h-4 w-4" />}
+                         Reschedule
                     </Button>
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" asChild disabled={!isRescheduleAllowed(booking)}>
                          <Link href="/credits">
                             <XCircle className="mr-2 h-4 w-4" /> Cancel
                         </Link>
@@ -250,25 +270,15 @@ export function StudentBookingsManager() {
         ))}
       </div>
       
-      <AlertDialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reschedule Lesson?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will cancel your current booking and issue you a credit for the same lesson type. You will then be able to book a new time slot from the &quot;My Credits&quot; page. Are you sure you want to proceed?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Go Back</AlertDialogCancel>
-            <AlertDialogAction onClick={proceedToReschedule} disabled={isProcessingReschedule}>
-              {isProcessingReschedule && <Spinner size="sm" className="mr-2" />}
-              Yes, Cancel and Get Credit
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <RescheduleModal
+        isOpen={rescheduleModalOpen}
+        onClose={() => setRescheduleModalOpen(false)}
+        onRescheduleSuccess={() => {
+            setRescheduleModalOpen(false);
+            fetchData();
+        }}
+        rescheduleCredit={activeRescheduleCredit}
+      />
     </>
   );
 }
-
-    

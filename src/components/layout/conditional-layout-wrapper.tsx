@@ -12,12 +12,12 @@ export function ConditionalLayoutWrapper({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  // Don't show the main Navbar and Footer on the special homepage layout or admin pages.
-  const showGlobalNavAndFooter = !pathname.startsWith('/admin') && pathname !== "/";
+  // Don't show main nav/footer on admin, profile, or special homepage layout.
+  const showGlobalNavAndFooter = !pathname.startsWith('/admin') && !pathname.startsWith('/profile') && pathname !== "/";
 
 
-  // The admin layout provides its own structure, so we render it without the standard wrapper
-  if (pathname.startsWith('/admin')) {
+  // The admin and profile layouts provide their own structure.
+  if (pathname.startsWith('/admin') || pathname.startsWith('/profile')) {
     return <>{children}</>;
   }
 
@@ -26,6 +26,7 @@ export function ConditionalLayoutWrapper({
     return <>{children}</>;
   }
   
+  // Render the standard layout for all other public pages.
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
