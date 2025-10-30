@@ -13,7 +13,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid, addMonths } from 'date-fns';
+import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid, addMonths, parseISO } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType, TimeOff } from "@/lib/types";
@@ -62,7 +62,8 @@ export default function BookLessonPage() {
   
   
   const getInitialProductId = (): ProductId => {
-    if (isRescheduleMode && lessonTypeFromUrl) {
+    // FIX: Prioritize reschedule mode
+    if (isRescheduleMode && lessonTypeFromUrl && products[lessonTypeFromUrl]) {
       return lessonTypeFromUrl;
     }
     if (useCreditType && creditToLessonMap[useCreditType]) {
@@ -88,10 +89,14 @@ export default function BookLessonPage() {
   const isTimeRequired = selectedProduct?.type === 'individual' || selectedProduct?.type === 'group';
 
   useEffect(() => {
-    if (useCreditType && creditToLessonMap[useCreditType]) {
+    // When in reschedule mode, lock the product ID
+    if (isRescheduleMode && lessonTypeFromUrl) {
+      setSelectedProductId(lessonTypeFromUrl);
+    }
+    else if (useCreditType && creditToLessonMap[useCreditType]) {
       setSelectedProductId(creditToLessonMap[useCreditType] as ProductId);
     }
-  }, [useCreditType]);
+  }, [isRescheduleMode, lessonTypeFromUrl, useCreditType]);
 
 
   const fetchAvailability = async (date: Date) => {
@@ -148,10 +153,13 @@ export default function BookLessonPage() {
         let timeOffMeta: TimeOff | undefined;
 
         for (const booking of dailyBookedSlots) {
-            if (booking.id === originalBookingId) continue; // Exclude the current booking being rescheduled
+            // FIX: Exclude the original booking being rescheduled from conflict check
+            if (isRescheduleMode && booking.id === originalBookingId) continue;
+            
             if (booking.startTime && booking.endTime) {
-                const bookingStart = new Date(booking.startTime as any);
-                const bookingEnd = new Date(booking.endTime as any);
+                 const bookingStart = booking.startTime instanceof Date ? booking.startTime : parseISO(booking.startTime as any);
+                 const bookingEnd = booking.endTime instanceof Date ? booking.endTime : parseISO(booking.endTime as any);
+
                 if (potentialStartTime < bookingEnd && potentialEndTime > bookingStart) {
                     currentStatus = 'booked';
                     bookingMeta = booking;
@@ -177,7 +185,7 @@ export default function BookLessonPage() {
         slots.push({ display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`, value: startTimeString, status: currentStatus, blockedMeta: timeOffMeta });
     }
     return slots;
-}, [selectedDate, isTimeRequired, selectedProduct, dailyBookedSlots, dailyTimeOff, originalBookingId]);
+}, [selectedDate, isTimeRequired, selectedProduct, dailyBookedSlots, dailyTimeOff, originalBookingId, isRescheduleMode]);
 
 
   const handleReschedule = async () => {

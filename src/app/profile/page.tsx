@@ -270,9 +270,14 @@ export default function StudentDashboardPage() {
 
   const proceedToReschedule = () => {
     if (!selectedBookingForReschedule) return;
-    const { id, lessonType } = selectedBookingForReschedule;
-    const encodedLessonType = encodeURIComponent(lessonType || 'comprehensive-lesson');
-    router.push(`/bookings?reschedule=true&bookingId=${id}&lessonType=${encodedLessonType}`);
+    const { id, productId } = selectedBookingForReschedule;
+    
+    if (!productId) {
+      toast({title: "Cannot Reschedule", description: "This booking is missing product information and cannot be rescheduled automatically. Please contact support.", variant: "destructive"});
+      return;
+    }
+    
+    router.push(`/bookings?reschedule=true&bookingId=${id}&lessonType=${productId}`);
   };
 
 
