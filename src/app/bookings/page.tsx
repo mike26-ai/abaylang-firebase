@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -9,19 +8,19 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket } from "lucide-react"
+import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
-import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid, addMonths, parseISO } from 'date-fns';
+import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid, parseISO } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType, TimeOff, GroupSession } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo"
 
 import { getAvailability } from "@/services/availabilityService";
-import { createBooking, createBookingWithCredit, createPrivateGroupBooking } from "@/services/bookingService";
+import { createBooking, createPrivateGroupBooking } from "@/services/bookingService";
 import { getGroupSessions } from "@/services/groupSessionService";
 import { products, type ProductId } from "@/config/products"; 
 import { creditToLessonMap } from "@/config/creditMapping";
@@ -435,7 +434,7 @@ export default function BookLessonPage() {
                                  <div className="flex justify-between items-start">
                                    <div>
                                      <p className="font-semibold text-foreground">{session.title}</p>
-                                     <p className="text-sm text-muted-foreground">{format(session.startTime.toDate(), 'eeee, PPP \'at\' p')}</p>
+                                     <p className="text-sm text-muted-foreground">{format(new Date(session.startTime as any), 'eeee, PPP \'at\' p')}</p>
                                    </div>
                                    <Badge variant={session.participantCount >= session.maxStudents ? "destructive" : "secondary"}>
                                        <Users className="w-3 h-3 mr-1.5"/>
@@ -544,4 +543,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
