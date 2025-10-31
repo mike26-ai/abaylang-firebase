@@ -82,6 +82,7 @@ export default function BookLessonPage() {
   const isPublicGroupLesson = selectedProduct?.type === 'group';
   const isPrivateGroup = selectedProduct?.type === 'private-group';
   const isPackage = selectedProduct?.type === 'package';
+  const isPackageSelected = isPackage;
 
 
   useEffect(() => {
@@ -518,3 +519,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
