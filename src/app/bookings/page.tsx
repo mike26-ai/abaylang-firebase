@@ -149,7 +149,7 @@ export default function BookLessonPage() {
     const userDurationMinutes = selectedProduct.duration;
     const slotDate = startOfDay(selectedDate);
     const now = new Date();
-    const isToday = isEqual(slotDate, now);
+    const isToday = isEqual(slotDate, startOfDay(now));
 
     for (const startTimeString of baseStartTimes) {
         const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
@@ -313,6 +313,7 @@ export default function BookLessonPage() {
                               .filter((lesson) => lesson.type === lessonGroupType)
                               .map((lesson) => (
                                   <div key={lesson.id} className="flex items-start space-x-3">
+                                  {/* --- THE FIX: Correctly associate Label and RadioGroupItem --- */}
                                   <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType} />
                                   <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
                                       <div className="p-4 border rounded-lg transition-colors hover:bg-accent/50">
