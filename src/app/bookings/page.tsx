@@ -303,7 +303,7 @@ export default function BookLessonPage() {
                 <CardContent>
                   <RadioGroup value={selectedProductId} onValueChange={(value) => {setSelectedProductId(value as ProductId); setSelectedTime(undefined); setSelectedDateState(undefined);}} disabled={!!useCreditType}>
                     <div className="space-y-6">
-                      {["individual", "group", "private-group", "package"].map(lessonGroupType => (
+                      {["individual", "private-group", "group", "package"].map(lessonGroupType => (
                          <div key={lessonGroupType}>
                           <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">
                               {lessonGroupType.replace(/-\w/g, c => " " + c[1].toUpperCase())} Lessons
@@ -313,7 +313,6 @@ export default function BookLessonPage() {
                               .filter((lesson) => lesson.type === lessonGroupType)
                               .map((lesson) => (
                                   <div key={lesson.id} className="flex items-start space-x-3">
-                                  {/* --- THE FIX: Correctly associate Label and RadioGroupItem --- */}
                                   <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType} />
                                   <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
                                       <div className="p-4 border rounded-lg transition-colors hover:bg-accent/50">
@@ -537,3 +536,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
