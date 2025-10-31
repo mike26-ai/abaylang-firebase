@@ -370,7 +370,7 @@ export default function BookLessonPage() {
                         <CardDescription>Organize a lesson just for your friends or family.</CardDescription>
                     </CardHeader>
                     <CardContent className="text-center space-y-4">
-                       <p className="text-muted-foreground">This option allows you to create your own private group. You'll be taken to a separate page to invite your members and choose a time that works for everyone.</p>
+                       <p className="text-muted-foreground text-sm">This option allows you to create your own private group. You'll be taken to a separate page to invite your members and choose a time that works for everyone.</p>
                        <Button asChild size="lg">
                            <Link href="/bookings/private-group">
                                Organize Your Private Group
