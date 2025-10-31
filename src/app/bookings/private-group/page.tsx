@@ -30,18 +30,19 @@ export default function PrivateGroupBookingPage() {
   const [time, setTime] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const privateGroupProduct = products['private-group-lesson'];
+  // Hardcode for this page, can be dynamic via query param later if needed
+  const privateGroupProduct = products['private-immersive-group']; 
 
   const addMember = () => {
     if (members.length < 5) { // Leader + 5 members = 6 total
       setMembers([...members, { name: '', email: '' }]);
     } else {
-      toast({ title: 'Maximum Group Size', description: 'A private group can have a maximum of 6 participants.', variant: 'destructive' });
+      toast({ title: 'Maximum Group Size Reached', description: 'A private group can have a maximum of 6 participants (including you).', variant: 'destructive' });
     }
   };
 
   const removeMember = (index: number) => {
-    if (members.length > 1) {
+    if (members.length > 0) {
       const newMembers = members.filter((_, i) => i !== index);
       setMembers(newMembers);
     }
@@ -54,6 +55,11 @@ export default function PrivateGroupBookingPage() {
   };
 
   const handleNextStep = () => {
+    if (members.length < 2) {
+      toast({ title: 'Minimum Group Size', description: 'Please add at least 2 other members to form a group of 3.', variant: 'destructive' });
+      return;
+    }
+
     const allMembersValid = members.every(m => m.name.trim() !== '' && m.email.trim() !== '' && m.email.includes('@'));
     if (!allMembersValid) {
       toast({ title: 'Incomplete Information', description: 'Please fill out the name and a valid email for all members.', variant: 'destructive' });
@@ -95,12 +101,20 @@ export default function PrivateGroupBookingPage() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Failed to create group session.');
         
-        toast({ title: "Group Session Created!", description: "Proceed to payment to confirm your group's spot." });
+        toast({ title: "Group Session Created!", description: "You will be redirected to complete the booking." });
         
-        const bookingId = result.bookingId;
-        const passthroughData = { booking_id: bookingId, product_id: 'private-group-lesson' };
-        const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${privateGroupProduct.paddlePriceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
-        window.location.href = checkoutUrl;
+        // This will now use the individual booking flow, which is fine for the leader's booking
+        // The backend has already created the session and placeholders
+        const { redirectUrl } = await createBooking({
+            productId: 'private-immersive-group',
+            userId: user.uid,
+            date: date,
+            time: time,
+        });
+
+        if (redirectUrl) {
+            window.location.href = redirectUrl;
+        }
 
     } catch (error: any) {
         toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -126,7 +140,7 @@ export default function PrivateGroupBookingPage() {
             <div className="space-y-6">
               <div>
                 <h3 className="font-semibold text-lg">Step 1: Invite Your Group Members</h3>
-                <p className="text-sm text-muted-foreground">Add at least 2 other people to meet the minimum group size of 3.</p>
+                <p className="text-sm text-muted-foreground">Add 2 to 5 other people to meet the group size requirement.</p>
               </div>
 
               <div className="p-4 bg-accent/50 rounded-lg border">
@@ -138,11 +152,9 @@ export default function PrivateGroupBookingPage() {
               {members.map((member, index) => (
                 <div key={index} className="p-4 border rounded-lg space-y-3 relative">
                   <Label>Member {index + 1}</Label>
-                   {members.length > 1 && (
-                    <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => removeMember(index)}>
+                   <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => removeMember(index)}>
                         <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  )}
+                   </Button>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <Input placeholder="Full Name" value={member.name} onChange={(e) => handleMemberChange(index, 'name', e.target.value)} />
                     <Input type="email" placeholder="Email Address" value={member.email} onChange={(e) => handleMemberChange(index, 'email', e.target.value)} />

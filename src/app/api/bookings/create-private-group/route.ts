@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/create-private-group/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, adminDb, Timestamp } from '@/lib/firebase-admin';
@@ -18,7 +19,7 @@ const CreatePrivateGroupSchema = z.object({
   pricePerStudent: z.number().min(0),
   tutorId: z.string(),
   leader: PrivateGroupMemberSchema,
-  members: z.array(PrivateGroupMemberSchema).min(1), // At least one other member besides the leader
+  members: z.array(PrivateGroupMemberSchema).min(1, "At least one other member is required.").max(5, "A maximum of 5 other members can be invited."),
 });
 
 type PrivateGroupPayload = z.infer<typeof CreatePrivateGroupSchema>;
