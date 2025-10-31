@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket } from "lucide-react"
+import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
@@ -341,7 +341,15 @@ export default function BookLessonPage() {
                                                 </div>
                                             </div>
                                             <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
-                                                {lesson.features.map((feature, index) => ( <li key={index} className="flex items-center gap-2"> <Check className="w-4 h-4 text-primary flex-shrink-0" /> <span className="text-muted-foreground">{feature}</span> </li> ))}
+                                                {lesson.features.map((feature, index) => {
+                                                    const featureKey = `${lesson.id}-feat-${index}-${feature?.toString().slice(0,30).replace(/\s+/g, "-")}`;
+                                                    return (
+                                                        <li key={featureKey} className="flex items-center gap-2">
+                                                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                                                        <span className="text-muted-foreground">{feature}</span>
+                                                        </li>
+                                                    );
+                                                })}
                                             </ul>
                                         </div>
                                       </Label>
@@ -483,7 +491,15 @@ export default function BookLessonPage() {
                   <div className="w-20 h-20 bg-accent rounded-full mx-auto mb-3 flex items-center justify-center"> <span className="text-2xl text-primary font-bold">{tutorInfo.name.split(" ").map(n=>n[0]).join("")}</span> </div>
                   <h3 className="font-semibold text-foreground">{tutorInfo.name}</h3>
                   <p className="text-sm text-muted-foreground">{tutorInfo.shortIntro}</p>
-                  <div className="flex items-center justify-center gap-1 mt-2"> {[...Array(5)].map((_, i) => ( <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" /> ))} <span className="text-sm text-muted-foreground ml-1">(Highly Rated)</span> </div>
+                  <div className="flex items-center justify-center gap-1 mt-2">
+                    {[...Array(5)].map((_, i) => {
+                        const starKey = `tutor-star-${i}-${tutorInfo.name.slice(0,3).replace(/\s+/g, "-")}`;
+                        return (
+                           <Star key={starKey} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        )
+                    })}
+                    <span className="text-sm text-muted-foreground ml-1">(Highly Rated)</span>
+                  </div>
                 </div>
 
                 <div className="border-t border-border pt-4 space-y-3">
@@ -542,5 +558,6 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
 
     
