@@ -26,6 +26,7 @@ import { products, type ProductId } from "@/config/products";
 import { creditToLessonMap } from "@/config/creditMapping";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
+import { cn } from "@/lib/utils"
 
 
 const lessonTypes = Object.values(products);
@@ -313,32 +314,37 @@ export default function BookLessonPage() {
                               .filter((lesson) => lesson.type === lessonGroupType)
                               .map((lesson) => (
                                   <div key={lesson.id} className="flex items-start space-x-3">
-                                  <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType} />
-                                  <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
-                                      <div className="p-4 border rounded-lg transition-colors hover:bg-accent/50">
-                                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
-                                          <div className="mb-2 sm:mb-0">
-                                          <div className="font-semibold text-lg text-foreground flex items-center gap-2">
-                                              {lesson.label}
-                                              {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
-                                              {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                              {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
-                                               {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
-                                          </div>
-                                          <div className="text-sm text-muted-foreground">
-                                              {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
-                                          </div>
-                                          </div>
-                                          <div className="text-right">
-                                          <div className="text-2xl font-bold text-primary">${lesson.price}{lesson.type === 'private-group' ? <span className="text-sm text-muted-foreground">/person</span> : ''}</div>
-                                          {lesson.originalPrice && <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>}
-                                          </div>
-                                      </div>
-                                      <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
-                                          {lesson.features.map((feature, index) => ( <li key={index} className="flex items-center gap-2"> <Check className="w-4 h-4 text-primary flex-shrink-0" /> <span className="text-muted-foreground">{feature}</span> </li> ))}
-                                      </ul>
-                                      </div>
-                                  </Label>
+                                      <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType} />
+                                      <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
+                                        <div
+                                            className={cn(
+                                                "p-4 border rounded-lg transition-colors hover:bg-accent/50",
+                                                selectedProductId === lesson.id && "bg-accent border-primary ring-2 ring-primary"
+                                            )}
+                                            >
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
+                                                <div className="mb-2 sm:mb-0">
+                                                <div className="font-semibold text-lg text-foreground flex items-center gap-2">
+                                                    {lesson.label}
+                                                    {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
+                                                    {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
+                                                    {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
+                                                    {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
+                                                </div>
+                                                </div>
+                                                <div className="text-right">
+                                                <div className="text-2xl font-bold text-primary">${lesson.price}{lesson.type === 'private-group' ? <span className="text-sm text-muted-foreground">/person</span> : ''}</div>
+                                                {lesson.originalPrice && <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>}
+                                                </div>
+                                            </div>
+                                            <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
+                                                {lesson.features.map((feature, index) => ( <li key={index} className="flex items-center gap-2"> <Check className="w-4 h-4 text-primary flex-shrink-0" /> <span className="text-muted-foreground">{feature}</span> </li> ))}
+                                            </ul>
+                                        </div>
+                                      </Label>
                                   </div>
                               ))}
                           </div>
