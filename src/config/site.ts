@@ -39,6 +39,7 @@ export const siteConfig = {
   userNav: [ // For logged-in user dropdown
     { title: "Dashboard", href: "/profile", authRequired: true, icon: LayoutDashboard },
     { title: "Book New Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
+    { title: "Book Private Group", href: "/bookings/private-group", authRequired: true, icon: Users },
     { title: "My Credits", href: "/credits", authRequired: true, icon: Ticket },
     { title: "Booking History", href: "/profile/history", authRequired: true, icon: History },
     { title: "Submit Testimonial", href: "/submit-testimonial", authRequired: true, icon: Award },

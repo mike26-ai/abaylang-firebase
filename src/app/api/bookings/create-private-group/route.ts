@@ -24,7 +24,8 @@ const CreatePrivateGroupSchema = z.object({
 type PrivateGroupPayload = z.infer<typeof CreatePrivateGroupSchema>;
 
 async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedToken: DecodedIdToken) {
-    if (decodedToken.uid !== payload.leader.uid) { // Assuming leader object has uid
+    const leaderUid = (payload.leader as any).uid;
+    if (decodedToken.uid !== leaderUid) { 
         throw new Error("unauthorized");
     }
 
@@ -69,14 +70,14 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
         let leaderBookingId = '';
         for (const participant of allParticipants) {
             const newBookingRef = adminDb.collection('bookings').doc();
-            const isLeader = participant.uid === payload.leader.uid;
+            const isLeader = (participant as any).uid === leaderUid;
             
             if (isLeader) {
                 leaderBookingId = newBookingRef.id;
             }
 
             transaction.set(newBookingRef, {
-                userId: participant.uid || null, // Guest members may not have a UID yet
+                userId: (participant as any).uid || null, // Guest members may not have a UID yet
                 userName: participant.name,
                 userEmail: participant.email,
                 date: payload.date,

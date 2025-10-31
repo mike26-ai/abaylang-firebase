@@ -1,4 +1,3 @@
-
 // File: src/app/api/bookings/service.ts
 /**
  * This file contains the core, testable business logic for the bookings endpoints.
@@ -16,6 +15,7 @@ interface BookingPayload {
   userId: string;
   date?: string;
   time?: string;
+  groupSessionId?: string; // For joining group sessions
   paymentNote?: string;
 }
 
@@ -31,25 +31,48 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
 
     const isPaidLesson = product.price > 0;
     const newBookingRef = db.collection('bookings').doc();
-
-    const isTimeRequired = product.type === 'individual' || product.type === 'group';
-
-    const startTime = (isTimeRequired && payload.date && payload.time) 
-        ? Timestamp.fromDate(parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date())) 
-        : null;
-
-    const endTime = startTime && typeof product.duration === 'number'
-        ? Timestamp.fromDate(addMinutes(startTime.toDate(), product.duration))
-        : null;
-
-    if (isTimeRequired && (!startTime || !endTime)) {
-        throw new Error('A date and time are required for this lesson type.');
-    }
     
-    // This transaction now also handles the simulated credit allocation for packages.
+    let startTime: Timestamp | null = null;
+    let endTime: Timestamp | null = null;
+    let finalDate = payload.date;
+    let finalTime = payload.time;
+
+    // This transaction now also handles group session participant updates.
     await db.runTransaction(async (transaction: Transaction) => {
-        // --- CONFLICT CHECK: Only run for time-based bookings ---
-        if (isTimeRequired && startTime && endTime) {
+        // --- Group Session Logic ---
+        if (product.type === 'group' && payload.groupSessionId) {
+            const sessionRef = db.collection('groupSessions').doc(payload.groupSessionId);
+            const sessionDoc = await transaction.get(sessionRef);
+
+            if (!sessionDoc.exists) throw new Error('group_session_not_found');
+            
+            const sessionData = sessionDoc.data()!;
+            if (sessionData.participantCount >= sessionData.maxStudents) {
+                throw new Error('group_session_full');
+            }
+            if (new Date(sessionData.startTime.toDate()) < new Date()) {
+                throw new Error('group_session_registration_closed');
+            }
+
+            // Set booking time details from the session
+            startTime = sessionData.startTime;
+            endTime = sessionData.endTime;
+            finalDate = format(startTime.toDate(), 'yyyy-MM-dd');
+            finalTime = format(startTime.toDate(), 'HH:mm');
+            
+            transaction.update(sessionRef, {
+                participantCount: FieldValue.increment(1),
+                participantIds: FieldValue.arrayUnion(payload.userId)
+            });
+        } 
+        // --- Individual Lesson Logic ---
+        else if (product.type === 'individual') {
+            if (!payload.date || !payload.time) {
+                throw new Error('A date and time are required for this lesson type.');
+            }
+            startTime = Timestamp.fromDate(parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date()));
+            endTime = Timestamp.fromDate(addMinutes(startTime.toDate(), product.duration as number));
+
             const bookingsRef = db.collection('bookings');
             const timeOffRef = db.collection('timeOff');
             const tutorId = "MahderNegashMamo";
@@ -74,38 +97,6 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             if (!conflictingTimeOff.empty) throw new Error('tutor_unavailable');
         }
 
-        // --- SIMULATED CREDIT ALLOCATION (for packages during testing) ---
-        if (product.type === 'package' && product.totalLessons) {
-            const userRef = db.collection('users').doc(payload.userId);
-            const userDoc = await transaction.get(userRef);
-            if(userDoc.exists) {
-                const userData = userDoc.data()!;
-                const currentCredits = userData.credits || [];
-                const creditType = payload.productId;
-                const creditsToAdd = product.totalLessons;
-                
-                const existingCreditIndex = currentCredits.findIndex((c: any) => c.lessonType === creditType);
-                let newCredits = [];
-
-                // FIX: Replace FieldValue.serverTimestamp() with Timestamp.now()
-                const newCreditObject = { 
-                    lessonType: creditType, 
-                    count: creditsToAdd, 
-                    purchasedAt: Timestamp.now(), // Use Timestamp.now()
-                    packageBookingId: newBookingRef.id // Link credits to this booking
-                };
-                
-                if (existingCreditIndex > -1) {
-                    newCredits = currentCredits.map((c: any, index: number) => 
-                        index === existingCreditIndex ? { ...c, count: c.count + creditsToAdd, purchasedAt: Timestamp.now(), packageBookingId: newBookingRef.id } : c
-                    );
-                } else {
-                    newCredits = [...currentCredits, newCreditObject];
-                }
-                transaction.update(userRef, { credits: newCredits, lastCreditPurchase: Timestamp.now() });
-            }
-        }
-        
         let initialStatus: 'confirmed' | 'payment-pending-confirmation' | 'completed' = 'payment-pending-confirmation';
         if (product.type === 'package') {
             initialStatus = 'completed';
@@ -117,8 +108,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             userId: payload.userId,
             userName: decodedToken.name || 'User',
             userEmail: decodedToken.email || 'No Email',
-            date: payload.date || 'N/A_PACKAGE',
-            time: payload.time || 'N/A_PACKAGE',
+            date: finalDate || 'N/A_PACKAGE',
+            time: finalTime || 'N/A_PACKAGE',
             startTime: startTime,
             endTime: endTime,
             duration: typeof product.duration === 'number' ? product.duration : null,
@@ -126,10 +117,11 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             price: product.price,
             productId: payload.productId,
             productType: product.type,
+            groupSessionId: payload.groupSessionId || null,
             tutorId: "MahderNegashMamo",
             tutorName: "Mahder N. Mamo",
             status: initialStatus,
-            createdAt: Timestamp.now(), // Use Timestamp.now() for consistency
+            createdAt: Timestamp.now(),
             statusHistory: [{
                 status: initialStatus,
                 changedAt: Timestamp.now(),
@@ -140,22 +132,35 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
         };
 
         transaction.set(newBookingRef, newBookingDoc);
+
+        if (product.type === 'package' && product.totalLessons) {
+            const userRef = db.collection('users').doc(payload.userId);
+            const newCreditObject = { 
+                lessonType: payload.productId, 
+                count: product.totalLessons, 
+                purchasedAt: Timestamp.now(),
+                packageBookingId: newBookingRef.id
+            };
+            transaction.update(userRef, { 
+                credits: FieldValue.arrayUnion(newCreditObject),
+                lastCreditPurchase: Timestamp.now() 
+            });
+        }
     });
 
-    // Determine redirect URL based on payment type
     const isFreeTrial = product.price === 0;
 
     if (isFreeTrial) {
-        // Redirect free trials to the dashboard directly
         return { 
             bookingId: newBookingRef.id, 
             redirectUrl: `/profile?booking_id=${newBookingRef.id}&new_booking=true&type=free_trial` 
         };
     }
     
-    // For paid lessons (including packages), redirect to the dashboard to show the confirmation popup
     return { 
         bookingId: newBookingRef.id, 
         redirectUrl: `/profile?booking_id=${newBookingRef.id}&new_booking=true&type=paid` 
     };
 }
+
+    

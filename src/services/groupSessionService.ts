@@ -3,7 +3,6 @@
 // File: src/services/groupSessionService.ts
 import { auth } from "@/lib/firebase";
 import type { GroupSession } from "@/lib/types";
-import { Timestamp } from "firebase/firestore";
 
 const API_BASE_URL = '/api';
 
@@ -59,13 +58,8 @@ export async function getGroupSessions(): Promise<GroupSession[]> {
         if (!result.success) {
             throw new Error(result.error || 'Server responded with an error.');
         }
-        // Convert ISO strings back to Firestore Timestamps for client-side type consistency
-        return result.data.map((session: any) => ({
-            ...session,
-            startTime: Timestamp.fromDate(new Date(session.startTime)),
-            endTime: Timestamp.fromDate(new Date(session.endTime)),
-            createdAt: Timestamp.fromDate(new Date(session.createdAt)),
-        }));
+        // Data is already serialized, so we just return it
+        return result.data;
     } catch (error: any) {
         console.error("Error in getGroupSessions service:", error);
         throw error;

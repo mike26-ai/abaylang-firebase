@@ -1,4 +1,5 @@
 
+
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
@@ -17,6 +18,7 @@ const CreateBookingRequestSchema = z.object({
   userId: z.string().min(1), // Still useful for a cross-check
   date: z.string().optional(), // "YYYY-MM-DD" - optional for packages
   time: z.string().optional(), // "HH:mm" - optional for packages
+  groupSessionId: z.string().optional(), // For joining a group session
   paymentNote: z.string().optional(),
 });
 

@@ -17,11 +17,12 @@ import { useToast } from "@/hooks/use-toast"
 import { format, addDays, isPast, startOfDay, isEqual, addMinutes, parse, isValid, addMonths, parseISO } from 'date-fns';
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
-import type { Booking as BookingType, TimeOff } from "@/lib/types";
+import type { Booking as BookingType, TimeOff, GroupSession } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo"
 
 import { getAvailability } from "@/services/availabilityService";
-import { createBooking, createBookingWithCredit } from "@/services/bookingService";
+import { createBooking, createBookingWithCredit, createPrivateGroupBooking } from "@/services/bookingService";
+import { getGroupSessions } from "@/services/groupSessionService";
 import { products, type ProductId } from "@/config/products"; 
 import { creditToLessonMap } from "@/config/creditMapping";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
@@ -76,9 +77,17 @@ export default function BookLessonPage() {
   const [dailyBookedSlots, setDailyBookedSlots] = useState<BookingType[]>([]);
   const [dailyTimeOff, setDailyTimeOff] = useState<TimeOff[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+  
+  const [groupSessions, setGroupSessions] = useState<GroupSession[]>([]);
+  const [isFetchingGroupSessions, setIsFetchingGroupSessions] = useState(false);
+  const [selectedGroupSessionId, setSelectedGroupSessionId] = useState<string | null>(null);
 
   const selectedProduct = lessonTypes.find((p) => p.id === selectedProductId);
-  const isTimeRequired = selectedProduct?.type === 'individual' || selectedProduct?.type === 'group';
+  const isIndividualLesson = selectedProduct?.type === 'individual';
+  const isPublicGroupLesson = selectedProduct?.type === 'group';
+  const isPackage = selectedProduct?.type === 'package';
+  const isPrivateGroup = selectedProduct?.type === 'private-group';
+
 
   useEffect(() => {
     if (useCreditType && creditToLessonMap[useCreditType]) {
@@ -103,14 +112,28 @@ export default function BookLessonPage() {
   }
 
   useEffect(() => {
-    if (isTimeRequired && selectedDate && isValid(selectedDate)) {
+    if (isIndividualLesson && selectedDate && isValid(selectedDate)) {
         fetchAvailability(selectedDate);
     } else {
       setDailyBookedSlots([]);
       setDailyTimeOff([]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, isTimeRequired]);
+  }, [selectedDate, isIndividualLesson]);
+
+  useEffect(() => {
+    if (isPublicGroupLesson) {
+        setIsFetchingGroupSessions(true);
+        getGroupSessions().then(sessions => {
+            setGroupSessions(sessions);
+        }).catch(error => {
+            console.error("Failed to get group sessions:", error);
+            toast({ title: "Error", description: "Could not fetch group sessions.", variant: "destructive" });
+        }).finally(() => {
+            setIsFetchingGroupSessions(false);
+        });
+    }
+  }, [isPublicGroupLesson, toast]);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date && isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))) {
@@ -122,7 +145,7 @@ export default function BookLessonPage() {
   };
 
   const displayTimeSlots = useMemo(() => {
-    if (!selectedDate || !isTimeRequired || !selectedProduct || typeof selectedProduct.duration !== 'number') return [];
+    if (!selectedDate || !isIndividualLesson || !selectedProduct || typeof selectedProduct.duration !== 'number') return [];
     
     const slots: TimeSlotProps[] = [];
     const userDurationMinutes = selectedProduct.duration;
@@ -170,7 +193,7 @@ export default function BookLessonPage() {
         slots.push({ display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`, value: startTimeString, status: currentStatus, blockedMeta: timeOffMeta });
     }
     return slots;
-}, [selectedDate, isTimeRequired, selectedProduct, dailyBookedSlots, dailyTimeOff]);
+}, [selectedDate, isIndividualLesson, selectedProduct, dailyBookedSlots, dailyTimeOff]);
 
 
   const handleBooking = async () => {
@@ -183,8 +206,12 @@ export default function BookLessonPage() {
       toast({ title: "Selection Incomplete", description: "Please select a lesson type.", variant: "destructive" });
       return;
     }
-    if (isTimeRequired && (!selectedDate || !selectedTime)) {
+    if (isIndividualLesson && (!selectedDate || !selectedTime)) {
       toast({ title: "Selection Incomplete", description: "Please select a date and time.", variant: "destructive" });
+      return;
+    }
+     if (isPublicGroupLesson && !selectedGroupSessionId) {
+      toast({ title: "Selection Incomplete", description: "Please select a group session to join.", variant: "destructive" });
       return;
     }
     
@@ -213,9 +240,14 @@ export default function BookLessonPage() {
         const payload = {
           productId: selectedProduct.id,
           userId: user.uid,
-          ...(isTimeRequired && { 
+          ...(isIndividualLesson && { 
               date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined, 
               time: selectedTime 
+          }),
+           ...(isPublicGroupLesson && { 
+              date: groupSessions.find(s => s.id === selectedGroupSessionId)?.startTime.toDate().toISOString().split('T')[0],
+              time: groupSessions.find(s => s.id === selectedGroupSessionId)?.startTime.toDate().toTimeString().substring(0,5),
+              groupSessionId: selectedGroupSessionId,
           }),
           ...(paymentNote.trim() && { paymentNote: paymentNote.trim() }),
         };
@@ -239,7 +271,10 @@ export default function BookLessonPage() {
           : error.message || "Could not complete your booking. Please try again.",
         variant: "destructive",
     });
-    if (selectedDate) fetchAvailability(selectedDate);
+    if (selectedDate && isIndividualLesson) fetchAvailability(selectedDate);
+    if(isPublicGroupLesson) {
+        getGroupSessions().then(setGroupSessions);
+    }
     setIsProcessing(false);
   }
 
@@ -294,10 +329,10 @@ export default function BookLessonPage() {
                 <CardContent>
                   <RadioGroup value={selectedProductId} onValueChange={(value) => {setSelectedProductId(value as ProductId); setSelectedTime(undefined); setSelectedDateState(undefined);}} disabled={!!useCreditType}>
                     <div className="space-y-6">
-                      {["individual", "group", "package"].map(lessonGroupType => (
+                      {["individual", "group", "private-group", "package"].map(lessonGroupType => (
                          <div key={lessonGroupType}>
                           <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">
-                              {lessonGroupType === 'individual' ? 'Individual' : lessonGroupType} Lessons
+                              {lessonGroupType.replace('-', ' ')}
                           </h3>
                           <div className="space-y-4">
                               {lessonTypes
@@ -341,7 +376,7 @@ export default function BookLessonPage() {
             </Card>
 
 
-            {isTimeRequired && (
+            {isIndividualLesson && (
               <>
                 <Card className="shadow-lg">
                       <CardHeader>
@@ -377,7 +412,48 @@ export default function BookLessonPage() {
               </>
             )}
             
-            {selectedProduct?.type === 'package' && (
+             {isPublicGroupLesson && (
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl text-foreground">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    Join an Upcoming Group Session
+                  </CardTitle>
+                  <CardDescription>Select one of the scheduled sessions below to book your spot.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isFetchingGroupSessions ? <div className="flex justify-center items-center h-24"><Spinner /></div>
+                  : groupSessions.length === 0 ? <p className="text-muted-foreground text-center py-4">No upcoming group sessions scheduled. Please check back later.</p>
+                  : (
+                    <RadioGroup value={selectedGroupSessionId || ''} onValueChange={setSelectedGroupSessionId}>
+                        <div className="space-y-4">
+                        {groupSessions.map((session) => (
+                           <div key={session.id} className="flex items-start space-x-3">
+                             <RadioGroupItem value={session.id} id={session.id} className="mt-1" disabled={session.participantCount >= session.maxStudents} />
+                             <Label htmlFor={session.id} className="flex-1 cursor-pointer">
+                               <div className={`p-4 border rounded-lg ${selectedGroupSessionId === session.id ? "bg-accent border-primary ring-2 ring-primary" : "border-border"} ${session.participantCount >= session.maxStudents ? 'opacity-60 cursor-not-allowed' : 'hover:bg-accent/50'}`}>
+                                 <div className="flex justify-between items-start">
+                                   <div>
+                                     <p className="font-semibold text-foreground">{session.title}</p>
+                                     <p className="text-sm text-muted-foreground">{format(session.startTime.toDate(), 'eeee, PPP \'at\' p')}</p>
+                                   </div>
+                                   <Badge variant={session.participantCount >= session.maxStudents ? "destructive" : "secondary"}>
+                                       <Users className="w-3 h-3 mr-1.5"/>
+                                       {session.participantCount} / {session.maxStudents} spots filled
+                                   </Badge>
+                                 </div>
+                               </div>
+                             </Label>
+                           </div>
+                        ))}
+                        </div>
+                    </RadioGroup>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {isPackage && (
                  <Card className="shadow-lg">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-xl text-foreground"> <Package className="w-5 h-5 text-primary" /> Package Details </CardTitle>
@@ -420,12 +496,12 @@ export default function BookLessonPage() {
                   {selectedProduct && (
                     <div className="space-y-2">
                       <div className="flex justify-between"> <span className="text-muted-foreground">Selected:</span> <span className="font-medium text-right text-foreground">{selectedProduct.label}</span> </div>
-                      {(selectedProduct.type !== 'package') && ( <div className="flex justify-between"> <span className="text-muted-foreground">Duration:</span> <span className="font-medium text-foreground">{selectedProduct.duration} minutes</span> </div> )}
-                      {selectedProduct.type === 'package' && ( <div className="flex justify-between"> <span className="text-muted-foreground">Contains:</span> <span className="font-medium text-foreground">{selectedProduct.duration}</span> </div> )}
+                      {(!isPackage) && ( <div className="flex justify-between"> <span className="text-muted-foreground">Duration:</span> <span className="font-medium text-foreground">{selectedProduct.duration} minutes</span> </div> )}
+                      {isPackage && ( <div className="flex justify-between"> <span className="text-muted-foreground">Contains:</span> <span className="font-medium text-foreground">{selectedProduct.duration}</span> </div> )}
                     </div>
                   )}
-                  {selectedDate && selectedProduct?.type !== 'package' && ( <div className="flex justify-between"> <span className="text-muted-foreground">Date:</span> <span className="font-medium text-foreground"> {format(selectedDate, "PPP")} </span> </div> )}
-                  {selectedTime && isTimeRequired && ( <div className="flex justify-between"> <span className="text-muted-foreground">Time:</span> <span className="font-medium text-foreground"> {selectedTime} </span> </div> )}
+                  {selectedDate && isIndividualLesson && ( <div className="flex justify-between"> <span className="text-muted-foreground">Date:</span> <span className="font-medium text-foreground"> {format(selectedDate, "PPP")} </span> </div> )}
+                  {selectedTime && isIndividualLesson && ( <div className="flex justify-between"> <span className="text-muted-foreground">Time:</span> <span className="font-medium text-foreground"> {selectedTime} </span> </div> )}
                 </div>
                 
                 {selectedProduct && (
@@ -440,14 +516,14 @@ export default function BookLessonPage() {
                 )}
 
                 <div className="space-y-3 pt-2">
-                  <Button className="w-full" onClick={handleBooking} disabled={isProcessing || !selectedProduct || (isTimeRequired && (!selectedDate || !selectedTime))}>
+                  <Button className="w-full" onClick={handleBooking} disabled={isProcessing || !selectedProduct || (isIndividualLesson && (!selectedDate || !selectedTime)) || (isPublicGroupLesson && !selectedGroupSessionId) }>
                     {isProcessing && <Spinner size="sm" className="mr-2" />}
                     {isProcessing ? "Processing..." 
                       : useCreditType ? "Confirm with 1 Credit"
                       : isPaidLesson ? "Proceed to Payment" 
                       : "Confirm Free Trial"}
                   </Button>
-                   {!useCreditType && user && selectedProduct?.type !== 'package' && (
+                   {!useCreditType && user && !isPackage && (
                         <Button className="w-full" variant="outline" asChild>
                             <Link href="/credits">
                                 <Ticket className="w-4 h-4 mr-2"/>
@@ -468,3 +544,4 @@ export default function BookLessonPage() {
     </div>
   )
 }
+

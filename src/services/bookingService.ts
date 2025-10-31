@@ -1,3 +1,4 @@
+
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
 import type { ProductId } from "@/config/products";
@@ -10,6 +11,7 @@ interface CreateBookingPayload {
     date?: string;
     time?: string;
     paymentNote?: string;
+    groupSessionId?: string; // Add this to handle joining a group session
 }
 
 interface CreateWithCreditPayload {
@@ -19,6 +21,23 @@ interface CreateWithCreditPayload {
     time: string;
     notes?: string;
 }
+
+interface PrivateGroupMember {
+  name: string;
+  email: string;
+}
+
+interface CreatePrivateGroupPayload {
+    date: string;
+    time: string;
+    duration: number;
+    lessonType: string;
+    pricePerStudent: number;
+    tutorId: string;
+    leader: PrivateGroupMember;
+    members: PrivateGroupMember[];
+}
+
 
 /**
  * Creates a new booking via a secure, server-side API endpoint.
@@ -111,4 +130,28 @@ export async function requestReschedule(payload: RescheduleRequestPayload): Prom
         throw new Error(data.error || 'Failed to process reschedule request.');
     }
     return data;
+}
+
+
+export async function createPrivateGroupBooking(payload: CreatePrivateGroupPayload): Promise<{ bookingId: string; groupSessionId: string }> {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("Authentication required.");
+  }
+  const idToken = await user.getIdToken();
+
+  const response = await fetch(`${API_BASE_URL}/bookings/create-private-group`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.message || 'Failed to create private group booking.');
+  }
+  return result;
 }

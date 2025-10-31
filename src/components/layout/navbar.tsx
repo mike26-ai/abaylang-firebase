@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from "next/link";
@@ -29,6 +30,7 @@ export function Navbar() {
   const publicNavLinks = [
     { title: "About Tutor", href: "/tutor-profile" },
     { title: "Packages", href: "/packages" },
+    { title: "Group Sessions", href: "/group-sessions" },
     { title: "Testimonials", href: "/testimonials" },
     { title: "Resources", href: "/resources" },
     { title: "Contact", href: "/contact" },
