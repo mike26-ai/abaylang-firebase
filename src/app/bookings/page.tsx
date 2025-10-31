@@ -106,14 +106,14 @@ export default function BookLessonPage() {
   }
 
   useEffect(() => {
-    if (isIndividualLesson && selectedDate && isValid(selectedDate)) {
+    if ((isIndividualLesson || isPrivateGroup) && selectedDate && isValid(selectedDate)) {
         fetchAvailability(selectedDate);
     } else {
       setDailyBookedSlots([]);
       setDailyTimeOff([]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, isIndividualLesson]);
+  }, [selectedDate, isIndividualLesson, isPrivateGroup]);
 
   useEffect(() => {
     if (isPublicGroupLesson) {
@@ -143,7 +143,7 @@ export default function BookLessonPage() {
   };
 
   const displayTimeSlots = useMemo(() => {
-    if (!selectedDate || (!isIndividualLesson) || !selectedProduct || typeof selectedProduct.duration !== 'number') return [];
+    if (!selectedDate || (!isIndividualLesson && !isPrivateGroup) || !selectedProduct || typeof selectedProduct.duration !== 'number') return [];
     
     const slots: TimeSlotProps[] = [];
     const userDurationMinutes = selectedProduct.duration;
@@ -191,7 +191,7 @@ export default function BookLessonPage() {
         slots.push({ display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`, value: startTimeString, status: currentStatus, blockedMeta: timeOffMeta });
     }
     return slots;
-}, [selectedDate, isIndividualLesson, selectedProduct, dailyBookedSlots, dailyTimeOff]);
+}, [selectedDate, isIndividualLesson, isPrivateGroup, selectedProduct, dailyBookedSlots, dailyTimeOff]);
 
 
   const handleBooking = async () => {
@@ -204,7 +204,7 @@ export default function BookLessonPage() {
       toast({ title: "Selection Incomplete", description: "Please select a lesson type.", variant: "destructive" });
       return;
     }
-    if (isIndividualLesson && (!selectedDate || !selectedTime)) {
+    if ((isIndividualLesson || isPrivateGroup) && (!selectedDate || !selectedTime)) {
       toast({ title: "Selection Incomplete", description: "Please select a date and time.", variant: "destructive" });
       return;
     }
@@ -242,7 +242,7 @@ export default function BookLessonPage() {
           : error.message || "Could not complete your booking. Please try again.",
         variant: "destructive",
     });
-    if (selectedDate && isIndividualLesson) fetchAvailability(selectedDate);
+    if (selectedDate && (isIndividualLesson || isPrivateGroup)) fetchAvailability(selectedDate);
     if(isPublicGroupLesson) {
         getGroupSessions().then(sessions => {
             const filteredSessions = sessions.filter(s => {
@@ -315,7 +315,7 @@ export default function BookLessonPage() {
                                   <div key={lesson.id} className="flex items-start space-x-3">
                                   <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType} />
                                   <Label htmlFor={lesson.id} className={`flex-1 ${!!useCreditType ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                                      <div className={`p-4 border rounded-lg transition-colors hover:bg-accent/50 data-[state=checked]:bg-accent data-[state=checked]:border-primary data-[state=checked]:ring-2 data-[state=checked]:ring-primary`}>
+                                      <div className={`p-4 border rounded-lg transition-colors hover:bg-accent/50`}>
                                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
                                           <div className="mb-2 sm:mb-0">
                                           <div className="font-semibold text-lg text-foreground flex items-center gap-2">
@@ -366,7 +366,7 @@ export default function BookLessonPage() {
                 </Card>
             )}
 
-            {(isIndividualLesson || isPrivateGroup) && !useCreditType && (
+            {(isIndividualLesson || useCreditType) && (
               <>
                 <Card className="shadow-lg">
                       <CardHeader>
@@ -454,7 +454,7 @@ export default function BookLessonPage() {
                 </Card>
             )}
 
-            {!useCreditType && (
+            {!useCreditType && !isPrivateGroup &&(
               <Card className="shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-xl text-foreground"> <MessageSquare className="w-5 h-5 text-primary" /> Notes (Optional) </CardTitle>
@@ -511,7 +511,7 @@ export default function BookLessonPage() {
                 )}
 
                 <div className="space-y-3 pt-2">
-                  <Button className="w-full" onClick={handleBooking} disabled={isProcessing || !selectedProduct || (isIndividualLesson && (!selectedDate || !selectedTime)) || (isPublicGroupLesson && !selectedGroupSessionId) || isPrivateGroup }>
+                  <Button className="w-full" onClick={handleBooking} disabled={isProcessing || !selectedProduct || (isIndividualLesson && (!selectedDate || !selectedTime)) || (isPublicGroupLesson && !selectedGroupSessionId) || (isPrivateGroup) }>
                     {isProcessing && <Spinner size="sm" className="mr-2" />}
                     {isPrivateGroup ? "Organize on Next Page" : isProcessing ? "Processing..." : useCreditType ? "Confirm with 1 Credit" : isPaidLesson ? "Proceed to Payment" : "Confirm Free Trial"}
                   </Button>
