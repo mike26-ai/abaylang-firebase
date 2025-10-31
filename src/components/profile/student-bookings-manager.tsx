@@ -65,15 +65,13 @@ export function StudentBookingsManager() {
     };
     setIsLoading(true);
     try {
-      // --- THE FIX: SIMPLIFY THE QUERY ---
-      // Instead of a complex "not-in" filter, we fetch all bookings for the user, ordered by creation date.
-      // Filtering will now be done on the client-side. This avoids the need for a composite index.
+      // --- FIX: Use modular 'collection(db, ...)' syntax instead of namespaced 'db.collection(...)' ---
       const bookingsQuery = query(
-          db.collection("bookings"), 
+          collection(db, "bookings"), 
           where("userId", "==", user.uid),
           orderBy("createdAt", "desc")
       );
-      const userProfileRef = db.doc(`users/${user.uid}`);
+      const userProfileRef = doc(db, "users", user.uid);
 
       const [bookingsSnapshot, userProfileSnap] = await Promise.all([
           getDocs(bookingsQuery),
@@ -100,10 +98,9 @@ export function StudentBookingsManager() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, toast]);
 
-  // --- THE FIX: CLIENT-SIDE FILTERING ---
-  // This `useMemo` hook filters the fetched bookings on the client.
+  // --- Client-side filtering to avoid complex Firestore queries ---
   const activeBookings = useMemo(() => {
-      const inactiveStatuses = ["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"];
+      const inactiveStatuses = ["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled", "no-show"];
       return bookings.filter(b => !inactiveStatuses.includes(b.status));
   }, [bookings]);
 
@@ -120,8 +117,7 @@ export function StudentBookingsManager() {
         description: "Your lesson was cancelled. You can now book a new time.",
       });
 
-      // Find the newly created credit to pass to the modal
-      const updatedUserSnap = await db.doc(`users/${user!.uid}`).get();
+      const updatedUserSnap = await getDoc(doc(db, "users", user!.uid));
       const updatedUser = updatedUserSnap.data() as UserProfile;
       const newCredit = updatedUser.credits?.find(c => c.packageBookingId === booking.id);
 

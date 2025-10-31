@@ -1,3 +1,4 @@
+
 // File: src/app/layout.tsx
 
 import type { Metadata } from 'next';
@@ -20,19 +21,18 @@ const lora = Lora({
   weight: ['400', '700'],
 });
 
-// --- NEW METADATA OBJECT ---
-// This is the modern, correct way to add the Title and Description.
+// --- METADATA OBJECT ---
 export const metadata: Metadata = {
   title: 'ABYLANG — Learn Amharic with a Native Tutor',
   description: 'Connect to Ethiopian language and culture with Mahder Negash Mamo, a seasoned Amharic tutor offering live online lessons and cultural immersion through ABYLANG.',
-  manifest: '/manifest.json',
+  // FIX: The manifest property is removed to prevent browsers from trying to fetch the non-existent file.
+  // manifest: '/manifest.json', // This line is removed.
   icons: {
-    apple: '/icon-192x192.png', // Your existing apple touch icon
+    apple: '/icon-192x192.png', 
   },
 };
 
 // This is your updated RootLayout component.
-// We are now using the <ClientProviders> wrapper for all client-side context.
 export default function RootLayout({
   children,
 }: {
