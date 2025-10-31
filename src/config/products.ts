@@ -65,15 +65,24 @@ export const products = {
     features: ['Extended conversation time', 'In-depth cultural topics', 'Collaborative learning'],
   },
 
-  // --- PRIVATE GROUP LESSON ---
-  'private-group-lesson': {
-    label: 'Private Group Lesson',
+  // --- PRIVATE GROUP LESSONS ---
+  'private-quick-group': {
+    label: 'Private Quick Group',
+    type: 'private-group',
+    duration: 30,
+    price: 8, // Per person
+    paddlePriceId: 'TBD',
+    description: 'A private 30-min session for your group',
+    features: ["Your own private group", "Minimum 3 people total", "Flexible for families or friends"],
+  },
+  'private-immersive-group': {
+    label: 'Private Immersive Group',
     type: 'private-group',
     duration: 60,
-    price: 10, // Per person
-    paddlePriceId: 'TBD', // Needs a dynamic pricing solution or manual checkout
-    description: 'Book a private session for your own group',
-    features: ["Your own private group", "Flexible for families or friends", "Personalized to your group's level"],
+    price: 14, // Per person
+    paddlePriceId: 'TBD',
+    description: 'A private 60-min session for your group',
+    features: ["Your own private group", "Minimum 3 people total", "Personalized to your group's level"],
   },
 
   // --- PACKAGES ---
