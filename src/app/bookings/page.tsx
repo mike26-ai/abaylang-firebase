@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -350,8 +349,24 @@ export default function BookLessonPage() {
                 </CardContent>
             </Card>
 
+            {isPrivateGroup && (
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-xl text-foreground"> <Users className="w-5 h-5 text-primary" /> Book a Private Group Session </CardTitle>
+                        <CardDescription>Organize a lesson just for your friends or family.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-center space-y-4">
+                       <p className="text-muted-foreground">This option allows you to create your own private group. You'll be taken to a separate page to invite your members and choose a time that works for everyone.</p>
+                       <Button asChild size="lg">
+                           <Link href="/bookings/private-group">
+                               Organize Your Private Group
+                           </Link>
+                       </Button>
+                    </CardContent>
+                </Card>
+            )}
 
-            {isIndividualLesson && (
+            {(isIndividualLesson || isPrivateGroup) && !useCreditType && (
               <>
                 <Card className="shadow-lg">
                       <CardHeader>
@@ -426,24 +441,7 @@ export default function BookLessonPage() {
                 </CardContent>
               </Card>
             )}
-
-            {isPrivateGroup && (
-                <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-xl text-foreground"> <Users className="w-5 h-5 text-primary" /> Book a Private Group Session </CardTitle>
-                        <CardDescription>Organize a lesson just for your friends or family.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-center space-y-4">
-                       <p className="text-muted-foreground">This option allows you to create your own private group. You'll be taken to a separate page to invite your members and choose a time that works for everyone.</p>
-                       <Button asChild size="lg">
-                           <Link href="/bookings/private-group">
-                               Organize Your Private Group
-                           </Link>
-                       </Button>
-                    </CardContent>
-                </Card>
-            )}
-
+            
             {isPackage && (
                  <Card className="shadow-lg">
                     <CardHeader>
@@ -539,3 +537,4 @@ export default function BookLessonPage() {
   )
 }
 
+    
