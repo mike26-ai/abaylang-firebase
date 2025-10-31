@@ -30,7 +30,7 @@ export default function BookingHistoryPage() {
   
   const [bookings, setBookings] = useState<HistoryBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("archived"); // Default to archived history
 
 
   const [feedbackModal, setFeedbackModal] = useState({
@@ -44,6 +44,8 @@ export default function BookingHistoryPage() {
       if (!user) return;
       setIsLoading(true);
       try {
+        // --- THE FIX: SIMPLIFY THE QUERY ---
+        // Fetch ALL bookings for the user, and we will filter them into "active" and "archived" on the client.
         const bookingsQuery = query(
             collection(db, "bookings"),
             where("userId", "==", user.uid),
@@ -110,11 +112,14 @@ export default function BookingHistoryPage() {
     }));
   }, [bookings]);
 
+  // --- THE FIX: CLIENT-SIDE FILTERING ---
   const filteredBookings = useMemo(() => {
+    const inactiveStatuses = ['completed', 'cancelled', 'cancelled-by-admin', 'refunded', 'credit-issued', 'rescheduled', 'no-show'];
     if (activeTab === 'archived') {
-        return organizedBookings.filter(b => ['completed', 'cancelled', 'cancelled-by-admin', 'refunded', 'credit-issued'].includes(b.status));
+        return organizedBookings.filter(b => inactiveStatuses.includes(b.status));
     }
-    return organizedBookings.filter(b => !['completed', 'cancelled', 'cancelled-by-admin', 'refunded', 'credit-issued'].includes(b.status));
+    // Active Tab
+    return organizedBookings.filter(b => !inactiveStatuses.includes(b.status));
   }, [organizedBookings, activeTab]);
 
 
@@ -130,7 +135,7 @@ export default function BookingHistoryPage() {
             </div>
         </div>
         <div className="flex items-center gap-2 mt-2 sm:mt-0">
-           <Badge variant={item.status === 'completed' || item.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
+           <Badge variant={item.status === 'completed' || item.status === 'confirmed' ? 'default' : item.status === 'cancelled' || item.status === 'cancelled-by-admin' ? 'destructive' : 'secondary'} className="capitalize">
             {item.status.replace(/-/g, ' ')}
            </Badge>
            {item.status === 'completed' && item.productType !== 'package' && (

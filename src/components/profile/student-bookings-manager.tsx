@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, where, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import type { Booking, UserCredit, UserProfile } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,7 +13,6 @@ import { MoreHorizontal, Calendar, Clock, User, RefreshCw, XCircle } from "lucid
 import { format, isValid, parseISO, differenceInHours, parse } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { JoinLessonButton } from "@/components/bookings/join-lesson-button";
 import { requestReschedule } from "@/services/bookingService";
@@ -66,11 +65,12 @@ export function StudentBookingsManager() {
     };
     setIsLoading(true);
     try {
+      // --- THE FIX: SIMPLIFY THE QUERY ---
+      // Instead of a complex "not-in" filter, we fetch all bookings for the user, ordered by creation date.
+      // Filtering will now be done on the client-side. This avoids the need for a composite index.
       const bookingsQuery = query(
           db.collection("bookings"), 
           where("userId", "==", user.uid),
-          where("status", "not-in", ["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"]),
-          orderBy("status"),
           orderBy("createdAt", "desc")
       );
       const userProfileRef = db.doc(`users/${user.uid}`);
@@ -99,6 +99,13 @@ export function StudentBookingsManager() {
     fetchData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, toast]);
+
+  // --- THE FIX: CLIENT-SIDE FILTERING ---
+  // This `useMemo` hook filters the fetched bookings on the client.
+  const activeBookings = useMemo(() => {
+      const inactiveStatuses = ["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"];
+      return bookings.filter(b => !inactiveStatuses.includes(b.status));
+  }, [bookings]);
 
   const handleRescheduleClick = async (booking: Booking) => {
     setIsProcessingReschedule(true);
@@ -152,7 +159,7 @@ export function StudentBookingsManager() {
     return <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>;
   }
 
-  if (bookings.length === 0) {
+  if (activeBookings.length === 0) {
     return <p className="text-muted-foreground text-center py-8">You have no active or upcoming bookings.</p>;
   }
 
@@ -169,7 +176,7 @@ export function StudentBookingsManager() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bookings.map((booking) => (
+            {activeBookings.map((booking) => (
               <TableRow key={booking.id}>
                 <TableCell className="font-medium">
                   {booking.lessonType || 'Amharic Lesson'}
@@ -222,7 +229,7 @@ export function StudentBookingsManager() {
 
       {/* Mobile View: Cards */}
       <div className="md:hidden space-y-4">
-        {bookings.map((booking) => (
+        {activeBookings.map((booking) => (
           <Card key={booking.id} className="shadow-sm">
             <CardHeader>
               <div className="flex justify-between items-start">
