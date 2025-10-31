@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -14,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { Spinner } from '@/components/ui/spinner';
 import { products } from '@/config/products';
 import { createBooking } from '@/services/bookingService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Member {
   name: string;
@@ -25,13 +27,13 @@ export default function PrivateGroupBookingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [members, setMembers] = useState<Member[]>([{ name: '', email: '' }]);
+  const [members, setMembers] = useState<Member[]>([{ name: '', email: '' }, { name: '', email: '' }]); // Start with 2 members for a group of 3
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [duration, setDuration] = useState(60); // Default to 60 mins
   const [isLoading, setIsLoading] = useState(false);
 
-  // Hardcode for this page, can be dynamic via query param later if needed
-  const privateGroupProduct = products['private-immersive-group']; 
+  const privateGroupProduct = duration === 30 ? products['private-quick-group'] : products['private-immersive-group'];
 
   const addMember = () => {
     if (members.length < 5) { // Leader + 5 members = 6 total
@@ -42,9 +44,11 @@ export default function PrivateGroupBookingPage() {
   };
 
   const removeMember = (index: number) => {
-    if (members.length > 0) {
+    if (members.length > 2) { // Must maintain at least 2 members + leader
       const newMembers = members.filter((_, i) => i !== index);
       setMembers(newMembers);
+    } else {
+       toast({ title: 'Minimum Group Size', description: 'You need at least 2 other members to form a group of 3.', variant: 'destructive' });
     }
   };
 
@@ -55,14 +59,9 @@ export default function PrivateGroupBookingPage() {
   };
 
   const handleNextStep = () => {
-    if (members.length < 2) {
-      toast({ title: 'Minimum Group Size', description: 'Please add at least 2 other members to form a group of 3.', variant: 'destructive' });
-      return;
-    }
-
     const allMembersValid = members.every(m => m.name.trim() !== '' && m.email.trim() !== '' && m.email.includes('@'));
     if (!allMembersValid) {
-      toast({ title: 'Incomplete Information', description: 'Please fill out the name and a valid email for all members.', variant: 'destructive' });
+      toast({ title: 'Incomplete Information', description: 'Please fill out the name and a valid email for all invited members.', variant: 'destructive' });
       return;
     }
     setStep(2);
@@ -106,7 +105,7 @@ export default function PrivateGroupBookingPage() {
         // This will now use the individual booking flow, which is fine for the leader's booking
         // The backend has already created the session and placeholders
         const { redirectUrl } = await createBooking({
-            productId: 'private-immersive-group',
+            productId: duration === 30 ? 'private-quick-group' : 'private-immersive-group',
             userId: user.uid,
             date: date,
             time: time,
@@ -133,14 +132,14 @@ export default function PrivateGroupBookingPage() {
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2"><Users className="w-6 h-6 text-primary"/>Book a Private Group Lesson</CardTitle>
-          <CardDescription>Organize a session for just you and your friends or family. Minimum 3 people total, maximum 6.</CardDescription>
+          <CardDescription>Organize a session for just you and your friends or family. Total group size can be 3 to 6 people.</CardDescription>
         </CardHeader>
         <CardContent>
           {step === 1 && (
             <div className="space-y-6">
               <div>
                 <h3 className="font-semibold text-lg">Step 1: Invite Your Group Members</h3>
-                <p className="text-sm text-muted-foreground">Add 2 to 5 other people to meet the group size requirement.</p>
+                <p className="text-sm text-muted-foreground">You are the group leader. Invite 2 to 5 other people to join you.</p>
               </div>
 
               <div className="p-4 bg-accent/50 rounded-lg border">
@@ -152,7 +151,7 @@ export default function PrivateGroupBookingPage() {
               {members.map((member, index) => (
                 <div key={index} className="p-4 border rounded-lg space-y-3 relative">
                   <Label>Member {index + 1}</Label>
-                   <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => removeMember(index)}>
+                   <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => removeMember(index)} disabled={members.length <= 2}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                    </Button>
                   <div className="grid sm:grid-cols-2 gap-4">
@@ -170,8 +169,20 @@ export default function PrivateGroupBookingPage() {
           {step === 2 && (
             <div className="space-y-6">
                 <div>
-                    <h3 className="font-semibold text-lg">Step 2: Choose a Date & Time</h3>
-                    <p className="text-sm text-muted-foreground">Select a 60-minute time slot for your group lesson.</p>
+                    <h3 className="font-semibold text-lg">Step 2: Choose Session Details</h3>
+                    <p className="text-sm text-muted-foreground">Select the duration and time for your group lesson.</p>
+                </div>
+                <div className="space-y-2">
+                    <Label>Session Duration</Label>
+                    <Select value={String(duration)} onValueChange={(value) => setDuration(Number(value))}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select duration..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="30">30 minutes (Quick Practice)</SelectItem>
+                            <SelectItem value="60">60 minutes (Immersive Lesson)</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -184,7 +195,7 @@ export default function PrivateGroupBookingPage() {
                     </div>
                 </div>
                  <div className="p-4 bg-accent/50 rounded-lg border text-center">
-                    <p className="font-semibold">Total Cost: ${privateGroupProduct.price} x {members.length + 1} participants = <span className="text-primary text-xl">${privateGroupProduct.price * (members.length + 1)}</span></p>
+                    <p className="font-semibold">Total Cost: ${privateGroupProduct.price} x (1 Leader + {members.length} Members) = <span className="text-primary text-xl">${privateGroupProduct.price * (members.length + 1)}</span></p>
                     <p className="text-sm text-muted-foreground">The group leader pays for the entire session. You can arrange reimbursement with your group members personally.</p>
                 </div>
             </div>
@@ -199,3 +210,4 @@ export default function PrivateGroupBookingPage() {
     </div>
   );
 }
+
