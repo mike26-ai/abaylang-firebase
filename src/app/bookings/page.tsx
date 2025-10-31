@@ -149,7 +149,7 @@ export default function BookLessonPage() {
     const userDurationMinutes = selectedProduct.duration;
     const slotDate = startOfDay(selectedDate);
     const now = new Date();
-    const isToday = isEqual(slotDate, startOfDay(now));
+    const isToday = isEqual(slotDate, now);
 
     for (const startTimeString of baseStartTimes) {
         const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
@@ -314,8 +314,8 @@ export default function BookLessonPage() {
                               .map((lesson) => (
                                   <div key={lesson.id} className="flex items-start space-x-3">
                                   <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType} />
-                                  <Label htmlFor={lesson.id} className={`flex-1 ${!!useCreditType ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                                      <div className={`p-4 border rounded-lg transition-colors hover:bg-accent/50`}>
+                                  <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
+                                      <div className="p-4 border rounded-lg transition-colors hover:bg-accent/50">
                                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
                                           <div className="mb-2 sm:mb-0">
                                           <div className="font-semibold text-lg text-foreground flex items-center gap-2">
@@ -420,7 +420,7 @@ export default function BookLessonPage() {
                            <div key={session.id} className="flex items-start space-x-3">
                              <RadioGroupItem value={session.id} id={session.id} className="mt-1" disabled={session.participantCount >= session.maxStudents} />
                              <Label htmlFor={session.id} className="flex-1 cursor-pointer">
-                               <div className={`p-4 border rounded-lg hover:bg-accent/50 ${selectedGroupSessionId === session.id ? "bg-accent border-primary ring-2 ring-primary" : "border-border"} ${session.participantCount >= session.maxStudents ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                               <div className="p-4 border rounded-lg hover:bg-accent/50">
                                  <div className="flex justify-between items-start">
                                    <div>
                                      <p className="font-semibold text-foreground">{session.title}</p>
