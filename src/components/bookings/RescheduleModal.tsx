@@ -10,9 +10,9 @@ import { createBookingWithCredit } from "@/services/bookingService";
 import { useAuth } from "@/hooks/use-auth";
 import { Spinner } from "../ui/spinner";
 import { format } from "date-fns";
-import { BookingsCalendar } from "@/components/bookings/booking-calendar";
+import { BookingCalendar } from "@/components/bookings/booking-calendar";
 import { creditToLessonMap } from "@/config/creditMapping";
-import { products, ProductId } from "@/config/products";
+import { products, type ProductId } from "@/config/products";
 
 interface RescheduleModalProps {
   isOpen: boolean;
@@ -82,7 +82,7 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, reschedu
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-            <BookingsCalendar 
+            <BookingCalendar 
                 lessonType={lessonDetails}
                 selectedDate={selectedDate}
                 selectedTime={selectedTime}
