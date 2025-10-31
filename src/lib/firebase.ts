@@ -2,8 +2,6 @@
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth } from "firebase/auth";
-// --- THE FIX ---
-// Use getFirestore and pass settings to it, instead of using the deprecated initializeFirestore
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig: FirebaseOptions = {
@@ -18,6 +16,8 @@ const firebaseConfig: FirebaseOptions = {
   }),
 };
 
+// A simple check to see if the environment variables are loaded.
+// This is the most common reason for the API key error.
 if (!firebaseConfig.apiKey) {
   console.error(`
     ********************************************************************************
@@ -32,13 +32,9 @@ if (!firebaseConfig.apiKey) {
   `);
 }
 
+
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-
-// --- THE FIX ---
-// Get the Firestore instance and pass settings directly to it.
-// This is the modern, correct pattern that avoids the "client is offline" error.
 const db = getFirestore(app);
-
 
 export { app, auth, db };
