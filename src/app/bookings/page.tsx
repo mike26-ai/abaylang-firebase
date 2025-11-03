@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -51,7 +51,6 @@ export default function BookLessonPage() {
   const lessonTypeFromUrl = searchParams.get('lessonType') as ProductId | null;
   const useCreditType = searchParams.get('useCredit') as ProductId | null;
   
-  // This function now ONLY runs once to set the initial state. No more useEffects.
   const getInitialProductId = (): ProductId => {
     if (useCreditType && creditToLessonMap[useCreditType]) {
       return creditToLessonMap[useCreditType] as ProductId;
@@ -76,11 +75,20 @@ export default function BookLessonPage() {
   const [isFetchingGroupSessions, setIsFetchingGroupSessions] = useState(false);
   const [selectedGroupSessionId, setSelectedGroupSessionId] = useState<string | null>(null);
 
+  const userSelectedRef = useRef(false);
+
   const selectedProduct = products[selectedProductId];
   const isIndividualLesson = selectedProduct?.type === 'individual';
   const isPublicGroupLesson = selectedProduct?.type === 'group';
   const isPrivateGroup = selectedProduct?.type === 'private-group';
   const isPackage = selectedProduct?.type === 'package';
+  
+  useEffect(() => {
+    if (useCreditType && creditToLessonMap[useCreditType] && !userSelectedRef.current) {
+      setSelectedProductId(creditToLessonMap[useCreditType] as ProductId);
+    }
+  }, [useCreditType]);
+
 
   const fetchAvailability = async (date: Date) => {
     setIsFetchingSlots(true);
@@ -197,7 +205,6 @@ export default function BookLessonPage() {
       return;
     }
     
-    // Logic for using a credit
     if (useCreditType) {
         if (!selectedDate || !selectedTime) {
           toast({ title: "Selection Incomplete", description: "Please select a date and time.", variant: "destructive" });
@@ -221,7 +228,6 @@ export default function BookLessonPage() {
         return;
     }
 
-    // Standard booking logic
     if ((isIndividualLesson || isPrivateGroup) && (!selectedDate || !selectedTime)) {
       toast({ title: "Selection Incomplete", description: "Please select a date and time.", variant: "destructive" });
       return;
@@ -344,6 +350,7 @@ export default function BookLessonPage() {
                                 onChange={() => {
                                   if (useCreditType) return;
                                   setSelectedProductId(lesson.id as ProductId);
+                                  userSelectedRef.current = true;
                                   setSelectedTime(undefined);
                                   setSelectedDateState(undefined);
                                 }}
@@ -594,3 +601,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
