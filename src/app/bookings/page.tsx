@@ -5,8 +5,6 @@ import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket } from "lucide-react"
 import Link from "next/link"
@@ -20,7 +18,7 @@ import type { Booking as BookingType, TimeOff, GroupSession } from "@/lib/types"
 import { SiteLogo } from "@/components/layout/SiteLogo"
 
 import { getAvailability } from "@/services/availabilityService";
-import { createBooking } from "@/services/bookingService";
+import { createBooking, createBookingWithCredit } from "@/services/bookingService";
 import { getGroupSessions } from "@/services/groupSessionService";
 import { products, type ProductId } from "@/config/products"; 
 import { creditToLessonMap } from "@/config/creditMapping";
@@ -82,7 +80,7 @@ export default function BookLessonPage() {
   const isPublicGroupLesson = selectedProduct?.type === 'group';
   const isPrivateGroup = selectedProduct?.type === 'private-group';
   const isPackage = selectedProduct?.type === 'package';
-
+  
 
   useEffect(() => {
     if (useCreditType && creditToLessonMap[useCreditType]) {
@@ -205,6 +203,32 @@ export default function BookLessonPage() {
       toast({ title: "Selection Incomplete", description: "Please select a lesson type.", variant: "destructive" });
       return;
     }
+    
+    // Logic for using a credit
+    if (useCreditType) {
+        if (!selectedDate || !selectedTime) {
+          toast({ title: "Selection Incomplete", description: "Please select a date and time.", variant: "destructive" });
+          return;
+        }
+        setIsProcessing(true);
+        try {
+            const result = await createBookingWithCredit({
+                creditType: useCreditType,
+                userId: user.uid,
+                date: format(selectedDate, 'yyyy-MM-dd'),
+                time: selectedTime,
+                notes: paymentNote.trim(),
+            });
+            if (result.redirectUrl) {
+                router.push(result.redirectUrl);
+            }
+        } catch (error: any) {
+            handleBookingError(error);
+        }
+        return;
+    }
+
+    // Standard booking logic
     if ((isIndividualLesson || isPrivateGroup) && (!selectedDate || !selectedTime)) {
       toast({ title: "Selection Incomplete", description: "Please select a date and time.", variant: "destructive" });
       return;
@@ -302,72 +326,74 @@ export default function BookLessonPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RadioGroup 
-                  value={selectedProductId} 
-                  onValueChange={(value) => {
-                    if (!useCreditType) {
-                      setSelectedProductId(value as ProductId);
-                      setSelectedTime(undefined);
-                      setSelectedDateState(undefined);
-                    }
-                  }}
-                  className="space-y-6"
-                >
+                <div className="space-y-6">
                   {["individual", "private-group", "group", "package"].map(lessonGroupType => (
-                     <div key={lessonGroupType}>
+                    <div key={lessonGroupType}>
                       <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">
-                          {lessonGroupType.replace(/-/g, ' ')} Lessons
+                        {lessonGroupType.replace(/-/g, ' ')} Lessons
                       </h3>
                       <div className="space-y-4">
-                          {lessonTypes
+                        {lessonTypes
                           .filter((lesson) => lesson.type === lessonGroupType)
                           .map((lesson) => (
-                              <div key={lesson.id} className="flex items-start space-x-3">
-                                <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType}/>
-                                <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
-                                    <div
-                                        className={cn(
-                                            "p-4 border rounded-lg transition-colors hover:bg-accent/50",
-                                            selectedProductId === lesson.id && "bg-accent border-primary ring-2 ring-primary"
-                                        )}
-                                        >
-                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
-                                            <div className="mb-2 sm:mb-0">
-                                            <div className="font-semibold text-lg text-foreground flex items-center gap-2">
-                                                {lesson.label}
-                                                {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
-                                                {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                                {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
-                                                {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
-                                            </div>
-                                            <div className="text-sm text-muted-foreground">
-                                                {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
-                                            </div>
-                                            </div>
-                                            <div className="text-right">
-                                            <div className="text-2xl font-bold text-primary">${lesson.price}{lesson.type === 'private-group' ? <span className="text-sm text-muted-foreground">/person</span> : ''}</div>
-                                            {lesson.originalPrice && <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>}
-                                            </div>
-                                        </div>
-                                        <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
-                                            {lesson.features.map((feature, index) => {
-                                                const featureKey = `${lesson.id}-feat-${index}-${feature?.toString().slice(0,30).replace(/\s+/g, "-")}`;
-                                                return (
-                                                    <li key={featureKey} className="flex items-center gap-2">
-                                                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                                                    <span className="text-muted-foreground">{feature}</span>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
+                            <label key={lesson.id} htmlFor={lesson.id}>
+                              <input
+                                type="radio"
+                                id={lesson.id}
+                                name="lessonType"
+                                value={lesson.id}
+                                checked={selectedProductId === lesson.id}
+                                onChange={() => {
+                                  if (useCreditType) return;
+                                  setSelectedProductId(lesson.id as ProductId);
+                                  setSelectedTime(undefined);
+                                  setSelectedDateState(undefined);
+                                }}
+                                className="hidden"
+                                disabled={!!useCreditType}
+                              />
+                              <div
+                                className={cn(
+                                  "p-4 border rounded-lg cursor-pointer transition-colors hover:bg-accent/50",
+                                  selectedProductId === lesson.id && "bg-accent border-primary ring-2 ring-primary"
+                                )}
+                              >
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
+                                  <div className="mb-2 sm:mb-0">
+                                    <div className="font-semibold text-lg text-foreground flex items-center gap-2">
+                                      {lesson.label}
+                                      {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
+                                      {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
+                                      {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
+                                      {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
                                     </div>
-                                </Label>
+                                    <div className="text-sm text-muted-foreground">
+                                      {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-2xl font-bold text-primary">${lesson.price}{lesson.type === 'private-group' ? <span className="text-sm text-muted-foreground">/person</span> : ''}</div>
+                                    {lesson.originalPrice && <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>}
+                                  </div>
+                                </div>
+                                <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
+                                  {lesson.features.map((feature, index) => {
+                                    const featureKey = `${lesson.id}-feat-${index}-${feature?.toString().slice(0,30).replace(/\s+/g, "-")}`;
+                                    return (
+                                      <li key={featureKey} className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                                        <span className="text-muted-foreground">{feature}</span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
                               </div>
+                            </label>
                           ))}
                       </div>
-                     </div>
+                    </div>
                   ))}
-                </RadioGroup>
+                </div>
               </CardContent>
             </Card>
 
@@ -571,3 +597,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
