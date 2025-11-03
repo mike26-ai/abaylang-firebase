@@ -1,12 +1,10 @@
 
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket } from "lucide-react"
@@ -303,64 +301,73 @@ export default function BookLessonPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <RadioGroup value={selectedProductId} onValueChange={(value) => {setSelectedProductId(value as ProductId); setSelectedTime(undefined); setSelectedDateState(undefined);}} disabled={!!useCreditType}>
-                    <div className="space-y-6">
-                      {["individual", "private-group", "group", "package"].map(lessonGroupType => (
-                         <div key={lessonGroupType}>
-                          <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">
-                              {lessonGroupType.replace(/-\w/g, c => " " + c[1].toUpperCase())} Lessons
-                          </h3>
-                          <div className="space-y-4">
-                              {lessonTypes
-                              .filter((lesson) => lesson.type === lessonGroupType)
-                              .map((lesson) => (
-                                  <div key={lesson.id} className="flex items-start space-x-3">
-                                      <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" disabled={!!useCreditType} />
-                                      <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
-                                        <div
-                                            className={cn(
-                                                "p-4 border rounded-lg transition-colors hover:bg-accent/50",
-                                                selectedProductId === lesson.id && "bg-accent border-primary ring-2 ring-primary"
-                                            )}
-                                            >
-                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
-                                                <div className="mb-2 sm:mb-0">
-                                                <div className="font-semibold text-lg text-foreground flex items-center gap-2">
-                                                    {lesson.label}
-                                                    {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
-                                                    {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                                    {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
-                                                    {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
-                                                </div>
-                                                <div className="text-sm text-muted-foreground">
-                                                    {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
-                                                </div>
-                                                </div>
-                                                <div className="text-right">
-                                                <div className="text-2xl font-bold text-primary">${lesson.price}{lesson.type === 'private-group' ? <span className="text-sm text-muted-foreground">/person</span> : ''}</div>
-                                                {lesson.originalPrice && <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>}
-                                                </div>
-                                            </div>
-                                            <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
-                                                {lesson.features.map((feature, index) => {
-                                                    const featureKey = `${lesson.id}-feat-${index}-${feature?.toString().slice(0,30).replace(/\s+/g, "-")}`;
-                                                    return (
-                                                        <li key={featureKey} className="flex items-center gap-2">
-                                                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                                                        <span className="text-muted-foreground">{feature}</span>
-                                                        </li>
-                                                    );
-                                                })}
-                                            </ul>
-                                        </div>
-                                      </Label>
+                  <div className="space-y-6">
+                    {["individual", "private-group", "group", "package"].map(lessonGroupType => (
+                       <div key={lessonGroupType}>
+                        <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">
+                            {lessonGroupType.replace(/-\\w/g, c => " " + c[1].toUpperCase())} Lessons
+                        </h3>
+                        <div className="space-y-4">
+                            {lessonTypes
+                            .filter((lesson) => lesson.type === lessonGroupType)
+                            .map((lesson) => (
+                                <label key={lesson.id} htmlFor={lesson.id} className="block cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    id={lesson.id}
+                                    name="lessonType"
+                                    value={lesson.id}
+                                    checked={selectedProductId === lesson.id}
+                                    onChange={() => {
+                                        setSelectedProductId(lesson.id as ProductId);
+                                        setSelectedTime(undefined);
+                                        setSelectedDateState(undefined);
+                                    }}
+                                    className="hidden"
+                                    disabled={!!useCreditType}
+                                  />
+                                  <div
+                                      className={cn(
+                                          "p-4 border rounded-lg transition-colors hover:bg-accent/50",
+                                          selectedProductId === lesson.id && "bg-accent border-primary ring-2 ring-primary"
+                                      )}
+                                      >
+                                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
+                                          <div className="mb-2 sm:mb-0">
+                                          <div className="font-semibold text-lg text-foreground flex items-center gap-2">
+                                              {lesson.label}
+                                              {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
+                                              {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
+                                              {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
+                                              {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
+                                          </div>
+                                          <div className="text-sm text-muted-foreground">
+                                              {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
+                                          </div>
+                                          </div>
+                                          <div className="text-right">
+                                          <div className="text-2xl font-bold text-primary">${lesson.price}{lesson.type === 'private-group' ? <span className="text-sm text-muted-foreground">/person</span> : ''}</div>
+                                          {lesson.originalPrice && <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>}
+                                          </div>
+                                      </div>
+                                      <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
+                                          {lesson.features.map((feature, index) => {
+                                              const featureKey = `${lesson.id}-feat-${index}-${feature?.toString().slice(0,30).replace(/\s+/g, "-")}`;
+                                              return (
+                                                  <li key={featureKey} className="flex items-center gap-2">
+                                                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                                                  <span className="text-muted-foreground">{feature}</span>
+                                                  </li>
+                                              );
+                                          })}
+                                      </ul>
                                   </div>
-                              ))}
-                          </div>
-                         </div>
-                      ))}
-                    </div>
-                  </RadioGroup>
+                                </label>
+                            ))}
+                        </div>
+                       </div>
+                    ))}
+                  </div>
                 </CardContent>
             </Card>
 
@@ -429,29 +436,34 @@ export default function BookLessonPage() {
                   {isFetchingGroupSessions ? <div className="flex justify-center items-center h-24"><Spinner /></div>
                   : groupSessions.length === 0 ? <p className="text-muted-foreground text-center py-4">No upcoming group sessions for this type. Please check back later.</p>
                   : (
-                    <RadioGroup value={selectedGroupSessionId || ''} onValueChange={setSelectedGroupSessionId}>
-                        <div className="space-y-4">
+                    <div className="space-y-4">
                         {groupSessions.map((session) => (
-                           <div key={session.id} className="flex items-start space-x-3">
-                             <RadioGroupItem value={session.id} id={session.id} className="mt-1" disabled={session.participantCount >= session.maxStudents} />
-                             <Label htmlFor={session.id} className="flex-1 cursor-pointer">
-                               <div className="p-4 border rounded-lg hover:bg-accent/50">
-                                 <div className="flex justify-between items-start">
-                                   <div>
-                                     <p className="font-semibold text-foreground">{session.title}</p>
-                                     <p className="text-sm text-muted-foreground">{format(new Date(session.startTime as any), 'eeee, PPP \'at\' p')}</p>
-                                   </div>
-                                   <Badge variant={session.participantCount >= session.maxStudents ? "destructive" : "secondary"}>
-                                       <Users className="w-3 h-3 mr-1.5"/>
-                                       {session.participantCount} / {session.maxStudents} spots filled
-                                   </Badge>
+                          <label key={session.id} htmlFor={session.id} className="block cursor-pointer">
+                            <input
+                              type="radio"
+                              id={session.id}
+                              name="groupSession"
+                              value={session.id}
+                              checked={selectedGroupSessionId === session.id}
+                              onChange={() => setSelectedGroupSessionId(session.id)}
+                              className="hidden"
+                              disabled={session.participantCount >= session.maxStudents}
+                            />
+                             <div className={cn("p-4 border rounded-lg hover:bg-accent/50", selectedGroupSessionId === session.id && "bg-accent border-primary ring-2 ring-primary")}>
+                               <div className="flex justify-between items-start">
+                                 <div>
+                                   <p className="font-semibold text-foreground">{session.title}</p>
+                                   <p className="text-sm text-muted-foreground">{format(new Date(session.startTime as any), 'eeee, PPP \'at\' p')}</p>
                                  </div>
+                                 <Badge variant={session.participantCount >= session.maxStudents ? "destructive" : "secondary"}>
+                                     <Users className="w-3 h-3 mr-1.5"/>
+                                     {session.participantCount} / {session.maxStudents} spots filled
+                                 </Badge>
                                </div>
-                             </Label>
-                           </div>
+                             </div>
+                           </label>
                         ))}
-                        </div>
-                    </RadioGroup>
+                    </div>
                   )}
                 </CardContent>
               </Card>
