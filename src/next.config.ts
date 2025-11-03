@@ -30,8 +30,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // The 'allowedDevOrigins' property has been removed as it's not supported
+  // in this Next.js version and was causing a build failure.
   experimental: {
-    
+
   },
 };
 
