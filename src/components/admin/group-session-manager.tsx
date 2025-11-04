@@ -64,8 +64,8 @@ export function GroupSessionManager() {
     try {
         const fetchedSessions = await getGroupSessions();
         const sortedSessions = fetchedSessions.sort((a, b) => {
-          const timeA = (a.startTime as unknown as Timestamp).toDate().getTime();
-          const timeB = (b.startTime as unknown as Timestamp).toDate().getTime();
+          const timeA = new Date(a.startTime as any).getTime();
+          const timeB = new Date(b.startTime as any).getTime();
           return timeB - timeA;
         });
         setSessions(sortedSessions);
@@ -161,7 +161,7 @@ export function GroupSessionManager() {
 
 
   const isRegistrationClosed = (session: GroupSession) => {
-      const registrationDeadline = new Date((session.startTime as unknown as Timestamp).toDate().getTime() - 3 * 60 * 60 * 1000);
+      const registrationDeadline = new Date(new Date(session.startTime as any).getTime() - 3 * 60 * 60 * 1000);
       return new Date() > registrationDeadline;
   };
 
@@ -271,7 +271,7 @@ export function GroupSessionManager() {
                                         <h4 className="font-semibold text-foreground">{session.title}</h4>
                                         <p className="text-sm text-muted-foreground flex items-center gap-2">
                                             <CalendarDays className="w-4 h-4"/>
-                                            {format((session.startTime as unknown as Timestamp).toDate(), 'PPP, p')}
+                                            {format(new Date(session.startTime as any), 'PPP, p')}
                                         </p>
                                         {deadlinePassed && minimumNotMet && session.status === 'scheduled' && (
                                             <div className="mt-2 text-xs flex items-center gap-1 text-destructive">
@@ -338,7 +338,7 @@ export function GroupSessionManager() {
                 <form onSubmit={handleUpdateSession} className="space-y-4 py-4">
                     <div className="p-3 bg-muted rounded-md border text-sm">
                         <p className="font-semibold">Date & Time (Read-only)</p>
-                        <p className="text-muted-foreground">{sessionToEdit ? format((sessionToEdit.startTime as unknown as Timestamp).toDate(), 'PPP, p') : ''}</p>
+                        <p className="text-muted-foreground">{sessionToEdit ? format(new Date(sessionToEdit.startTime as any), 'PPP, p') : ''}</p>
                         <p className="text-xs text-muted-foreground mt-1">To change the time, please cancel and create a new session to avoid conflicts with existing student bookings.</p>
                     </div>
                     <div className="space-y-1">
@@ -376,5 +376,3 @@ export function GroupSessionManager() {
     </div>
   );
 }
-
-    
