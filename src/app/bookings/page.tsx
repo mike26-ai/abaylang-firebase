@@ -5,7 +5,6 @@ import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Clock, ArrowLeft, Check, User, MessageSquare, BookOpen, Star, Package, Users, ShieldCheck, Ticket } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -26,7 +25,7 @@ import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
-
+import { Textarea } from "@/components/ui/textarea"
 
 const lessonTypes = Object.values(products);
 
@@ -41,7 +40,6 @@ const generateBaseStartTimes = (): string[] => {
   return times;
 };
 const baseStartTimes = generateBaseStartTimes();
-
 
 export default function BookLessonPage() {
   const { user } = useAuth();
@@ -92,7 +90,6 @@ export default function BookLessonPage() {
       setSelectedProductId(creditToLessonMap[useCreditType] as ProductId);
     }
   }, [useCreditType]);
-
 
   const fetchAvailability = async (date: Date) => {
     setIsFetchingSlots(true);
@@ -346,7 +343,7 @@ export default function BookLessonPage() {
                         {lessonTypes
                           .filter((lesson) => lesson.type === lessonGroupType)
                           .map((lesson) => (
-                            <Label key={lesson.id} htmlFor={lesson.id} className="block cursor-pointer">
+                            <label key={lesson.id} htmlFor={lesson.id} className="block">
                                 <input
                                     type="radio"
                                     id={lesson.id}
@@ -400,7 +397,7 @@ export default function BookLessonPage() {
                                     })}
                                   </ul>
                                 </div>
-                            </Label>
+                            </label>
                           ))}
                       </div>
                     </div>
@@ -609,4 +606,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-```
