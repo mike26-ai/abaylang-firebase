@@ -341,61 +341,59 @@ export default function BookLessonPage() {
                         {lessonTypes
                           .filter((lesson) => lesson.type === lessonGroupType)
                           .map((lesson) => (
-                            <div
-                              key={lesson.id}
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => {
-                                if (useCreditType) return;
-                                setSelectedProductId(lesson.id as ProductId);
-                                hasUserSelectedRef.current = true; // prevent effect override
-                                setSelectedTime(undefined);
-                                setSelectedDateState(undefined);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  if (useCreditType) return;
-                                  setSelectedProductId(lesson.id as ProductId);
-                                  hasUserSelectedRef.current = true;
-                                  setSelectedTime(undefined);
-                                  setSelectedDateState(undefined);
-                                }
-                              }}
-                              className={cn(
-                                "p-4 border rounded-lg cursor-pointer transition-colors hover:bg-accent/50",
-                                selectedProductId === lesson.id && "bg-accent border-primary ring-2 ring-primary"
-                              )}
-                            >
-                              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
-                                <div className="mb-2 sm:mb-0">
-                                  <div className="font-semibold text-lg text-foreground flex items-center gap-2">
-                                    {lesson.label}
-                                    {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
-                                    {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                    {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
-                                    {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
+                            <label key={lesson.id} htmlFor={lesson.id} className="block cursor-pointer">
+                                <input
+                                    type="radio"
+                                    id={lesson.id}
+                                    name="lessonSelection"
+                                    value={lesson.id}
+                                    checked={selectedProductId === lesson.id}
+                                    onChange={() => {
+                                        if (useCreditType) return;
+                                        setSelectedProductId(lesson.id as ProductId);
+                                        hasUserSelectedRef.current = true;
+                                        setSelectedTime(undefined);
+                                        setSelectedDateState(undefined);
+                                    }}
+                                    className="hidden"
+                                />
+                                <div
+                                    className={cn(
+                                        "p-4 border rounded-lg transition-colors hover:bg-accent/50",
+                                        selectedProductId === lesson.id && "bg-accent border-primary ring-2 ring-primary"
+                                    )}
+                                >
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
+                                    <div className="mb-2 sm:mb-0">
+                                      <div className="font-semibold text-lg text-foreground flex items-center gap-2">
+                                        {lesson.label}
+                                        {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
+                                        {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
+                                        {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Public Group</Badge>}
+                                        {lesson.type === "private-group" && <Badge variant="secondary" className="bg-teal-500/10 text-teal-700 dark:text-teal-400">Private Group</Badge>}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-2xl font-bold text-primary">${lesson.price}{lesson.type === 'private-group' ? <span className="text-sm text-muted-foreground">/person</span> : ''}</div>
+                                      {lesson.originalPrice && <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>}
+                                    </div>
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
-                                  </div>
+                                  <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
+                                    {lesson.features.map((feature, index) => {
+                                      const featureKey = `${lesson.id}-feat-${index}-${feature?.toString().slice(0,30).replace(/\s+/g, "-")}`;
+                                      return (
+                                        <li key={featureKey} className="flex items-center gap-2">
+                                          <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                                          <span className="text-muted-foreground">{feature}</span>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-2xl font-bold text-primary">${lesson.price}{lesson.type === 'private-group' ? <span className="text-sm text-muted-foreground">/person</span> : ''}</div>
-                                  {lesson.originalPrice && <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>}
-                                </div>
-                              </div>
-                              <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
-                                {lesson.features.map((feature, index) => {
-                                  const featureKey = `${lesson.id}-feat-${index}-${feature?.toString().slice(0,30).replace(/\s+/g, "-")}`;
-                                  return (
-                                    <li key={featureKey} className="flex items-center gap-2">
-                                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                                      <span className="text-muted-foreground">{feature}</span>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </div>
+                            </label>
                           ))}
                       </div>
                     </div>
@@ -604,4 +602,4 @@ export default function BookLessonPage() {
     </div>
   )
 }
-    
+
