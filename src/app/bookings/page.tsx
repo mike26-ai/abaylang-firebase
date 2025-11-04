@@ -25,6 +25,7 @@ import { creditToLessonMap } from "@/config/creditMapping";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
 import { cn } from "@/lib/utils"
+import { Label } from "@/components/ui/label"
 
 
 const lessonTypes = Object.values(products);
@@ -228,6 +229,8 @@ export default function BookLessonPage() {
             }
         } catch (error: any) {
             handleBookingError(error);
+        } finally {
+            setIsProcessing(false);
         }
         return;
     }
@@ -259,6 +262,8 @@ export default function BookLessonPage() {
         }
     } catch (error: any) {
         handleBookingError(error);
+    } finally {
+        setIsProcessing(false);
     }
   };
 
@@ -341,7 +346,7 @@ export default function BookLessonPage() {
                         {lessonTypes
                           .filter((lesson) => lesson.type === lessonGroupType)
                           .map((lesson) => (
-                            <label key={lesson.id} htmlFor={lesson.id} className="block cursor-pointer">
+                            <Label key={lesson.id} htmlFor={lesson.id} className="block cursor-pointer">
                                 <input
                                     type="radio"
                                     id={lesson.id}
@@ -356,10 +361,12 @@ export default function BookLessonPage() {
                                         setSelectedDateState(undefined);
                                     }}
                                     className="hidden"
+                                    disabled={!!useCreditType}
                                 />
                                 <div
                                     className={cn(
-                                        "p-4 border rounded-lg transition-colors hover:bg-accent/50",
+                                        "p-4 border rounded-lg transition-colors",
+                                        !!useCreditType ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-accent/50",
                                         selectedProductId === lesson.id && "bg-accent border-primary ring-2 ring-primary"
                                     )}
                                 >
@@ -393,7 +400,7 @@ export default function BookLessonPage() {
                                     })}
                                   </ul>
                                 </div>
-                            </label>
+                            </Label>
                           ))}
                       </div>
                     </div>
@@ -577,7 +584,7 @@ export default function BookLessonPage() {
                 )}
 
                 <div className="space-y-3 pt-2">
-                  <Button className="w-full" onClick={handleBooking} disabled={isProcessing || !selectedProduct || (isIndividualLesson && (!selectedDate || !selectedTime)) || (isPublicGroupLesson && !selectedGroupSessionId) || (isPrivateGroup) }>
+                  <Button className="w-full" onClick={handleBooking} disabled={isProcessing || !selectedProduct || ((isIndividualLesson || isPrivateGroup) && (!selectedDate || !selectedTime)) || (isPublicGroupLesson && !selectedGroupSessionId) }>
                     {isProcessing && <Spinner size="sm" className="mr-2" />}
                     {isPrivateGroup ? "Organize on Next Page" : isProcessing ? "Processing..." : useCreditType ? "Confirm with 1 Credit" : isPaidLesson ? "Proceed to Payment" : "Confirm Free Trial"}
                   </Button>
@@ -602,4 +609,4 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
+```
