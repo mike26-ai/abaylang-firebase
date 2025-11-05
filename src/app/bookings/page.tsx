@@ -50,7 +50,6 @@ export default function BookLessonPage() {
   const lessonTypeFromUrl = searchParams.get('lessonType') as ProductId | null;
   const useCreditType = searchParams.get('useCredit') as ProductId | null;
 
-  // Lazy initialization ensures getInitialProductId only runs once
   const getInitialProductId = (): ProductId => {
     if (useCreditType && creditToLessonMap[useCreditType]) {
       return creditToLessonMap[useCreditType] as ProductId;
@@ -75,7 +74,6 @@ export default function BookLessonPage() {
   const [isFetchingGroupSessions, setIsFetchingGroupSessions] = useState(false);
   const [selectedGroupSessionId, setSelectedGroupSessionId] = useState<string | null>(null);
 
-  // Guard flag to track if the user has manually selected a lesson
   const hasUserSelectedRef = useRef(false);
 
   const selectedProduct = products[selectedProductId];
@@ -84,7 +82,6 @@ export default function BookLessonPage() {
   const isPrivateGroup = selectedProduct?.type === 'private-group';
   const isPackage = selectedProduct?.type === 'package';
 
-  // Only set initial product from credit if user has NOT selected manually
   useEffect(() => {
     if (!hasUserSelectedRef.current && useCreditType && creditToLessonMap[useCreditType]) {
       setSelectedProductId(creditToLessonMap[useCreditType] as ProductId);
@@ -206,7 +203,6 @@ export default function BookLessonPage() {
       return;
     }
     
-    // Logic for using a credit
     if (useCreditType) {
         if (!selectedDate || !selectedTime) {
           toast({ title: "Selection Incomplete", description: "Please select a date and time.", variant: "destructive" });
@@ -232,7 +228,6 @@ export default function BookLessonPage() {
         return;
     }
 
-    // Standard booking logic
     if ((isIndividualLesson || isPrivateGroup) && (!selectedDate || !selectedTime)) {
       toast({ title: "Selection Incomplete", description: "Please select a date and time.", variant: "destructive" });
       return;
@@ -532,7 +527,7 @@ export default function BookLessonPage() {
                 </div>
             )}
 
-            {!useCreditType && !isPrivateGroup &&(
+            {!useCreditType && !isPrivateGroup && (
               <div key="notes-wrapper">
                 <Card className="shadow-lg">
                   <CardHeader>
@@ -624,5 +619,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
