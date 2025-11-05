@@ -449,18 +449,20 @@ export default function BookLessonPage() {
                 </Card>
 
                 {selectedDate && (
-                <Card key="timeslot-card">
-                    <CardHeader>
-                    <CardTitle className="text-xl text-foreground flex items-center gap-2"> <Clock className="w-5 h-5 text-primary" /> Select Time Slot </CardTitle>
-                    <CardDescription>Available slots for {format(selectedDate, 'PPP')}. (Your local time)</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                    {isFetchingSlots ? <div className="flex justify-center items-center h-24"><Spinner /></div>
-                    : displayTimeSlots.length === 0 ? <p className="text-muted-foreground text-center py-4">No available slots for this duration/date.</p>
-                    : <div className="grid grid-cols-2 md:grid-cols-3 gap-3"> {displayTimeSlots.map((slot) => ( <TimeSlot key={slot.value} {...slot} isSelected={selectedTime === slot.value} onClick={(clickedSlot) => setSelectedTime(clickedSlot.value)} /> ))} </div>
-                    }
-                    </CardContent>
-                </Card>
+                <div key="timeslot-card-wrapper">
+                    <Card>
+                        <CardHeader>
+                        <CardTitle className="text-xl text-foreground flex items-center gap-2"> <Clock className="w-5 h-5 text-primary" /> Select Time Slot </CardTitle>
+                        <CardDescription>Available slots for {format(selectedDate, 'PPP')}. (Your local time)</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                        {isFetchingSlots ? <div className="flex justify-center items-center h-24"><Spinner /></div>
+                        : displayTimeSlots.length === 0 ? <p className="text-muted-foreground text-center py-4">No available slots for this duration/date.</p>
+                        : <div className="grid grid-cols-2 md:grid-cols-3 gap-3"> {displayTimeSlots.map((slot) => ( <TimeSlot key={slot.value} {...slot} isSelected={selectedTime === slot.value} onClick={(clickedSlot) => setSelectedTime(clickedSlot.value)} /> ))} </div>
+                        }
+                        </CardContent>
+                    </Card>
+                </div>
                 )}
               </div>
             )}
@@ -619,5 +621,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
