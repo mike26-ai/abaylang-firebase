@@ -432,7 +432,7 @@ export default function BookLessonPage() {
             )}
 
             {(isIndividualLesson || useCreditType) && (
-              <>
+              <div key="individual-lesson-section" className="space-y-8">
                 <Card className="shadow-lg">
                       <CardHeader>
                           <CardTitle className="flex items-center gap-2 text-xl text-foreground">
@@ -463,7 +463,7 @@ export default function BookLessonPage() {
                     </CardContent>
                 </Card>
                 )}
-              </>
+              </div>
             )}
             
              {isPublicGroupLesson && (
@@ -614,3 +614,6 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+
+    
