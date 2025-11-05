@@ -449,7 +449,7 @@ export default function BookLessonPage() {
                 </Card>
 
                 {selectedDate && (
-                <Card>
+                <Card key="timeslot-card">
                     <CardHeader>
                     <CardTitle className="text-xl text-foreground flex items-center gap-2"> <Clock className="w-5 h-5 text-primary" /> Select Time Slot </CardTitle>
                     <CardDescription>Available slots for {format(selectedDate, 'PPP')}. (Your local time)</CardDescription>
