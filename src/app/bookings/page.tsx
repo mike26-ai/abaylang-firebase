@@ -432,7 +432,7 @@ export default function BookLessonPage() {
 
             {(isIndividualLesson || useCreditType) && (
               <div key="individual-lesson-wrapper" className="space-y-8">
-                <Card className="shadow-lg">
+                <Card>
                       <CardHeader>
                           <CardTitle className="flex items-center gap-2 text-xl text-foreground">
                           <Calendar className="w-5 h-5 text-primary" />
@@ -449,7 +449,7 @@ export default function BookLessonPage() {
                 </Card>
 
                 {selectedDate && (
-                <Card className="shadow-lg">
+                <Card>
                     <CardHeader>
                     <CardTitle className="text-xl text-foreground flex items-center gap-2"> <Clock className="w-5 h-5 text-primary" /> Select Time Slot </CardTitle>
                     <CardDescription>Available slots for {format(selectedDate, 'PPP')}. (Your local time)</CardDescription>
@@ -619,3 +619,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
