@@ -431,7 +431,7 @@ export default function BookLessonPage() {
             )}
 
             {(isIndividualLesson || useCreditType) && (
-              <div key="individual-lesson-section" className="space-y-8">
+              <div key="individual-lesson-wrapper" className="space-y-8">
                 <Card>
                       <CardHeader>
                           <CardTitle className="flex items-center gap-2 text-xl text-foreground">
