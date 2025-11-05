@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -359,7 +358,6 @@ export default function BookLessonPage() {
                               setSelectedDateState(undefined);
                             }}
                           >
-                            {/* Hidden radio for accessibility */}
                             <input
                               type="radio"
                               id={lesson.id}
@@ -617,3 +615,4 @@ export default function BookLessonPage() {
   )
 }
 
+    
