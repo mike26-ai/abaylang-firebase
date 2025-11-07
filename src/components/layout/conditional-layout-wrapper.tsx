@@ -6,6 +6,11 @@ import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/Footer";
 
+// THIS COMPONENT IS NO LONGER USED.
+// The logic has been moved directly into Navbar and Footer components
+// to simplify the root layout and potentially fix the ChunkLoadError.
+// It is kept in the project to avoid breaking imports but can be deleted later.
+
 export function ConditionalLayoutWrapper({
   children,
 }: {

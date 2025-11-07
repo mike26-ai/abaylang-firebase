@@ -26,6 +26,14 @@ export function Navbar() {
   const { user, loading, signOut, isAdmin } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
+  // This logic is now inside the Navbar itself.
+  // It ensures the navbar doesn't render on special pages.
+  const showNav = !pathname.startsWith('/admin') && !pathname.startsWith('/profile') && pathname !== "/" && !pathname.startsWith('/register') && !pathname.startsWith('/login') && !pathname.startsWith('/forgot-password');
+
+  if (!showNav) {
+    return null;
+  }
+
   const publicNavLinks = [
     { title: "About Tutor", href: "/tutor-profile" },
     { title: "Packages", href: "/packages" },
@@ -35,14 +43,11 @@ export function Navbar() {
     { title: "Contact", href: "/contact" },
   ];
 
-  // CORRECT LOGIC: Create a single, unified list of links for the mobile menu.
   const mobileNavLinks = [...publicNavLinks];
   if (isAdmin) {
-    // Add a separator object and then the admin links to the same array.
     mobileNavLinks.push({ title: "separator", href: "#" });
     mobileNavLinks.push(...siteConfig.adminNav);
   }
-
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">

@@ -1,7 +1,19 @@
+
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
 
 export function Footer() {
+  const pathname = usePathname();
+  // Conditionally render footer based on path
+  const showFooter = !pathname.startsWith('/admin') && !pathname.startsWith('/profile') && pathname !== "/" && !pathname.startsWith('/register') && !pathname.startsWith('/login') && !pathname.startsWith('/forgot-password');
+
+  if (!showFooter) {
+    return null;
+  }
+
   return (
     <footer className="border-t bg-foreground text-background py-12 px-4">
       <div className="container mx-auto">
