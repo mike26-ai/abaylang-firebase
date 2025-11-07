@@ -4,9 +4,10 @@
  * It now uses the server-side product catalog as the single source of truth.
  */
 import { getFirestore, Timestamp, FieldValue, Transaction } from 'firebase-admin/firestore';
-import { addMinutes, parse } from 'date-fns';
+import { addMinutes, parse, format } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { products, type ProductId } from '@/config/products'; // Import the server-side catalog
+import { paddlePriceIds } from '@/config/paddle';
 
 const db = getFirestore();
 
@@ -70,7 +71,11 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             if (!payload.date || !payload.time) {
                 throw new Error('A date and time are required for this lesson type.');
             }
-            startTime = Timestamp.fromDate(parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date()));
+            const startDateTime = parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date());
+            if (isNaN(startDateTime.getTime())) {
+                throw new Error('Invalid date or time format provided.');
+            }
+            startTime = Timestamp.fromDate(startDateTime);
             endTime = Timestamp.fromDate(addMinutes(startTime.toDate(), product.duration as number));
 
             const bookingsRef = db.collection('bookings');
@@ -97,10 +102,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             if (!conflictingTimeOff.empty) throw new Error('tutor_unavailable');
         }
 
-        let initialStatus: 'confirmed' | 'payment-pending-confirmation' | 'completed' = 'payment-pending-confirmation';
-        if (product.type === 'package') {
-            initialStatus = 'completed';
-        } else if (product.price === 0) {
+        let initialStatus: 'confirmed' | 'awaiting-payment' = 'awaiting-payment';
+        if (!isPaidLesson) { // Free trials are confirmed immediately
             initialStatus = 'confirmed';
         }
 
@@ -130,7 +133,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             }],
             ...(payload.paymentNote && { paymentNote: payload.paymentNote }),
         };
-
+        
+        console.info("FINAL_BOOKING_PAYLOAD", newBookingDoc); // Temporary debug log
         transaction.set(newBookingRef, newBookingDoc);
 
         if (product.type === 'package' && product.totalLessons) {
@@ -148,19 +152,29 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
         }
     });
 
-    const isFreeTrial = product.price === 0;
-
-    if (isFreeTrial) {
+    if (!isPaidLesson) {
         return { 
             bookingId: newBookingRef.id, 
-            redirectUrl: `/profile?booking_id=${newBookingRef.id}&new_booking=true&type=free_trial` 
+            redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&free_trial=true` 
         };
     }
+
+    const priceId = product.paddlePriceId;
+
+    if (!priceId || priceId.includes('YOUR_') || priceId === 'price_free_trial') {
+        throw new Error("Payment link for this product is not configured.");
+    }
+    
+    const passthroughData = { 
+        booking_id: newBookingRef.id,
+        user_id: payload.userId,
+        product_id: payload.productId,
+        product_type: product.type,
+    };
+    const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${priceId}?email=${encodeURIComponent(decodedToken.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
     
     return { 
         bookingId: newBookingRef.id, 
-        redirectUrl: `/profile?booking_id=${newBookingRef.id}&new_booking=true&type=paid` 
+        redirectUrl: checkoutUrl 
     };
 }
-
-    

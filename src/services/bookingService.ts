@@ -1,4 +1,3 @@
-
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
 import type { ProductId } from "@/config/products";
@@ -43,7 +42,7 @@ interface CreatePrivateGroupPayload {
  * Creates a new booking via a secure, server-side API endpoint.
  * This function uses a transaction on the server to prevent double-bookings.
  * @param bookingPayload - The data for the new booking.
- * @returns An object containing the new booking's ID and the Paddle redirect URL.
+ * @returns An object containing the new booking's ID and the redirect URL.
  */
 export async function createBooking(bookingPayload: CreateBookingPayload): Promise<{ bookingId: string; redirectUrl: string }> {
     const user = auth.currentUser;

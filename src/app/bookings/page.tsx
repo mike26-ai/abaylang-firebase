@@ -240,14 +240,18 @@ export default function BookLessonPage() {
     setIsProcessing(true);
 
     try {
-        const data = await createBooking({
+        const payload = {
             productId: selectedProductId,
             userId: user.uid,
             date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined,
             time: selectedTime,
             groupSessionId: isPublicGroupLesson ? selectedGroupSessionId : undefined,
             paymentNote: paymentNote.trim(),
-        });
+        };
+
+        console.debug("BOOKING_PAYLOAD", payload); // Temporary debug log
+
+        const data = await createBooking(payload);
         
         if (data.redirectUrl) {
             window.location.href = data.redirectUrl;
@@ -341,7 +345,7 @@ export default function BookLessonPage() {
                           .filter((lesson) => lesson.type === lessonGroupType)
                           .map((lesson) => (
                             <div
-                              key={lesson.id}
+                              key={lesson.label}
                               className={cn(
                                 "p-4 border rounded-lg transition-colors",
                                 !!useCreditType ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-accent/50",
@@ -622,5 +626,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    

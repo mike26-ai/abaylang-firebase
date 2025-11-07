@@ -1,5 +1,3 @@
-
-
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin } from '@/lib/firebase-admin';
@@ -38,6 +36,7 @@ export async function POST(request: NextRequest) {
     
     // 2. Validate Input Body
     const body = await request.json();
+    console.debug("API_RECEIVED_PAYLOAD", body); // Temporary debug log
     const validationResult = CreateBookingRequestSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json({ success: false, message: 'Invalid input', details: validationResult.error.flatten() }, { status: 400 });
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
     // 3. Call the decoupled, testable logic function
     const result = await _createBooking(validationResult.data, decodedToken);
 
-    // 4. Return success response with the Paddle checkout URL
+    // 4. Return success response with the redirect URL
     return NextResponse.json({ success: true, ...result }, { status: 201 });
 
   } catch (error: any) {
