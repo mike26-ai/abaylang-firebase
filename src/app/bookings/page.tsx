@@ -249,7 +249,7 @@ export default function BookLessonPage() {
             paymentNote: paymentNote.trim(),
         };
 
-        console.debug("BOOKING_PAYLOAD", payload); // Temporary debug log
+        console.debug("BOOKING_PAYLOAD", payload);
 
         const data = await createBooking(payload);
         
@@ -345,7 +345,7 @@ export default function BookLessonPage() {
                           .filter((lesson) => lesson.type === lessonGroupType)
                           .map((lesson) => (
                             <div
-                              key={lesson.label}
+                              key={lesson.id}
                               className={cn(
                                 "p-4 border rounded-lg transition-colors",
                                 !!useCreditType ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-accent/50",
@@ -359,23 +359,6 @@ export default function BookLessonPage() {
                                 setSelectedDateState(undefined);
                               }}
                             >
-                              <input
-                                type="radio"
-                                id={lesson.id}
-                                name="lessonSelection"
-                                value={lesson.id}
-                                checked={selectedProductId === lesson.id}
-                                onChange={() => {
-                                  if (useCreditType) return;
-                                  setSelectedProductId(lesson.id as ProductId);
-                                  hasUserSelectedRef.current = true;
-                                  setSelectedTime(undefined);
-                                  setSelectedDateState(undefined);
-                                }}
-                                className="hidden"
-                                disabled={!!useCreditType}
-                              />
-
                               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
                                 <div className="mb-2 sm:mb-0">
                                   <div className="font-semibold text-lg text-foreground flex items-center gap-2">
@@ -461,8 +444,8 @@ export default function BookLessonPage() {
                         <CardDescription>Available slots for {format(selectedDate, 'PPP')}. (Your local time)</CardDescription>
                         </CardHeader>
                         <CardContent>
-                        {isFetchingSlots ? <div className="flex justify-center items-center h-24"><Spinner /></div>
-                        : displayTimeSlots.length === 0 ? <p className="text-muted-foreground text-center py-4">No available slots for this duration/date.</p>
+                        {isFetchingSlots ? <div className="flex justify-center items-center h-24 col-span-full"><Spinner /></div>
+                        : displayTimeSlots.length === 0 ? <p className="text-muted-foreground text-center py-4 col-span-full">No available slots for this duration/date.</p>
                         : <div className="grid grid-cols-2 md:grid-cols-3 gap-3"> {displayTimeSlots.map((slot) => ( <TimeSlot key={slot.value} {...slot} isSelected={selectedTime === slot.value} onClick={(clickedSlot) => setSelectedTime(clickedSlot.value)} /> ))} </div>
                         }
                         </CardContent>
@@ -488,30 +471,25 @@ export default function BookLessonPage() {
                     : (
                       <div className="space-y-4">
                           {groupSessions.map((session) => (
-                            <label key={session.id} htmlFor={session.id} className="block cursor-pointer">
-                              <input
-                                type="radio"
-                                id={session.id}
-                                name="groupSession"
-                                value={session.id}
-                                checked={selectedGroupSessionId === session.id}
-                                onChange={() => setSelectedGroupSessionId(session.id)}
-                                className="hidden"
-                                disabled={session.participantCount >= session.maxStudents}
-                              />
-                              <div className={cn("p-4 border rounded-lg hover:bg-accent/50", selectedGroupSessionId === session.id && "bg-accent border-primary ring-2 ring-primary")}>
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <p className="font-semibold text-foreground">{session.title}</p>
-                                    <p className="text-sm text-muted-foreground">{format(new Date(session.startTime as any), 'eeee, PPP \'at\' p')}</p>
-                                  </div>
-                                  <Badge variant={session.participantCount >= session.maxStudents ? "destructive" : "secondary"}>
-                                      <Users className="w-3 h-3 mr-1.5"/>
-                                      {session.participantCount} / {session.maxStudents} spots filled
-                                  </Badge>
+                            <div key={session.id}
+                              className={cn("p-4 border rounded-lg hover:bg-accent/50", selectedGroupSessionId === session.id && "bg-accent border-primary ring-2 ring-primary", session.participantCount >= session.maxStudents ? "cursor-not-allowed opacity-60" : "cursor-pointer")}
+                              onClick={() => {
+                                if (session.participantCount < session.maxStudents) {
+                                  setSelectedGroupSessionId(session.id);
+                                }
+                              }}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="font-semibold text-foreground">{session.title}</p>
+                                  <p className="text-sm text-muted-foreground">{format(new Date(session.startTime as any), 'eeee, PPP \'at\' p')}</p>
                                 </div>
+                                <Badge variant={session.participantCount >= session.maxStudents ? "destructive" : "secondary"}>
+                                    <Users className="w-3 h-3 mr-1.5"/>
+                                    {session.participantCount} / {session.maxStudents} spots filled
+                                </Badge>
                               </div>
-                            </label>
+                            </div>
                           ))}
                       </div>
                     )}
@@ -626,3 +604,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
