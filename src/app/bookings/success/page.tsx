@@ -74,8 +74,8 @@ export default function BookingSuccessPage() {
                 icon: <CheckCircle className="h-10 w-10 text-primary" />,
                 bgColor: "bg-primary/10",
                 title: "Purchase Confirmed (Simulated)",
-                description: "Your purchase has been successfully processed.",
-                message: "This is a simulated payment confirmation for testing purposes. Your purchase has been logged and any credits have been added to your dashboard."
+                description: "Your purchase has been successfully processed for testing.",
+                message: "This is a simulated payment confirmation. Your booking is now awaiting confirmation on your dashboard, just like a real payment."
             };
         }
         

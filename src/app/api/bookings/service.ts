@@ -102,7 +102,7 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             if (!conflictingTimeOff.empty) throw new Error('tutor_unavailable');
         }
 
-        let initialStatus: 'confirmed' | 'awaiting-payment' = 'awaiting-payment';
+        let initialStatus: 'confirmed' | 'payment-pending-confirmation' = 'payment-pending-confirmation';
         if (!isPaidLesson) { // Free trials are confirmed immediately
             initialStatus = 'confirmed';
         }
@@ -145,6 +145,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
                 purchasedAt: Timestamp.now(),
                 packageBookingId: newBookingRef.id
             };
+            // Note: This logic assumes credits are added on purchase, not on completion.
+            // In a real scenario, this might happen in the webhook after payment confirmation.
             transaction.update(userRef, { 
                 credits: FieldValue.arrayUnion(newCreditObject),
                 lastCreditPurchase: Timestamp.now() 
@@ -152,29 +154,19 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
         }
     });
 
+    // --- LOGIC CHANGE FOR TESTING ---
     if (!isPaidLesson) {
+        // Free trial flow remains the same
         return { 
             bookingId: newBookingRef.id, 
             redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&free_trial=true` 
         };
     }
 
-    const priceId = product.paddlePriceId;
-
-    if (!priceId || priceId.includes('YOUR_') || priceId === 'price_free_trial') {
-        throw new Error("Payment link for this product is not configured.");
-    }
-    
-    const passthroughData = { 
-        booking_id: newBookingRef.id,
-        user_id: payload.userId,
-        product_id: payload.productId,
-        product_type: product.type,
-    };
-    const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${priceId}?email=${encodeURIComponent(decodedToken.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
-    
+    // For paid lessons, simulate a successful payment by redirecting to the success page
+    // instead of the Paddle checkout URL.
     return { 
         bookingId: newBookingRef.id, 
-        redirectUrl: checkoutUrl 
+        redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&simulated_payment=true` 
     };
 }
