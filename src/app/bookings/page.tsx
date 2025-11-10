@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
-const lessonTypes = Object.values(products);
+const lessonTypes = Object.entries(products).map(([id, product]) => ({ ...product, id: id as ProductId }));
 
 const generateBaseStartTimes = (): string[] => {
   const times: string[] = [];
