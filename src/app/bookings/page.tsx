@@ -178,8 +178,8 @@ export default function BookLessonPage() {
         }
 
         for (const block of dailyTimeOff) {
-            const blockStart = new Date(block.startISO);
-            const blockEnd = new Date(block.endISO);
+            const blockStart = block.startISO instanceof Date ? block.startISO : new Date(block.startISO);
+            const blockEnd = block.endISO instanceof Date ? block.endISO : new Date(block.endISO);
             if (potentialStartTime < blockEnd && potentialEndTime > blockStart) {
                 currentStatus = 'blocked';
                 timeOffMeta = block;
@@ -605,6 +605,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-
-    
