@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, X } from "lucide-react";
+import { AccordionValue } from "@radix-ui/react-accordion";
 
 interface PaymentPendingNoticeProps {
   bookingId: string;
@@ -17,6 +19,7 @@ interface PaymentPendingNoticeProps {
 
 export function PaymentPendingNotice({ bookingId, onDismiss }: PaymentPendingNoticeProps) {
   const [isOpen, setIsOpen] = useState(true);
+  const [accordionValue, setAccordionValue] = useState("item-1");
 
   if (!isOpen) {
     return null;
@@ -26,10 +29,20 @@ export function PaymentPendingNotice({ bookingId, onDismiss }: PaymentPendingNot
     onDismiss(bookingId);
     setIsOpen(false);
   };
+  
+  const handleCloseAccordion = () => {
+      setAccordionValue("");
+  }
 
   return (
     <div className="mb-4">
-      <Accordion type="single" collapsible defaultValue="item-1" className="w-full bg-blue-500/5 border border-blue-500/20 rounded-lg">
+      <Accordion 
+        type="single" 
+        collapsible 
+        value={accordionValue} 
+        onValueChange={setAccordionValue} 
+        className="w-full bg-blue-500/5 border border-blue-500/20 rounded-lg"
+      >
         <AccordionItem value="item-1" className="border-b-0">
           <AccordionTrigger className="px-4 py-3 text-sm font-semibold text-blue-800 dark:text-blue-300 hover:no-underline">
             <div className="flex items-center gap-2">
@@ -44,12 +57,10 @@ export function PaymentPendingNotice({ bookingId, onDismiss }: PaymentPendingNot
                 </p>
                 <div className="flex gap-2">
                     <Button onClick={handleDismissPermanently} size="sm">Dismiss Permanently</Button>
-                     <AccordionTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                            <X className="w-4 h-4 mr-1" />
-                            Close
-                        </Button>
-                    </AccordionTrigger>
+                    <Button onClick={handleCloseAccordion} variant="ghost" size="sm">
+                        <X className="w-4 h-4 mr-1" />
+                        Close
+                    </Button>
                 </div>
             </div>
           </AccordionContent>
