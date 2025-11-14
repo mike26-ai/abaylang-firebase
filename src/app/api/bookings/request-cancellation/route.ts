@@ -48,6 +48,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden: You can only cancel your own bookings.' }, { status: 403 });
     }
 
+    // --- FIX: Relax the status check ---
+    // Allow cancellation if the lesson is confirmed OR awaiting payment.
+    const allowedStatuses = ['confirmed', 'payment-pending-confirmation'];
+    if (!allowedStatuses.includes(booking.status)) {
+        return NextResponse.json({ success: false, error: `This lesson cannot be rescheduled as its status is '${booking.status}'.`}, { status: 400});
+    }
+
     // Server-Side Eligibility Check
     if (booking.date === 'N/A_PACKAGE' || !booking.time) {
         return NextResponse.json({ success: false, error: 'This booking type cannot be cancelled.' }, { status: 400 });
@@ -66,6 +73,7 @@ export async function POST(request: NextRequest) {
     // Use a transaction to ensure atomicity for rescheduling
     if (resolutionChoice === 'reschedule') {
         const userRef = adminDb.collection('users').doc(booking.userId);
+        let issuedCredit = null;
 
         await adminDb.runTransaction(async (transaction) => {
             const userDoc = await transaction.get(userRef);
@@ -82,10 +90,11 @@ export async function POST(request: NextRequest) {
                 lessonType: creditType,
                 count: 1,
                 purchasedAt: booking.createdAt,
-                // --- THE FIX ---
-                // Use the `bookingId` from the validated request, NOT from the document data.
                 packageBookingId: bookingId,
             };
+            
+            // This is what will be returned to the client
+            issuedCredit = newCredit;
 
             transaction.update(userRef, {
                 credits: FieldValue.arrayUnion(newCredit)
@@ -105,6 +114,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
             success: true, 
             message: `Lesson cancelled. A credit has been issued for you to reschedule.`,
+            credit: issuedCredit, // Return the issued credit
         });
 
     } else {
