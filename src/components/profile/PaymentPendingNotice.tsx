@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -10,7 +9,6 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, X } from "lucide-react";
-import type { AccordionSingleProps } from "@radix-ui/react-accordion";
 
 interface PaymentPendingNoticeProps {
   bookingId: string;

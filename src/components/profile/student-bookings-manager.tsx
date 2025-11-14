@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { JoinLessonButton } from "@/components/bookings/join-lesson-button";
-import { rescheduleBooking } from "@/services/bookingService";
 import { useAuth } from "@/hooks/use-auth";
 import Link from 'next/link';
 import { RescheduleModal } from "@/components/bookings/RescheduleModal";
@@ -58,7 +57,6 @@ export function StudentBookingsManager() {
 
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<Booking | null>(null);
-  const [isProcessingReschedule, setIsProcessingReschedule] = useState(false);
 
   // State for permanently dismissed notices
   const [dismissedNotices, setDismissedNotices] = useState<string[]>([]);
@@ -125,28 +123,6 @@ export function StudentBookingsManager() {
   const handleRescheduleClick = (booking: Booking) => {
     setSelectedBookingForReschedule(booking);
     setRescheduleModalOpen(true);
-  };
-
-  const handleRescheduleSubmit = async (newDate: Date, newTime: string) => {
-    if (!selectedBookingForReschedule) return;
-    setIsProcessingReschedule(true);
-    try {
-        await rescheduleBooking({
-            originalBookingId: selectedBookingForReschedule.id,
-            newDate: format(newDate, 'yyyy-MM-dd'),
-            newTime: newTime,
-        });
-        toast({
-            title: "Reschedule Successful",
-            description: "Your lesson has been moved to the new time.",
-        });
-        setRescheduleModalOpen(false);
-        fetchData();
-    } catch (error: any) {
-        toast({ title: "Reschedule Failed", description: error.message, variant: "destructive"});
-    } finally {
-        setIsProcessingReschedule(false);
-    }
   };
 
   const isRescheduleAllowed = (booking: Booking) => {
@@ -224,9 +200,9 @@ export function StudentBookingsManager() {
                                 <DropdownMenuLabel>Lesson Actions</DropdownMenuLabel>
                                 <DropdownMenuItem 
                                 onClick={() => handleRescheduleClick(booking)} 
-                                disabled={!isRescheduleAllowed(booking) || isProcessingReschedule}
+                                disabled={!isRescheduleAllowed(booking)}
                                 >
-                                    {isProcessingReschedule ? <Spinner size="sm" className="mr-2"/> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                    <RefreshCw className="mr-2 h-4 w-4" />
                                     Reschedule
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild disabled={!isRescheduleAllowed(booking)}>
@@ -277,8 +253,8 @@ export function StudentBookingsManager() {
                     <CardFooter className="flex flex-col gap-2">
                         {booking.status === 'confirmed' && <JoinLessonButton booking={booking} />}
                         <div className="grid grid-cols-2 gap-2 w-full">
-                            <Button onClick={() => handleRescheduleClick(booking)} disabled={!isRescheduleAllowed(booking) || isProcessingReschedule} variant="outline" size="sm">
-                                {isProcessingReschedule ? <Spinner size="sm" className="mr-2"/> : <RefreshCw className="mr-2 h-4 w-4" />}
+                            <Button onClick={() => handleRescheduleClick(booking)} disabled={!isRescheduleAllowed(booking)} variant="outline" size="sm">
+                                <RefreshCw className="mr-2 h-4 w-4" />
                                 Reschedule
                             </Button>
                             <Button variant="outline" size="sm" asChild disabled={!isRescheduleAllowed(booking)}>
@@ -297,7 +273,7 @@ export function StudentBookingsManager() {
       <RescheduleModal
         isOpen={rescheduleModalOpen}
         onClose={() => setRescheduleModalOpen(false)}
-        onRescheduleConfirm={handleRescheduleSubmit}
+        onRescheduleSuccess={fetchData}
         originalBooking={selectedBookingForReschedule}
       />
     </>
