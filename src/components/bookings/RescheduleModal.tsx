@@ -1,18 +1,17 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import type { Booking } from "@/lib/types";
-import { createBookingWithCredit, requestReschedule } from "@/services/bookingService";
+import type { Booking, TimeOff } from "@/lib/types";
+import { rescheduleBooking } from "@/services/bookingService";
 import { useAuth } from "@/hooks/use-auth";
 import { Spinner } from "../ui/spinner";
-import { format, isValid } from "date-fns";
+import { format, isValid, isPast, isEqual, startOfDay, addMinutes, parse, parseISO } from "date-fns";
 import { getAvailability } from "@/services/availabilityService";
 import { products, ProductId } from "@/config/products";
-import { creditToLessonMap } from "@/config/creditMapping";
 import { Calendar } from "@/components/ui/calendar";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,13 +25,26 @@ interface RescheduleModalProps {
   originalBooking: Booking | null;
 }
 
+const generateBaseStartTimes = (): string[] => {
+  const times: string[] = [];
+  const refDate = new Date();
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      times.push(format(new Date(refDate.setHours(h, m, 0, 0)), 'HH:mm'));
+    }
+  }
+  return times;
+};
+const baseStartTimes = generateBaseStartTimes();
+
+
 export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, originalBooking }: RescheduleModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [availability, setAvailability] = useState<{ bookings: Booking[]; timeOff: any[] }>({ bookings: [], timeOff: [] });
+  const [availability, setAvailability] = useState<{ bookings: Booking[]; timeOff: TimeOff[] }>({ bookings: [], timeOff: [] });
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
   // Determine the lesson details from the original booking
@@ -55,6 +67,15 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
   };
   
   useEffect(() => {
+    // Reset state when the modal is closed or the booking changes
+    if (!isOpen) {
+      setSelectedDate(undefined);
+      setSelectedTime(undefined);
+      setAvailability({ bookings: [], timeOff: [] });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (isOpen && selectedDate && isValid(selectedDate)) {
       fetchAvailability(selectedDate);
     }
@@ -62,17 +83,61 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
   }, [selectedDate, isOpen]);
 
 
-  const timeSlots = useMemo((): TimeSlotProps[] => {
+  const timeSlots = useMemo(() => {
     if (!selectedDate || !lessonDetails || typeof lessonDetails.duration !== 'number') return [];
     
-    // This logic should be robust enough to handle time slot generation
-    // It's simplified here for brevity but should be consistent with the main booking page
     const slots: TimeSlotProps[] = [];
+    const slotDate = startOfDay(selectedDate);
     const now = new Date();
-    // Your existing time slot generation logic...
-    // Make sure it uses `availability.bookings` and `availability.timeOff`
+    const isToday = isEqual(slotDate, startOfDay(now));
+
+    for (const startTimeString of baseStartTimes) {
+        const potentialStartTime = parse(startTimeString, 'HH:mm', slotDate);
+        const potentialEndTime = addMinutes(potentialStartTime, lessonDetails.duration as number);
+
+        if (isToday && isPast(potentialStartTime)) continue;
+
+        let currentStatus: 'available' | 'booked' | 'blocked' = 'available';
+        let bookedMeta: Booking | undefined = undefined;
+        let blockedMeta: TimeOff | undefined = undefined;
+
+        for (const booking of availability.bookings) {
+            if (booking.startTime && booking.endTime) {
+                 const bookingStart = booking.startTime instanceof Date ? booking.startTime : parseISO(booking.startTime as any);
+                 const bookingEnd = booking.endTime instanceof Date ? booking.endTime : parseISO(booking.endTime as any);
+
+                if (potentialStartTime < bookingEnd && potentialEndTime > bookingStart) {
+                    currentStatus = 'booked';
+                    bookedMeta = booking;
+                    break;
+                }
+            }
+        }
+        if (currentStatus === 'booked') {
+            slots.push({ display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`, value: startTimeString, status: 'booked', bookedMeta });
+            continue;
+        }
+
+        for (const block of availability.timeOff) {
+            const blockStart = block.startISO instanceof Date ? block.startISO : new Date(block.startISO);
+            const blockEnd = block.endISO instanceof Date ? block.endISO : new Date(block.endISO);
+            if (potentialStartTime < blockEnd && potentialEndTime > blockStart) {
+                currentStatus = 'blocked';
+                blockedMeta = block;
+                break;
+            }
+        }
+
+        slots.push({
+            display: `${format(potentialStartTime, 'HH:mm')} - ${format(potentialEndTime, 'HH:mm')}`,
+            value: startTimeString,
+            status: currentStatus,
+            bookedMeta,
+            blockedMeta
+        });
+    }
     return slots;
-  }, [selectedDate, lessonDetails, availability]);
+}, [selectedDate, lessonDetails, availability]);
 
 
   const handleConfirmReschedule = async () => {
@@ -83,28 +148,15 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
     
     setIsProcessing(true);
     try {
-      // Step 1: Cancel the original booking to get a credit. This is now safe.
-      const rescheduleResponse = await requestReschedule({
-          bookingId: originalBooking.id,
-          reason: "Student initiated reschedule from dashboard.",
-      });
-
-      if (!rescheduleResponse.success || !rescheduleResponse.credit) {
-          throw new Error(rescheduleResponse.message || "Failed to issue reschedule credit.");
-      }
-      
-      const creditType = rescheduleResponse.credit.lessonType;
-
-      // Step 2: Use the issued credit to book the new lesson. This only runs if step 1 succeeds.
-      await createBookingWithCredit({
-        creditType: creditType,
-        userId: user.uid,
-        date: format(selectedDate, 'yyyy-MM-dd'),
-        time: selectedTime,
+      await rescheduleBooking({
+        originalBookingId: originalBooking.id,
+        newDate: format(selectedDate, 'yyyy-MM-dd'),
+        newTime: selectedTime,
       });
       
       toast({ title: "Reschedule Successful", description: "Your lesson has been moved to the new time." });
       onRescheduleSuccess();
+      onClose(); // Close the modal on success
       
     } catch (error: any) {
        toast({ title: "Reschedule Failed", description: error.message, variant: "destructive" });
@@ -120,7 +172,7 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
         <DialogHeader>
           <DialogTitle>Reschedule Lesson</DialogTitle>
           <DialogDescription>
-            Select a new date and time for your &quot;{lessonDetails?.label || 'lesson'}&quot;. The old booking will be cancelled and a credit will be used.
+            Select a new date and time for your &quot;{lessonDetails?.label || 'lesson'}&quot;. The old booking will be cancelled and replaced.
           </DialogDescription>
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-6 py-4 max-h-[70vh]">
@@ -128,7 +180,7 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
             mode="single"
             selected={selectedDate}
             onSelect={setSelectedDate}
-            disabled={(date) => date < new Date()}
+            disabled={(date) => isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))}
             className="rounded-md border"
           />
           <Card>
