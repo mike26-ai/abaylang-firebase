@@ -16,11 +16,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { JoinLessonButton } from "@/components/bookings/join-lesson-button";
-import { requestReschedule } from "@/services/bookingService";
+import { requestReschedule, rescheduleBooking } from "@/services/bookingService";
 import { useAuth } from "@/hooks/use-auth";
 import Link from 'next/link';
 import { RescheduleModal } from "@/components/bookings/RescheduleModal";
-import { Alert } from "../ui/alert";
+import { PaymentPendingNotice } from "@/components/profile/PaymentPendingNotice";
 
 // Helper function to safely format dates
 const safeFormatDate = (dateInput: any, formatString: string) => {
@@ -57,11 +57,26 @@ export function StudentBookingsManager() {
   const { toast } = useToast();
 
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
-  const [activeRescheduleCredit, setActiveRescheduleCredit] = useState<UserCredit | null>(null);
+  const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<Booking | null>(null);
   const [isProcessingReschedule, setIsProcessingReschedule] = useState(false);
 
-  // New state for the dismissible notice
-  const [showConfirmationNotice, setShowConfirmationNotice] = useState(true);
+  // State for permanently dismissed notices
+  const [dismissedNotices, setDismissedNotices] = useState<string[]>([]);
+  
+  useEffect(() => {
+    // Load dismissed notices from localStorage on component mount
+    const dismissed = localStorage.getItem('dismissedPaymentNotices');
+    if (dismissed) {
+      setDismissedNotices(JSON.parse(dismissed));
+    }
+  }, []);
+
+  const handleDismissNotice = (bookingId: string) => {
+    const newDismissed = [...dismissedNotices, bookingId];
+    setDismissedNotices(newDismissed);
+    localStorage.setItem('dismissedPaymentNotices', JSON.stringify(newDismissed));
+  };
+
 
   const fetchData = async () => {
     if (!user) {
@@ -107,51 +122,16 @@ export function StudentBookingsManager() {
       return bookings.filter(b => !inactiveStatuses.includes(b.status));
   }, [bookings]);
 
-  // Find bookings that are awaiting payment confirmation for the notice
-  const bookingsAwaitingConfirmation = useMemo(() => {
-    return activeBookings.filter(b => b.status === 'payment-pending-confirmation');
-  }, [activeBookings]);
-
-  const handleRescheduleClick = async (booking: Booking) => {
-    setIsProcessingReschedule(true);
-    try {
-      const result = await requestReschedule({
-        bookingId: booking.id,
-        reason: 'Student initiated reschedule',
-      });
-      
-      toast({
-        title: "Credit Issued",
-        description: "Your lesson was cancelled. You can now book a new time.",
-      });
-
-      const updatedUserSnap = await getDoc(doc(db, "users", user!.uid));
-      const updatedUser = updatedUserSnap.data() as UserProfile;
-      const newCredit = updatedUser.credits?.find(c => c.packageBookingId === booking.id);
-
-      if (newCredit) {
-        setActiveRescheduleCredit(newCredit);
-        setRescheduleModalOpen(true);
-        fetchData(); 
-      } else {
-        throw new Error("Could not find the reschedule credit.");
-      }
-
-    } catch (error: any) {
-      toast({
-        title: "Reschedule Failed",
-        description: error.message || "Could not process your reschedule request.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessingReschedule(false);
-    }
+  const handleRescheduleClick = (booking: Booking) => {
+    setSelectedBookingForReschedule(booking);
+    setRescheduleModalOpen(true);
   };
 
   const isRescheduleAllowed = (booking: Booking) => {
-    if (booking.date === 'N/A_PACKAGE' || !booking.time) return false; 
+    if (!booking.startTime) return false;
+    const lessonDateTime = (booking.startTime as any).toDate();
+    if (!isValid(lessonDateTime)) return false;
     const hours = booking.groupSessionId ? 3 : 12;
-    const lessonDateTime = parse(`${booking.date} ${booking.time}`, 'yyyy-MM-dd HH:mm', new Date());
     return differenceInHours(lessonDateTime, new Date()) >= hours;
   };
   
@@ -165,28 +145,16 @@ export function StudentBookingsManager() {
   
   return (
     <>
-      {showConfirmationNotice && bookingsAwaitingConfirmation.length > 0 && (
-          <Alert className="mb-6 border-blue-500/30 bg-blue-500/5 text-blue-800 dark:text-blue-300">
-              <AlertCircle className="h-4 w-4 !text-blue-600" />
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                  <div>
-                      <h5 className="font-bold">Payment Awaiting Confirmation</h5>
-                      <p className="text-xs">
-                          Your recent booking is awaiting payment confirmation from the tutor. This usually takes a few minutes. The lesson status will update here automatically.
-                      </p>
-                  </div>
-                  <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="mt-2 sm:mt-0"
-                      onClick={() => setShowConfirmationNotice(false)}
-                  >
-                      OK, I Understand
-                  </Button>
-              </div>
-          </Alert>
+       {activeBookings.map(booking => 
+        booking.status === 'payment-pending-confirmation' && !dismissedNotices.includes(booking.id) && (
+          <PaymentPendingNotice 
+            key={`notice-${booking.id}`} 
+            bookingId={booking.id}
+            onDismiss={handleDismissNotice}
+          />
+        )
       )}
-
+      
       {activeBookings.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">You have no active or upcoming bookings.</p>
       ) : (
@@ -207,12 +175,12 @@ export function StudentBookingsManager() {
                         <TableCell className="font-medium">
                         {booking.lessonType || 'Amharic Lesson'}
                         </TableCell>
-                        <TableCell>{booking.date !== 'N/A_PACKAGE' ? `${safeFormatDate(booking.date, 'PPP')} at ${booking.time}` : 'Package'}</TableCell>
+                        <TableCell>{booking.date !== 'N/A_PACKAGE' ? `${safeFormatDate(booking.startTime, 'PPP, p')}` : 'Package'}</TableCell>
                         <TableCell>
                         <Badge
                             variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
                             className={
-                            booking.status === 'awaiting-payment' ? "bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30" 
+                             booking.status === 'awaiting-payment' ? "bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30" 
                             : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
                             : booking.status === 'cancellation-requested' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30"
                             : ""
@@ -277,11 +245,11 @@ export function StudentBookingsManager() {
                     <CardContent className="space-y-3 text-sm">
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="w-4 h-4" />
-                            <span>{booking.date !== 'N/A_PACKAGE' ? safeFormatDate(booking.date, 'PPP') : 'Package'}</span>
+                            <span>{booking.date !== 'N/A_PACKAGE' ? safeFormatDate(booking.startTime, 'PPP') : 'Package'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <Clock className="w-4 h-4" />
-                            <span>{booking.time !== 'N/A_PACKAGE' ? booking.time : 'N/A'}</span>
+                            <span>{booking.time !== 'N/A_PACKAGE' ? safeFormatDate(booking.startTime, 'p') : 'N/A'}</span>
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2">
@@ -311,7 +279,7 @@ export function StudentBookingsManager() {
             setRescheduleModalOpen(false);
             fetchData();
         }}
-        rescheduleCredit={activeRescheduleCredit}
+        originalBooking={selectedBookingForReschedule}
       />
     </>
   );
