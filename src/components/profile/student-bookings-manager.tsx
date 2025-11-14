@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { JoinLessonButton } from "@/components/bookings/join-lesson-button";
-import { requestReschedule, rescheduleBooking } from "@/services/bookingService";
+import { rescheduleBooking } from "@/services/bookingService";
 import { useAuth } from "@/hooks/use-auth";
 import Link from 'next/link';
 import { RescheduleModal } from "@/components/bookings/RescheduleModal";
@@ -125,6 +125,28 @@ export function StudentBookingsManager() {
   const handleRescheduleClick = (booking: Booking) => {
     setSelectedBookingForReschedule(booking);
     setRescheduleModalOpen(true);
+  };
+
+  const handleRescheduleSubmit = async (newDate: Date, newTime: string) => {
+    if (!selectedBookingForReschedule) return;
+    setIsProcessingReschedule(true);
+    try {
+        await rescheduleBooking({
+            originalBookingId: selectedBookingForReschedule.id,
+            newDate: format(newDate, 'yyyy-MM-dd'),
+            newTime: newTime,
+        });
+        toast({
+            title: "Reschedule Successful",
+            description: "Your lesson has been moved to the new time.",
+        });
+        setRescheduleModalOpen(false);
+        fetchData();
+    } catch (error: any) {
+        toast({ title: "Reschedule Failed", description: error.message, variant: "destructive"});
+    } finally {
+        setIsProcessingReschedule(false);
+    }
   };
 
   const isRescheduleAllowed = (booking: Booking) => {
@@ -275,10 +297,7 @@ export function StudentBookingsManager() {
       <RescheduleModal
         isOpen={rescheduleModalOpen}
         onClose={() => setRescheduleModalOpen(false)}
-        onRescheduleSuccess={() => {
-            setRescheduleModalOpen(false);
-            fetchData();
-        }}
+        onRescheduleConfirm={handleRescheduleSubmit}
         originalBooking={selectedBookingForReschedule}
       />
     </>
