@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/create-with-credit/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminDb, Timestamp } from '@/lib/firebase-admin';
@@ -90,13 +91,13 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
             productId: lessonProductId,
             tutorId: "MahderNegashMamo",
             tutorName: "Mahder N. Mamo",
-            status: 'rescheduled', // Set status to 'rescheduled'
+            status: 'payment-pending-confirmation', // FIX: Use a pending status
             wasRedeemedWithCredit: true,
             creditTypeUsed: payload.creditType,
             parentPackageId: parentPackageId || null, // Add the link to the parent package
             createdAt: FieldValue.serverTimestamp(),
             statusHistory: [{
-                status: 'rescheduled',
+                status: 'payment-pending-confirmation',
                 changedAt: Timestamp.now(),
                 changedBy: 'system',
                 reason: `Booked via reschedule, using one credit from '${productDetails.label}'.`,
