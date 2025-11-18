@@ -33,6 +33,7 @@ import {
 import type { Booking as BookingType } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
 import { StudentBookingsManager } from "@/components/profile/student-bookings-manager";
+import { isFuture, isPast, parseISO } from "date-fns";
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -87,28 +88,29 @@ export default function StudentDashboardPage() {
     fetchDashboardData(user);
   }, [user, authLoading, router, toast]);
 
-  const upcomingBookingsCount = useMemo(
-    () =>
-      bookings.filter(
-        (b) =>
-          !["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"].includes(
-            b.status
-          ) && b.date !== "N/A_PACKAGE"
-      ).length,
-    [bookings]
-  );
+  const upcomingBookingsCount = useMemo(() => {
+    const terminalStatuses = ["cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"];
+    return bookings.filter(b => {
+      const startTime = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()) : null;
+      return startTime && isFuture(startTime) && !terminalStatuses.includes(b.status);
+    }).length;
+  }, [bookings]);
   
-  const completedBookingsCount = useMemo(
-    () => bookings.filter((b) => b.status === "completed").length,
-    [bookings]
-  );
-  const totalHours = useMemo(
-    () =>
-      bookings
-        .filter((b) => b.status === "completed")
-        .reduce((sum, b) => sum + (b.duration || 60), 0) / 60,
-    [bookings]
-  );
+  const completedBookingsCount = useMemo(() => {
+    return bookings.filter(b => {
+        const startTime = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()) : null;
+        return b.status === 'completed' || (startTime && isPast(startTime) && b.status !== 'cancelled' && b.status !== 'cancelled-by-admin' && b.status !== 'refunded');
+    }).length;
+  }, [bookings]);
+
+  const totalHours = useMemo(() => {
+    return bookings
+        .filter((b) => {
+            const startTime = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()) : null;
+            return b.status === "completed" || (startTime && isPast(startTime) && b.status !== 'cancelled' && b.status !== 'cancelled-by-admin' && b.status !== 'refunded');
+        })
+        .reduce((sum, b) => sum + (b.duration || 60), 0) / 60;
+    }, [bookings]);
 
 
   if (isLoading || authLoading) {

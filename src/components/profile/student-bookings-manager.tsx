@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Calendar, Clock, User, RefreshCw, XCircle, AlertCircle } from "lucide-react";
-import { format, isValid, parseISO, differenceInHours, parse } from 'date-fns';
+import { format, isValid, parseISO, differenceInHours, parse, isFuture, isPast } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,8 +86,8 @@ export function StudentBookingsManager() {
     try {
       const bookingsQuery = query(
           collection(db, "bookings"), 
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
+          where("userId", "==", user.uid)
+          // Removing order by createdAt to sort manually later
       );
       const userProfileRef = doc(db, "users", user.uid);
 
@@ -117,8 +117,31 @@ export function StudentBookingsManager() {
   }, [user, toast]);
 
   const activeBookings = useMemo(() => {
-      const inactiveStatuses = ["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled", "no-show"];
-      return bookings.filter(b => !inactiveStatuses.includes(b.status));
+    const terminalStatuses = ["cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"];
+    
+    return bookings
+      .filter(b => {
+        // Must not have a terminal status
+        if (terminalStatuses.includes(b.status)) {
+          return false;
+        }
+        // If it's a lesson (not a package purchase), its start time must be in the future
+        if (b.date !== 'N/A_PACKAGE' && b.startTime) {
+          const startTime = typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate();
+          return isFuture(startTime);
+        }
+        // If it's a package purchase without a date, consider it "active" until it's completed or cancelled.
+        if (b.date === 'N/A_PACKAGE') {
+          return b.status !== 'completed';
+        }
+        return false;
+      })
+      .sort((a, b) => {
+        // Sort by start time, soonest first
+        const timeA = a.startTime ? (typeof a.startTime === 'string' ? parseISO(a.startTime) : (a.startTime as any).toDate()).getTime() : Infinity;
+        const timeB = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()).getTime() : Infinity;
+        return timeA - timeB;
+      });
   }, [bookings]);
 
   const handleRescheduleClick = (booking: Booking) => {

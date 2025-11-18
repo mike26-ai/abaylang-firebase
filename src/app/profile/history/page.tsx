@@ -11,7 +11,7 @@ import type { Booking } from "@/lib/types";
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { format, parse, isValid } from "date-fns";
+import { format, parse, isValid, parseISO, isPast } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import LessonFeedbackModal from "@/components/lesson-feedback-modal";
@@ -30,7 +30,7 @@ export default function BookingHistoryPage() {
   
   const [bookings, setBookings] = useState<HistoryBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("archived"); // Default to archived history
+  const [activeTab, setActiveTab] = useState("active");
 
 
   const [feedbackModal, setFeedbackModal] = useState({
@@ -44,12 +44,9 @@ export default function BookingHistoryPage() {
       if (!user) return;
       setIsLoading(true);
       try {
-        // --- THE FIX: SIMPLIFY THE QUERY ---
-        // Fetch ALL bookings for the user, and we will filter them into "active" and "archived" on the client.
         const bookingsQuery = query(
             collection(db, "bookings"),
-            where("userId", "==", user.uid),
-            orderBy("createdAt", "desc")
+            where("userId", "==", user.uid)
         );
         const querySnapshot = await getDocs(bookingsQuery);
         let fetchedBookings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as HistoryBooking));
@@ -109,18 +106,40 @@ export default function BookingHistoryPage() {
     return parentBookings.map(parent => ({
         ...parent,
         redeemedLessons: childBookings.filter(child => child.parentPackageId === parent.id)
-    }));
+    })).sort((a, b) => {
+      const timeA = a.startTime ? (typeof a.startTime === 'string' ? parseISO(a.startTime) : (a.startTime as any).toDate()).getTime() : (a.createdAt as any).toDate().getTime();
+      const timeB = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()).getTime() : (b.createdAt as any).toDate().getTime();
+      return timeB - timeA; // Sort descending, most recent first
+    });
   }, [bookings]);
 
-  // --- THE FIX: CLIENT-SIDE FILTERING ---
-  const filteredBookings = useMemo(() => {
-    const inactiveStatuses = ['completed', 'cancelled', 'cancelled-by-admin', 'refunded', 'credit-issued', 'rescheduled', 'no-show'];
-    if (activeTab === 'archived') {
-        return organizedBookings.filter(b => inactiveStatuses.includes(b.status));
-    }
-    // Active Tab
-    return organizedBookings.filter(b => !inactiveStatuses.includes(b.status));
-  }, [organizedBookings, activeTab]);
+  const { activeBookings, archivedBookings } = useMemo(() => {
+    const terminalStatuses = ["cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"];
+    const active: HistoryBooking[] = [];
+    const archived: HistoryBooking[] = [];
+
+    organizedBookings.forEach(booking => {
+      const startTime = booking.startTime ? (typeof booking.startTime === 'string' ? parseISO(booking.startTime) : (booking.startTime as any).toDate()) : null;
+      const isLessonInPast = startTime ? isPast(startTime) : booking.status === 'completed'; // If no startTime, rely on status
+
+      if (terminalStatuses.includes(booking.status) || isLessonInPast) {
+        archived.push(booking);
+      } else {
+        active.push(booking);
+      }
+    });
+    
+    // Sort active bookings by soonest first
+    active.sort((a, b) => {
+        const timeA = a.startTime ? (typeof a.startTime === 'string' ? parseISO(a.startTime) : (a.startTime as any).toDate()).getTime() : Infinity;
+        const timeB = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()).getTime() : Infinity;
+        return timeA - timeB;
+    });
+
+    return { activeBookings: active, archivedBookings: archived };
+  }, [organizedBookings]);
+  
+  const bookingsToDisplay = activeTab === 'active' ? activeBookings : archivedBookings;
 
 
   const renderBookingItem = (item: HistoryBooking, isChild: boolean = false) => (
@@ -183,9 +202,9 @@ export default function BookingHistoryPage() {
                         <CardDescription>Lessons that are upcoming or awaiting action.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {filteredBookings.length > 0 ? (
+                      {bookingsToDisplay.length > 0 ? (
                         <div className="space-y-4">
-                            {filteredBookings.map(item => (
+                            {bookingsToDisplay.map(item => (
                                 <div key={item.id}>
                                     {renderBookingItem(item)}
                                     {item.productType === 'package' && item.redeemedLessons && item.redeemedLessons.length > 0 && (
@@ -207,9 +226,9 @@ export default function BookingHistoryPage() {
                         <CardDescription>Your history of completed and cancelled lessons.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                       {filteredBookings.length > 0 ? (
+                       {bookingsToDisplay.length > 0 ? (
                         <div className="space-y-4">
-                            {filteredBookings.map(item => (
+                            {bookingsToDisplay.map(item => (
                                 <div key={item.id}>
                                     {renderBookingItem(item)}
                                     {item.productType === 'package' && item.redeemedLessons && item.redeemedLessons.length > 0 && (
