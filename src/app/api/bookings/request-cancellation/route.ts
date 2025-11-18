@@ -1,3 +1,4 @@
+
 // File: src/app/api/bookings/request-cancellation/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminDb } from '@/lib/firebase-admin';
@@ -64,12 +65,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: `Cancellation is not allowed within ${hours} hours of the lesson.` }, { status: 400 });
     }
     
-    let newStatus: 'cancellation-requested' | 'cancelled' = 'cancellation-requested';
-    if (resolutionChoice === 'reschedule') {
-        newStatus = 'cancelled';
-    }
-
-    // Use a transaction to ensure atomicity for rescheduling
+    // --- ATOMIC RESCHEDULE LOGIC ---
     if (resolutionChoice === 'reschedule') {
         const userRef = adminDb.collection('users').doc(booking.userId);
         let issuedCredit = null;
@@ -79,6 +75,7 @@ export async function POST(request: NextRequest) {
             if (!userDoc.exists) throw new Error("User not found for credit issuance.");
             
             const userData = userDoc.data()!;
+            // Determine credit type from the original booking's product ID
             const creditType = Object.keys(creditToLessonMap).find(key => creditToLessonMap[key] === booking.productId) || booking.productId;
             
             if (!creditType) {
@@ -88,21 +85,23 @@ export async function POST(request: NextRequest) {
             const newCredit = {
                 lessonType: creditType,
                 count: 1,
-                purchasedAt: booking.createdAt,
-                packageBookingId: bookingId,
+                // Use original purchase time if available, otherwise now
+                purchasedAt: booking.createdAt || Timestamp.now(), 
+                packageBookingId: bookingId, // Link credit to the original cancelled booking
             };
             
-            // This is what will be returned to the client
             issuedCredit = newCredit;
 
+            // Atomically update user's credits
             transaction.update(userRef, {
                 credits: FieldValue.arrayUnion(newCredit)
             });
 
+            // Atomically update the old booking to cancelled
             transaction.update(bookingRef, {
-                status: newStatus,
+                status: 'rescheduled', // Use a specific 'rescheduled' status
                 statusHistory: FieldValue.arrayUnion({
-                  status: newStatus,
+                  status: 'rescheduled',
                   changedAt: Timestamp.now(),
                   changedBy: 'student',
                   reason: `Lesson cancelled for reschedule. Credit issued. Original reason: ${reason}`,
@@ -119,11 +118,11 @@ export async function POST(request: NextRequest) {
     } else {
         // For standard refund/credit requests that need admin approval
         await bookingRef.update({
-            status: newStatus,
+            status: 'cancellation-requested',
             requestedResolution: resolutionChoice,
             cancellationReason: reason,
             statusHistory: FieldValue.arrayUnion({
-              status: newStatus,
+              status: 'cancellation-requested',
               changedAt: Timestamp.now(),
               changedBy: 'student',
               reason: `Requested ${resolutionChoice}. Reason: ${reason}`,

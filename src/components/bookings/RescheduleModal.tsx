@@ -147,6 +147,7 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
     
     setIsProcessing(true);
     try {
+        // Step 1: Cancel the old booking and get a credit in return. This is now an atomic operation on the backend.
         const rescheduleResult = await requestReschedule({
             bookingId: originalBooking.id,
             reason: `Rescheduled by user to ${format(selectedDate, 'yyyy-MM-dd')} at ${selectedTime}`,
@@ -158,6 +159,7 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
         
         toast({ title: "Step 1/2 Complete", description: "Old lesson cancelled. Now booking new time..." });
       
+        // Step 2: Use the returned credit to book the new lesson.
         await createBookingWithCredit({
             creditType: rescheduleResult.credit.lessonType,
             userId: user.uid,
