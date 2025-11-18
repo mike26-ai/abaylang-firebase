@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { History, Star, CheckCircle, Package } from "lucide-react";
+import { History, Star, CheckCircle, Package, Search } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import type { Booking } from "@/lib/types";
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import LessonFeedbackModal from "@/components/lesson-feedback-modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 interface HistoryBooking extends Booking {
@@ -32,6 +34,10 @@ export default function BookingHistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("active");
 
+  // State for search and filter controls
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortBy, setSortBy] = useState("date-desc");
 
   const [feedbackModal, setFeedbackModal] = useState({
       isOpen: false,
@@ -106,11 +112,7 @@ export default function BookingHistoryPage() {
     return parentBookings.map(parent => ({
         ...parent,
         redeemedLessons: childBookings.filter(child => child.parentPackageId === parent.id)
-    })).sort((a, b) => {
-      const timeA = a.startTime ? (typeof a.startTime === 'string' ? parseISO(a.startTime) : (a.startTime as any).toDate()).getTime() : (a.createdAt as any).toDate().getTime();
-      const timeB = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()).getTime() : (b.createdAt as any).toDate().getTime();
-      return timeB - timeA; // Sort descending, most recent first
-    });
+    }));
   }, [bookings]);
 
   const { activeBookings, archivedBookings } = useMemo(() => {
@@ -120,7 +122,7 @@ export default function BookingHistoryPage() {
 
     organizedBookings.forEach(booking => {
       const startTime = booking.startTime ? (typeof booking.startTime === 'string' ? parseISO(booking.startTime) : (booking.startTime as any).toDate()) : null;
-      const isLessonInPast = startTime ? isPast(startTime) : booking.status === 'completed'; // If no startTime, rely on status
+      const isLessonInPast = startTime ? isPast(startTime) : booking.status === 'completed';
 
       if (terminalStatuses.includes(booking.status) || isLessonInPast) {
         archived.push(booking);
@@ -129,18 +131,46 @@ export default function BookingHistoryPage() {
       }
     });
     
-    // Sort active bookings by soonest first
     active.sort((a, b) => {
         const timeA = a.startTime ? (typeof a.startTime === 'string' ? parseISO(a.startTime) : (a.startTime as any).toDate()).getTime() : Infinity;
         const timeB = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()).getTime() : Infinity;
         return timeA - timeB;
     });
+    
+    archived.sort((a,b) => {
+      const timeA = a.startTime ? (typeof a.startTime === 'string' ? parseISO(a.startTime) : (a.startTime as any).toDate()).getTime() : (a.createdAt as any).toDate().getTime();
+      const timeB = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()).getTime() : (b.createdAt as any).toDate().getTime();
+      return timeB - timeA;
+    });
 
     return { activeBookings: active, archivedBookings: archived };
   }, [organizedBookings]);
   
-  const bookingsToDisplay = activeTab === 'active' ? activeBookings : archivedBookings;
+  const filteredAndSortedBookings = useMemo(() => {
+    const source = activeTab === 'active' ? activeBookings : archivedBookings;
 
+    let filtered = source;
+
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(b => b.status === filterStatus);
+    }
+    
+    if (searchTerm) {
+      filtered = filtered.filter(b => b.lessonType?.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+
+    const sorted = [...filtered].sort((a, b) => {
+        const timeA = a.startTime ? (typeof a.startTime === 'string' ? parseISO(a.startTime) : (a.startTime as any).toDate()).getTime() : (a.createdAt as any).toDate().getTime();
+        const timeB = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()).getTime() : (b.createdAt as any).toDate().getTime();
+        
+        if(sortBy === 'date-asc') return timeA - timeB;
+        if(sortBy === 'date-desc') return timeB - timeA;
+        return 0;
+    });
+
+    return sorted;
+
+  }, [activeTab, activeBookings, archivedBookings, searchTerm, filterStatus, sortBy]);
 
   const renderBookingItem = (item: HistoryBooking, isChild: boolean = false) => (
      <div key={item.id} className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg ${isChild ? 'bg-muted/30 ml-8' : 'bg-card border'}`}>
@@ -189,61 +219,79 @@ export default function BookingHistoryPage() {
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Booking History</h1>
         <p className="text-muted-foreground">A log of all your credit and booking activities.</p>
       </header>
+        
+      <Card>
+        <CardHeader>
+             <div className="grid sm:grid-cols-3 gap-4">
+                <div className="relative sm:col-span-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                    <Input placeholder="Search by lesson type..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Filter by status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="cancellation-requested">Cancellation Requested</SelectItem>
+                    </SelectContent>
+                </Select>
+                 <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Sort by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="date-desc">Newest First</SelectItem>
+                        <SelectItem value="date-asc">Oldest First</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        </CardHeader>
+        <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="active">Active & Upcoming</TabsTrigger>
+                        <TabsTrigger value="archived">Archived</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="active" className="mt-6">
+                        {filteredAndSortedBookings.length > 0 ? (
+                            <div className="space-y-4">
+                                {filteredAndSortedBookings.map(item => (
+                                    <div key={item.id}>
+                                        {renderBookingItem(item)}
+                                        {item.productType === 'package' && item.redeemedLessons && item.redeemedLessons.length > 0 && (
+                                        <div className="space-y-2 mt-2">{item.redeemedLessons.map(lesson => renderBookingItem(lesson, true))}</div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-10 text-muted-foreground"><p>No active or upcoming bookings match your filters.</p></div>
+                        )}
+                    </TabsContent>
+                    <TabsContent value="archived" className="mt-6">
+                        {filteredAndSortedBookings.length > 0 ? (
+                            <div className="space-y-4">
+                                {filteredAndSortedBookings.map(item => (
+                                    <div key={item.id}>
+                                        {renderBookingItem(item)}
+                                        {item.productType === 'package' && item.redeemedLessons && item.redeemedLessons.length > 0 && (
+                                        <div className="space-y-2 mt-2">{item.redeemedLessons.map(lesson => renderBookingItem(lesson, true))}</div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-10 text-muted-foreground"><p>No archived bookings match your filters.</p></div>
+                        )}
+                    </TabsContent>
+            </Tabs>
+        </CardContent>
+      </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="active">Active & Upcoming</TabsTrigger>
-                <TabsTrigger value="archived">Archived</TabsTrigger>
-            </TabsList>
-            <TabsContent value="active">
-                <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><History className="w-5 h-5 text-primary" />Active Bookings</CardTitle>
-                        <CardDescription>Lessons that are upcoming or awaiting action.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {bookingsToDisplay.length > 0 ? (
-                        <div className="space-y-4">
-                            {bookingsToDisplay.map(item => (
-                                <div key={item.id}>
-                                    {renderBookingItem(item)}
-                                    {item.productType === 'package' && item.redeemedLessons && item.redeemedLessons.length > 0 && (
-                                      <div className="space-y-2 mt-2">{item.redeemedLessons.map(lesson => renderBookingItem(lesson, true))}</div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                      ) : (
-                         <div className="text-center py-10 text-muted-foreground"><p>No active or upcoming bookings.</p></div>
-                      )}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="archived">
-                 <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><History className="w-5 h-5 text-primary" />Archived Bookings</CardTitle>
-                        <CardDescription>Your history of completed and cancelled lessons.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       {bookingsToDisplay.length > 0 ? (
-                        <div className="space-y-4">
-                            {bookingsToDisplay.map(item => (
-                                <div key={item.id}>
-                                    {renderBookingItem(item)}
-                                    {item.productType === 'package' && item.redeemedLessons && item.redeemedLessons.length > 0 && (
-                                       <div className="space-y-2 mt-2">{item.redeemedLessons.map(lesson => renderBookingItem(lesson, true))}</div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                      ) : (
-                         <div className="text-center py-10 text-muted-foreground"><p>No archived bookings yet.</p></div>
-                      )}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-      </Tabs>
 
       <LessonFeedbackModal
         lessonId={feedbackModal.lessonId}
