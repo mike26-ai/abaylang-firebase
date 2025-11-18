@@ -147,8 +147,6 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
     
     setIsProcessing(true);
     try {
-        // --- ATOMIC WORKFLOW START ---
-        // Step 1: Cancel the old lesson to get a credit.
         const rescheduleResult = await requestReschedule({
             bookingId: originalBooking.id,
             reason: `Rescheduled by user to ${format(selectedDate, 'yyyy-MM-dd')} at ${selectedTime}`,
@@ -160,8 +158,6 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
         
         toast({ title: "Step 1/2 Complete", description: "Old lesson cancelled. Now booking new time..." });
       
-        // Step 2: Use the issued credit to book the new lesson.
-        // This will only run if Step 1 was successful.
         await createBookingWithCredit({
             creditType: rescheduleResult.credit.lessonType,
             userId: user.uid,
@@ -171,8 +167,7 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
 
         toast({ title: "Reschedule Successful!", description: "Your lesson has been moved to the new time." });
         onRescheduleSuccess();
-        onClose(); // Close the modal on success
-        // --- ATOMIC WORKFLOW END ---
+        onClose();
       
     } catch (error: any) {
        toast({ title: "Reschedule Failed", description: error.message, variant: "destructive" });
@@ -191,14 +186,16 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
             Select a new date and time for your &quot;{lessonDetails?.label || 'lesson'}&quot;. The old booking will be cancelled and replaced.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid md:grid-cols-2 gap-6 py-4 max-h-[70vh]">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={setSelectedDate}
-            disabled={(date) => isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))}
-            className="rounded-md border"
-          />
+        <div className="grid md:grid-cols-2 gap-6 py-4">
+          <div className="flex justify-center">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              disabled={(date) => isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))}
+              className="rounded-md border"
+            />
+          </div>
           <Card>
             <CardContent className="p-2 h-full">
               <ScrollArea className="h-full max-h-[400px] p-4">
