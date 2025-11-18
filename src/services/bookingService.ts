@@ -106,7 +106,7 @@ interface RescheduleRequestPayload {
 /**
  * Initiates a reschedule by cancelling the old lesson and issuing a credit.
  * @param payload - The ID of the booking to cancel and the reason.
- * @returns A success message.
+ * @returns A success message and the credit object.
  */
 export async function requestReschedule(payload: RescheduleRequestPayload): Promise<{ success: boolean; message: string; credit: any; }> {
     const user = auth.currentUser;

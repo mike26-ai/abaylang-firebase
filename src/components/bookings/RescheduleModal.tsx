@@ -15,7 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
-import { requestReschedule } from "@/services/bookingService";
+import { requestReschedule, createBookingWithCredit } from "@/services/bookingService";
 
 
 interface RescheduleModalProps {
@@ -148,27 +148,32 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
     
     setIsProcessing(true);
     try {
-        // Step 1: Cancel the old lesson and get a credit.
+        // --- ATOMIC WORKFLOW START ---
+        // Step 1: Cancel the old lesson to get a credit.
         const rescheduleResult = await requestReschedule({
             bookingId: originalBooking.id,
             reason: `Rescheduled by user to ${format(selectedDate, 'yyyy-MM-dd')} at ${selectedTime}`,
         });
 
         if (!rescheduleResult.success || !rescheduleResult.credit) {
-            throw new Error(rescheduleResult.message || "Failed to get reschedule credit.");
+            throw new Error(rescheduleResult.message || "Failed to get reschedule credit. Your original booking was not changed.");
         }
         
-        toast({ title: "Step 1/2 Complete", description: "Old lesson cancelled, one credit issued." });
+        toast({ title: "Step 1/2 Complete", description: "Old lesson cancelled. Now booking new time..." });
       
         // Step 2: Use the issued credit to book the new lesson.
-        // This is a placeholder for the actual `createBookingWithCredit` call
-        // As the current `requestReschedule` doesn't return a usable credit object yet
-        // In a real scenario, the `credit` object would be used here.
-        // For now, we simulate success and rely on the backend to handle the full transaction.
-      
-        toast({ title: "Reschedule Successful", description: "Your lesson has been moved to the new time." });
+        // This will only run if Step 1 was successful.
+        await createBookingWithCredit({
+            creditType: rescheduleResult.credit.lessonType,
+            userId: user.uid,
+            date: format(selectedDate, 'yyyy-MM-dd'),
+            time: selectedTime,
+        });
+
+        toast({ title: "Reschedule Successful!", description: "Your lesson has been moved to the new time." });
         onRescheduleSuccess();
         onClose(); // Close the modal on success
+        // --- ATOMIC WORKFLOW END ---
       
     } catch (error: any) {
        toast({ title: "Reschedule Failed", description: error.message, variant: "destructive" });
