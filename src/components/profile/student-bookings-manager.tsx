@@ -1,3 +1,4 @@
+
 // File: src/components/profile/student-bookings-manager.tsx
 
 "use client";
@@ -127,8 +128,13 @@ export function StudentBookingsManager() {
 
   const isRescheduleAllowed = (booking: Booking) => {
     if (!booking.startTime) return false;
-    const lessonDateTime = (booking.startTime as any).toDate();
+    // Handle both Timestamp and ISO string formats for startTime
+    const lessonDateTime = typeof booking.startTime === 'string' 
+      ? parseISO(booking.startTime) 
+      : (booking.startTime as any).toDate();
+      
     if (!isValid(lessonDateTime)) return false;
+    
     const hours = booking.groupSessionId ? 3 : 12;
     return differenceInHours(lessonDateTime, new Date()) >= hours;
   };
@@ -143,16 +149,6 @@ export function StudentBookingsManager() {
   
   return (
     <>
-       {activeBookings.map(booking => 
-        booking.status === 'payment-pending-confirmation' && !dismissedNotices.includes(booking.id) && (
-          <PaymentPendingNotice 
-            key={`notice-${booking.id}`} 
-            bookingId={booking.id}
-            onDismiss={handleDismissNotice}
-          />
-        )
-      )}
-      
       {activeBookings.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">You have no active or upcoming bookings.</p>
       ) : (
@@ -171,6 +167,13 @@ export function StudentBookingsManager() {
                     {activeBookings.map((booking) => (
                     <TableRow key={booking.id}>
                         <TableCell className="font-medium">
+                        {booking.status === 'payment-pending-confirmation' && !dismissedNotices.includes(booking.id) && (
+                            <PaymentPendingNotice 
+                                key={`notice-${booking.id}`} 
+                                bookingId={booking.id}
+                                onDismiss={handleDismissNotice}
+                            />
+                        )}
                         {booking.lessonType || 'Amharic Lesson'}
                         </TableCell>
                         <TableCell>{booking.date !== 'N/A_PACKAGE' ? `${safeFormatDate(booking.startTime, 'PPP, p')}` : 'Package'}</TableCell>
@@ -222,6 +225,15 @@ export function StudentBookingsManager() {
             <div className="md:hidden space-y-4">
                 {activeBookings.map((booking) => (
                 <Card key={booking.id} className="shadow-sm">
+                    {booking.status === 'payment-pending-confirmation' && !dismissedNotices.includes(booking.id) && (
+                        <div className="p-4 border-b">
+                            <PaymentPendingNotice 
+                                key={`notice-mobile-${booking.id}`} 
+                                bookingId={booking.id}
+                                onDismiss={handleDismissNotice}
+                            />
+                        </div>
+                    )}
                     <CardHeader>
                     <div className="flex justify-between items-start">
                         <div>

@@ -1,3 +1,4 @@
+
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
 import type { ProductId } from "@/config/products";
@@ -107,7 +108,7 @@ interface RescheduleRequestPayload {
  * @param payload - The ID of the booking to cancel and the reason.
  * @returns A success message.
  */
-export async function requestReschedule(payload: RescheduleRequestPayload): Promise<{ success: boolean; message: string }> {
+export async function requestReschedule(payload: RescheduleRequestPayload): Promise<{ success: boolean; message: string; credit: any; }> {
     const user = auth.currentUser;
     if (!user) throw new Error("Authentication required.");
     

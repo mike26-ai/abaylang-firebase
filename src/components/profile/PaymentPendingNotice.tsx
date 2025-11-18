@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -16,15 +17,11 @@ interface PaymentPendingNoticeProps {
 }
 
 export function PaymentPendingNotice({ bookingId, onDismiss }: PaymentPendingNoticeProps) {
-  const [value, setValue] = useState("item-1");
-
-  if (!value) {
-    return null; // The accordion is closed, render nothing more.
-  }
+  const [value, setValue] = useState<string | undefined>();
 
   const handleDismissPermanently = () => {
     onDismiss(bookingId);
-    setValue(""); // Close it after dismissing
+    setValue(undefined); // Close it after dismissing
   };
 
   return (
@@ -50,7 +47,7 @@ export function PaymentPendingNotice({ bookingId, onDismiss }: PaymentPendingNot
                 </p>
                 <div className="flex gap-2">
                     <Button onClick={handleDismissPermanently} size="sm">Dismiss Permanently</Button>
-                    <Button onClick={() => setValue("")} variant="ghost" size="sm">
+                    <Button onClick={() => setValue(undefined)} variant="ghost" size="sm">
                         <X className="w-4 h-4 mr-1" />
                         Close
                     </Button>
