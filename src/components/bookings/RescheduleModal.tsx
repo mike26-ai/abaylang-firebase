@@ -47,7 +47,6 @@ export function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, original
   const [availability, setAvailability] = useState<{ bookings: Booking[]; timeOff: TimeOff[] }>({ bookings: [], timeOff: [] });
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
-  // Determine the lesson details from the original booking
   const lessonDetails = useMemo(() => {
     if (!originalBooking?.productId) return null;
     return products[originalBooking.productId as ProductId] || null;
