@@ -1,4 +1,3 @@
-
 // File: src/components/profile/student-bookings-manager.tsx
 
 "use client";
@@ -117,7 +116,7 @@ export function StudentBookingsManager() {
   }, [user, toast]);
 
   const activeBookings = useMemo(() => {
-    const terminalStatuses = ["cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"];
+    const terminalStatuses = ["cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled", "completed"];
     
     return bookings
       .filter(b => {

@@ -90,16 +90,16 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
             productId: lessonProductId,
             tutorId: "MahderNegashMamo",
             tutorName: "Mahder N. Mamo",
-            status: 'confirmed', // Directly confirmed as it's paid for
+            status: 'rescheduled', // Set status to 'rescheduled'
             wasRedeemedWithCredit: true,
             creditTypeUsed: payload.creditType,
             parentPackageId: parentPackageId || null, // Add the link to the parent package
             createdAt: FieldValue.serverTimestamp(),
             statusHistory: [{
-                status: 'confirmed',
+                status: 'rescheduled',
                 changedAt: Timestamp.now(),
                 changedBy: 'system',
-                reason: `Booked using one credit from '${productDetails.label}'.`,
+                reason: `Booked via reschedule, using one credit from '${productDetails.label}'.`,
             }],
             ...(payload.notes && { paymentNote: payload.notes }),
         };
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
         success: true, 
         bookingId: result.bookingId,
-        redirectUrl: `/bookings/success?booking_id=${result.bookingId}&used_credit=true`
+        redirectUrl: `/profile` // Redirect back to dashboard after reschedule
     }, { status: 201 });
 
   } catch (error: any) {
