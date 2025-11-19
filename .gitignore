@@ -51,3 +51,4 @@ repo-mirror/
 *.tar.gz
 node_modules/
 .next/
+firestore-debug.log
