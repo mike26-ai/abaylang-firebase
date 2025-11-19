@@ -1,3 +1,4 @@
+
 // File: src/components/profile/student-bookings-manager.tsx
 
 "use client";
@@ -8,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Calendar, Clock, RefreshCw, XCircle } from "lucide-react";
+import { MoreHorizontal, Calendar, Clock, RefreshCw, XCircle, Users } from "lucide-react";
 import { format, isValid, parseISO, differenceInHours } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
@@ -103,8 +104,13 @@ export function StudentBookingsManager({
     setSelectedBookingForReschedule(booking);
     setRescheduleModalOpen(true);
   };
+  
+  // This function now checks for both rescheduling and cancellation eligibility
+  const isActionAllowed = (booking: Booking): boolean => {
+    // Cannot take action on package purchase meta-bookings
+    if (booking.date === 'N/A_PACKAGE') return false;
 
-  const isRescheduleAllowed = (booking: Booking) => {
+    // Check if the lesson start time is valid
     if (!booking.startTime) return false;
     const lessonDateTime = typeof booking.startTime === 'string' 
       ? parseISO(booking.startTime) 
@@ -112,7 +118,10 @@ export function StudentBookingsManager({
       
     if (!isValid(lessonDateTime)) return false;
     
+    // Determine the cancellation window: 3 hours for group, 12 for individual
     const hours = booking.groupSessionId ? 3 : 12;
+    
+    // Return true if the current time is before the cancellation deadline
     return differenceInHours(lessonDateTime, new Date()) >= hours;
   };
   
@@ -153,7 +162,11 @@ export function StudentBookingsManager({
                                 onDismiss={handleDismissNotice}
                             />
                         )}
-                        {booking.lessonType || 'Amharic Lesson'}
+                        <div className="flex items-center gap-2">
+                             {booking.groupSessionId && <Users className="w-4 h-4 text-muted-foreground" />}
+                             <span>{booking.lessonType || 'Amharic Lesson'}</span>
+                             {booking.groupSessionId && <Badge variant="outline">Group</Badge>}
+                        </div>
                         </TableCell>
                         <TableCell>{booking.date !== 'N/A_PACKAGE' ? `${safeFormatDate(booking.startTime, 'PPP, p')}` : 'Package'}</TableCell>
                         <TableCell>
@@ -182,12 +195,12 @@ export function StudentBookingsManager({
                                 <DropdownMenuLabel>Lesson Actions</DropdownMenuLabel>
                                 <DropdownMenuItem 
                                 onClick={() => handleRescheduleClick(booking)} 
-                                disabled={!isRescheduleAllowed(booking)}
+                                disabled={!isActionAllowed(booking) || !!booking.groupSessionId}
                                 >
                                     <RefreshCw className="mr-2 h-4 w-4" />
                                     Reschedule
                                 </DropdownMenuItem>
-                                <DropdownMenuItem asChild disabled={!isRescheduleAllowed(booking)}>
+                                <DropdownMenuItem asChild disabled={!isActionAllowed(booking)}>
                                     <Link href="/credits">
                                         <XCircle className="mr-2 h-4 w-4" /> Request Cancellation
                                     </Link>
@@ -216,7 +229,10 @@ export function StudentBookingsManager({
                     <CardHeader>
                     <div className="flex justify-between items-start">
                         <div>
-                            <CardTitle className="text-lg">{booking.lessonType || 'Amharic Lesson'}</CardTitle>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                {booking.groupSessionId && <Users className="w-5 h-5 text-muted-foreground" />}
+                                <span>{booking.lessonType || 'Amharic Lesson'}</span>
+                            </CardTitle>
                         </div>
                         <Badge
                             variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
@@ -244,11 +260,11 @@ export function StudentBookingsManager({
                     <CardFooter className="flex flex-col gap-2">
                         {booking.status === 'confirmed' && <JoinLessonButton booking={booking} />}
                         <div className="grid grid-cols-2 gap-2 w-full">
-                            <Button onClick={() => handleRescheduleClick(booking)} disabled={!isRescheduleAllowed(booking)} variant="outline" size="sm">
+                            <Button onClick={() => handleRescheduleClick(booking)} disabled={!isActionAllowed(booking) || !!booking.groupSessionId} variant="outline" size="sm">
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Reschedule
                             </Button>
-                            <Button variant="outline" size="sm" asChild disabled={!isRescheduleAllowed(booking)}>
+                            <Button variant="outline" size="sm" asChild disabled={!isActionAllowed(booking)}>
                                 <Link href="/credits">
                                     <XCircle className="mr-2 h-4 w-4" /> Cancel
                                 </Link>
