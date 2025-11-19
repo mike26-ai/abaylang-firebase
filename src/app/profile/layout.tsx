@@ -8,13 +8,11 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { SiteLogo } from "@/components/layout/SiteLogo";
-import { Menu, LogOut } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 function StudentMobileNav() {
-    const { signOut } = useAuth();
     return (
         <div className="flex items-center justify-between">
            <SiteLogo />
@@ -27,12 +25,6 @@ function StudentMobileNav() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] flex flex-col p-0">
                 <StudentSidebar isMobile={true} />
-                 <div className="p-4 border-t mt-auto">
-                    <Button variant="ghost" onClick={signOut} className="w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground">
-                        <LogOut className="h-5 w-5 mr-3" />
-                        <span>Logout</span>
-                    </Button>
-                 </div>
             </SheetContent>
            </Sheet>
         </div>

@@ -6,6 +6,9 @@ import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { SiteLogo } from "@/components/layout/SiteLogo";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { LogOut, ExternalLink } from "lucide-react";
 
 interface StudentSidebarProps {
     isMobile?: boolean;
@@ -13,6 +16,7 @@ interface StudentSidebarProps {
 
 export function StudentSidebar({ isMobile = false }: StudentSidebarProps) {
   const pathname = usePathname();
+  const { signOut } = useAuth();
 
   const navContent = (
     <nav className={cn("space-y-2", isMobile ? "p-4" : "mt-6")}>
@@ -40,26 +44,42 @@ export function StudentSidebar({ isMobile = false }: StudentSidebarProps) {
     </nav>
   );
 
+  const footerContent = (
+     <div className={cn("mt-auto space-y-2", isMobile && "p-4 border-t")}>
+        <Button variant="ghost" asChild className="w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground">
+          <Link href="/" target="_blank">
+            <ExternalLink className="h-5 w-5 mr-3" />
+            <span>View Site</span>
+          </Link>
+        </Button>
+        <Button variant="ghost" onClick={signOut} className="w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground">
+          <LogOut className="h-5 w-5 mr-3" />
+          <span>Logout</span>
+        </Button>
+      </div>
+  );
+
   if (isMobile) {
     return (
-        <div>
+        <>
             <div className="p-4 border-b">
                 <SiteLogo />
             </div>
-            {navContent}
-        </div>
+            <div className="flex-grow">
+              {navContent}
+            </div>
+            {footerContent}
+        </>
     );
   }
 
   return (
     <aside className="w-64 border-r bg-card p-4 space-y-6 hidden md:flex flex-col">
-      <div>
-        <div className="p-4 border-b">
-          <SiteLogo />
-        </div>
-        {navContent}
+      <div className="p-4 border-b">
+        <SiteLogo />
       </div>
-      {/* Additional footer items for desktop sidebar can go here */}
+      {navContent}
+      {footerContent}
     </aside>
   );
 }
