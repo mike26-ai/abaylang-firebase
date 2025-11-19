@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -14,7 +15,7 @@ import { db, auth } from "@/lib/firebase";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { differenceInHours, parse, addMonths, format } from "date-fns";
+import { differenceInHours, parse, addMonths, format, parseISO } from "date-fns";
 import { products } from "@/config/products";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -234,9 +235,15 @@ export default function CreditsPage() {
               {credits.length > 0 ? (
                 <div className="space-y-4">
                   {credits.map((credit, index) => {
-                    const purchasedAtISO = credit.purchasedAt?.toDate().toISOString() || new Date().toISOString();
+                    const purchasedAtDate = credit.purchasedAt && typeof (credit.purchasedAt as any).toDate === 'function' 
+                      ? (credit.purchasedAt as any).toDate()
+                      : typeof credit.purchasedAt === 'string'
+                        ? parseISO(credit.purchasedAt)
+                        : new Date();
+
+                    const purchasedAtISO = purchasedAtDate.toISOString();
                     const details = getCreditDetails(credit);
-                    const creditExpiryDate = credit.purchasedAt ? addMonths(credit.purchasedAt.toDate(), 6) : null;
+                    const creditExpiryDate = addMonths(purchasedAtDate, 6);
 
                     return (
                       <div key={index} className="p-4 bg-accent/50 rounded-lg border border-primary/20">
