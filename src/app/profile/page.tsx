@@ -17,6 +17,7 @@ import {
   Plus,
   Star,
   Award,
+  Search,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -34,6 +35,9 @@ import type { Booking as BookingType } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
 import { StudentBookingsManager } from "@/components/profile/student-bookings-manager";
 import { isFuture, isPast, parseISO } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 interface DashboardBooking extends BookingType {
   hasReview?: boolean;
@@ -46,6 +50,11 @@ export default function StudentDashboardPage() {
 
   const [bookings, setBookings] = useState<DashboardBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // State for search and filter controls, lifted up to this parent page
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortBy, setSortBy] = useState("date-asc");
 
 
   const fetchDashboardData = async (currentUser: any) => {
@@ -88,13 +97,25 @@ export default function StudentDashboardPage() {
     fetchDashboardData(user);
   }, [user, authLoading, router, toast]);
 
-  const upcomingBookingsCount = useMemo(() => {
-    const terminalStatuses = ["cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled"];
+  const activeBookings = useMemo(() => {
+    const terminalStatuses = ["cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled", "completed"];
     return bookings.filter(b => {
-      const startTime = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()) : null;
-      return startTime && isFuture(startTime) && !terminalStatuses.includes(b.status);
-    }).length;
+        if (terminalStatuses.includes(b.status)) {
+            return false;
+        }
+        if (b.date !== 'N/A_PACKAGE' && b.startTime) {
+            const startTime = typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate();
+            return isFuture(startTime);
+        }
+        if (b.date === 'N/A_PACKAGE') {
+            return b.status !== 'completed';
+        }
+        return false;
+    });
   }, [bookings]);
+
+
+  const upcomingBookingsCount = activeBookings.length;
   
   const completedBookingsCount = useMemo(() => {
     return bookings.filter(b => {
@@ -183,15 +204,44 @@ export default function StudentDashboardPage() {
 
       <Card>
         <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <CardTitle>My Active Bookings</CardTitle>
                     <CardDescription>Manage your scheduled lessons that are upcoming or awaiting action.</CardDescription>
                 </div>
+                <div className="grid sm:grid-cols-3 gap-2 w-full md:w-auto">
+                    <div className="relative sm:col-span-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                        <Input placeholder="Search lessons..." className="pl-10 w-full" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    </div>
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger><SelectValue placeholder="Filter..." /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Active Statuses</SelectItem>
+                            <SelectItem value="confirmed">Confirmed</SelectItem>
+                            <SelectItem value="payment-pending-confirmation">Pending Confirmation</SelectItem>
+                            <SelectItem value="cancellation-requested">Cancellation Requested</SelectItem>
+                        </SelectContent>
+                    </Select>
+                     <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger><SelectValue placeholder="Sort by..." /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="date-asc">Soonest First</SelectItem>
+                            <SelectItem value="date-desc">Latest First</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
         </CardHeader>
         <CardContent>
-            <StudentBookingsManager />
+            <StudentBookingsManager
+                bookings={activeBookings}
+                isLoading={isLoading}
+                onDataRefresh={fetchDashboardData}
+                searchTerm={searchTerm}
+                filterStatus={filterStatus}
+                sortBy={sortBy}
+            />
         </CardContent>
       </Card>
     </div>

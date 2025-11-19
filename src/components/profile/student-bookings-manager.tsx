@@ -1,31 +1,30 @@
+
 // File: src/components/profile/student-bookings-manager.tsx
 
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { collection, getDocs, orderBy, query, where, doc, getDoc, updateDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
-import type { Booking, UserCredit, UserProfile } from "@/lib/types";
+import type { Booking, UserProfile } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Calendar, Clock, User, RefreshCw, XCircle, AlertCircle } from "lucide-react";
-import { format, isValid, parseISO, differenceInHours, parse, isFuture, isPast } from 'date-fns';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Calendar, Clock, RefreshCw, XCircle } from "lucide-react";
+import { format, isValid, parseISO } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { JoinLessonButton } from "@/components/bookings/join-lesson-button";
-import { useAuth } from "@/hooks/use-auth";
 import Link from 'next/link';
 import { RescheduleModal } from "@/components/bookings/RescheduleModal";
 import { PaymentPendingNotice } from "@/components/profile/PaymentPendingNotice";
+
 
 // Helper function to safely format dates
 const safeFormatDate = (dateInput: any, formatString: string) => {
   if (!dateInput) return 'N/A';
   
-  if (dateInput.toDate && typeof dateInput.toDate === 'function') {
+  if (dateInput?.toDate && typeof dateInput.toDate === 'function') {
     const date = dateInput.toDate();
     return isValid(date) ? format(date, formatString) : 'Invalid Date';
   }
@@ -33,12 +32,6 @@ const safeFormatDate = (dateInput: any, formatString: string) => {
   if (typeof dateInput === 'string') {
       const date = parseISO(dateInput);
       if(isValid(date)) return format(date, formatString);
-      
-      const [year, month, day] = dateInput.split('-').map(Number);
-      if(year && month && day) {
-        const directDate = new Date(year, month - 1, day);
-        if(isValid(directDate)) return format(directDate, formatString);
-      }
   }
   
   if (dateInput instanceof Date && isValid(dateInput)) {
@@ -48,13 +41,23 @@ const safeFormatDate = (dateInput: any, formatString: string) => {
   return 'Invalid Date';
 };
 
-export function StudentBookingsManager() {
-  const { user } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+interface StudentBookingsManagerProps {
+    bookings: Booking[];
+    isLoading: boolean;
+    onDataRefresh: () => void;
+    searchTerm: string;
+    filterStatus: string;
+    sortBy: string;
+}
 
+export function StudentBookingsManager({
+    bookings,
+    isLoading,
+    onDataRefresh,
+    searchTerm,
+    filterStatus,
+    sortBy,
+}: StudentBookingsManagerProps) {
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<Booking | null>(null);
 
@@ -75,73 +78,27 @@ export function StudentBookingsManager() {
     localStorage.setItem('dismissedPaymentNotices', JSON.stringify(newDismissed));
   };
 
+  const filteredAndSortedBookings = useMemo(() => {
+    let filtered = bookings;
 
-  const fetchData = async () => {
-    if (!user) {
-        setIsLoading(false);
-        return;
-    };
-    setIsLoading(true);
-    try {
-      const bookingsQuery = query(
-          collection(db, "bookings"), 
-          where("userId", "==", user.uid)
-          // Removing order by createdAt to sort manually later
-      );
-      const userProfileRef = doc(db, "users", user.uid);
-
-      const [bookingsSnapshot, userProfileSnap] = await Promise.all([
-          getDocs(bookingsQuery),
-          getDoc(userProfileRef)
-      ]);
-      
-      const fetchedBookings = bookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
-      setBookings(fetchedBookings);
-
-      if (userProfileSnap.exists()) {
-          setUserProfile(userProfileSnap.data() as UserProfile);
-      }
-
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-      toast({ title: "Error", description: "Could not fetch bookings.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(b => b.status === filterStatus);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, toast]);
-
-  const activeBookings = useMemo(() => {
-    const terminalStatuses = ["cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled", "completed"];
     
-    return bookings
-      .filter(b => {
-        // Must not have a terminal status
-        if (terminalStatuses.includes(b.status)) {
-          return false;
-        }
-        // If it's a lesson (not a package purchase), its start time must be in the future
-        if (b.date !== 'N/A_PACKAGE' && b.startTime) {
-          const startTime = typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate();
-          return isFuture(startTime);
-        }
-        // If it's a package purchase without a date, consider it "active" until it's completed or cancelled.
-        if (b.date === 'N/A_PACKAGE') {
-          return b.status !== 'completed';
-        }
-        return false;
-      })
-      .sort((a, b) => {
-        // Sort by start time, soonest first
+    if (searchTerm) {
+      filtered = filtered.filter(b => b.lessonType?.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+
+    return [...filtered].sort((a, b) => {
         const timeA = a.startTime ? (typeof a.startTime === 'string' ? parseISO(a.startTime) : (a.startTime as any).toDate()).getTime() : Infinity;
         const timeB = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()).getTime() : Infinity;
-        return timeA - timeB;
-      });
-  }, [bookings]);
+        
+        if(sortBy === 'date-asc') return timeA - timeB;
+        if(sortBy === 'date-desc') return timeB - timeA;
+        return 0; // Default sort
+    });
+  }, [bookings, searchTerm, filterStatus, sortBy]);
+
 
   const handleRescheduleClick = (booking: Booking) => {
     setSelectedBookingForReschedule(booking);
@@ -150,7 +107,6 @@ export function StudentBookingsManager() {
 
   const isRescheduleAllowed = (booking: Booking) => {
     if (!booking.startTime) return false;
-    // Handle both Timestamp and ISO string formats for startTime
     const lessonDateTime = typeof booking.startTime === 'string' 
       ? parseISO(booking.startTime) 
       : (booking.startTime as any).toDate();
@@ -171,8 +127,10 @@ export function StudentBookingsManager() {
   
   return (
     <>
-      {activeBookings.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">You have no active or upcoming bookings.</p>
+      {filteredAndSortedBookings.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">
+            {searchTerm || filterStatus !== 'all' ? 'No bookings match your filters.' : 'You have no active or upcoming bookings.'}
+          </p>
       ) : (
           <>
             <div className="hidden md:block overflow-x-auto">
@@ -186,7 +144,7 @@ export function StudentBookingsManager() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {activeBookings.map((booking) => (
+                    {filteredAndSortedBookings.map((booking) => (
                     <TableRow key={booking.id}>
                         <TableCell className="font-medium">
                         {booking.status === 'payment-pending-confirmation' && !dismissedNotices.includes(booking.id) && (
@@ -245,7 +203,7 @@ export function StudentBookingsManager() {
             </div>
             
             <div className="md:hidden space-y-4">
-                {activeBookings.map((booking) => (
+                {filteredAndSortedBookings.map((booking) => (
                 <Card key={booking.id} className="shadow-sm">
                     {booking.status === 'payment-pending-confirmation' && !dismissedNotices.includes(booking.id) && (
                         <div className="p-4 border-b">
@@ -307,7 +265,7 @@ export function StudentBookingsManager() {
       <RescheduleModal
         isOpen={rescheduleModalOpen}
         onClose={() => setRescheduleModalOpen(false)}
-        onRescheduleSuccess={fetchData}
+        onRescheduleSuccess={onDataRefresh}
         originalBooking={selectedBookingForReschedule}
       />
     </>
