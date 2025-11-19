@@ -162,13 +162,6 @@ export function LoginForm() {
                 Sign up
               </Link>
             </p>
-            <p className="mt-2 text-xs">
-              Admin? You must{' '}
-              <Link href="/register" className="text-primary hover:underline">
-                Sign Up first
-              </Link>
-              {' '}with the admin email.
-            </p>
           </div>
         </form>
       </Form>
