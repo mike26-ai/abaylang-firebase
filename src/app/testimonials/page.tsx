@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -140,7 +141,7 @@ export default function ReviewsPage() {
               <div className="flex items-center justify-center gap-1 mb-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
-                    key={star}
+                    key={`avg-star-${star}`}
                     className={`w-5 h-5 ${
                       star <= Math.round(averageRating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
                     }`}
@@ -156,7 +157,7 @@ export default function ReviewsPage() {
               <h3 className="font-semibold text-foreground mb-4">Rating Distribution</h3>
               <div className="space-y-2">
                 {ratingDistribution.map(({ rating, count, percentage }) => (
-                  <div key={rating} className="flex items-center gap-3">
+                  <div key={`dist-rating-${rating}`} className="flex items-center gap-3">
                     <div className="flex items-center gap-1 w-12">
                       <span className="text-sm">{rating}</span>
                       <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
@@ -280,9 +281,9 @@ export default function ReviewsPage() {
                         </div>
                         <div className="text-left sm:text-right">
                           <div className="flex items-center gap-1 mb-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
+                            {[1, 2, 3, 4, 5].map((star, i) => (
                               <Star
-                                key={star}
+                                key={`star-${review.id}-${i}`}
                                 className={`w-4 h-4 ${
                                   star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
                                 }`}
@@ -300,14 +301,14 @@ export default function ReviewsPage() {
                           {Object.entries(review.specificRatings).map(([key, ratingValue]) => {
                             const rating = typeof ratingValue === 'number' ? ratingValue : 0;
                             return(
-                            <div key={key} className="text-center p-2 bg-muted/50 rounded-md">
+                            <div key={`${review.id}-spec-${key}`} className="text-center p-2 bg-muted/50 rounded-md">
                               <div className="text-xs text-muted-foreground mb-1 capitalize">
                                 {key.replace(/([A-Z])/g, " $1").trim()}
                               </div>
                               <div className="flex items-center justify-center gap-0.5">
-                                {[1, 2, 3, 4, 5].map((star) => (
+                                {[1, 2, 3, 4, 5].map((star, i) => (
                                   <Star
-                                    key={star}
+                                    key={`spec-star-${key}-${i}`}
                                     className={`w-4 h-4 ${
                                       star <= rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"
                                     }`}

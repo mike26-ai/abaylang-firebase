@@ -77,9 +77,9 @@ export default function AccentImprovementPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-2">
-                {practicePhrases.map((phrase, index) => (
+                {practicePhrases.map((phrase) => (
                   <Button
-                    key={index}
+                    key={phrase.amharic}
                     variant={selectedPhrase.amharic === phrase.amharic ? 'default' : 'outline'}
                     onClick={() => handlePhraseSelect(phrase)}
                     className="justify-start"
@@ -166,7 +166,7 @@ export default function AccentImprovementPage() {
                     <h3 className="text-lg font-semibold mb-2">Word-by-Word Analysis</h3>
                     <div className="space-y-2">
                       {feedback.wordByWordAnalysis.map((word, index) => (
-                        <div key={index} className="p-3 border rounded-md">
+                        <div key={`${word.word ?? 'word'}-${index}`} className="p-3 border rounded-md">
                            <div className="flex justify-between items-center">
                                 <span className="font-semibold text-foreground">{word.word}</span>
                                 <Badge variant={word.accuracy === 'good' ? 'default' : word.accuracy === 'average' ? 'secondary' : 'destructive'}>{word.accuracy}</Badge>
