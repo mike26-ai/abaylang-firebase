@@ -1,4 +1,3 @@
-
 // File: src/components/profile/student-bookings-manager.tsx
 
 "use client";
@@ -10,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Calendar, Clock, RefreshCw, XCircle } from "lucide-react";
-import { format, isValid, parseISO } from 'date-fns';
+import { format, isValid, parseISO, differenceInHours } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
