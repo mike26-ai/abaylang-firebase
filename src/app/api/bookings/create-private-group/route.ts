@@ -89,7 +89,7 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
                 duration: payload.duration,
                 lessonType: payload.lessonType,
                 price: payload.pricePerStudent,
-                status: 'awaiting-payment',
+                status: 'payment-pending-confirmation',
                 tutorId: payload.tutorId,
                 tutorName: "Mahder N. Mamo",
                 groupSessionId: newGroupSessionRef.id,
