@@ -125,13 +125,7 @@ export async function POST(request: NextRequest) {
 
     const result = await _createPrivateGroupBooking(validation.data, decodedToken);
     
-    // The createBooking service function will now generate the checkout URL
-    const { redirectUrl } = await createBooking({
-        productId: validation.data.duration === 30 ? 'private-quick-group' : 'private-immersive-group',
-        userId: decodedToken.uid,
-        date: validation.data.date,
-        time: validation.data.time,
-    });
+    const redirectUrl = `/bookings/success?booking_id=${result.bookingId}&simulated_payment=true`;
 
     return NextResponse.json({ success: true, ...result, redirectUrl }, { status: 201 });
 
