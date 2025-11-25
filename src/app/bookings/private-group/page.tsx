@@ -44,11 +44,11 @@ export default function PrivateGroupBookingPage() {
   };
 
   const removeMember = (index: number) => {
-    if (members.length > 2) { // Must maintain at least 2 members + leader
+    if (members.length > 1) { // Maintain at least 1 other member
       const newMembers = members.filter((_, i) => i !== index);
       setMembers(newMembers);
     } else {
-       toast({ title: 'Minimum Group Size', description: 'You need at least 2 other members to form a group of 3.', variant: 'destructive' });
+       toast({ title: 'Minimum Group Size', description: 'You need at least one other member to form a private group.', variant: 'destructive' });
     }
   };
 
@@ -93,7 +93,7 @@ export default function PrivateGroupBookingPage() {
                 lessonType: privateGroupProduct.label,
                 pricePerStudent: privateGroupProduct.price,
                 tutorId: 'MahderNegashMamo',
-                leader: { name: user.displayName, email: user.email },
+                leader: { name: user.displayName, email: user.email, uid: user.uid },
                 members,
             }),
         });
@@ -132,14 +132,14 @@ export default function PrivateGroupBookingPage() {
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2"><Users className="w-6 h-6 text-primary"/>Book a Private Group Lesson</CardTitle>
-          <CardDescription>Organize a session for just you and your friends or family. Total group size can be 3 to 6 people.</CardDescription>
+          <CardDescription>Organize a session for just you and your friends or family. Total group size can be 2 to 6 people.</CardDescription>
         </CardHeader>
         <CardContent>
           {step === 1 && (
             <div className="space-y-6">
               <div>
                 <h3 className="font-semibold text-lg">Step 1: Invite Your Group Members</h3>
-                <p className="text-sm text-muted-foreground">You are the group leader. Invite 2 to 5 other people to join you.</p>
+                <p className="text-sm text-muted-foreground">You are the group leader. Invite 1 to 5 other people to join you.</p>
               </div>
 
               <div className="p-4 bg-accent/50 rounded-lg border">
@@ -151,7 +151,7 @@ export default function PrivateGroupBookingPage() {
               {members.map((member, index) => (
                 <div key={index} className="p-4 border rounded-lg space-y-3 relative">
                   <Label>Member {index + 1}</Label>
-                   <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => removeMember(index)} disabled={members.length <= 2}>
+                   <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => removeMember(index)} disabled={members.length <= 1}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                    </Button>
                   <div className="grid sm:grid-cols-2 gap-4">

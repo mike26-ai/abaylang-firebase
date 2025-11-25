@@ -7,6 +7,7 @@ import type { DecodedIdToken } from 'firebase-admin/auth';
 import { addMinutes, parse } from 'date-fns';
 
 const PrivateGroupMemberSchema = z.object({
+  uid: z.string().optional(), // Make UID optional for incoming non-leader members
   name: z.string().min(1, "Member name is required."),
   email: z.string().email("Invalid email format for a member."),
 });
@@ -18,14 +19,14 @@ const CreatePrivateGroupSchema = z.object({
   lessonType: z.string(),
   pricePerStudent: z.number().min(0),
   tutorId: z.string(),
-  leader: PrivateGroupMemberSchema,
+  leader: PrivateGroupMemberSchema.extend({ uid: z.string().min(1) }), // Leader must have UID
   members: z.array(PrivateGroupMemberSchema).min(1, "At least one other member is required.").max(5, "A maximum of 5 other members can be invited."),
 });
 
 type PrivateGroupPayload = z.infer<typeof CreatePrivateGroupSchema>;
 
 async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedToken: DecodedIdToken) {
-    const leaderUid = (payload.leader as any).uid;
+    const leaderUid = payload.leader.uid;
     if (decodedToken.uid !== leaderUid) { 
         throw new Error("unauthorized");
     }
@@ -71,14 +72,14 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
         let leaderBookingId = '';
         for (const participant of allParticipants) {
             const newBookingRef = adminDb.collection('bookings').doc();
-            const isLeader = (participant as any).uid === leaderUid;
+            const isLeader = participant.uid === leaderUid;
             
             if (isLeader) {
                 leaderBookingId = newBookingRef.id;
             }
 
             transaction.set(newBookingRef, {
-                userId: (participant as any).uid || null, // Guest members may not have a UID yet
+                userId: participant.uid || null, // Guest members may not have a UID yet
                 userName: participant.name,
                 userEmail: participant.email,
                 date: payload.date,
@@ -116,16 +117,7 @@ export async function POST(request: NextRequest) {
     
     const body = await request.json();
     
-    // Add the leader's UID to the payload before validation
-    const payloadWithLeaderUid = {
-        ...body,
-        leader: {
-            ...body.leader,
-            uid: decodedToken.uid
-        }
-    };
-    
-    const validation = CreatePrivateGroupSchema.safeParse(payloadWithLeaderUid);
+    const validation = CreatePrivateGroupSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json({ success: false, message: 'Invalid input', details: validation.error.flatten() }, { status: 400 });
     }
@@ -138,6 +130,9 @@ export async function POST(request: NextRequest) {
     console.error('API Error (create-private-group):', error);
     if (error.message === 'slot_already_booked') {
         return NextResponse.json({ success: false, message: 'This time slot is no longer available. Please select another time.' }, { status: 409 });
+    }
+     if (error.message === 'unauthorized') {
+        return NextResponse.json({ success: false, message: 'Unauthorized: Your user ID does not match the group leader.' }, { status: 403 });
     }
     return NextResponse.json({ success: false, message: error.message || 'An internal server error occurred.' }, { status: 500 });
   }
