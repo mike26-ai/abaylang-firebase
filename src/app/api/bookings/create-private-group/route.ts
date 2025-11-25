@@ -5,6 +5,7 @@ import { adminAuth, adminDb, Timestamp } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { addMinutes, parse } from 'date-fns';
+import { createBooking } from '@/services/bookingService';
 
 const PrivateGroupMemberSchema = z.object({
   uid: z.string().optional(), // Make UID optional for incoming non-leader members
@@ -89,7 +90,7 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
                 duration: payload.duration,
                 lessonType: payload.lessonType,
                 price: payload.pricePerStudent,
-                status: 'payment-pending-confirmation',
+                status: 'payment-pending-confirmation', // FIX: Corrected status
                 tutorId: payload.tutorId,
                 tutorName: "Mahder N. Mamo",
                 groupSessionId: newGroupSessionRef.id,
@@ -123,8 +124,16 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await _createPrivateGroupBooking(validation.data, decodedToken);
+    
+    // The createBooking service function will now generate the checkout URL
+    const { redirectUrl } = await createBooking({
+        productId: validation.data.duration === 30 ? 'private-quick-group' : 'private-immersive-group',
+        userId: decodedToken.uid,
+        date: validation.data.date,
+        time: validation.data.time,
+    });
 
-    return NextResponse.json({ success: true, ...result }, { status: 201 });
+    return NextResponse.json({ success: true, ...result, redirectUrl }, { status: 201 });
 
   } catch (error: any) {
     console.error('API Error (create-private-group):', error);
