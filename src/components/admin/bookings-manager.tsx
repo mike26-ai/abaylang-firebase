@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs, orderBy, query, updateDoc, doc, deleteDoc, getDoc, where, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Booking, UserProfile } from "@/lib/types";
@@ -10,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, MessageCircle, Link as LinkIcon, Calendar, Clock, User, Check, Ban } from "lucide-react";
-import { format, isValid, parseISO } from 'date-fns';
+import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, MessageCircle, Link as LinkIcon, Calendar, Clock, User, Check, Ban, Search } from "lucide-react";
+import { format, isValid, parseISO, isPast } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "../ui/spinner";
 import {
@@ -29,6 +28,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 // Helper function to safely format dates
 const safeFormatDate = (dateInput: any, formatString: string) => {
@@ -58,11 +60,17 @@ const safeFormatDate = (dateInput: any, formatString: string) => {
 };
 
 export function BookingsManager() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [zoomLinkData, setZoomLinkData] = useState<{ isOpen: boolean; booking: Booking | null; link: string; isSaving: boolean }>({ isOpen: false, booking: null, link: "", isSaving: false });
   const [deleteConfirmation, setDeleteConfirmation] = useState<Booking | null>(null);
+
+  // State for tabs, search and filter
+  const [activeTab, setActiveTab] = useState("active");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortBy, setSortBy] = useState("date-asc");
 
 
   const fetchBookings = async () => {
@@ -72,7 +80,7 @@ export function BookingsManager() {
       const q = query(bookingsCol, orderBy("createdAt", "desc"));
       const querySnapshot = await getDocs(q);
       const fetchedBookings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
-      setBookings(fetchedBookings);
+      setAllBookings(fetchedBookings);
     } catch (error) {
       console.error("Error fetching bookings:", error);
       toast({ title: "Error", description: "Could not fetch bookings.", variant: "destructive" });
@@ -85,6 +93,52 @@ export function BookingsManager() {
     fetchBookings();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
+  const { activeBookings, archivedBookings } = useMemo(() => {
+    const terminalStatuses = ["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled", "no-show"];
+    const active: Booking[] = [];
+    const archived: Booking[] = [];
+
+    allBookings.forEach(booking => {
+      const startTime = booking.startTime ? (typeof booking.startTime === 'string' ? parseISO(booking.startTime) : (booking.startTime as any).toDate()) : null;
+      const isLessonInPast = startTime ? isPast(startTime) : booking.status === 'completed';
+
+      if (terminalStatuses.includes(booking.status) || (isLessonInPast && booking.status !== 'confirmed' && booking.status !== 'in-progress')) {
+        archived.push(booking);
+      } else {
+        active.push(booking);
+      }
+    });
+
+    return { activeBookings: active, archivedBookings: archived };
+  }, [allBookings]);
+  
+  const filteredAndSortedBookings = useMemo(() => {
+    const source = activeTab === 'active' ? activeBookings : archivedBookings;
+    let filtered = source;
+
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(b => b.status === filterStatus);
+    }
+    
+    if (searchTerm) {
+      filtered = filtered.filter(b => 
+          b.lessonType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          b.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          b.userEmail?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    return [...filtered].sort((a, b) => {
+        const timeA = a.startTime ? (typeof a.startTime === 'string' ? parseISO(a.startTime) : (a.startTime as any).toDate()).getTime() : Infinity;
+        const timeB = b.startTime ? (typeof b.startTime === 'string' ? parseISO(b.startTime) : (b.startTime as any).toDate()).getTime() : Infinity;
+        
+        if (sortBy === 'date-asc') return timeA - timeB;
+        if (sortBy === 'date-desc') return timeB - timeA;
+        return 0;
+    });
+  }, [activeTab, activeBookings, archivedBookings, searchTerm, filterStatus, sortBy]);
+
 
   const triggerFirstLessonFeedbackPrompt = async (userId: string) => {
     try {
@@ -174,10 +228,14 @@ export function BookingsManager() {
           case 'completed':
           case 'payment-pending-confirmation':
           case 'awaiting-payment':
+          case 'cancellation-requested':
+          case 'credit-issued':
+          case 'rescheduled':
               return 'secondary';
           case 'cancelled':
           case 'cancelled-by-admin':
           case 'no-show':
+          case 'refunded':
               return 'destructive';
           default:
               return 'secondary';
@@ -188,13 +246,100 @@ export function BookingsManager() {
     return <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>;
   }
 
-  if (bookings.length === 0) {
-    return <p className="text-muted-foreground">No bookings found.</p>;
-  }
-
   return (
     <>
-      <div className="hidden md:block overflow-x-auto">
+      <div className="mb-4 grid sm:grid-cols-3 gap-4">
+        <div className="relative sm:col-span-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+            <Input placeholder="Search by lesson, name, email..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger><SelectValue placeholder="Filter by status..." /></SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="cancellation-requested">Cancellation Requested</SelectItem>
+                <SelectItem value="payment-pending-confirmation">Payment Pending</SelectItem>
+            </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger><SelectValue placeholder="Sort by..." /></SelectTrigger>
+            <SelectContent>
+                <SelectItem value="date-asc">Soonest First</SelectItem>
+                <SelectItem value="date-desc">Latest First</SelectItem>
+            </SelectContent>
+        </Select>
+      </div>
+
+       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="active">Active & Upcoming</TabsTrigger>
+            <TabsTrigger value="archived">Archived</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active" className="mt-6">
+            {filteredAndSortedBookings.length === 0 ? <p className="text-muted-foreground text-center py-10">No active bookings match your criteria.</p> : renderBookings(filteredAndSortedBookings)}
+        </TabsContent>
+        <TabsContent value="archived" className="mt-6">
+            {filteredAndSortedBookings.length === 0 ? <p className="text-muted-foreground text-center py-10">No archived bookings match your criteria.</p> : renderBookings(filteredAndSortedBookings)}
+        </TabsContent>
+      </Tabs>
+      
+      {/* Modals and Dialogs */}
+      <Dialog open={zoomLinkData.isOpen} onOpenChange={(isOpen) => !isOpen && setZoomLinkData({ isOpen: false, booking: null, link: "", isSaving: false })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add/Edit Zoom Link</DialogTitle>
+            <DialogDescription>
+              Provide the Zoom meeting link for the lesson with {zoomLinkData.booking?.userName} on {zoomLinkData.booking?.date ? safeFormatDate(zoomLinkData.booking.date, 'PPP') : ''}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="zoom-link">Zoom Link</Label>
+            <Input
+              id="zoom-link"
+              value={zoomLinkData.link}
+              onChange={(e) => setZoomLinkData(prev => ({...prev, link: e.target.value}))}
+              placeholder="https://zoom.us/j/..."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setZoomLinkData({ isOpen: false, booking: null, link: "", isSaving: false })}>Cancel</Button>
+            <Button onClick={handleSaveZoomLink} disabled={zoomLinkData.isSaving}>
+              {zoomLinkData.isSaving && <Spinner size="sm" className="mr-2" />}
+              Save Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteConfirmation} onOpenChange={(isOpen) => !isOpen && setDeleteConfirmation(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the booking for {deleteConfirmation?.userName} on {deleteConfirmation?.date !== 'N/A_PACKAGE' ? safeFormatDate(deleteConfirmation?.date, 'PPP') : 'a package'}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteConfirmation(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmation && deleteBooking(deleteConfirmation.id)}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Yes, delete booking
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+
+  function renderBookings(bookingsToRender: Booking[]) {
+    return (
+        <>
+        <div className="hidden md:block overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -208,7 +353,7 @@ export function BookingsManager() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bookings.map((booking) => (
+            {bookingsToRender.map((booking) => (
               <TableRow key={booking.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
@@ -237,6 +382,7 @@ export function BookingsManager() {
                       booking.status === 'awaiting-payment' ? "bg-orange-400/20 text-orange-700 dark:text-orange-500 border-orange-400/30" 
                       : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
                       : booking.status === 'in-progress' ? "bg-green-400/20 text-green-700 dark:text-green-500 border-green-400/30 animate-pulse"
+                      : booking.status === 'cancellation-requested' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30"
                       : ""
                       }
                   >
@@ -287,9 +433,8 @@ export function BookingsManager() {
         </Table>
       </div>
 
-      {/* Mobile View: Cards */}
       <div className="md:hidden space-y-4">
-        {bookings.map((booking) => (
+        {bookingsToRender.map((booking) => (
           <Card key={booking.id} className="shadow-md">
             <CardHeader>
               <div className="flex justify-between items-start">
@@ -353,54 +498,8 @@ export function BookingsManager() {
           </Card>
         ))}
       </div>
-      
-      {/* Modals and Dialogs */}
-      <Dialog open={zoomLinkData.isOpen} onOpenChange={(isOpen) => !isOpen && setZoomLinkData({ isOpen: false, booking: null, link: "", isSaving: false })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add/Edit Zoom Link</DialogTitle>
-            <DialogDescription>
-              Provide the Zoom meeting link for the lesson with {zoomLinkData.booking?.userName} on {zoomLinkData.booking?.date ? safeFormatDate(zoomLinkData.booking.date, 'PPP') : ''}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="zoom-link">Zoom Link</Label>
-            <Input
-              id="zoom-link"
-              value={zoomLinkData.link}
-              onChange={(e) => setZoomLinkData(prev => ({...prev, link: e.target.value}))}
-              placeholder="https://zoom.us/j/..."
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setZoomLinkData({ isOpen: false, booking: null, link: "", isSaving: false })}>Cancel</Button>
-            <Button onClick={handleSaveZoomLink} disabled={zoomLinkData.isSaving}>
-              {zoomLinkData.isSaving && <Spinner size="sm" className="mr-2" />}
-              Save Link
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!deleteConfirmation} onOpenChange={(isOpen) => !isOpen && setDeleteConfirmation(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the booking for {deleteConfirmation?.userName} on {deleteConfirmation?.date !== 'N/A_PACKAGE' ? safeFormatDate(deleteConfirmation?.date, 'PPP') : 'a package'}.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteConfirmation(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteConfirmation && deleteBooking(deleteConfirmation.id)}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Yes, delete booking
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
+        </>
+    )
+  }
 }
+
