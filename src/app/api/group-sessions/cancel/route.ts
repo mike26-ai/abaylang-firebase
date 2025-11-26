@@ -1,5 +1,3 @@
-
-
 // File: src/app/api/group-sessions/cancel/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, initAdmin } from '@/lib/firebase-admin';
@@ -32,31 +30,34 @@ export async function POST(request: NextRequest) {
     
     const { sessionId } = validation.data;
     
-    // Use a transaction to ensure atomicity
-    await adminDb.runTransaction(async (transaction) => {
-        const sessionRef = adminDb.collection('groupSessions').doc(sessionId);
-        const sessionDoc = await transaction.get(sessionRef);
+    // --- REFACTORED LOGIC ---
+    // Perform a more resilient two-step operation instead of a single transaction
+    // to avoid issues with missing composite indexes.
 
-        if (!sessionDoc.exists) {
-            throw new Error("Session not found.");
-        }
-        
-        // 1. Update the group session status
-        transaction.update(sessionRef, { status: 'cancelled' });
-
-        // 2. Find all bookings associated with this group session
-        const bookingsRef = adminDb.collection('bookings');
-        const bookingsQuery = bookingsRef.where('groupSessionId', '==', sessionId);
-        const bookingsSnapshot = await transaction.get(bookingsQuery);
-        
-        // 3. Update the status of each associated booking to 'cancelled-by-admin'
+    // 1. Find and update all associated bookings first.
+    const bookingsRef = adminDb.collection('bookings');
+    const bookingsQuery = bookingsRef.where('groupSessionId', '==', sessionId);
+    const bookingsSnapshot = await bookingsQuery.get();
+    
+    if (!bookingsSnapshot.empty) {
+        const batch = adminDb.batch();
         bookingsSnapshot.docs.forEach(doc => {
-            transaction.update(doc.ref, { 
+            batch.update(doc.ref, { 
                 status: 'cancelled-by-admin',
                 cancellationReason: 'The group session was cancelled by the administrator.'
             });
         });
-    });
+        await batch.commit(); // Commit all booking updates at once
+    }
+
+    // 2. After successfully updating bookings, cancel the main group session document.
+    const sessionRef = adminDb.collection('groupSessions').doc(sessionId);
+    const sessionDoc = await sessionRef.get();
+    if (!sessionDoc.exists) {
+        throw new Error("Session not found.");
+    }
+    await sessionRef.update({ status: 'cancelled' });
+
 
     return NextResponse.json({ success: true, message: 'Session and all associated bookings have been cancelled.' }, { status: 200 });
 
