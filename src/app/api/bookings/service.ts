@@ -58,8 +58,15 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             // Set booking time details from the session
             startTime = sessionData.startTime;
             endTime = sessionData.endTime;
-            finalDate = format(startTime.toDate(), 'yyyy-MM-dd');
-            finalTime = format(startTime.toDate(), 'HH:mm');
+
+            // FIX: Add a null check to ensure startTime exists before using its methods.
+            if (startTime && endTime) {
+                finalDate = format(startTime.toDate(), 'yyyy-MM-dd');
+                finalTime = format(startTime.toDate(), 'HH:mm');
+            } else {
+                // If a group session document is missing a start/end time, it's a critical data error.
+                throw new Error('group_session_time_missing');
+            }
             
             transaction.update(sessionRef, {
                 participantCount: FieldValue.increment(1),
