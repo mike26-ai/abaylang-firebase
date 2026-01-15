@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
@@ -289,7 +290,7 @@ export default function BookLessonPage() {
             userId: user.uid,
             date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined,
             time: selectedTime,
-            groupSessionId: isPublicGroupLesson ? selectedGroupSessionId : undefined,
+            groupSessionId: isPublicGroupLesson ? (selectedGroupSessionId ?? undefined) : undefined,
             paymentNote: paymentNote.trim(),
         };
 
@@ -643,6 +644,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-
-    
