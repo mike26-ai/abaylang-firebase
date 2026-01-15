@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -53,10 +52,10 @@ export function PaymentPendingNotice({ bookingId, onDismiss }: PaymentPendingNot
         )}>
             <div className="pt-2 border-t border-blue-500/10 space-y-3">
                  <p className="text-sm text-blue-700 dark:text-blue-400">
-                  Thank you for your payment! Our system is now automatically confirming your transaction. Your booking status will be updated to 'Confirmed' on your dashboard, usually within a few minutes. We guarantee confirmation within 2-3 hours.
+                  Thank you for your payment! Our system is now automatically confirming your transaction. Your booking status will be updated to &apos;Confirmed&apos; on your dashboard, usually within a few minutes. We guarantee confirmation within 2-3 hours.
                 </p>
                  <p className="text-sm text-blue-700 dark:text-blue-400">
-                  If you have any questions or experience delays, please don't hesitate to contact us at{' '}
+                  If you have any questions or experience delays, please don&apos;t hesitate to contact us at{' '}
                   <a href={`mailto:${contactEmail}`} className="font-semibold underline">{contactEmail}</a>. You can also review our{' '}
                   <Link href="/faq" className="font-semibold underline">FAQ</Link> or{' '}
                   <Link href="/terms" className="font-semibold underline">Terms of Service</Link>.

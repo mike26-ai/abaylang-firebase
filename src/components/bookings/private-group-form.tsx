@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -79,7 +78,7 @@ export function PrivateGroupForm({ onMembersChange }: PrivateGroupFormProps) {
         <h4 className="font-medium text-foreground">Add a new member</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
           <div className="space-y-1">
-            <Label htmlFor="new-member-name">Member's Name</Label>
+            <Label htmlFor="new-member-name">Member&apos;s Name</Label>
             <Input
               id="new-member-name"
               placeholder="e.g., Jane Doe"
@@ -88,7 +87,7 @@ export function PrivateGroupForm({ onMembersChange }: PrivateGroupFormProps) {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="new-member-email">Member's Email</Label>
+            <Label htmlFor="new-member-email">Member&apos;s Email</Label>
             <Input
               id="new-member-email"
               type="email"

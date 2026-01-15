@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -57,7 +56,7 @@ export default function StudentDashboardPage() {
   const [sortBy, setSortBy] = useState("date-asc");
 
 
-  const fetchDashboardData = async (currentUser: any) => {
+  const fetchDashboardData = useCallback(async (currentUser: any) => {
     setIsLoading(true);
     try {
       const bookingsCol = collection(db, "bookings");
@@ -85,7 +84,7 @@ export default function StudentDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -95,7 +94,7 @@ export default function StudentDashboardPage() {
       return;
     }
     fetchDashboardData(user);
-  }, [user, authLoading, router, toast]);
+  }, [user, authLoading, router, fetchDashboardData]);
 
   const activeBookings = useMemo(() => {
     const terminalStatuses = ["cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled", "completed"];
@@ -237,7 +236,7 @@ export default function StudentDashboardPage() {
             <StudentBookingsManager
                 bookings={activeBookings}
                 isLoading={isLoading}
-                onDataRefresh={fetchDashboardData}
+                onDataRefresh={() => fetchDashboardData(user)}
                 searchTerm={searchTerm}
                 filterStatus={filterStatus}
                 sortBy={sortBy}

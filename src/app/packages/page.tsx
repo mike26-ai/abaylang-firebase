@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -58,7 +57,7 @@ export default function PackagesPage() {
                             </li>
                              <li className="flex items-center gap-2">
                                 <Check className="w-4 h-4 text-primary" />
-                                <span className="text-sm text-foreground">Content tailored to your group's needs</span>
+                                <span className="text-sm text-foreground">Content tailored to your group&apos;s needs</span>
                             </li>
                         </ul>
                         <Button asChild size="lg">

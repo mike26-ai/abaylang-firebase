@@ -1,8 +1,6 @@
-
-
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -89,7 +87,7 @@ export default function BookLessonPage() {
     }
   }, [useCreditType]);
 
-  const fetchAvailability = async (date: Date) => {
+  const fetchAvailability = useCallback(async (date: Date) => {
     setIsFetchingSlots(true);
     try {
         const { bookings, timeOff } = await getAvailability(date);
@@ -102,7 +100,7 @@ export default function BookLessonPage() {
     } finally {
         setIsFetchingSlots(false);
     }
-  }
+  }, [toast]);
 
   useEffect(() => {
     if ((isIndividualLesson || isPrivateGroup) && selectedDate && isValid(selectedDate)) {
@@ -111,8 +109,7 @@ export default function BookLessonPage() {
       setDailyBookedSlots([]);
       setDailyTimeOff([]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, isIndividualLesson, isPrivateGroup]);
+  }, [selectedDate, isIndividualLesson, isPrivateGroup, fetchAvailability]);
 
   useEffect(() => {
     if (isPublicGroupLesson) {
@@ -211,7 +208,29 @@ export default function BookLessonPage() {
 }, [selectedDate, isIndividualLesson, isPrivateGroup, selectedProduct, dailyBookedSlots, dailyTimeOff]);
 
 
-  const handleBooking = async () => {
+  const handleBookingError = useCallback((error: any) => {
+    console.error("Booking process failed:", error);
+    toast({
+        title: "Booking Failed",
+        description: error.message.includes('slot_already_booked') 
+          ? "This slot is no longer available. Please select another." 
+          : error.message || "Could not complete your booking. Please try again.",
+        variant: "destructive",
+    });
+    if (selectedDate && (isIndividualLesson || isPrivateGroup)) fetchAvailability(selectedDate);
+    if(isPublicGroupLesson) {
+        getGroupSessions().then(sessions => {
+            const filteredSessions = sessions.filter(s => {
+              const productKey = Object.keys(products).find(key => products[key as ProductId].label === s.title);
+              return productKey === selectedProductId;
+            });
+            setGroupSessions(filteredSessions);
+        });
+    }
+    setIsProcessing(false);
+  }, [toast, selectedDate, isIndividualLesson, isPrivateGroup, isPublicGroupLesson, selectedProductId, fetchAvailability]);
+
+  const handleBooking = useCallback(async () => {
     if (!user) {
       toast({ title: "Login Required", description: "Please log in to book a lesson.", variant: "destructive" });
       router.push('/login?redirect=/bookings');
@@ -280,29 +299,8 @@ export default function BookLessonPage() {
     } finally {
         setIsProcessing(false);
     }
-  };
+  }, [user, toast, router, selectedProduct, useCreditType, selectedDate, selectedTime, paymentNote, isIndividualLesson, isPrivateGroup, handleBookingError, isPublicGroupLesson, selectedGroupSessionId, selectedProductId]);
 
-  const handleBookingError = (error: any) => {
-    console.error("Booking process failed:", error);
-    toast({
-        title: "Booking Failed",
-        description: error.message.includes('slot_already_booked') 
-          ? "This slot is no longer available. Please select another." 
-          : error.message || "Could not complete your booking. Please try again.",
-        variant: "destructive",
-    });
-    if (selectedDate && (isIndividualLesson || isPrivateGroup)) fetchAvailability(selectedDate);
-    if(isPublicGroupLesson) {
-        getGroupSessions().then(sessions => {
-            const filteredSessions = sessions.filter(s => {
-              const productKey = Object.keys(products).find(key => products[key as ProductId].label === s.title);
-              return productKey === selectedProductId;
-            });
-            setGroupSessions(filteredSessions);
-        });
-    }
-    setIsProcessing(false);
-  }
 
   const isPaidLesson = (selectedProduct?.price || 0) > 0 && !useCreditType;
   
@@ -442,7 +440,7 @@ export default function BookLessonPage() {
                             <CardDescription>Organize a lesson just for your friends or family.</CardDescription>
                         </CardHeader>
                         <CardContent className="text-center space-y-4">
-                        <p className="text-muted-foreground text-sm">This option allows you to create your own private group. You'll be taken to a separate page to invite your members and choose a time that works for everyone.</p>
+                        <p className="text-muted-foreground text-sm">This option allows you to create your own private group. You&apos;ll be taken to a separate page to invite your members and choose a time that works for everyone.</p>
                         <Button asChild size="lg">
                             <Link href="/bookings/private-group">
                                 Organize Your Private Group

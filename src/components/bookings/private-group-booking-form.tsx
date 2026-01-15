@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,7 @@ import { useGroupBookingForm } from "@/hooks/use-group-booking-form";
 import { PlusCircle, Trash2, Calendar as CalendarIcon, Clock, Users } from "lucide-react";
 import { DateSelection } from "./date-selection";
 import { TimeSlot, TimeSlotProps } from "./time-slot";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { getAvailability } from "@/services/availabilityService";
 import type { Booking as BookingType, TimeOff } from "@/lib/types";
 import { format, addMinutes, parse, startOfDay, isEqual, isPast, parseISO } from 'date-fns';
@@ -46,7 +45,7 @@ export function PrivateGroupBookingForm({ product }: { product: any }) {
         form.setValue('time', selectedTime || '');
     }, [selectedTime, form]);
 
-    const fetchAvailability = async (date: Date) => {
+    const fetchAvailability = useCallback(async (date: Date) => {
         setIsFetchingSlots(true);
         try {
             const { bookings, timeOff } = await getAvailability(date);
@@ -58,11 +57,11 @@ export function PrivateGroupBookingForm({ product }: { product: any }) {
         } finally {
             setIsFetchingSlots(false);
         }
-    };
+    }, [toast]);
 
     useEffect(() => {
         if (selectedDate) fetchAvailability(selectedDate);
-    }, [selectedDate]);
+    }, [selectedDate, fetchAvailability]);
 
     const displayTimeSlots = useMemo(() => {
         if (!selectedDate || !product || typeof product.duration !== 'number') return [];

@@ -1,7 +1,7 @@
-
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
 
@@ -18,9 +18,9 @@ export function Footer() {
     <footer className="border-t bg-foreground text-background py-12 px-4">
       <div className="container mx-auto">
         <div style={{ textAlign: 'center', padding: '28px 0' }}>
-            <a href="/" aria-label="ABYLANG home" style={{ display: 'inline-block' }}>
-                <img src="/logo.svg" alt="ABYLANG logo" style={{ height: 150, width: 'auto', display: 'block', margin: '0 auto' }} />
-            </a>
+            <Link href="/" aria-label="ABYLANG home" style={{ display: 'inline-block' }}>
+                <Image src="/logo.svg" alt="ABYLANG logo" width={150} height={38} style={{ height: 'auto', display: 'block', margin: '0 auto' }} />
+            </Link>
         </div>
         <div className="grid md:grid-cols-4 gap-8">
           <div className="md:col-span-2 group">
