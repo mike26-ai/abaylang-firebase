@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
@@ -162,16 +163,21 @@ export default function BookLessonPage() {
             let bookingEnd: Date | null = null;
 
             if (booking.startTime) {
-              if (typeof booking.startTime === 'string') bookingStart = new Date(booking.startTime);
-              else if ((booking.startTime as any).toDate) bookingStart = (booking.startTime as any).toDate();
-              else bookingStart = new Date(booking.startTime);
+                if ((booking.startTime as any).toDate) {
+                    bookingStart = (booking.startTime as any).toDate();
+                } else if (typeof booking.startTime === 'string') {
+                    bookingStart = new Date(booking.startTime);
+                }
+            }
+            
+            if (booking.endTime) {
+                if ((booking.endTime as any).toDate) {
+                    bookingEnd = (booking.endTime as any).toDate();
+                } else if (typeof booking.endTime === 'string') {
+                    bookingEnd = new Date(booking.endTime);
+                }
             }
 
-            if (booking.endTime) {
-              if (typeof booking.endTime === 'string') bookingEnd = new Date(booking.endTime);
-              else if ((booking.endTime as any).toDate) bookingEnd = (booking.endTime as any).toDate();
-              else bookingEnd = new Date(booking.endTime);
-            }
 
             if (bookingStart && bookingEnd && !isNaN(bookingStart.getTime()) && !isNaN(bookingEnd.getTime())) {
                 if (potentialStartTime < bookingEnd && potentialEndTime > bookingStart) {
@@ -637,3 +643,6 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+
+    
