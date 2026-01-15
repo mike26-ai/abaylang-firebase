@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, CalendarDays, MessageSquareText, Award, BookOpenText, Users, LibraryBig, LogOut, ExternalLink, ClipboardList, Ticket, RefreshCw } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquareText, Award, BookOpenText, Users, LibraryBig, LogOut, ExternalLink, ClipboardList, Ticket, RefreshCw, GanttChartSquare } from "lucide-react";
 import type { NavItem } from "@/config/site";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Manage Group Sessions": ClipboardList,
   "Manage Credits": Ticket,
   "Manage Resolutions": RefreshCw,
+  "Manage Availability": GanttChartSquare,
 };
 
 

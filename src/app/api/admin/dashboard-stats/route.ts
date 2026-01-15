@@ -6,6 +6,7 @@ import admin from "firebase-admin";
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { startOfDay } from 'date-fns';
+import type { Booking, Testimonial } from '@/lib/types';
 
 // Initialize Firebase Admin SDK
 initAdmin();
@@ -59,8 +60,8 @@ export async function GET(request: NextRequest) {
     ]);
 
     // 3. Process the results in-memory to avoid complex index requirements
-    const allBookings = allBookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const allTestimonials = allTestimonialsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const allBookings = allBookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
+    const allTestimonials = allTestimonialsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial));
 
     const upcomingBookingsCount = allBookings.filter(doc => {
         const bookingDate = doc.date;
