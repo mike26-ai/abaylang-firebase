@@ -1,3 +1,4 @@
+
 // File: src/app/api/admin/resolve-cancellation/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminDb } from '@/lib/firebase-admin';

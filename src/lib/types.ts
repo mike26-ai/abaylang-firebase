@@ -1,6 +1,7 @@
 
 
 import type { Timestamp } from "firebase/firestore";
+import type { Timestamp as AdminTimestamp } from "firebase-admin/firestore";
 
 export interface Booking {
   id: string;
@@ -12,10 +13,10 @@ export interface Booking {
   status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed" | "cancellation-requested" | "refunded" | "credit-issued" | "cancelled-by-admin" | "rescheduled" | "in-progress" | "no-show";
   tutorId: string;
   tutorName: string;
-  createdAt: Timestamp;
-  updatedAt?: Timestamp; // For tracking updates like rescheduling
-  startTime?: Timestamp | null;
-  endTime?: Timestamp | null;
+  createdAt: Timestamp | AdminTimestamp;
+  updatedAt?: Timestamp | AdminTimestamp; // For tracking updates like rescheduling
+  startTime?: Timestamp | AdminTimestamp | null;
+  endTime?: Timestamp | AdminTimestamp | null;
   // Optional fields
   lessonNotes?: string;
   duration?: number; // in minutes
@@ -36,7 +37,7 @@ export interface Booking {
   parentPackageId?: string; // Links a redeemed lesson to its parent package booking
   statusHistory?: {
       status: string;
-      changedAt: Timestamp;
+      changedAt: Timestamp | AdminTimestamp;
       changedBy: string; // 'student', 'admin', 'system'
       reason?: string;
   }[];
@@ -50,15 +51,15 @@ export interface TimeOff {
   blockedById: string;
   blockedByEmail?: string;
   note?: string;
-  createdAt: Timestamp;
+  createdAt: Timestamp | AdminTimestamp;
 }
 
 export interface GroupSession {
   id: string;
   title: string;
   description: string;
-  startTime: Timestamp;
-  endTime: Timestamp;
+  startTime: Timestamp | AdminTimestamp;
+  endTime: Timestamp | AdminTimestamp;
   duration: number; // in minutes
   price: number;
   tutorId: string;
@@ -68,7 +69,7 @@ export interface GroupSession {
   participantCount: number;
   participantIds: string[];
   status: "scheduled" | "cancelled" | "completed";
-  createdAt: Timestamp;
+  createdAt: Timestamp | AdminTimestamp;
   zoomLink?: string;
 }
 
@@ -83,7 +84,7 @@ export interface Testimonial {
   imageUrl?: string; // Optional
   location?: string;
   status: "pending" | "approved" | "rejected";
-  createdAt: Timestamp;
+  createdAt: Timestamp | AdminTimestamp;
   studentInitials?: string;
   lessonType?: string;
   specificRatings?: {
@@ -104,7 +105,7 @@ export interface ContactMessage {
   name: string;
   email: string;
   message: string;
-  createdAt: Timestamp;
+  createdAt: Timestamp | AdminTimestamp;
   read: boolean;
 }
 
@@ -114,7 +115,7 @@ export interface UserProfile {
   name: string;
   email: string;
   role: "student" | "admin";
-  createdAt: Timestamp;
+  createdAt: Timestamp | AdminTimestamp;
   nativeLanguage?: string;
   country?: string;
   amharicLevel?: string;
@@ -122,7 +123,7 @@ export interface UserProfile {
   showFirstLessonFeedbackPrompt?: boolean;
   hasSubmittedFirstLessonFeedback?: boolean;
   credits?: UserCredit[];
-  lastCreditPurchase?: Timestamp;
+  lastCreditPurchase?: Timestamp | AdminTimestamp;
 }
 
 export interface ChatMessage {
@@ -131,13 +132,13 @@ export interface ChatMessage {
   userId: string;
   userName: string;
   userAvatar?: string | null;
-  timestamp: Timestamp;
+  timestamp: Timestamp | AdminTimestamp;
 }
 
 export interface NewsletterSubscription {
   id: string;
   email: string;
-  subscribedAt: Timestamp;
+  subscribedAt: Timestamp | AdminTimestamp;
 }
 
 export interface LearningLesson {
@@ -163,11 +164,11 @@ export interface HomeworkAssignment {
   id: string;
   title: string;
   description: string;
-  dueDate: Timestamp;
+  dueDate: Timestamp | AdminTimestamp;
   status: "pending" | "submitted" | "graded" | "late";
   feedback?: string;
   grade?: string;
-  createdAt?: Timestamp;
+  createdAt?: Timestamp | AdminTimestamp;
 }
 
 export interface HomeworkSubmissionType {
@@ -177,7 +178,7 @@ export interface HomeworkSubmissionType {
   userName: string;
   userEmail: string;
   submissionText: string;
-  submittedAt: Timestamp;
+  submittedAt: Timestamp | AdminTimestamp;
   status: "submitted" | "graded" | "late_submission";
   feedback?: string;
   grade?: string;
@@ -190,7 +191,7 @@ export interface LessonMaterial {
   fileUrl: string;
   fileName: string;
   fileType: string;
-  createdAt: Timestamp;
+  createdAt: Timestamp | AdminTimestamp;
   uploaderId: string;
 }
 
@@ -198,6 +199,6 @@ export interface LessonMaterial {
 export interface UserCredit {
   lessonType: string; // Corresponds to product 'id', e.g., 'learning-intensive'
   count: number;
-  purchasedAt: Timestamp;
+  purchasedAt: Timestamp | AdminTimestamp;
   packageBookingId?: string; // The ID of the booking that granted these credits
 }
