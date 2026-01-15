@@ -6,16 +6,21 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, Check, Users, Package, Calendar, Star, Info, PlusCircle } from "lucide-react"
 import Link from "next/link"
 import { SiteLogo } from "@/components/layout/SiteLogo"
-import { products } from "@/config/products"
+import { products, type ProductId } from "@/config/products"
 
-type Product = typeof products[keyof typeof products];
+type Product = typeof products[keyof typeof products] & { id: ProductId };
 
 export default function PackagesPage() {
 
-  const individualLessons = Object.values(products).filter(p => p.type === 'individual');
-  const groupSessions = Object.values(products).filter(p => p.type === 'group');
-  const privateGroup = Object.values(products).filter(p => p.type === 'private-group');
-  const packages = Object.values(products).filter(p => p.type === 'package');
+  const allProducts = Object.entries(products).map(([id, product]) => ({
+    id: id as ProductId,
+    ...product,
+  }));
+
+  const individualLessons = allProducts.filter(p => p.type === 'individual');
+  const groupSessions = allProducts.filter(p => p.type === 'group');
+  const privateGroup = allProducts.filter(p => p.type === 'private-group');
+  const packages = allProducts.filter(p => p.type === 'package');
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
