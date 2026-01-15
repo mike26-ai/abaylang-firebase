@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { Users, Calendar, Clock, Tag, UserCheck, AlertTriangle } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export function GroupSessionList() {
   const [sessions, setSessions] = useState<GroupSession[]>([]);
@@ -31,7 +32,11 @@ export function GroupSessionList() {
         const upcomingSessions = await getGroupSessions();
         setSessions(upcomingSessions);
       } catch (error: any) {
-        toast({ title: 'Error', description: 'Could not fetch group sessions.', variant: 'destructive' });
+        toast({
+          title: 'Error Fetching Group Sessions',
+          description: error.message,
+          variant: 'destructive',
+        });
       } finally {
         setIsLoading(false);
       }
@@ -42,13 +47,12 @@ export function GroupSessionList() {
   const handleBookGroupSession = async (session: GroupSession) => {
     if (!user) {
       toast({ title: 'Login Required', description: 'Please log in to book a session.', variant: 'destructive' });
-      router.push('/login?callbackUrl=/bookings');
+      router.push('/login?redirect=/bookings');
       return;
     }
     
     setIsBooking(session.id);
     
-    // Find the corresponding product ID from the session title
     const productKey = Object.keys(products).find(key => products[key as ProductId].label === session.title) as ProductId | undefined;
 
     if (!productKey) {
@@ -62,6 +66,8 @@ export function GroupSessionList() {
             productId: productKey,
             userId: user.uid,
             groupSessionId: session.id,
+            date: format(new Date(session.startTime as any), 'yyyy-MM-dd'),
+            time: format(new Date(session.startTime as any), 'HH:mm'),
         };
         const data = await createBooking(payload);
         if (data.redirectUrl) {
@@ -78,7 +84,7 @@ export function GroupSessionList() {
   }
   
   if (sessions.length === 0) {
-    return null; // Don't render the card if there are no sessions
+    return null; 
   }
 
   return (
@@ -99,8 +105,8 @@ export function GroupSessionList() {
               <div>
                 <h4 className="font-semibold text-foreground">{session.title}</h4>
                 <div className="text-sm text-muted-foreground flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                    <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4"/>{format(new Date(session.startTime), 'PPP')}</span>
-                    <span className="flex items-center gap-1.5"><Clock className="w-4 h-4"/>{format(new Date(session.startTime), 'p')}</span>
+                    <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4"/>{format(new Date(session.startTime as any), 'PPP')}</span>
+                    <span className="flex items-center gap-1.5"><Clock className="w-4 h-4"/>{format(new Date(session.startTime as any), 'p')}</span>
                     <span className="flex items-center gap-1.5"><Tag className="w-4 h-4"/>${session.price}</span>
                 </div>
               </div>
