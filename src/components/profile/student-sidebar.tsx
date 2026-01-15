@@ -22,7 +22,7 @@ export function StudentSidebar({ isMobile = false }: StudentSidebarProps) {
     <nav className={cn("space-y-2", isMobile ? "p-4" : "mt-6")}>
       {siteConfig.userNav.map((item) => {
         // For mobile, close the sheet on nav
-        const linkProps = isMobile ? { onClick: () => (document.querySelector('[data-radix-collection-item] > button[aria-label="Close"]')?.['click']()) } : {};
+        const linkProps = isMobile ? { onClick: () => ((document.querySelector('[data-radix-collection-item] > button[aria-label="Close"]') as HTMLElement)?.click()) } : {};
 
         return (
           <Link
