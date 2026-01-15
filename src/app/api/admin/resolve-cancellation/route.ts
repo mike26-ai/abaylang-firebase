@@ -1,11 +1,10 @@
-
 // File: src/app/api/admin/resolve-cancellation/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { initAdmin, adminDb } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 import { z } from 'zod';
 import type { Booking, UserCredit } from '@/lib/types';
-import { FieldValue, Transaction } from 'firebase-admin/firestore';
+import { FieldValue, Transaction, Timestamp } from 'firebase-admin/firestore';
 
 initAdmin();
 const auth = getAuth();
@@ -47,7 +46,7 @@ async function handleCreditIssuance(transaction: Transaction, booking: Booking) 
         index === existingCreditIndex ? { ...c, count: c.count + 1 } : c
     );
   } else {
-    newCredits = [...currentCredits, { lessonType: creditTypeToGrant, count: 1 }];
+    newCredits = [...currentCredits, { lessonType: creditTypeToGrant, count: 1, purchasedAt: Timestamp.now() }];
   }
 
   transaction.update(userRef, { credits: newCredits });
