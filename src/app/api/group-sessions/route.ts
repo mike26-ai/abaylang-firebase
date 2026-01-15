@@ -1,8 +1,7 @@
-
-
 // File: src/app/api/group-sessions/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb, initAdmin, Timestamp } from '@/lib/firebase-admin';
+import { adminDb, initAdmin } from '@/lib/firebase-admin';
+import type { Timestamp } from 'firebase-admin/firestore';
 
 initAdmin();
 
@@ -40,5 +39,3 @@ export async function GET() {
     return NextResponse.json({ success: false, error: 'Failed to fetch group sessions.' }, { status: 500 });
   }
 }
-
-    
