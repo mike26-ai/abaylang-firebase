@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit3, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { format } from "date-fns";
 
 
 export default function ProfileSettingsPage() {
@@ -208,7 +209,7 @@ export default function ProfileSettingsPage() {
                             </div>
                             <div>
                                 <h4 className="font-medium text-muted-foreground">Member Since</h4>
-                                <p className="text-foreground text-base">{userProfileData.createdAt ? format(userProfileData.createdAt.toDate(), "MMMM yyyy") : "N/A"}</p>
+                                <p className="text-foreground text-base">{userProfileData.createdAt ? format((userProfileData.createdAt as any).toDate(), "MMMM yyyy") : "N/A"}</p>
                             </div>
                         </div>
                     </div>
