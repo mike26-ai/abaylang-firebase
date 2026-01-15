@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { createBooking } from '@/services/bookingService';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import type { ProductId } from '@/config/products';
 
 export function GroupSessionList() {
   const { user } = useAuth();
@@ -50,10 +51,16 @@ export function GroupSessionList() {
     }
     setIsBooking(session.id);
     try {
+        const productId = (session.title.toLowerCase().includes('quick') 
+            ? 'quick-group-conversation' 
+            : 'immersive-conversation-practice') as ProductId;
+
         const payload = {
-            productId: session.title.toLowerCase().includes('quick') ? 'quick-group-conversation' : 'immersive-conversation-practice',
+            productId: productId,
             userId: user.uid,
-            // For group sessions, specific date/time is tied to the session
+            groupSessionId: session.id,
+            date: format((session.startTime as any).toDate(), 'yyyy-MM-dd'),
+            time: format((session.startTime as any).toDate(), 'HH:mm'),
         };
         const data = await createBooking(payload);
         if (data.redirectUrl) {
