@@ -164,9 +164,9 @@ export default function BookLessonPage() {
             let bookingEnd: Date | null = null;
 
             if (booking.startTime) {
-                if ((booking.startTime as any).toDate) {
+                 if ((booking.startTime as any).toDate) { // Handle Firestore Timestamps
                     bookingStart = (booking.startTime as any).toDate();
-                } else if (typeof booking.startTime === 'string') {
+                } else if (typeof booking.startTime === 'string') { // Handle ISO strings
                     bookingStart = new Date(booking.startTime);
                 }
             }
