@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -107,7 +108,7 @@ export default function PackagesPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3 mb-6">
-                    {(pkg.features as string[]).map((feature: string, index: number) => (
+                    {pkg.features.map((feature: string, index: number) => (
                       <li key={index} className="flex items-center gap-2">
                         <Check className="w-4 h-4 text-primary" />
                         <span className="text-sm text-muted-foreground">{feature}</span>
@@ -147,7 +148,7 @@ export default function PackagesPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3 mb-6">
-                    {(session.features as string[]).map((feature: string, index: number) => (
+                    {session.features.map((feature: string, index: number) => (
                       <li key={index} className="flex items-center gap-2">
                         <Check className="w-4 h-4 text-primary" />
                         <span className="text-sm text-muted-foreground">{feature}</span>
@@ -172,7 +173,7 @@ export default function PackagesPage() {
           <div className="grid md:grid-cols-3 gap-8">
             {individualLessons.map((lesson) => (
               <Card key={lesson.id} className="border-border shadow-lg relative">
-                 {(lesson as any).price === 0 && (
+                 {lesson.price === 0 && (
                     <div className="absolute top-3 left-3 transform">
                         <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">Free Trial</Badge>
                     </div>
@@ -186,7 +187,7 @@ export default function PackagesPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3 mb-6">
-                    {(lesson.features as string[]).map((feature: string, index: number) => (
+                    {lesson.features.map((feature: string, index: number) => (
                       <li key={index} className="flex items-center gap-2">
                         <Check className="w-4 h-4 text-primary" />
                         <span className="text-sm text-muted-foreground">{feature}</span>
