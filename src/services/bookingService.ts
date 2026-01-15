@@ -1,4 +1,3 @@
-
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
 import type { ProductId } from "@/config/products";
@@ -6,7 +5,7 @@ import type { ProductId } from "@/config/products";
 const API_BASE_URL = '/api';
 
 interface CreateBookingPayload {
-    productId: ProductId;
+    productId: ProductId; // Add productId here
     userId: string;
     date?: string;
     time?: string;
