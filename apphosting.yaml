@@ -33,32 +33,23 @@ runConfig:
 # Defines environment variables that will be available at build time and runtime.
 # https://firebase.google.com/docs/app-hosting/configure#environment-variables
 env:
+  # --- Public Variables ---
   - variable: NEXT_PUBLIC_ADMIN_EMAIL
-    value: "mahdernmamo@gmail.com" # Admin email for the site
+    value: "mahdernmamo@gmail.com"
   - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-    value: "YOUR_RECAPTCHA_SITE_KEY_HERE" # TODO: Replace with your actual Site Key from Google reCAPTCHA admin.
+    value: "YOUR_RECAPTCHA_SITE_KEY_HERE"
   - variable: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-    value: "YOUR_CLOUD_NAME_HERE" # TODO: Replace with your Cloudinary Cloud Name
+    value: "YOUR_CLOUD_NAME_HERE"
   - variable: NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
-    value: "YOUR_UPLOAD_PRESET_HERE" # TODO: Replace with your Cloudinary Upload Preset
+    value: "YOUR_UPLOAD_PRESET_HERE"
   
-  # --- SERVER-SIDE SECRETS ---
-  # These are required for server actions to function correctly.
-  # TODO: Replace these placeholder values with your actual secrets.
-  # For production, it is highly recommended to use Secret Manager.
+  # --- Server-Side Secrets ---
+  # These are now securely referenced from Google Cloud Secret Manager.
   - variable: PADDLE_API_KEY
-    value: "pdl_sdbx_apikey_01k47qj21fv3xr6fegn7af76kq"
+    secret: PADDLE_API_KEY
   - variable: PADDLE_WEBHOOK_SECRET
-    value: "pdl_ntfset_01k455ybkmznxbfq8hf1vzz67c_/pw0l9K796Tp77AX9sqUvA7Y0f3eJ0OB"
+    secret: PADDLE_WEBHOOK_SECRET
   - variable: CLOUDINARY_API_KEY
-    value: "YOUR_CLOUDINARY_API_KEY_HERE"
+    secret: CLOUDINARY_API_KEY
   - variable: CLOUDINARY_API_SECRET
-    value: "YOUR_CLOUDINARY_API_SECRET_HERE"
-
-# It's generally recommended to use Secret Manager for sensitive env vars.
-# Example using secrets:
-#  - variable: PADDLE_API_KEY
-#    secret: PADDLE_API_KEY_SECRET_NAME
-#  - variable: PADDLE_WEBHOOK_SECRET
-#    secret: PADDLE_WEBHOOK_SECRET_NAME
-    
+    secret: CLOUDINARY_API_SECRET

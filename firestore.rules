@@ -1,25 +1,15 @@
 /**
  * @file Overview
- * This ruleset enforces a role-based access control model with ownership for user profiles.
+ * This ruleset enforces a strict role-based access control model with ownership for user profiles.
  * Admins, identifiable by a "role: admin" field in their user document, have broad access.
- * Users can manage their own profiles and create bookings.
- * Testimonials are publicly readable but only creatable by signed-in users and manageable by admins.
- * News/Blog content is only manageable by admins.
- *
- * @dataStructure
- * - /users/{userId}: Stores user profile data.  Admins have 'role: admin'.
- * - /bookings/{bookingId}: Stores lesson booking data.
- * - /availability/{docId}: Stores tutor availability information.
- * - /timeOff/{docId}: Stores tutor time off information.
- * - /testimonials/{testimonialId}: Stores user testimonials.
- * - /news/{newsId}: Stores news or blog posts.
+ * Users can only create/manage their own profiles and bookings.
  *
  * @keySecurityDecisions
- * - Users can only read and write their own user profiles (owner-only).
- * - Admin role is determined by the presence of `role: "admin"` in the user document.
- * - Testimonials are publicly readable.
- * - All collections except /users/{userId} are listable.
- * - No schema validation is performed in this prototyping phase.
+ * - Users can only read and write their own profiles (owner-only).
+ * - Admins can override most user-level restrictions.
+ * - Write access to availability and timeOff collections is restricted to admins only.
+ * - Booking creation/modification is restricted to the owner of the booking.
+ * - A user cannot change their own role.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -35,120 +25,86 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // You can store `role: "admin"` in users/{userId}
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
 
     /**
-     * @description Manages user profiles. Users can only read and write their own profiles, or if they are an admin.
+     * @description Manages user profiles. Users can only manage their own profile. Admins have full access.
      * @path /users/{userId}
-     * @allow (read, write) if the user is the owner of the profile (userId matches request.auth.uid) or if the user is an admin.
-     * @deny (read, write) if the user is not the owner and not an admin.
-     * @principle Enforces user-ownership for profile management and allows admin override.
+     * @allow (read, write) if the user is the owner or an admin.
+     * @allow (update) only if the user is not trying to change their own role.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if false;
-      allow create: if isOwner(userId) || isAdmin();
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin(); // Only admins can list all users.
+      allow create: if isOwner(userId); // A user can create their own profile document.
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin(); // Owner can update, but not change their role. Admin can update everything.
+      allow delete: if isAdmin(); // Only admins can delete user profiles.
     }
 
     /**
-     * @description Manages lesson bookings. All users can read bookings, and any signed-in user can create, update or delete them.
+     * @description Manages lesson bookings. Users can read all, but only write their own.
      * @path /bookings/{bookingId}
      * @allow (read) any user can read any booking.
-     * @allow (create, update, delete) any signed-in user can write bookings.
-     * @deny (create, update, delete) if the user is not signed in.
-     * @principle Allows public read access with write access for signed-in users.
+     * @allow (create) if the user is creating a booking for themselves.
+     * @allow (update, delete) if the user is the owner of the booking or an admin.
      */
     match /bookings/{bookingId} {
       allow get: if true;
       allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow delete: if isAdmin(); // Only admins can delete bookings.
     }
-
+    
     /**
-     * @description Manages tutor availability. Tutors' availability is visible to everyone, and admins can modify it.
+     * @description Manages tutor availability. Publicly readable, admin-only write access.
      * @path /availability/{docId}
-     * @allow (read) anyone can read tutor availability.
-     * @allow (create, update, delete) any signed-in user or admin can write availability.
-     * @deny (create, update, delete) if the user is not signed in and not an admin.
-     * @principle Allows public read access with write access for signed-in users and admins.
      */
     match /availability/{docId} {
       allow get: if true;
       allow list: if true;
-      allow create: if isSignedIn() || isAdmin();
-      allow update: if isSignedIn() || isAdmin();
-      allow delete: if isSignedIn() || isAdmin();
+      allow create, update, delete: if isAdmin(); // Only admins can manage availability.
     }
 
     /**
-     * @description Manages tutor time off. Time off blocks are visible to everyone, and admins can manage them.
+     * @description Manages tutor time off. Publicly readable, admin-only write access.
      * @path /timeOff/{docId}
-     * @allow (read) anyone can read time off blocks.
-     * @allow (create, update, delete) any signed-in user or admin can write time off.
-     * @deny (create, update, delete) if the user is not signed in and not an admin.
-     * @principle Allows public read access with write access for signed-in users and admins.
      */
     match /timeOff/{docId} {
       allow get: if true;
       allow list: if true;
-      allow create: if isSignedIn() || isAdmin();
-      allow update: if isSignedIn() || isAdmin();
-      allow delete: if isSignedIn() || isAdmin();
+      allow create, update, delete: if isAdmin(); // Only admins can manage time off.
     }
 
     /**
-     * @description Manages testimonials. Testimonials are publicly readable, can be created by any signed-in user, and only admins can edit/delete them.
+     * @description Manages testimonials. Publicly readable, creatable by signed-in users, editable by admins.
      * @path /testimonials/{testimonialId}
-     * @allow (read) any user can read testimonials.
-     * @allow (create) any signed-in user can create testimonials.
-     * @allow (update, delete) only admins can modify testimonials.
-     * @deny (create) if the user is not signed in.
-     * @deny (update, delete) if the user is not an admin.
-     * @principle Allows public read access and user-submitted content with admin moderation.
      */
     match /testimonials/{testimonialId} {
       allow get: if true;
       allow list: if true;
       allow create: if isSignedIn();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin();
     }
-
+    
     /**
-     * @description Manages news or blog posts. Only admins can create, read, update, or delete news posts.
-     * @path /news/{newsId}
-     * @allow (read) any user can read news posts.
-     * @allow (create, update, delete) only admins can manage news posts.
-     * @deny (create, update, delete) if the user is not an admin.
-     * @principle Restricts content management to administrators.
+     * @description Manages group sessions. Publicly readable, admin-only write access.
+     * @path /groupSessions/{sessionId}
      */
-    match /news/{newsId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
-    }
+     match /groupSessions/{sessionId} {
+        allow get: if true;
+        allow list: if true;
+        allow create, update, delete: if isAdmin();
+     }
+
 
     /**
      * @description Fallback rule that denies all other requests.
      * @path /{document=**}
-     * @allow None. This is a deny-all rule.
-     * @deny All read and write requests to any document not explicitly matched by other rules.
-     * @principle Default-deny security posture.
      */
     match /{document=**} {
-      allow get: if false;
-      allow list: if false;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow read, write: if false;
     }
   }
 }
