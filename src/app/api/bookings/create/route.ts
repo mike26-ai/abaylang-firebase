@@ -10,15 +10,16 @@ import { isValidProductId } from '@/config/products';
 initAdmin();
 const auth = getAuth();
 
-// Zod schema for input validation. Now only requires productId.
+// Zod schema for input validation, now including productId
 const CreateBookingRequestSchema = z.object({
   productId: z.string().refine(isValidProductId, { message: 'Invalid product ID.' }),
-  userId: z.string().min(1), // Still useful for a cross-check
-  date: z.string().optional(), // "YYYY-MM-DD" - optional for packages
-  time: z.string().optional(), // "HH:mm" - optional for packages
-  groupSessionId: z.string().optional(), // For joining a group session
+  userId: z.string().min(1),
+  date: z.string().optional(),
+  time: z.string().optional(),
+  groupSessionId: z.string().optional(),
   paymentNote: z.string().optional(),
 });
+
 
 /**
  * POST handler to create a new booking securely.
