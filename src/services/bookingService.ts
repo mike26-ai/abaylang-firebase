@@ -1,3 +1,4 @@
+
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
 import type { ProductId } from "@/config/products";
@@ -154,3 +155,5 @@ export async function createPrivateGroupBooking(payload: CreatePrivateGroupPaylo
   }
   return result;
 }
+
+    

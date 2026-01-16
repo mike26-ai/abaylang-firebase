@@ -1,3 +1,4 @@
+
 // File: src/config/products.ts
 
 /**
@@ -19,7 +20,7 @@ export const products = {
   // --- INDIVIDUAL LESSONS ---
   'free-trial': {
     label: 'Free Trial',
-    type: 'individual',
+    type: 'individual' as const,
     duration: 30, // minutes
     price: 0,
     originalPrice: undefined,
@@ -30,7 +31,7 @@ export const products = {
   },
   'quick-practice': {
     label: 'Quick Practice',
-    type: 'individual',
+    type: 'individual' as const,
     duration: 30,
     price: 9,
     originalPrice: undefined,
@@ -41,7 +42,7 @@ export const products = {
   },
   'comprehensive-lesson': {
     label: 'Comprehensive Lesson',
-    type: 'individual',
+    type: 'individual' as const,
     duration: 60,
     price: 16,
     originalPrice: undefined,
@@ -54,7 +55,7 @@ export const products = {
   // --- GROUP SESSIONS ---
   'quick-group-conversation': {
     label: 'Quick Group Conversation',
-    type: 'group',
+    type: 'group' as const,
     duration: 30,
     price: 7,
     originalPrice: undefined,
@@ -67,7 +68,7 @@ export const products = {
   },
   'immersive-conversation-practice': {
     label: 'Immersive Conversation Practice',
-    type: 'group',
+    type: 'group' as const,
     duration: 60,
     price: 12,
     originalPrice: undefined,
@@ -82,7 +83,7 @@ export const products = {
   // --- PRIVATE GROUP LESSONS ---
   'private-quick-group': {
     label: 'Private Quick Group',
-    type: 'private-group',
+    type: 'private-group' as const,
     duration: 30,
     price: 8, // Per person
     originalPrice: undefined,
@@ -93,7 +94,7 @@ export const products = {
   },
   'private-immersive-group': {
     label: 'Private Immersive Group',
-    type: 'private-group',
+    type: 'private-group' as const,
     duration: 60,
     price: 14, // Per person
     originalPrice: undefined,
@@ -106,7 +107,7 @@ export const products = {
   // --- PACKAGES ---
   'quick-practice-bundle': {
     label: 'Quick Practice Bundle',
-    type: 'package',
+    type: 'package' as const,
     duration: '10 x 30-min',
     price: 50,
     originalPrice: 70,
@@ -117,7 +118,7 @@ export const products = {
   },
   'learning-intensive': {
     label: 'Learning Intensive',
-    type: 'package',
+    type: 'package' as const,
     duration: '10 x 60-min',
     price: 100,
     originalPrice: 150,
@@ -128,7 +129,7 @@ export const products = {
   },
   'starter-bundle': {
     label: 'Starter Bundle',
-    type: 'package',
+    type: 'package' as const,
     duration: '5 x 30-min',
     price: 25,
     originalPrice: 35,
@@ -139,7 +140,7 @@ export const products = {
   },
   'foundation-pack': {
     label: 'Foundation Pack',
-    type: 'package',
+    type: 'package' as const,
     duration: '5 x 60-min',
     price: 60,
     originalPrice: 75,
@@ -157,3 +158,5 @@ export type ProductId = keyof typeof products;
 export function isValidProductId(id: string): id is ProductId {
   return id in products;
 }
+
+    
