@@ -21,7 +21,7 @@ import { SiteLogo } from "@/components/layout/SiteLogo"
 import { paddlePriceIds } from "@/config/paddle";
 
 import { getAvailability } from "@/services/availabilityService";
-import { createBooking } from "@/services/bookingService";
+import { createBooking, type CreateBookingPayload } from "@/services/bookingService";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
 
@@ -230,9 +230,8 @@ export default function BookLessonPage() {
           ? selectedLessonDetails.duration
           : 60;
 
-      // Step 1: Create the booking document in Firestore first via the secure API route.
       const bookingPayload = {
-        productId: selectedType,
+        productId: selectedType as CreateBookingPayload["productId"],
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
         time: selectedTime || 'N/A_PACKAGE',
         duration: unitDuration,
@@ -246,46 +245,27 @@ export default function BookLessonPage() {
         isFreeTrial
       };
 
-      const { bookingId } = await createBooking(bookingPayload);
+      const { bookingId, redirectUrl } = await createBooking(bookingPayload);
       
       console.log('✅ Booking document created successfully.', { id: bookingId });
 
-      // Step 2: Handle the next action based on payment requirement.
       if (isFreeTrial) {
-        // For free trials, redirect directly to the success page.
         router.push(`/bookings/success?booking_id=${bookingId}&free_trial=true`);
       } else {
-        // For paid lessons, use direct redirection to Paddle Hosted Checkout
-        const lessonValue = selectedLessonDetails.value;
-        const lessonKey = Object.keys(paddlePriceIds).find(key => 
-          key.toLowerCase().replace(/_/g, '') === lessonValue.toLowerCase().replace(/-/g, '')
-        ) as keyof typeof paddlePriceIds;
-
-        const priceId = lessonKey ? paddlePriceIds[lessonKey] : undefined;
-        
-        if (!priceId || priceId.includes('YOUR_') || priceId.includes('price_free_trial')) {
-            toast({
-                title: "Payment Link Not Configured",
-                description: "The payment link for this product has not been set up by the site administrator. Please contact support.",
-                variant: "destructive",
-                duration: 9000,
-            });
-            setIsProcessing(false);
-            return;
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+        } else {
+          toast({
+              title: "Payment Link Not Available",
+              description: "Could not generate payment link. Please contact support.",
+              variant: "destructive",
+          });
+          setIsProcessing(false);
         }
-
-        const passthroughData = { booking_id: bookingId };
-        
-        // Construct the correct Hosted Checkout URL.
-        const checkoutUrl = `https://sandbox-billing.paddle.com/checkout/buy/${priceId}?email=${encodeURIComponent(user.email || "")}&passthrough=${encodeURIComponent(JSON.stringify(passthroughData))}`;
-
-        // Redirect the user.
-        window.location.href = checkoutUrl;
       }
 
     } catch (error: any) {
       console.error("❌ Booking process failed:", error);
-      // Check if the error message indicates a booking conflict
       if (error.message.includes("slot_already_booked") || error.message.includes("tutor_unavailable")) {
           toast({
               title: "Booking Conflict",
@@ -293,12 +273,10 @@ export default function BookLessonPage() {
               variant: "destructive",
               duration: 9000,
           });
-          // Refresh the availability for the selected date to show the user the updated schedule
           if (selectedDate) {
               fetchAvailability(selectedDate);
           }
       } else {
-          // For all other errors, show a generic message
           toast({
               title: "Booking Failed",
               description: error.message || "Could not complete your booking. Please try again.",
@@ -368,7 +346,7 @@ export default function BookLessonPage() {
                                             {lesson.label}
                                             {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
                                             {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group ({lesson.minStudents}-{lesson.maxStudents} people)</Badge>}
+                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group ({lesson.minStudents}-${lesson.maxStudents} people)</Badge>}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
                                             {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
@@ -566,11 +544,11 @@ export default function BookLessonPage() {
                       </span>
                     </div>
                   )}
-                  {selectedTime && !isPackageSelected && (
+                  {selectedTime && !isPackageSelected && selectedLessonDetails && (typeof selectedLessonDetails.duration === 'number' || typeof selectedLessonDetails.unitDuration === 'number') && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
                       <span className="font-medium text-foreground">
-                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), (selectedLessonDetails?.unitDuration || selectedLessonDetails?.duration) as number), 'HH:mm')}`}
+                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), (selectedLessonDetails.unitDuration || selectedLessonDetails.duration) as number), 'HH:mm')}`}
                       </span>
                     </div>
                   )}
@@ -613,3 +591,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
