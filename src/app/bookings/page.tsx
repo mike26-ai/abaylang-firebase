@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
@@ -286,7 +285,7 @@ export default function BookLessonPage() {
 
     try {
         const payload = {
-            productId: selectedProductId,
+            productId: selectedProductId as ProductId,
             userId: user.uid,
             date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined,
             time: selectedTime,
@@ -644,3 +643,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
