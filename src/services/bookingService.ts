@@ -1,3 +1,4 @@
+
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
 import type { ProductId } from "@/config/products";
@@ -5,12 +6,12 @@ import type { ProductId } from "@/config/products";
 const API_BASE_URL = '/api';
 
 interface CreateBookingPayload {
-    productId: ProductId; // Add productId here
+    productId: ProductId;
     userId: string;
     date?: string;
     time?: string;
     paymentNote?: string;
-    groupSessionId?: string; // Add this to handle joining a group session
+    groupSessionId?: string;
 }
 
 interface CreateWithCreditPayload {
