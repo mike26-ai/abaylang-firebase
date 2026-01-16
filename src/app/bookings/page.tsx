@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -180,7 +181,7 @@ export default function BookLessonPage() {
     setIsProcessing(true);
 
     try {
-      const bookingPayload = {
+      const bookingPayload: CreateBookingPayload = {
         productId: selectedType,
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined,
         time: selectedTime,
@@ -278,7 +279,7 @@ export default function BookLessonPage() {
                                             {lesson.label}
                                             {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
                                             {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group (${lesson.minStudents}-${lesson.maxStudents} people)</Badge>}
+                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group ({lesson.minStudents}-{lesson.maxStudents} people)</Badge>}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
                                             {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
@@ -476,11 +477,11 @@ export default function BookLessonPage() {
                       </span>
                     </div>
                   )}
-                  {selectedTime && !isPackageSelected && (
+                  {selectedTime && !isPackageSelected && selectedLessonDetails && typeof selectedLessonDetails.duration === 'number' && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
                       <span className="font-medium text-foreground">
-                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), (selectedLessonDetails.duration) as number), 'HH:mm')}`}
+                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), selectedLessonDetails.duration), 'HH:mm')}`}
                       </span>
                     </div>
                   )}
@@ -523,5 +524,3 @@ export default function BookLessonPage() {
     </div>
   )
 }
-
-    
