@@ -292,7 +292,7 @@ export default function BookLessonPage() {
                                         </div>
                                     </div>
                                     <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
-                                        {(lesson.features as any[]).map((feature: string, index: number) => (
+                                        {lesson.features.map((feature: string, index: number) => (
                                         <li key={index} className="flex items-center gap-2">
                                             <Check className="w-4 h-4 text-primary flex-shrink-0" />
                                             <span className="text-muted-foreground">{feature}</span>
@@ -480,7 +480,7 @@ export default function BookLessonPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Time:</span>
                       <span className="font-medium text-foreground">
-                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), (selectedLessonDetails.duration) as number), 'HH:mm')}`}
+                        {`${format(parse(selectedTime, 'HH:mm', selectedDate || new Date()), 'HH:mm')} - ${format(addMinutes(parse(selectedTime, 'HH:mm', selectedDate || new Date()), selectedLessonDetails.duration), 'HH:mm')}`}
                       </span>
                     </div>
                   )}
