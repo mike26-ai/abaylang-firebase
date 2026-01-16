@@ -45,13 +45,12 @@ export default function BookLessonPage() {
   const searchParams = useSearchParams();
   const initialType = searchParams.get('type');
 
-  const lessonTypes = Object.entries(products).map(([id, product]) => ({
-    ...product,
+  const allProducts = Object.entries(products).map(([id, product]) => ({
     id: id as ProductId,
-    value: id,
+    ...product,
   }));
 
-  const [selectedType, setSelectedType] = useState<ProductId>(initialType && lessonTypes.some(l => l.value === initialType) ? initialType as ProductId : "comprehensive-lesson");
+  const [selectedType, setSelectedType] = useState<ProductId>(initialType && allProducts.some(l => l.id === initialType) ? initialType as ProductId : "comprehensive-lesson");
   const [selectedDate, setSelectedDateState] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [paymentNote, setPaymentNote] = useState("");
@@ -62,7 +61,7 @@ export default function BookLessonPage() {
 
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
-  const selectedLessonDetails = products[selectedType];
+  const selectedLessonDetails = useMemo(() => allProducts.find((p) => p.id === selectedType), [selectedType, allProducts]);
 
   const fetchAvailability = async (date: Date) => {
     setIsFetchingSlots(true);
@@ -260,15 +259,15 @@ export default function BookLessonPage() {
                        <div key={lessonGroupType}>
                         <h3 className="text-lg font-semibold text-foreground mb-3 capitalize">{lessonGroupType === 'individual' ? 'Individual' : lessonGroupType} Lessons</h3>
                         <div className="space-y-4">
-                            {lessonTypes
+                            {allProducts
                             .filter((lesson) => lesson.type === lessonGroupType)
                             .map((lesson) => (
-                                <div key={lesson.value} className="flex items-start space-x-3">
-                                <RadioGroupItem value={lesson.value} id={lesson.value} className="mt-1" />
-                                <Label htmlFor={lesson.value} className="flex-1 cursor-pointer">
+                                <div key={lesson.id} className="flex items-start space-x-3">
+                                <RadioGroupItem value={lesson.id} id={lesson.id} className="mt-1" />
+                                <Label htmlFor={lesson.id} className="flex-1 cursor-pointer">
                                     <div
                                     className={`p-4 border rounded-lg hover:bg-accent/50 transition-colors ${
-                                        selectedType === lesson.value
+                                        selectedType === lesson.id
                                         ? "bg-accent border-primary ring-2 ring-primary"
                                         : "border-border"
                                     }`}
@@ -293,7 +292,7 @@ export default function BookLessonPage() {
                                         </div>
                                     </div>
                                     <ul className="grid md:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm list-none p-0">
-                                        {(lesson.features as any[]).map((feature: string, index: number) => (
+                                        {lesson.features.map((feature: string, index: number) => (
                                         <li key={index} className="flex items-center gap-2">
                                             <Check className="w-4 h-4 text-primary flex-shrink-0" />
                                             <span className="text-muted-foreground">{feature}</span>
@@ -524,3 +523,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
