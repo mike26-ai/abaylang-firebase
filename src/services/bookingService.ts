@@ -8,17 +8,10 @@ const API_BASE_URL = '/api';
 export interface CreateBookingPayload {
     productId: ProductId;
     userId: string;
-    date: string;
-    time: string;
-    duration: number;
-    lessonType: string;
-    price: number;
-    tutorId: string;
-    userName: string;
-    userEmail: string;
-    paymentNote?: string;
-    isFreeTrial: boolean;
+    date?: string;
+    time?: string;
     groupSessionId?: string;
+    paymentNote?: string;
 }
 
 interface CreateWithCreditPayload {
