@@ -1,5 +1,3 @@
-
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -21,7 +19,7 @@ import type { Booking as BookingType, TimeOff } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo"
 
 import { getAvailability } from "@/services/availabilityService";
-import { createBooking } from "@/services/bookingService";
+import { createBooking, type CreateBookingPayload } from "@/services/bookingService";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
 import { DateSelection } from "@/components/bookings/date-selection"
 import { products, type ProductId } from "@/config/products"

@@ -4,7 +4,7 @@ import type { ProductId } from "@/config/products";
 
 const API_BASE_URL = '/api';
 
-interface CreateBookingPayload {
+export interface CreateBookingPayload {
     productId: ProductId;
     userId: string;
     date?: string;
