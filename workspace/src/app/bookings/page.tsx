@@ -133,10 +133,10 @@ export default function BookLessonPage() {
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date && isPast(date) && !isEqual(startOfDay(date), startOfDay(new Date()))) {
-      toast({ title: "Invalid Date", description: "Cannot select a past date.", variant: "destructive" });
-      setSelectedDateState(undefined);
+        toast({ title: "Invalid Date", description: "Cannot select a past date.", variant: "destructive"});
+        setSelectedDateState(undefined);
     } else {
-      setSelectedDateState(date);
+        setSelectedDateState(date);
     }
   };
 
@@ -232,6 +232,7 @@ export default function BookLessonPage() {
 
       // Step 1: Create the booking document in Firestore first via the secure API route.
       const bookingPayload = {
+        productId: selectedType,
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'N/A_PACKAGE',
         time: selectedTime || 'N/A_PACKAGE',
         duration: unitDuration,
@@ -328,7 +329,7 @@ export default function BookLessonPage() {
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
-          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with {tutorInfo.name}</p>
+          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with ${tutorInfo.name}</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -374,9 +375,9 @@ export default function BookLessonPage() {
                                         </div>
                                         </div>
                                         <div className="text-right">
-                                        <div className="text-2xl font-bold text-primary">${lesson.price}</div>
+                                        <div className="text-2xl font-bold text-primary">$${lesson.price}</div>
                                         {lesson.originalPrice && (
-                                            <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>
+                                            <div className="text-sm text-muted-foreground line-through">$${lesson.originalPrice}</div>
                                         )}
                                         </div>
                                     </div>
@@ -510,8 +511,8 @@ export default function BookLessonPage() {
                   <div className="w-20 h-20 bg-accent rounded-full mx-auto mb-3 flex items-center justify-center">
                     <span className="text-2xl text-primary font-bold">{tutorInfo.name.split(" ").map(n=>n[0]).join("")}</span>
                   </div>
-                  <h3 className="font-semibold text-foreground">{tutorInfo.name}</h3>
-                  <p className="text-sm text-muted-foreground">{tutorInfo.shortIntro}</p>
+                  <h3 className="font-semibold text-foreground">${tutorInfo.name}</h3>
+                  <p className="text-sm text-muted-foreground">${tutorInfo.shortIntro}</p>
                   <div className="flex items-center justify-center gap-1 mt-2">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />

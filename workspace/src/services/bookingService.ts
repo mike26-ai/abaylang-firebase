@@ -1,16 +1,17 @@
+
 // File: src/services/bookingService.ts
 import { auth } from "@/lib/firebase";
 
 const API_BASE_URL = '/api';
 
 interface CreateBookingPayload {
+    productId: string;
     date: string;
     time: string;
     duration: number;
     lessonType: string;
     price: number;
     tutorId: string;
-    tutorName: string;
     userId: string;
     userName: string;
     userEmail: string;
