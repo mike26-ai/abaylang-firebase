@@ -1,14 +1,11 @@
+
 // File: src/app/bookings/success/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-<<<<<<< HEAD
-import { CheckCircle, Clock } from "lucide-react";
-=======
 import { CheckCircle, Clock, Ticket } from "lucide-react";
->>>>>>> before-product-selection-rewrite
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase";
@@ -20,28 +17,15 @@ import { Spinner } from "@/components/ui/spinner";
 
 export default function BookingSuccessPage() {
     const searchParams = useSearchParams();
-<<<<<<< HEAD
-    // For paid bookings, Paddle might add query params.
-    // For free trials, we pass `booking_id` and `free_trial`. We'll use these to differentiate.
-    const isFreeTrial = searchParams.get('free_trial') === 'true';
-    const bookingId = searchParams.get('booking_id'); 
-    
-=======
     const isFreeTrial = searchParams.get('free_trial') === 'true';
     const isSimulatedPayment = searchParams.get('simulated_payment') === 'true';
     const usedCredit = searchParams.get('used_credit') === 'true';
     const bookingId = searchParams.get('booking_id'); 
 
->>>>>>> before-product-selection-rewrite
     const [bookingDetails, setBookingDetails] = useState<Booking | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-<<<<<<< HEAD
-        // We only have the booking ID for free trials, so we only fetch details for those.
-        // For paid sessions, we show a generic "pending confirmation" message.
-=======
->>>>>>> before-product-selection-rewrite
         if (!bookingId) {
             setIsLoading(false);
             return;
@@ -71,13 +55,6 @@ export default function BookingSuccessPage() {
                 icon: <CheckCircle className="h-10 w-10 text-primary" />,
                 bgColor: "bg-primary/10",
                 title: "Free Trial Confirmed!",
-<<<<<<< HEAD
-                description: "Your introductory lesson is booked.",
-                message: "You're all set! Your free trial has been scheduled. You can view the details in your dashboard. We look forward to seeing you!",
-            };
-        }
-        // This is the message for users returning from a paid Paddle checkout.
-=======
                 description: "Your lesson has been successfully scheduled.",
                 message: "You're all set! Your free trial has been scheduled. You can view the details in your dashboard. We look forward to seeing you!",
             };
@@ -104,7 +81,6 @@ export default function BookingSuccessPage() {
         }
         
         // This message is for a real production environment where Paddle redirects back.
->>>>>>> before-product-selection-rewrite
         return {
             icon: <Clock className="h-10 w-10 text-yellow-600" />,
             bgColor: "bg-yellow-500/10",
@@ -129,11 +105,7 @@ export default function BookingSuccessPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-<<<<<<< HEAD
-                    {isLoading ? (
-=======
                     {isLoading && bookingId ? (
->>>>>>> before-product-selection-rewrite
                         <div className="flex justify-center py-4"><Spinner /></div>
                     ) : (
                         <div className="space-y-4">
@@ -142,13 +114,8 @@ export default function BookingSuccessPage() {
                                 <div className="text-left bg-muted/50 p-4 rounded-md border text-sm">
                                     <h4 className="font-semibold mb-2 text-foreground">Booking Summary</h4>
                                     <div className="space-y-1">
-<<<<<<< HEAD
-                                        <p><span className="font-medium text-muted-foreground">Lesson:</span> {bookingDetails.lessonType}</p>
-                                        {bookingDetails.date !== 'N/A_PACKAGE' && (
-=======
                                         <p><span className="font-medium text-muted-foreground">Item:</span> {bookingDetails.lessonType || (bookingDetails.productType === 'package' ? 'Lesson Package' : 'Lesson')}</p>
                                         {bookingDetails.date !== 'N/A_PACKAGE' && bookingDetails.date && bookingDetails.time && (
->>>>>>> before-product-selection-rewrite
                                             <p>
                                                 <span className="font-medium text-muted-foreground">Date:</span> 
                                                 {format(parse(bookingDetails.date, 'yyyy-MM-dd', new Date()), "PPP")} at {bookingDetails.time}
@@ -158,12 +125,6 @@ export default function BookingSuccessPage() {
                                     </div>
                                 </div>
                             )}
-<<<<<<< HEAD
-                            <p className="text-xs text-muted-foreground pt-2">
-                                If your booking is not confirmed within a few minutes, please contact us for support.
-                            </p>
-=======
->>>>>>> before-product-selection-rewrite
                             <Button asChild size="lg" className="mt-4">
                                 <Link href="/profile">Go to My Dashboard</Link>
                             </Button>

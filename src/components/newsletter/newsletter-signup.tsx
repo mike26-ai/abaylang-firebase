@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import type React from "react"
@@ -47,11 +48,7 @@ export function NewsletterSignup() {
             <span className="font-semibold text-lg">Successfully subscribed!</span>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-<<<<<<< HEAD
-            You'll receive our weekly Amharic learning tips and cultural insights.
-=======
             You&apos;ll receive our weekly Amharic learning tips and cultural insights.
->>>>>>> before-product-selection-rewrite
           </p>
         </CardContent>
       </Card>

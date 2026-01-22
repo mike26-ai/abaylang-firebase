@@ -5,30 +5,18 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-<<<<<<< HEAD
-import { Star, Calendar, Users, Award, CheckCircle, Play, Globe, Heart, BookOpen, Clock, Package } from "lucide-react"
-=======
 import { Star, Calendar, Globe, Heart, BookOpen, Clock, Package } from "lucide-react"
->>>>>>> before-product-selection-rewrite
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useState, type ChangeEvent, type FormEvent, useEffect } from "react"
-<<<<<<< HEAD
-import { addDoc, collection, serverTimestamp, getDocs, query, where, orderBy, limit } from "firebase/firestore"
-=======
 import { addDoc, collection, serverTimestamp } from "firebase/firestore"
->>>>>>> before-product-selection-rewrite
 import { db } from "@/lib/firebase"
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo, siteConfig } from "@/config/site"
 import Image from "next/image"
-<<<<<<< HEAD
-import type { Testimonial as TestimonialType } from "@/lib/types"; // For fetching testimonials
-=======
 import type { Testimonial as TestimonialType } from "@/lib/types";
->>>>>>> before-product-selection-rewrite
 import { SiteLogo } from "@/components/layout/SiteLogo"
 
 export default function HomePage() {
@@ -42,40 +30,6 @@ export default function HomePage() {
     const fetchTestimonials = async () => {
       setIsLoadingTestimonials(true);
       try {
-<<<<<<< HEAD
-        const testimonialsCol = collection(db, "testimonials");
-        // FIX: Query for status, but order in code to avoid needing a composite index
-        const q = query(
-          testimonialsCol,
-          where("status", "==", "approved"),
-          limit(10) // Fetch a few recent ones to sort
-        );
-        const querySnapshot = await getDocs(q);
-        const fetchedTestimonials = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TestimonialType));
-        
-        // Sort by date in the client-side code
-        fetchedTestimonials.sort((a, b) => {
-            const dateA = a.createdAt?.toDate()?.getTime() || 0;
-            const dateB = b.createdAt?.toDate()?.getTime() || 0;
-            return dateB - dateA;
-        });
-
-        setTestimonials(fetchedTestimonials.slice(0, 3)); // Take the top 3 after sorting
-
-      } catch (error: any) {
-        console.error("Error fetching testimonials for homepage:", error);
-        let description = "Could not load recent testimonials.";
-        if (error.code === 'failed-precondition') {
-            description = "Could not load testimonials. This often means a required database index is missing. Please check the browser console for a link to create it, or check Firestore indexes.";
-        } else if (error.code === 'permission-denied') {
-            description = "Could not load testimonials due to a permission issue. Please check Firestore security rules for 'testimonials'.";
-        }
-        toast({
-          title: "Error Loading Testimonials",
-          description: description,
-          variant: "destructive",
-          duration: 9000,
-=======
         // Fetch from the new, secure API route
         const response = await fetch('/api/testimonials');
         if (!response.ok) {
@@ -98,7 +52,6 @@ export default function HomePage() {
           title: "Error Loading Testimonials",
           description: "Could not load recent testimonials.",
           variant: "destructive",
->>>>>>> before-product-selection-rewrite
         });
       } finally {
         setIsLoadingTestimonials(false);
@@ -200,11 +153,7 @@ export default function HomePage() {
               asChild
             >
               <Link href="/tutor-profile">
-<<<<<<< HEAD
-                <Play className="w-5 h-5 mr-2" />
-=======
                 <Star className="w-5 h-5 mr-2" />
->>>>>>> before-product-selection-rewrite
                 Meet Your Tutor
               </Link>
             </Button>
@@ -250,11 +199,7 @@ export default function HomePage() {
             <div className="space-y-6">
               <Badge className="bg-accent text-accent-foreground">Meet Your Tutor</Badge>
               <h2 className="text-4xl md:text-5xl font-bold text-foreground">{tutorInfo.name}</h2>
-<<<<<<< HEAD
-              <p className="text-xl text-primary font-medium">{tutorInfo.bio}</p>
-=======
               <p className="text-xl text-primary font-medium">{tutorInfo.shortIntro}</p>
->>>>>>> before-product-selection-rewrite
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
                   Experienced Amharic teacher who makes language learning fun, simple, and interactive. Join me for easy lessons packed with culture and conversation!
@@ -295,14 +240,7 @@ export default function HomePage() {
                 <CardDescription className="text-muted-foreground">30-minute trial session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-<<<<<<< HEAD
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Meet the tutor</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Experience the teaching style</span></li>
-                </ul>
-=======
                  <p className="text-center text-sm text-muted-foreground">Meet the tutor and experience the teaching style.</p>
->>>>>>> before-product-selection-rewrite
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
                   <Link href="/bookings?type=free-trial">Book Free Trial</Link>
                 </Button>
@@ -322,14 +260,7 @@ export default function HomePage() {
                 <CardDescription className="text-muted-foreground">30-minute focused session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-<<<<<<< HEAD
-                 <ul className="space-y-3">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Conversation practice</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Pronunciation correction</span></li>
-                </ul>
-=======
                  <p className="text-center text-sm text-muted-foreground">Perfect for conversation practice and review.</p>
->>>>>>> before-product-selection-rewrite
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
                   <Link href="/bookings?type=quick-practice">Book Quick Session</Link>
                 </Button>
@@ -346,14 +277,7 @@ export default function HomePage() {
                 <CardDescription className="text-muted-foreground">60-minute deep dive session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-<<<<<<< HEAD
-                <ul className="space-y-3">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Structured lesson plan</span></li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /><span className="text-sm text-muted-foreground">Cultural context</span></li>
-                </ul>
-=======
                 <p className="text-center text-sm text-muted-foreground">Structured lesson with cultural context.</p>
->>>>>>> before-product-selection-rewrite
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
                   <Link href="/bookings?type=comprehensive-lesson">Book Full Lesson</Link>
                 </Button>
@@ -379,11 +303,7 @@ export default function HomePage() {
             <Badge className="mb-4 bg-accent text-accent-foreground">Student Success</Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">What Our Students Say</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-<<<<<<< HEAD
-              Real stories from learners who've connected with the culture
-=======
               Real stories from learners who&apos;ve connected with the culture
->>>>>>> before-product-selection-rewrite
             </p>
           </div>
             {isLoadingTestimonials ? (
@@ -397,11 +317,7 @@ export default function HomePage() {
                         {[...Array(5)].map((_, i) => (<Star key={i} className={`w-4 h-4 ${i < testimonial.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`} />))}
                     </div>
                     <p className="text-muted-foreground mb-6 leading-relaxed line-clamp-4">
-<<<<<<< HEAD
-                        "{testimonial.comment}"
-=======
                         &quot;{testimonial.comment}&quot;
->>>>>>> before-product-selection-rewrite
                     </p>
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
@@ -435,25 +351,15 @@ export default function HomePage() {
             <Badge className="mb-4 bg-accent text-accent-foreground">Get in Touch</Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Ready to Start Learning?</h2>
             <p className="text-xl text-muted-foreground">
-<<<<<<< HEAD
-              Have questions? Want to discuss your learning goals? I'm here to help you begin your Amharic journey.
-=======
               Have questions? Want to discuss your learning goals? I&apos;m here to help you begin your Amharic journey.
->>>>>>> before-product-selection-rewrite
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-12">
             <div className="space-y-6">
-<<<<<<< HEAD
-              <h3 className="text-2xl font-bold text-foreground">Let's Connect</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Whether you're a complete beginner or looking to improve your existing Amharic skills, I'm excited to
-=======
               <h3 className="text-2xl font-bold text-foreground">Let&apos;s Connect</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Whether you&apos;re a complete beginner or looking to improve your existing Amharic skills, I&apos;m excited to
->>>>>>> before-product-selection-rewrite
                 help you connect with your Ethiopian heritage through language.
               </p>
               <div className="flex gap-4">
@@ -469,11 +375,7 @@ export default function HomePage() {
             <Card className="shadow-lg bg-card">
               <CardHeader>
                 <CardTitle className="text-foreground">Quick Contact</CardTitle>
-<<<<<<< HEAD
-                <CardDescription className="text-muted-foreground">Send me a message and I'll get back to you within 24 hours</CardDescription>
-=======
                 <CardDescription className="text-muted-foreground">Send me a message and I&apos;ll get back to you within 24 hours</CardDescription>
->>>>>>> before-product-selection-rewrite
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleContactSubmit} className="space-y-4">

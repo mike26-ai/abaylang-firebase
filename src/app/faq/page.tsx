@@ -1,7 +1,5 @@
-<<<<<<< HEAD
-=======
 
->>>>>>> before-product-selection-rewrite
+
 // File: src/app/faq/page.tsx
 
 import {
@@ -30,21 +28,6 @@ const faqData = [
   {
     id: "payment-policy", // ID for direct linking
     question: "How does the booking and payment process work?",
-<<<<<<< HEAD
-    answer: "Choose a lesson and time on the booking page. After you submit, the slot is held for you. You will then be shown instructions on how to send payment (e.g., PayPal) and proof of payment (e.g., a screenshot) to confirm your booking. Your lesson is officially confirmed once our team verifies the payment and the status on your dashboard changes to 'Confirmed'.",
-  },
-   {
-    question: "How long does it take for my payment to be confirmed?",
-    answer: "We guarantee that your payment will be verified and your lesson status updated to 'Confirmed' within **12 business hours** of you sending us your proof of payment. 'Business hours' are typically Monday-Friday, 9am-6pm in our local time zone. Often, confirmations are much faster.",
-  },
-  {
-    question: "What if my payment isn't confirmed in time?",
-    answer: "We stand by our confirmation guarantee. In the unlikely event that your lesson is not confirmed within 12 business hours of receiving your proof of payment, you are entitled to a **full and immediate refund**, no questions asked. Please contact us with your payment details to process the refund.",
-  },
-  {
-    question: "What is your cancellation and refund policy?",
-    answer: "We have a simple and fair policy. You can receive a **full refund** or **reschedule for free** as long as you cancel at least **12 hours before** your scheduled lesson time. Cancellations made within the 12-hour window before a lesson are not eligible for a refund, as that time has been reserved for you.",
-=======
     answer: "Choose your lesson and time on the booking page. After you 'Proceed to Payment', you will be redirected to our secure payment partner, Paddle. Once your payment is complete, you will be sent back to your dashboard where you should click the 'Payment Submitted' button on your new booking. This will change the status to 'Awaiting Confirmation'.",
   },
    {
@@ -58,7 +41,6 @@ const faqData = [
   {
     question: "What is your cancellation and refund policy?",
     answer: "We have a simple and fair policy. You can receive a **full refund** or **reschedule for free** as long as you cancel at least **12 hours before** your scheduled lesson time. Cancellations made within the 12-hour window before a lesson are not eligible for a refund. To request a refund for an eligible cancellation, please contact us directly via email at mahdernmamo@gmail.com or through our contact page.",
->>>>>>> before-product-selection-rewrite
   },
   {
     question: "How do I reschedule a lesson?",
@@ -120,11 +102,7 @@ export default function FAQPage() {
         <Info className="h-4 w-4 text-primary" />
         <AlertTitle className="font-bold text-primary">Booking & Payment Policies</AlertTitle>
         <AlertDescription>
-<<<<<<< HEAD
-          Please review the updated policies on how payments are confirmed and our cancellation rules. We've designed them to be fair and transparent for everyone.
-=======
           Please review our updated policies on how payments are confirmed (within 2-3 hours) and our fair 12-hour cancellation rule. We&apos;ve designed them to be transparent for everyone.
->>>>>>> before-product-selection-rewrite
         </AlertDescription>
       </Alert>
 

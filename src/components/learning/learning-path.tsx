@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState } from "react"
@@ -203,11 +204,7 @@ export function LearningPath({ modules, onSelectLesson }: LearningPathProps) {
                     <div className="flex items-center gap-2">
                       <Award className="w-5 h-5 text-primary" />
                       <span className="text-sm font-medium text-primary">
-<<<<<<< HEAD
-                        Module completed! You've earned a certificate.
-=======
                         Module completed! You&apos;ve earned a certificate.
->>>>>>> before-product-selection-rewrite
                       </span>
                     </div>
                     <Button size="sm" variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">

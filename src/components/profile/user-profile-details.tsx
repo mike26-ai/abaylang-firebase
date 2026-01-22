@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -12,11 +13,7 @@ import { updateProfile } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-<<<<<<< HEAD
-import { Spinner } from "../ui/spinner";
-=======
 import { Spinner } from "@/components/ui/spinner";
->>>>>>> before-product-selection-rewrite
 // TODO: When implementing file uploads, import the server action.
 // import { uploadImage } from "@/app/actions/uploadActions";
 
@@ -170,8 +167,3 @@ export function UserProfileDetails() {
     </Card>
   );
 }
-<<<<<<< HEAD
-=======
-
-    
->>>>>>> before-product-selection-rewrite

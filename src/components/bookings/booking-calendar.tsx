@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,11 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { addDoc, collection, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format, addDays, isPast, startOfDay, isEqual } from 'date-fns';
-<<<<<<< HEAD
-import { Spinner } from "../ui/spinner";
-=======
 import { Spinner } from "@/components/ui/spinner";
->>>>>>> before-product-selection-rewrite
 import type { Booking } from "@/lib/types";
 
 
@@ -191,8 +188,3 @@ export function BookingCalendar() {
     </div>
   );
 }
-<<<<<<< HEAD
-=======
-
-    
->>>>>>> before-product-selection-rewrite

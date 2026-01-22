@@ -1,13 +1,11 @@
 
+
 import { LoginForm } from "@/components/auth/login-form";
 import { AuthFormWrapper } from "@/components/auth/auth-form-wrapper";
 import type { Metadata } from 'next';
-<<<<<<< HEAD
-=======
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
->>>>>>> before-product-selection-rewrite
 
 export const metadata: Metadata = {
   title: 'Login',
@@ -15,14 +13,6 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-<<<<<<< HEAD
-    <AuthFormWrapper
-      title="Welcome Back!"
-      description="Log in to continue your Amharic learning journey."
-    >
-      <LoginForm />
-    </AuthFormWrapper>
-=======
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background flex items-center justify-center p-4">
         <div className="w-full max-w-md">
             <div className="text-center mb-8">
@@ -42,6 +32,5 @@ export default function LoginPage() {
             </AuthFormWrapper>
         </div>
     </div>
->>>>>>> before-product-selection-rewrite
   );
 }
