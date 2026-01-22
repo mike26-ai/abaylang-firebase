@@ -1,25 +1,28 @@
 // File: src/app/actions/uploadActions.ts
 'use server';
 
-<<<<<<< HEAD
-import { v2 as cloudinary } from 'cloudinary';
-=======
 import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
->>>>>>> before-product-selection-rewrite
 
-// Configure Cloudinary with your credentials.
-// It's safe to do this here because this is a server-side action.
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Check if Cloudinary is fully configured
+const isCloudinaryConfigured = 
+  !!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME &&
+  !!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET &&
+  !!process.env.CLOUDINARY_API_KEY &&
+  !!process.env.CLOUDINARY_API_SECRET;
+
+// Only configure Cloudinary if all variables are present
+if (isCloudinaryConfigured) {
+  cloudinary.config({
+    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 
 /**
  * Uploads an image to Cloudinary using an unsigned upload preset.
- * This function now conditionally handles uploads. If Cloudinary is not configured,
- * it will skip the upload and return a success state with no URL.
+ * This function now gracefully skips the upload if Cloudinary is not fully configured.
  * @param formData - The FormData object containing the file to upload.
  * @returns An object with either the secure URL of the uploaded image or an error message.
  */
@@ -29,17 +32,13 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
     return { success: false, error: 'No file provided.' };
   }
   
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-  // Gracefully handle missing configuration for development
-  if (!cloudName || !uploadPreset) {
+  if (!isCloudinaryConfigured) {
     console.warn(`
       ********************************************************************************
-      Cloudinary environment variables (NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and 
-      NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) are not set. 
+      Cloudinary is not fully configured. All Cloudinary environment variables 
+      (NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
+      CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) must be set.
       Skipping image upload. The feature will work, but no image will be attached.
-      To enable uploads, please configure these in your .env file.
       ********************************************************************************
     `);
     // Return a success state indicating the upload was skipped, not failed.
@@ -53,14 +52,10 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
 
 
   try {
-<<<<<<< HEAD
-    const result = await new Promise((resolve, reject) => {
-=======
     const result = await new Promise<UploadApiResponse>((resolve, reject) => {
->>>>>>> before-product-selection-rewrite
       cloudinary.uploader.upload_stream(
         {
-          upload_preset: uploadPreset,
+          upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
           // You can add more options here, like tags, folders, etc.
           // folder: "amharic_connect_testimonials"
         },
@@ -69,12 +64,6 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
             reject(error);
             return;
           }
-<<<<<<< HEAD
-          resolve(result);
-        }
-      ).end(buffer);
-    }) as { secure_url: string };
-=======
           // FIX: Explicitly check for an undefined result before resolving.
           if (!result) {
             reject(new Error("Cloudinary upload failed: The result is undefined."));
@@ -84,7 +73,6 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
         }
       ).end(buffer);
     });
->>>>>>> before-product-selection-rewrite
 
     return { success: true, url: result.secure_url };
 
