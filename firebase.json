@@ -1,72 +1,18 @@
 
 {
-<<<<<<< HEAD
-  "hosting": {
-    "public": ".next", 
-=======
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
     "source": ".",
->>>>>>> before-product-selection-rewrite
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-<<<<<<< HEAD
-    "rewrites": [
-      {
-        "source": "/_next/static/**",
-        "destination": "/_next/static/**"
-      },
-      {
-        "source": "/static/**",
-        "destination": "/static/**"
-      },
-      {
-        "source": "/favicon.ico",
-        "destination": "/favicon.ico" 
-      },
-      {
-        "source": "/manifest.json",
-        "destination": "/manifest.json" 
-      },
-      {
-        "source": "/icon-*.png",
-        "destination": "/icon-*.png"
-      },
-      {
-        "source": "**",
-        "function": "server" 
-      }
-    ],
-    "headers": [
-      {
-        "source": "/_next/static/**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=31536000, immutable"
-          }
-        ]
-      },
-      {
-        "source": "/static/**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=31536000, immutable"
-          }
-        ]
-      }
-    ]
-=======
     "frameworksBackend": {
       "region": "us-central1"
     }
->>>>>>> before-product-selection-rewrite
   }
 }
