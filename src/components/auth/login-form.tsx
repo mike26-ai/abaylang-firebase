@@ -79,13 +79,8 @@ export function LoginForm() {
           case 'auth/wrong-password':
             errorMessage = "Invalid email or password. Please check your credentials and try again.";
             break;
-<<<<<<< HEAD
-          case 'auth/invalid-api-key':
-            errorMessage = "The Firebase API Key is not valid. This indicates a critical issue with your Firebase project setup or .env configuration.";
-=======
           case 'auth/api-key-not-valid':
             errorMessage = "The Firebase API Key is not valid. This is a critical configuration issue. Please check the .env file and restart the server.";
->>>>>>> before-product-selection-rewrite
             break;
           default:
              errorMessage = "An error occurred during login. Please try again.";
@@ -162,21 +157,11 @@ export function LoginForm() {
           </Button>
           <div className="text-center text-sm text-muted-foreground">
             <p>
-              Don&apos;t have an account?{" "}
+              Don't have an account?{" "}
               <Link href="/register" className="font-medium text-primary hover:underline">
                 Sign up
               </Link>
             </p>
-<<<<<<< HEAD
-            <p className="mt-2 text-xs">
-              Admin? You must{' '}
-              <Link href="/register" className="text-primary hover:underline">
-                Sign Up first
-              </Link>
-              {' '}with the admin email.
-            </p>
-=======
->>>>>>> before-product-selection-rewrite
           </div>
         </form>
       </Form>

@@ -1,11 +1,7 @@
 
 "use client";
 
-<<<<<<< HEAD
-import { useEffect, useState } from "react";
-=======
 import { useEffect, useState, useMemo } from "react";
->>>>>>> before-product-selection-rewrite
 import { collection, getDocs, orderBy, query, updateDoc, doc, deleteDoc, getDoc, where, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Booking, UserProfile } from "@/lib/types";
@@ -13,13 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-<<<<<<< HEAD
-import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, MessageCircle, Link as LinkIcon, Calendar, Clock, User } from "lucide-react";
-import { format } from 'date-fns';
-=======
 import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, MessageCircle, Link as LinkIcon, Calendar, Clock, User, Check, Ban, Search } from "lucide-react";
 import { format, isValid, parseISO, isPast } from 'date-fns';
->>>>>>> before-product-selection-rewrite
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "../ui/spinner";
 import {
@@ -37,11 +28,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
-<<<<<<< HEAD
-
-export function BookingsManager() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-=======
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -75,21 +61,17 @@ const safeFormatDate = (dateInput: any, formatString: string) => {
 
 export function BookingsManager() {
   const [allBookings, setAllBookings] = useState<Booking[]>([]);
->>>>>>> before-product-selection-rewrite
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [zoomLinkData, setZoomLinkData] = useState<{ isOpen: boolean; booking: Booking | null; link: string; isSaving: boolean }>({ isOpen: false, booking: null, link: "", isSaving: false });
   const [deleteConfirmation, setDeleteConfirmation] = useState<Booking | null>(null);
 
-<<<<<<< HEAD
-=======
   // State for tabs, search and filter
   const [activeTab, setActiveTab] = useState("active");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("date-asc");
 
->>>>>>> before-product-selection-rewrite
 
   const fetchBookings = async () => {
     setIsLoading(true);
@@ -98,11 +80,7 @@ export function BookingsManager() {
       const q = query(bookingsCol, orderBy("createdAt", "desc"));
       const querySnapshot = await getDocs(q);
       const fetchedBookings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
-<<<<<<< HEAD
-      setBookings(fetchedBookings);
-=======
       setAllBookings(fetchedBookings);
->>>>>>> before-product-selection-rewrite
     } catch (error) {
       console.error("Error fetching bookings:", error);
       toast({ title: "Error", description: "Could not fetch bookings.", variant: "destructive" });
@@ -115,8 +93,6 @@ export function BookingsManager() {
     fetchBookings();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-<<<<<<< HEAD
-=======
   
   const { activeBookings, archivedBookings } = useMemo(() => {
     const terminalStatuses = ["completed", "cancelled", "cancelled-by-admin", "refunded", "credit-issued", "rescheduled", "no-show"];
@@ -163,7 +139,6 @@ export function BookingsManager() {
     });
   }, [activeTab, activeBookings, archivedBookings, searchTerm, filterStatus, sortBy]);
 
->>>>>>> before-product-selection-rewrite
 
   const triggerFirstLessonFeedbackPrompt = async (userId: string) => {
     try {
@@ -240,8 +215,6 @@ export function BookingsManager() {
       setZoomLinkData(prev => ({ ...prev, isSaving: false }));
     }
   };
-<<<<<<< HEAD
-=======
   
   const getStatusText = (status: string) => {
     return status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -268,178 +241,11 @@ export function BookingsManager() {
               return 'secondary';
       }
   };
->>>>>>> before-product-selection-rewrite
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Spinner size="lg" /></div>;
   }
 
-<<<<<<< HEAD
-  if (bookings.length === 0) {
-    return <p className="text-muted-foreground">No bookings found.</p>;
-  }
-
-  return (
-    <>
-      {/* Desktop View: Table */}
-      <div className="hidden md:block overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Student Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Booked On</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bookings.map((booking) => (
-              <TableRow key={booking.id}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-2">
-                    {booking.userName}
-                    {booking.paymentNote && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <MessageCircle className="h-4 w-4 text-primary cursor-pointer" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">{booking.paymentNote}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>{booking.userEmail}</TableCell>
-                <TableCell>{booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'Package'}</TableCell>
-                <TableCell>{booking.time !== 'N/A_PACKAGE' ? booking.time : 'N/A'}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      booking.status === "confirmed" ? "default" 
-                      : booking.status === "completed" ? "secondary"
-                      : booking.status === "cancelled" ? "destructive" 
-                      : "secondary"
-                    }
-                    className={
-                      booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" 
-                      : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
-                      : ""
-                      }
-                  >
-                    {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </Badge>
-                </TableCell>
-                <TableCell>{booking.createdAt.toDate().toLocaleString()}</TableCell>
-                <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        {(booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation') && (
-                          <DropdownMenuItem onClick={() => updateBookingStatus(booking, "confirmed")}>
-                              <CreditCard className="mr-2 h-4 w-4 text-primary" /> Confirm Payment
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => setZoomLinkData({ isOpen: true, booking, link: booking.zoomLink || '', isSaving: false })}>
-                          <LinkIcon className="mr-2 h-4 w-4" /> {booking.zoomLink ? "Edit" : "Add"} Zoom Link
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => updateBookingStatus(booking, "completed")} disabled={booking.status === 'completed'}>
-                          <CheckCircle className="mr-2 h-4 w-4 text-blue-500" /> Mark as Completed
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateBookingStatus(booking, "cancelled")} disabled={booking.status === 'cancelled'}>
-                          <XCircle className="mr-2 h-4 w-4 text-red-500" /> Mark as Cancelled
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600 hover:!text-red-600 focus:!text-red-600" onClick={() => setDeleteConfirmation(booking)}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete Booking
-                          </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Mobile View: Cards */}
-      <div className="md:hidden space-y-4">
-        {bookings.map((booking) => (
-          <Card key={booking.id} className="shadow-md">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                  <div>
-                      <CardTitle className="text-lg">{booking.userName}</CardTitle>
-                      <p className="text-xs text-muted-foreground">{booking.userEmail}</p>
-                  </div>
-                  <Badge
-                    variant={
-                      booking.status === "confirmed" ? "default" 
-                      : booking.status === "completed" ? "secondary"
-                      : booking.status === "cancelled" ? "destructive" 
-                      : "secondary"
-                    }
-                    className={
-                      booking.status === 'awaiting-payment' ? "bg-yellow-400/20 text-yellow-700 dark:text-yellow-500 border-yellow-400/30" 
-                      : booking.status === 'payment-pending-confirmation' ? "bg-blue-400/20 text-blue-700 dark:text-blue-500 border-blue-400/30"
-                      : ""
-                      }
-                  >
-                    {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <span>{booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'Package'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    <span>{booking.time !== 'N/A_PACKAGE' ? booking.time : 'N/A'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <User className="w-4 h-4" />
-                    <span>Booked on {booking.createdAt.toDate().toLocaleDateString()}</span>
-                </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-                 {(booking.status === 'awaiting-payment' || booking.status === 'payment-pending-confirmation') && (
-                    <Button onClick={() => updateBookingStatus(booking, "confirmed")} className="w-full" size="sm">
-                        <CreditCard className="mr-2 h-4 w-4" /> Confirm Payment
-                    </Button>
-                 )}
-                 <div className="grid grid-cols-2 gap-2 w-full">
-                    <Button onClick={() => updateBookingStatus(booking, "completed")} disabled={booking.status === 'completed'} variant="outline" size="sm">
-                        <CheckCircle className="mr-2 h-4 w-4" /> Completed
-                    </Button>
-                     <Button onClick={() => updateBookingStatus(booking, "cancelled")} disabled={booking.status === 'cancelled'} variant="outline" size="sm">
-                        <XCircle className="mr-2 h-4 w-4" /> Cancelled
-                    </Button>
-                 </div>
-                 <Button onClick={() => setZoomLinkData({ isOpen: true, booking, link: booking.zoomLink || '', isSaving: false })} variant="outline" size="sm" className="w-full">
-                    <LinkIcon className="mr-2 h-4 w-4" /> {booking.zoomLink ? "Edit" : "Add"} Zoom Link
-                </Button>
-                 <Button onClick={() => setDeleteConfirmation(booking)} variant="destructive" size="sm" className="w-full mt-2">
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete
-                </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-=======
   return (
     <>
       <div className="mb-4 grid sm:grid-cols-3 gap-4">
@@ -479,7 +285,6 @@ export function BookingsManager() {
             {filteredAndSortedBookings.length === 0 ? <p className="text-muted-foreground text-center py-10">No archived bookings match your criteria.</p> : renderBookings(filteredAndSortedBookings)}
         </TabsContent>
       </Tabs>
->>>>>>> before-product-selection-rewrite
       
       {/* Modals and Dialogs */}
       <Dialog open={zoomLinkData.isOpen} onOpenChange={(isOpen) => !isOpen && setZoomLinkData({ isOpen: false, booking: null, link: "", isSaving: false })}>
@@ -487,11 +292,7 @@ export function BookingsManager() {
           <DialogHeader>
             <DialogTitle>Add/Edit Zoom Link</DialogTitle>
             <DialogDescription>
-<<<<<<< HEAD
-              Provide the Zoom meeting link for the lesson with {zoomLinkData.booking?.userName} on {zoomLinkData.booking?.date ? format(new Date(zoomLinkData.booking.date), 'PPP') : ''}.
-=======
               Provide the Zoom meeting link for the lesson with {zoomLinkData.booking?.userName} on {zoomLinkData.booking?.date ? safeFormatDate(zoomLinkData.booking.date, 'PPP') : ''}.
->>>>>>> before-product-selection-rewrite
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -518,11 +319,7 @@ export function BookingsManager() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-<<<<<<< HEAD
-              This action cannot be undone. This will permanently delete the booking for {deleteConfirmation?.userName} on {deleteConfirmation?.date !== 'N/A_PACKAGE' ? format(new Date(deleteConfirmation?.date || new Date()), 'PPP') : 'a package'}.
-=======
               This action cannot be undone. This will permanently delete the booking for {deleteConfirmation?.userName} on {deleteConfirmation?.date !== 'N/A_PACKAGE' ? safeFormatDate(deleteConfirmation?.date, 'PPP') : 'a package'}.
->>>>>>> before-product-selection-rewrite
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -538,9 +335,6 @@ export function BookingsManager() {
       </AlertDialog>
     </>
   );
-<<<<<<< HEAD
-}
-=======
 
   function renderBookings(bookingsToRender: Booking[]) {
     return (
@@ -708,5 +502,3 @@ export function BookingsManager() {
     )
   }
 }
-
->>>>>>> before-product-selection-rewrite

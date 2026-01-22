@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { Button } from "@/components/ui/button"
@@ -242,7 +241,7 @@ export default function HomePage() {
               <CardContent className="space-y-4">
                  <p className="text-center text-sm text-muted-foreground">Meet the tutor and experience the teaching style.</p>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
-                  <Link href="/bookings?type=free-trial">Book Free Trial</Link>
+                  <Link href="/bookings?lessonType=free-trial">Book Free Trial</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -256,13 +255,13 @@ export default function HomePage() {
                   <Clock className="w-8 h-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl text-foreground">Quick Practice</CardTitle>
-                <div className="text-3xl font-bold text-primary">$7</div>
+                <div className="text-3xl font-bold text-primary">$9</div>
                 <CardDescription className="text-muted-foreground">30-minute focused session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                  <p className="text-center text-sm text-muted-foreground">Perfect for conversation practice and review.</p>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
-                  <Link href="/bookings?type=quick-practice">Book Quick Session</Link>
+                  <Link href="/bookings?lessonType=quick-practice">Book Quick Session</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -273,13 +272,13 @@ export default function HomePage() {
                   <BookOpen className="w-8 h-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl text-foreground">Comprehensive Lesson</CardTitle>
-                <div className="text-3xl font-bold text-primary">$15</div>
+                <div className="text-3xl font-bold text-primary">$16</div>
                 <CardDescription className="text-muted-foreground">60-minute deep dive session</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-center text-sm text-muted-foreground">Structured lesson with cultural context.</p>
                 <Button className="w-full bg-primary hover:bg-primary/90 mt-6 text-primary-foreground" asChild>
-                  <Link href="/bookings?type=comprehensive-lesson">Book Full Lesson</Link>
+                  <Link href="/bookings?lessonType=comprehensive-lesson">Book Full Lesson</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -303,7 +302,7 @@ export default function HomePage() {
             <Badge className="mb-4 bg-accent text-accent-foreground">Student Success</Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">What Our Students Say</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Real stories from learners who&apos;ve connected with the culture
+              Real stories from learners who've connected with the culture
             </p>
           </div>
             {isLoadingTestimonials ? (
@@ -351,15 +350,15 @@ export default function HomePage() {
             <Badge className="mb-4 bg-accent text-accent-foreground">Get in Touch</Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Ready to Start Learning?</h2>
             <p className="text-xl text-muted-foreground">
-              Have questions? Want to discuss your learning goals? I&apos;m here to help you begin your Amharic journey.
+              Have questions? Want to discuss your learning goals? I'm here to help you begin your Amharic journey.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-12">
             <div className="space-y-6">
-              <h3 className="text-2xl font-bold text-foreground">Let&apos;s Connect</h3>
+              <h3 className="text-2xl font-bold text-foreground">Let's Connect</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Whether you&apos;re a complete beginner or looking to improve your existing Amharic skills, I&apos;m excited to
+                Whether you're a complete beginner or looking to improve your existing Amharic skills, I'm excited to
                 help you connect with your Ethiopian heritage through language.
               </p>
               <div className="flex gap-4">
@@ -375,7 +374,7 @@ export default function HomePage() {
             <Card className="shadow-lg bg-card">
               <CardHeader>
                 <CardTitle className="text-foreground">Quick Contact</CardTitle>
-                <CardDescription className="text-muted-foreground">Send me a message and I&apos;ll get back to you within 24 hours</CardDescription>
+                <CardDescription className="text-muted-foreground">Send me a message and I'll get back to you within 24 hours</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleContactSubmit} className="space-y-4">

@@ -5,11 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
-<<<<<<< HEAD
-import { LayoutDashboard, CalendarDays, MessageSquareText, Award, BookOpenText, Users, LibraryBig, LogOut, ExternalLink } from "lucide-react";
-=======
-import { LayoutDashboard, CalendarDays, MessageSquareText, Award, BookOpenText, Users, LibraryBig, LogOut, ExternalLink, ClipboardList } from "lucide-react";
->>>>>>> before-product-selection-rewrite
+import { LayoutDashboard, CalendarDays, MessageSquareText, Award, BookOpenText, Users, LibraryBig, LogOut, ExternalLink, ClipboardList, Ticket, RefreshCw, GanttChartSquare } from "lucide-react";
 import type { NavItem } from "@/config/site";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -21,10 +17,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Manage Testimonials": Award,
   "View Inquiries": MessageSquareText,
   "Manage Students": Users,
-<<<<<<< HEAD
-=======
   "Manage Group Sessions": ClipboardList,
->>>>>>> before-product-selection-rewrite
+  "Manage Credits": Ticket,
+  "Manage Resolutions": RefreshCw,
+  "Manage Availability": GanttChartSquare,
 };
 
 

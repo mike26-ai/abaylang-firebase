@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -44,7 +43,7 @@ export default function BookLessonPage() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialType = searchParams.get('type');
+  const initialType = searchParams.get('lessonType');
 
   const allProducts = useMemo(() => Object.entries(products).map(([id, product]) => ({
     id: id as ProductId,

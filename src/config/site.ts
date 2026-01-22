@@ -1,10 +1,6 @@
 
 import type React from "react";
-<<<<<<< HEAD
-import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, Users, FileText, BookOpen, Package, HelpCircle, MessageSquare, Award, CalendarDays, CalendarOff } from "lucide-react";
-=======
 import { LayoutDashboard, CalendarCheck, Star, Mail, LibraryBig, Users, FileText, BookOpen, Package, HelpCircle, MessageSquare, Award, CalendarDays, GanttChartSquare, ClipboardList, Ticket, User, History, RefreshCw } from "lucide-react";
->>>>>>> before-product-selection-rewrite
 
 export type NavItem = {
   title: string;
@@ -41,16 +37,6 @@ export const siteConfig = {
     { title: "Contact", href: "/contact", icon: Mail },
   ] satisfies NavItem[],
   userNav: [ // For logged-in user dropdown
-<<<<<<< HEAD
-    { title: "My Dashboard", href: "/profile", authRequired: true, icon: LayoutDashboard },
-    { title: "Book New Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
-  ] satisfies NavItem[],
-  adminNav: [
-    { title: "Admin Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-    { title: "Manage Bookings", href: "/admin/bookings", icon: CalendarDays },
-    { title: "Manage Students", href: "/admin/students", icon: Users },
-    { title: "Manage Availability", href: "/admin/availability", icon: CalendarOff }, // NEW
-=======
     { title: "Dashboard", href: "/profile", authRequired: true, icon: LayoutDashboard },
     { title: "Book New Lesson", href: "/bookings", authRequired: true, icon: CalendarCheck },
     { title: "Book Private Group", href: "/bookings/private-group", authRequired: true, icon: Users },
@@ -67,7 +53,6 @@ export const siteConfig = {
     { title: "Manage Group Sessions", href: "/admin/manage-group-sessions", icon: ClipboardList },
     { title: "Manage Credits", href: "/admin/manage-credits", icon: Ticket },
     { title: "Manage Students", href: "/admin/students", icon: Users },
->>>>>>> before-product-selection-rewrite
     { title: "Manage Testimonials", href: "/admin/testimonials", icon: Award },
     { title: "View Inquiries", href: "/admin/inquiries", icon: MessageSquare },
   ] satisfies NavItem[],

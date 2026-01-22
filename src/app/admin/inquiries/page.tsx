@@ -27,8 +27,3 @@ export default function AdminInquiriesPage() {
     </div>
   );
 }
-<<<<<<< HEAD
-=======
-
-    
->>>>>>> before-product-selection-rewrite

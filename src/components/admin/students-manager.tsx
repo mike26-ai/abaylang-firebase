@@ -2,13 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
-import { collection, getDocs, orderBy, query, doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-=======
 import { collection, doc, updateDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
->>>>>>> before-product-selection-rewrite
 import type { UserProfile } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,17 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, ShieldCheck, UserCheck, Mail, CalendarDays, BookOpen, User } from "lucide-react";
-<<<<<<< HEAD
-import { format } from 'date-fns';
-import { useToast } from "@/hooks/use-toast";
-import { Spinner } from "../ui/spinner";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
-=======
 import { format, parseISO } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
->>>>>>> before-product-selection-rewrite
 
 export function StudentsManager() {
   const [students, setStudents] = useState<UserProfile[]>([]);
@@ -36,16 +24,6 @@ export function StudentsManager() {
   const fetchStudents = async () => {
     setIsLoading(true);
     try {
-<<<<<<< HEAD
-      const usersCol = collection(db, "users");
-      const q = query(usersCol, orderBy("createdAt", "desc")); // Order by registration date
-      const querySnapshot = await getDocs(q);
-      const fetchedStudents = querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
-      setStudents(fetchedStudents);
-    } catch (error) {
-      console.error("Error fetching students:", error);
-      toast({ title: "Error", description: "Could not fetch student data.", variant: "destructive" });
-=======
       const idToken = await auth.currentUser?.getIdToken();
       if (!idToken) throw new Error("User not authenticated");
 
@@ -72,16 +50,12 @@ export function StudentsManager() {
     } catch (error: any) {
       console.error("Error fetching students:", error);
       toast({ title: "Error", description: error.message || "Could not fetch student data.", variant: "destructive" });
->>>>>>> before-product-selection-rewrite
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-<<<<<<< HEAD
-    fetchStudents();
-=======
     // Wait for auth to be ready before fetching
     const unsubscribe = auth.onAuthStateChanged(user => {
       if (user) {
@@ -91,7 +65,6 @@ export function StudentsManager() {
       }
     });
     return () => unsubscribe();
->>>>>>> before-product-selection-rewrite
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
@@ -161,11 +134,7 @@ export function StudentsManager() {
                 <TableCell>
                   <Badge variant="outline">{student.amharicLevel?.replace(/-/g, " ").split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || "N/A"}</Badge>
                 </TableCell>
-<<<<<<< HEAD
-                <TableCell>{format(student.createdAt.toDate(), 'PP')}</TableCell>
-=======
                 <TableCell>{format(student.createdAt as any, 'PP')}</TableCell>
->>>>>>> before-product-selection-rewrite
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -261,11 +230,7 @@ export function StudentsManager() {
               </div>
               <div className="flex justify-between">
                 <span className="font-medium text-muted-foreground">Joined:</span>
-<<<<<<< HEAD
-                <span>{format(student.createdAt.toDate(), 'PP')}</span>
-=======
                 <span>{format(student.createdAt as any, 'PP')}</span>
->>>>>>> before-product-selection-rewrite
               </div>
             </CardContent>
           </Card>
@@ -274,8 +239,3 @@ export function StudentsManager() {
     </>
   );
 }
-<<<<<<< HEAD
-=======
-
-    
->>>>>>> before-product-selection-rewrite

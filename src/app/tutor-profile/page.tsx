@@ -18,11 +18,7 @@ export default function TutorProfilePage() {
           Meet Your Tutor
         </h1>
         <p className="mt-3 text-lg text-muted-foreground">
-<<<<<<< HEAD
-          Get to know {tutorInfo.name} and his approach to teaching Amharic.
-=======
           Get to know {tutorInfo.name} and her approach to teaching Amharic.
->>>>>>> before-product-selection-rewrite
         </p>
       </header>
       

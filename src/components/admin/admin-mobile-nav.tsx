@@ -4,44 +4,26 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-<<<<<<< HEAD
-import { Menu, LogOut, ExternalLink, ShieldCheck, CalendarOff } from "lucide-react";
-=======
 import { Menu, LogOut, ExternalLink, ShieldCheck } from "lucide-react";
->>>>>>> before-product-selection-rewrite
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-<<<<<<< HEAD
-import type { NavItem } from "@/config/site";
-
-// Re-using the same icon mapping from the desktop sidebar for consistency
-import { LayoutDashboard, CalendarDays, MessageSquareText, Award, Users } from "lucide-react";
-=======
 import { Separator } from "@/components/ui/separator";
 import type { NavItem } from "@/config/site";
 
 // Re-using the same icon mapping from the desktop sidebar for consistency
 import { LayoutDashboard, CalendarDays, MessageSquareText, Award, Users, ClipboardList } from "lucide-react";
->>>>>>> before-product-selection-rewrite
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Admin Dashboard": LayoutDashboard,
   "Manage Bookings": CalendarDays,
-<<<<<<< HEAD
-  "Manage Availability": CalendarOff, // NEW
-  "Manage Testimonials": Award,
-  "View Inquiries": MessageSquareText,
-  "Manage Students": Users,
-=======
   "Manage Testimonials": Award,
   "View Inquiries": MessageSquareText,
   "Manage Students": Users,
   "Manage Group Sessions": ClipboardList,
->>>>>>> before-product-selection-rewrite
 };
 
 

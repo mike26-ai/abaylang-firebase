@@ -233,11 +233,7 @@ export function FlashcardPractice({ cards, onComplete }: FlashcardPracticeProps)
           <div className="flex gap-2">
             <Button variant="outline" className="border-destructive/50 hover:bg-destructive/10 text-destructive hover:text-destructive" onClick={handleDidntKnow}>
               <X className="w-4 h-4 mr-1" />
-<<<<<<< HEAD
               Didn't Know
-=======
-              Didn&apos;t Know
->>>>>>> before-product-selection-rewrite
             </Button>
             <Button className="bg-primary hover:bg-primary/90" onClick={handleKnew}>
               <Check className="w-4 h-4 mr-1" />

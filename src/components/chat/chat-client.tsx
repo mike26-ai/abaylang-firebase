@@ -162,11 +162,7 @@ export function ChatClient() {
               <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
               {msg.timestamp && typeof msg.timestamp === 'object' && 'toDate' in msg.timestamp && (
                 <p className={`text-xs mt-1 ${msg.userId === user.uid ? 'text-primary-foreground/70' : 'text-muted-foreground/70'}`}>
-<<<<<<< HEAD
-                  {formatDistanceToNow(msg.timestamp.toDate(), { addSuffix: true })}
-=======
                   {formatDistanceToNowStrict(msg.timestamp.toDate(), { addSuffix: true })}
->>>>>>> before-product-selection-rewrite
                 </p>
               )}
             </div>
