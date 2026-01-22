@@ -122,11 +122,7 @@ export default function RegisterPage() {
           case 'auth/operation-not-allowed':
             friendlyMessage = "Email/password accounts are not enabled. Please contact support.";
             break;
-<<<<<<< HEAD
-          case 'auth/invalid-api-key':
-=======
           case 'auth/api-key-not-valid':
->>>>>>> before-product-selection-rewrite
             friendlyMessage = "The Firebase API Key is invalid. This indicates a critical issue with your Firebase project setup or environment variables.";
             break;
           case 'auth/project-not-found':

@@ -2,12 +2,9 @@
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 import { AuthFormWrapper } from "@/components/auth/auth-form-wrapper";
 import type { Metadata } from 'next';
-<<<<<<< HEAD
-=======
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
->>>>>>> before-product-selection-rewrite
 
 export const metadata: Metadata = {
   title: 'Forgot Password',
@@ -16,14 +13,6 @@ export const metadata: Metadata = {
 
 export default function ForgotPasswordPage() {
   return (
-<<<<<<< HEAD
-    <AuthFormWrapper
-      title="Forgot Your Password?"
-      description="No problem. Enter your email address and we'll send you a link to reset it."
-    >
-      <ForgotPasswordForm />
-    </AuthFormWrapper>
-=======
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background flex items-center justify-center p-4">
         <div className="w-full max-w-md">
             <div className="text-center mb-8">
@@ -43,6 +32,5 @@ export default function ForgotPasswordPage() {
             </AuthFormWrapper>
         </div>
     </div>
->>>>>>> before-product-selection-rewrite
   );
 }

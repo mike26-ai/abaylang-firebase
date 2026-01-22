@@ -10,15 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, CheckCircle, XCircle, Trash2, CreditCard, MessageCircle, Link as LinkIcon, Calendar, Clock, User } from "lucide-react";
-<<<<<<< HEAD
-import { format } from 'date-fns';
-import { useToast } from "@/hooks/use-toast";
-import { Spinner } from "../ui/spinner";
-=======
 import { format, isValid, parseISO } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
->>>>>>> before-product-selection-rewrite
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,11 +25,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-<<<<<<< HEAD
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
-=======
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,7 +59,6 @@ const safeFormatDate = (dateInput: any, formatString: string) => {
 
   return 'Invalid Date';
 };
->>>>>>> before-product-selection-rewrite
 
 export function BookingsManager() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -222,11 +210,7 @@ export function BookingsManager() {
                   </div>
                 </TableCell>
                 <TableCell>{booking.userEmail}</TableCell>
-<<<<<<< HEAD
-                <TableCell>{booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'Package'}</TableCell>
-=======
                 <TableCell>{booking.date !== 'N/A_PACKAGE' ? safeFormatDate(booking.date, 'PPP') : 'Package'}</TableCell>
->>>>>>> before-product-selection-rewrite
                 <TableCell>{booking.time !== 'N/A_PACKAGE' ? booking.time : 'N/A'}</TableCell>
                 <TableCell>
                   <Badge
@@ -245,11 +229,7 @@ export function BookingsManager() {
                     {booking.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </Badge>
                 </TableCell>
-<<<<<<< HEAD
-                <TableCell>{booking.createdAt.toDate().toLocaleString()}</TableCell>
-=======
                 <TableCell>{safeFormatDate(booking.createdAt, 'PPp')}</TableCell>
->>>>>>> before-product-selection-rewrite
                 <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -318,11 +298,7 @@ export function BookingsManager() {
             <CardContent className="space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="w-4 h-4" />
-<<<<<<< HEAD
-                    <span>{booking.date !== 'N/A_PACKAGE' ? format(new Date(booking.date), 'PPP') : 'Package'}</span>
-=======
                     <span>{booking.date !== 'N/A_PACKAGE' ? safeFormatDate(booking.date, 'PPP') : 'Package'}</span>
->>>>>>> before-product-selection-rewrite
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="w-4 h-4" />
@@ -330,11 +306,7 @@ export function BookingsManager() {
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <User className="w-4 h-4" />
-<<<<<<< HEAD
-                    <span>Booked on {booking.createdAt.toDate().toLocaleDateString()}</span>
-=======
                     <span>Booked on {safeFormatDate(booking.createdAt, 'PP')}</span>
->>>>>>> before-product-selection-rewrite
                 </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
@@ -368,11 +340,7 @@ export function BookingsManager() {
           <DialogHeader>
             <DialogTitle>Add/Edit Zoom Link</DialogTitle>
             <DialogDescription>
-<<<<<<< HEAD
-              Provide the Zoom meeting link for the lesson with {zoomLinkData.booking?.userName} on {zoomLinkData.booking?.date ? format(new Date(zoomLinkData.booking.date), 'PPP') : ''}.
-=======
               Provide the Zoom meeting link for the lesson with {zoomLinkData.booking?.userName} on {zoomLinkData.booking?.date ? safeFormatDate(zoomLinkData.booking.date, 'PPP') : ''}.
->>>>>>> before-product-selection-rewrite
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -399,11 +367,7 @@ export function BookingsManager() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-<<<<<<< HEAD
-              This action cannot be undone. This will permanently delete the booking for {deleteConfirmation?.userName} on {deleteConfirmation?.date !== 'N/A_PACKAGE' ? format(new Date(deleteConfirmation?.date || new Date()), 'PPP') : 'a package'}.
-=======
               This action cannot be undone. This will permanently delete the booking for {deleteConfirmation?.userName} on {deleteConfirmation?.date !== 'N/A_PACKAGE' ? safeFormatDate(deleteConfirmation?.date, 'PPP') : 'a package'}.
->>>>>>> before-product-selection-rewrite
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -420,8 +384,3 @@ export function BookingsManager() {
     </>
   );
 }
-<<<<<<< HEAD
-=======
-
-    
->>>>>>> before-product-selection-rewrite

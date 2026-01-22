@@ -1,8 +1,4 @@
 
-<<<<<<< HEAD
-=======
-
->>>>>>> before-product-selection-rewrite
 "use client";
 
 import Link from "next/link";
@@ -30,11 +26,6 @@ export function Navbar() {
   const { user, loading, signOut, isAdmin } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
-<<<<<<< HEAD
-  const publicNavLinks = [
-    { title: "About Tutor", href: "/tutor-profile" },
-    { title: "Packages", href: "/packages" },
-=======
   // This logic is now inside the Navbar itself.
   // It ensures the navbar doesn't render on special pages.
   const showNav = !pathname.startsWith('/admin') && !pathname.startsWith('/profile') && pathname !== "/" && !pathname.startsWith('/register') && !pathname.startsWith('/login') && !pathname.startsWith('/forgot-password');
@@ -47,29 +38,17 @@ export function Navbar() {
     { title: "About Tutor", href: "/tutor-profile" },
     { title: "Packages", href: "/packages" },
     { title: "Group Sessions", href: "/group-sessions" },
->>>>>>> before-product-selection-rewrite
     { title: "Testimonials", href: "/testimonials" },
     { title: "Resources", href: "/resources" },
     { title: "Contact", href: "/contact" },
   ];
 
-<<<<<<< HEAD
-  // CORRECT LOGIC: Create a single, unified list of links for the mobile menu.
   const mobileNavLinks = [...publicNavLinks];
   if (isAdmin) {
-    // Add a separator object and then the admin links to the same array.
-=======
-  const mobileNavLinks = [...publicNavLinks];
-  if (isAdmin) {
->>>>>>> before-product-selection-rewrite
     mobileNavLinks.push({ title: "separator", href: "#" });
     mobileNavLinks.push(...siteConfig.adminNav);
   }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> before-product-selection-rewrite
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">

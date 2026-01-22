@@ -7,14 +7,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Video } from 'lucide-react';
 import { parse, addMinutes, differenceInMinutes } from 'date-fns';
 import type { Booking } from '@/lib/types';
-<<<<<<< HEAD
-
-interface JoinLessonButtonProps {
-  booking: Booking;
-}
-
-export function JoinLessonButton({ booking }: JoinLessonButtonProps) {
-=======
 import { cn } from '@/lib/utils';
 
 interface JoinLessonButtonProps {
@@ -23,7 +15,6 @@ interface JoinLessonButtonProps {
 }
 
 export function JoinLessonButton({ booking, className }: JoinLessonButtonProps) {
->>>>>>> before-product-selection-rewrite
   const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
@@ -56,13 +47,8 @@ export function JoinLessonButton({ booking, className }: JoinLessonButtonProps) 
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-<<<<<<< HEAD
-          <div> {/* TooltipTrigger requires a single child, div wraps the button */}
-            <Button size="sm" asChild disabled={!isActive}>
-=======
           <div className={cn("w-full", className)}>
             <Button size="sm" asChild disabled={!isActive} className="w-full">
->>>>>>> before-product-selection-rewrite
               <a href={booking.zoomLink} target="_blank" rel="noopener noreferrer">
                 <Video className="mr-2 h-4 w-4" /> Join Lesson
               </a>
@@ -78,8 +64,3 @@ export function JoinLessonButton({ booking, className }: JoinLessonButtonProps) 
     </TooltipProvider>
   );
 }
-<<<<<<< HEAD
-=======
-
-    
->>>>>>> before-product-selection-rewrite

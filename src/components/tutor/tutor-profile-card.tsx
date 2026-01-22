@@ -3,11 +3,7 @@ import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-<<<<<<< HEAD
-import { Check, Video, MessageSquare } from "lucide-react";
-=======
 import { Check, Video, MessageSquare, Star, Clock, Users } from "lucide-react";
->>>>>>> before-product-selection-rewrite
 import { tutorInfo } from "@/config/site";
 
 export function TutorProfileCard() {
@@ -35,8 +31,6 @@ export function TutorProfileCard() {
             <CardDescription className="text-md text-primary">{tutorInfo.shortIntro}</CardDescription>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
-<<<<<<< HEAD
-=======
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center border-b pb-6">
                 <div className="p-2 rounded-lg">
@@ -56,7 +50,6 @@ export function TutorProfileCard() {
                 </div>
             </div>
 
->>>>>>> before-product-selection-rewrite
             <div>
               <h4 className="font-semibold text-lg mb-2">About Me</h4>
               <p className="text-muted-foreground leading-relaxed">{tutorInfo.bio}</p>
@@ -87,11 +80,7 @@ export function TutorProfileCard() {
                    <div className="bg-muted w-full h-full flex items-center justify-center">
                      <a href={tutorInfo.videoUrl} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center text-primary hover:text-primary/80">
                        <Video className="h-12 w-12 mb-2" />
-<<<<<<< HEAD
-                       <span className="font-medium">Watch Introduction</span>
-=======
                        <span className="font-medium">Watch Introduction on YouTube</span>
->>>>>>> before-product-selection-rewrite
                      </a>
                    </div>
                 </div>

@@ -1,25 +1,10 @@
-<<<<<<< HEAD
 
-import Link from "next/link";
-import { siteConfig } from "@/config/site";
-import { SiteLogo } from "./SiteLogo";
-
-export function Footer() {
-  return (
-    <footer className="border-t bg-foreground text-background py-12 px-4">
-      <div className="container mx-auto">
-        <div className="grid md:grid-cols-4 gap-8">
-          <div className="md:col-span-2 group">
-            <div className="footer-logo">
-                <SiteLogo />
-            </div>
-=======
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
+import { SiteLogo } from "./SiteLogo";
 
 export function Footer() {
   const pathname = usePathname();
@@ -33,14 +18,9 @@ export function Footer() {
   return (
     <footer className="border-t bg-foreground text-background py-12 px-4">
       <div className="container mx-auto">
-        <div style={{ textAlign: 'center', padding: '28px 0' }}>
-            <Link href="/" aria-label="ABYLANG home" style={{ display: 'inline-block' }}>
-                <Image src="/logo.svg" alt="ABYLANG logo" width={150} height={38} style={{ height: 'auto', display: 'block', margin: '0 auto' }} />
-            </Link>
-        </div>
         <div className="grid md:grid-cols-4 gap-8">
-          <div className="md:col-span-2 group">
->>>>>>> before-product-selection-rewrite
+          <div className="md:col-span-2 group footer-logo">
+            <SiteLogo />
             <p className="text-muted-foreground mt-4 mb-4 max-w-md">
               {siteConfig.description}
             </p>

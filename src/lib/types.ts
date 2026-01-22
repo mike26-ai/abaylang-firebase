@@ -1,11 +1,6 @@
 
-<<<<<<< HEAD
-import type { Timestamp } from "firebase/firestore";
-=======
-
 import type { Timestamp } from "firebase/firestore";
 import type { Timestamp as AdminTimestamp } from "firebase-admin/firestore";
->>>>>>> before-product-selection-rewrite
 
 export interface Booking {
   id: string;
@@ -14,12 +9,6 @@ export interface Booking {
   userEmail: string;
   date: string; // YYYY-MM-DD format
   time: string;
-<<<<<<< HEAD
-  status: "awaiting-payment" | "confirmed" | "cancelled" | "completed";
-  tutorId: string;
-  tutorName: string;
-  createdAt: Timestamp;
-=======
   status: "awaiting-payment" | "payment-pending-confirmation" | "confirmed" | "cancelled" | "completed" | "cancellation-requested" | "refunded" | "credit-issued" | "cancelled-by-admin" | "rescheduled" | "in-progress" | "no-show";
   tutorId: string;
   tutorName: string;
@@ -27,7 +16,6 @@ export interface Booking {
   updatedAt?: Timestamp | AdminTimestamp; // For tracking updates like rescheduling
   startTime?: Timestamp | AdminTimestamp | null;
   endTime?: Timestamp | AdminTimestamp | null;
->>>>>>> before-product-selection-rewrite
   // Optional fields
   lessonNotes?: string;
   duration?: number; // in minutes
@@ -37,11 +25,6 @@ export interface Booking {
   hasReview?: boolean; // Added for student dashboard
   cancellationReason?: string; // For reschedule/cancellation data
   paymentNote?: string; // Note from student (e.g., transaction ID)
-<<<<<<< HEAD
-  zoomLink?: string; // NEW: For the lesson's Zoom link
-}
-
-=======
   zoomLink?: string;
   groupSessionId?: string;
   wasRedeemedWithCredit?: boolean;
@@ -89,8 +72,6 @@ export interface GroupSession {
   zoomLink?: string;
 }
 
-
->>>>>>> before-product-selection-rewrite
 export interface Testimonial {
   id: string;
   userId: string;
@@ -101,11 +82,7 @@ export interface Testimonial {
   imageUrl?: string; // Optional
   location?: string;
   status: "pending" | "approved" | "rejected";
-<<<<<<< HEAD
-  createdAt: Timestamp;
-=======
   createdAt: Timestamp | AdminTimestamp;
->>>>>>> before-product-selection-rewrite
   studentInitials?: string;
   lessonType?: string;
   specificRatings?: {
@@ -118,11 +95,7 @@ export interface Testimonial {
   helpful?: number;
   date?: string;
   verified?: boolean;
-<<<<<<< HEAD
-  lessonId?: string; // Added for linking testimonial to a lesson
-=======
   lessonId?: string;
->>>>>>> before-product-selection-rewrite
 }
 
 export interface ContactMessage {
@@ -130,11 +103,7 @@ export interface ContactMessage {
   name: string;
   email: string;
   message: string;
-<<<<<<< HEAD
-  createdAt: Timestamp;
-=======
   createdAt: Timestamp | AdminTimestamp;
->>>>>>> before-product-selection-rewrite
   read: boolean;
 }
 
@@ -144,25 +113,15 @@ export interface UserProfile {
   name: string;
   email: string;
   role: "student" | "admin";
-<<<<<<< HEAD
-  createdAt: Timestamp;
-=======
   createdAt: Timestamp | AdminTimestamp;
->>>>>>> before-product-selection-rewrite
   nativeLanguage?: string;
   country?: string;
   amharicLevel?: string;
   photoURL?: string | null;
-<<<<<<< HEAD
-  // New fields for one-time feedback system
-  showFirstLessonFeedbackPrompt?: boolean; // Defaults to false
-  hasSubmittedFirstLessonFeedback?: boolean; // Defaults to false
-=======
   showFirstLessonFeedbackPrompt?: boolean;
   hasSubmittedFirstLessonFeedback?: boolean;
   credits?: UserCredit[];
   lastCreditPurchase?: Timestamp | AdminTimestamp;
->>>>>>> before-product-selection-rewrite
 }
 
 export interface ChatMessage {
@@ -170,23 +129,14 @@ export interface ChatMessage {
   text: string;
   userId: string;
   userName: string;
-<<<<<<< HEAD
-  userAvatar?: string | null; // Optional: user.photoURL
-  timestamp: Timestamp; // Firestore Timestamp
-=======
   userAvatar?: string | null;
   timestamp: Timestamp | AdminTimestamp;
->>>>>>> before-product-selection-rewrite
 }
 
 export interface NewsletterSubscription {
   id: string;
   email: string;
-<<<<<<< HEAD
-  subscribedAt: Timestamp;
-=======
   subscribedAt: Timestamp | AdminTimestamp;
->>>>>>> before-product-selection-rewrite
 }
 
 export interface LearningLesson {
@@ -195,21 +145,6 @@ export interface LearningLesson {
   type: "video" | "interactive" | "quiz" | "reading";
   duration: number; // minutes
   status: "completed" | "in-progress" | "not-started" | "locked";
-<<<<<<< HEAD
-  // contentUrl?: string; // URL to video, quiz, etc.
-}
-
-export interface LearningModule {
-  id:string; // Firestore document ID
-  title: string;
-  description: string;
-  order: number; // For sequencing modules
-  status: "completed" | "in-progress" | "locked"; // User-specific progress, might be handled differently
-  progress: number; // User-specific progress (0-100), might be handled differently
-  lessons: LearningLesson[];
-  // totalLessons?: number; // Calculated or stored
-  // completedLessons?: number; // User-specific, calculated or stored
-=======
 }
 
 export interface LearningModule {
@@ -220,27 +155,17 @@ export interface LearningModule {
   status: "completed" | "in-progress" | "locked";
   progress: number;
   lessons: LearningLesson[];
->>>>>>> before-product-selection-rewrite
 }
-
 
 export interface HomeworkAssignment {
   id: string;
   title: string;
   description: string;
-<<<<<<< HEAD
-  dueDate: Timestamp;
-  status: "pending" | "submitted" | "graded" | "late";
-  feedback?: string;
-  grade?: string;
-  createdAt?: Timestamp;
-=======
   dueDate: Timestamp | AdminTimestamp;
   status: "pending" | "submitted" | "graded" | "late";
   feedback?: string;
   grade?: string;
   createdAt?: Timestamp | AdminTimestamp;
->>>>>>> before-product-selection-rewrite
 }
 
 export interface HomeworkSubmissionType {
@@ -250,11 +175,7 @@ export interface HomeworkSubmissionType {
   userName: string;
   userEmail: string;
   submissionText: string;
-<<<<<<< HEAD
-  submittedAt: Timestamp;
-=======
   submittedAt: Timestamp | AdminTimestamp;
->>>>>>> before-product-selection-rewrite
   status: "submitted" | "graded" | "late_submission";
   feedback?: string;
   grade?: string;
@@ -264,14 +185,6 @@ export interface LessonMaterial {
   id: string;
   title: string;
   description: string;
-<<<<<<< HEAD
-  fileUrl: string; // URL to the file in Firebase Storage
-  fileName: string;
-  fileType: string; // e.g., 'application/pdf', 'audio/mpeg'
-  createdAt: Timestamp;
-  uploaderId: string; // Admin's UID
-  // Could add categories, levels, etc.
-=======
   fileUrl: string;
   fileName: string;
   fileType: string;
@@ -285,5 +198,4 @@ export interface UserCredit {
   count: number;
   purchasedAt: Timestamp | AdminTimestamp;
   packageBookingId?: string; // The ID of the booking that granted these credits
->>>>>>> before-product-selection-rewrite
 }

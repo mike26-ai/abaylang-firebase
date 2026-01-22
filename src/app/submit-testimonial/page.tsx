@@ -1,3 +1,4 @@
+
 // Using "use client" because this page uses hooks (useState, useAuth, useRouter) for interactivity and auth checks.
 "use client";
 
@@ -11,24 +12,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { submitTestimonialAction } from "@/app/actions/testimonialActions";
-<<<<<<< HEAD
-=======
 import { useToast } from "@/hooks/use-toast";
->>>>>>> before-product-selection-rewrite
 
 
 export default function SubmitTestimonialPage() {
   const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
-<<<<<<< HEAD
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
-=======
   const { toast } = useToast();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
->>>>>>> before-product-selection-rewrite
 
   useEffect(() => {
     // If auth is done loading...
@@ -39,13 +32,11 @@ export default function SubmitTestimonialPage() {
       }
       // or if the user is an admin, redirect them to their dashboard.
       else if (isAdmin) {
-        router.push("/admin");
+        router.push("/admin/dashboard");
       }
       // The user is logged in and is a student, so they can stay.
     }
   }, [user, loading, isAdmin, router]);
-<<<<<<< HEAD
-=======
   
   const clientAction = async (formData: FormData) => {
     if (!user) {
@@ -60,22 +51,17 @@ export default function SubmitTestimonialPage() {
     setIsSubmitting(true);
     try {
       const idToken = await user.getIdToken();
-      // The `submitTestimonialAction` is wrapped to include the auth token in headers.
-      await fetch('/api/actions/submit-testimonial', {
-          method: 'POST',
-          headers: {
-              'Authorization': `Bearer ${idToken}`,
-          },
-          body: formData,
-      });
+      
+      // The server action now internally gets the user from the token,
+      // so we don't need to pass it in the form data.
+      await submitTestimonialAction(formData);
 
-      // The server action now handles the redirect, so we don't need to do it here.
       // A toast on success is good practice in case the redirect takes a moment.
       toast({
         title: "Feedback Submitted!",
-        description: "Redirecting you now...",
+        description: "Thank you for your review. Redirecting you now...",
       });
-      // The server will handle the redirect to the success page.
+      // The server action will handle the redirect to the success page.
       
     } catch (error: any) {
         console.error("Client Action Error:", error);
@@ -88,7 +74,6 @@ export default function SubmitTestimonialPage() {
         setIsSubmitting(false);
     }
   };
->>>>>>> before-product-selection-rewrite
 
   // Show a loading spinner while the authentication state is being checked.
   // Also covers the brief moment before a non-student user is redirected.
@@ -107,26 +92,12 @@ export default function SubmitTestimonialPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-3xl">Share Your Experience</CardTitle>
           <CardDescription>
-<<<<<<< HEAD
             We'd love to hear about your learning journey with us.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* We use the server action in the <form> element. */}
-          <form action={submitTestimonialAction} className="space-y-8">
-            {/* Hidden inputs to pass user data to the server action */}
-            <input type="hidden" name="userId" value={user.uid} />
-            <input type="hidden" name="userName" value={user.displayName || ""} />
-            <input type="hidden" name="userEmail" value={user.email || ""} />
-            
-=======
-            We&apos;d love to hear about your learning journey with us.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* We use the client action wrapper in the <form> element. */}
           <form action={clientAction} className="space-y-8">
->>>>>>> before-product-selection-rewrite
             <div className="space-y-2 text-center">
               <Label htmlFor="rating" className="text-lg">Your Rating</Label>
               {/* This hidden input will hold the actual rating value for the form submission. */}
@@ -165,14 +136,9 @@ export default function SubmitTestimonialPage() {
               />
             </div>
             
-<<<<<<< HEAD
-            <Button type="submit" size="lg" className="w-full" disabled={rating === 0}>
-              Submit Testimonial
-=======
             <Button type="submit" size="lg" className="w-full" disabled={isSubmitting || rating === 0}>
                 {isSubmitting ? <Spinner size="sm" className="mr-2"/> : null}
                 {isSubmitting ? "Submitting..." : "Submit Testimonial"}
->>>>>>> before-product-selection-rewrite
             </Button>
           </form>
         </CardContent>
