@@ -1,0 +1,73 @@
+<<<<<<< HEAD
+
+import Link from "next/link";
+import { siteConfig } from "@/config/site";
+import { SiteLogo } from "./SiteLogo";
+
+export function Footer() {
+  return (
+    <footer className="border-t bg-foreground text-background py-12 px-4">
+      <div className="container mx-auto">
+        <div className="grid md:grid-cols-4 gap-8">
+          <div className="md:col-span-2 group">
+            <div className="footer-logo">
+                <SiteLogo />
+            </div>
+=======
+"use client";
+
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { siteConfig } from "@/config/site";
+
+export function Footer() {
+  const pathname = usePathname();
+  // Conditionally render footer based on path
+  const showFooter = !pathname.startsWith('/admin') && !pathname.startsWith('/profile') && pathname !== "/" && !pathname.startsWith('/register') && !pathname.startsWith('/login') && !pathname.startsWith('/forgot-password');
+
+  if (!showFooter) {
+    return null;
+  }
+
+  return (
+    <footer className="border-t bg-foreground text-background py-12 px-4">
+      <div className="container mx-auto">
+        <div style={{ textAlign: 'center', padding: '28px 0' }}>
+            <Link href="/" aria-label="ABYLANG home" style={{ display: 'inline-block' }}>
+                <Image src="/logo.svg" alt="ABYLANG logo" width={150} height={38} style={{ height: 'auto', display: 'block', margin: '0 auto' }} />
+            </Link>
+        </div>
+        <div className="grid md:grid-cols-4 gap-8">
+          <div className="md:col-span-2 group">
+>>>>>>> before-product-selection-rewrite
+            <p className="text-muted-foreground mt-4 mb-4 max-w-md">
+              {siteConfig.description}
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-4 text-background">Learning</h3>
+            <ul className="space-y-2 text-muted-foreground">
+              <li><Link href="/bookings" className="hover:text-background">Book Lesson</Link></li>
+              <li><Link href="/tutor-profile" className="hover:text-background">About Mahder</Link></li>
+              <li><Link href="/testimonials" className="hover:text-background">Reviews</Link></li>
+              <li><Link href="/packages" className="hover:text-background">View Packages</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-4 text-background">Support</h3>
+            <ul className="space-y-2 text-muted-foreground">
+              <li><Link href="/contact" className="hover:text-background">Contact</Link></li>
+              <li><Link href="/privacy" className="hover:text-background">Privacy</Link></li>
+              <li><Link href="/terms" className="hover:text-background">Terms</Link></li>
+              <li><Link href="/faq" className="hover:text-background">FAQ</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-background/20 mt-8 pt-8 text-center text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} {siteConfig.name}. Made with ❤️ for the Amharic learning community.</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
