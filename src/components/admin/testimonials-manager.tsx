@@ -12,11 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { MoreHorizontal, CheckCircle, XCircle, EyeOff, Trash2, Star, User } from "lucide-react";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
-<<<<<<< HEAD
-import { Spinner } from "../ui/spinner";
-=======
 import { Spinner } from "@/components/ui/spinner";
->>>>>>> before-product-selection-rewrite
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,11 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-<<<<<<< HEAD
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
-=======
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
->>>>>>> before-product-selection-rewrite
 
 export function TestimonialsManager() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -193,11 +185,7 @@ export function TestimonialsManager() {
                           ))}
                            <span className="text-sm font-bold ml-1">({testimonial.rating})</span>
                       </div>
-<<<<<<< HEAD
                       <p className="text-muted-foreground text-sm italic">"{testimonial.comment}"</p>
-=======
-                      <p className="text-muted-foreground text-sm italic">&quot;{testimonial.comment}&quot;</p>
->>>>>>> before-product-selection-rewrite
                   </CardContent>
                   <CardFooter className="flex flex-col gap-2">
                        <div className="grid grid-cols-2 gap-2 w-full">

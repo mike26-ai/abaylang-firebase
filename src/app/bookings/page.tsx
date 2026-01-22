@@ -239,7 +239,7 @@ export default function BookLessonPage() {
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
-          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with ${tutorInfo.name}</p>
+          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with {tutorInfo.name}</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -278,16 +278,16 @@ export default function BookLessonPage() {
                                             {lesson.label}
                                             {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
                                             {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group (${lesson.minStudents}-${lesson.maxStudents} people)</Badge>}
+                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group ({lesson.minStudents}-{lesson.maxStudents} people)</Badge>}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
                                             {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
                                         </div>
                                         </div>
                                         <div className="text-right">
-                                        <div className="text-2xl font-bold text-primary">$${lesson.price}</div>
+                                        <div className="text-2xl font-bold text-primary">${lesson.price}</div>
                                         {lesson.originalPrice && (
-                                            <div className="text-sm text-muted-foreground line-through">$${lesson.originalPrice}</div>
+                                            <div className="text-sm text-muted-foreground line-through">${lesson.originalPrice}</div>
                                         )}
                                         </div>
                                     </div>
@@ -421,8 +421,8 @@ export default function BookLessonPage() {
                   <div className="w-20 h-20 bg-accent rounded-full mx-auto mb-3 flex items-center justify-center">
                     <span className="text-2xl text-primary font-bold">{tutorInfo.name.split(" ").map(n=>n[0]).join("")}</span>
                   </div>
-                  <h3 className="font-semibold text-foreground">${tutorInfo.name}</h3>
-                  <p className="text-sm text-muted-foreground">${tutorInfo.shortIntro}</p>
+                  <h3 className="font-semibold text-foreground">{tutorInfo.name}</h3>
+                  <p className="text-sm text-muted-foreground">{tutorInfo.shortIntro}</p>
                   <div className="flex items-center justify-center gap-1 mt-2">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
@@ -490,7 +490,7 @@ export default function BookLessonPage() {
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between text-lg font-bold">
                       <span className="text-foreground">Total:</span>
-                      <span className="text-primary">$${selectedLessonDetails.price}</span>
+                      <span className="text-primary">${selectedLessonDetails.price}</span>
                     </div>
                      {isPaidLesson && (
                         <p className="text-xs text-muted-foreground text-center mt-2 px-2 py-1 bg-accent rounded-md">

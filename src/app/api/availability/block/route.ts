@@ -1,3 +1,4 @@
+
 // File: src/app/api/availability/block/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, initAdmin } from '@/lib/firebase-admin';

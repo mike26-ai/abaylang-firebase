@@ -5,21 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
-<<<<<<< HEAD
-import { LayoutDashboard, CalendarDays, MessageSquareText, Award, Users, LogOut, ExternalLink, CalendarOff } from "lucide-react";
-import type { NavItem } from "@/config/site";
-import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { SiteLogo } from "../layout/SiteLogo";
-
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  "Admin Dashboard": LayoutDashboard,
-  "Manage Bookings": CalendarDays,
-  "Manage Availability": CalendarOff, // NEW
-  "Manage Testimonials": Award,
-  "View Inquiries": MessageSquareText,
-  "Manage Students": Users,
-=======
 import { LayoutDashboard, CalendarDays, MessageSquareText, Award, BookOpenText, Users, LibraryBig, LogOut, ExternalLink, ClipboardList, Ticket, RefreshCw, GanttChartSquare } from "lucide-react";
 import type { NavItem } from "@/config/site";
 import { useAuth } from "@/hooks/use-auth";
@@ -36,7 +21,6 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Manage Credits": Ticket,
   "Manage Resolutions": RefreshCw,
   "Manage Availability": GanttChartSquare,
->>>>>>> before-product-selection-rewrite
 };
 
 
