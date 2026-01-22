@@ -1,12 +1,10 @@
-<<<<<<< HEAD
-=======
-
->>>>>>> before-product-selection-rewrite
 # Firebase Studio
 
 This is a NextJS starter in Firebase Studio.
 
 To get started, take a look at src/app/page.tsx.
+
+**This is a new commit to trigger a fresh deployment.**
 
 ## External Media Uploads (Cloudinary)
 
@@ -26,41 +24,3 @@ This system is modular. To switch to a different provider (e.g., UploadThing):
 1.  Create a new Server Action (e.g., `uploadToUploadThing`).
 2.  Update the components that call the upload action to use your new function.
 3.  Update your environment variables with the new service's credentials.
-<<<<<<< HEAD
-=======
-
-## Firestore Security Rules & Indexes
-
-For the application to function correctly and securely, you must deploy the provided Firestore rules and create specific composite indexes in your Firebase Console.
-
-### Security Rules
-
-A `firestore.rules` file is included in the repository. You must deploy these rules to your Firebase project to protect user data. The key rules are:
--   **Users**: Can only edit their own profile.
--   **Bookings**: Can only be created, read, or updated by the user who owns them.
--   **TimeOff**: Can only be created, updated, or deleted by an administrator.
--   **Testimonials**: Can only be approved or rejected by an administrator.
-
-**To Deploy:** Use the Firebase CLI (`firebase deploy --only firestore:rules`) or copy the contents of `firestore.rules` into the Rules tab of the Firestore section in the Firebase Console.
-
-### Composite Indexes
-
-For the application's queries to work efficiently, you will need to manually create the following composite indexes in your Firebase Console. The application may prompt you with a direct link to create these if they are missing.
-
-1.  **Bookings Collection Index:**
-    *   **Collection:** `bookings`
-    *   **Fields:** `tutorId` (Ascending), `startTime` (Ascending)
-    *   **Query Scope:** Collection
-    *   **Purpose:** This index is essential for efficiently querying bookings by tutor and start time.
-
-2.  **TimeOff Collection Indexes (for Rescheduling):**
-    *   **Index 1:**
-        *   **Collection:** `timeOff`
-        *   **Fields:** `tutorId` (Ascending), `startISO` (Ascending)
-        *   **Query Scope:** Collection
-    *   **Index 2:**
-        *   **Collection:** `timeOff`
-        *   **Fields:** `tutorId` (Ascending), `endISO` (Ascending)
-        *   **Query Scope:** Collection
-    *   **Purpose:** These two indexes are critical for the lesson reschedule feature. They allow the system to efficiently check for tutor availability conflicts by querying time-off blocks that overlap with a proposed new lesson time.
->>>>>>> before-product-selection-rewrite
