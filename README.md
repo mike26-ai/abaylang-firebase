@@ -4,7 +4,9 @@ This is a NextJS starter in Firebase Studio.
 
 To get started, take a look at src/app/page.tsx.
 
-**This is a new commit to trigger a fresh deployment.**
+## Fresh Deployment Commit
+
+This commit is intended to trigger a fresh deployment in Firebase App Hosting.
 
 ## External Media Uploads (Cloudinary)
 
