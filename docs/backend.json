@@ -1,0 +1,131 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["student", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "country": { "type": "string" },
+        "amharicLevel": { "type": "string" },
+        "nativeLanguage": { "type": "string" },
+        "showFirstLessonFeedbackPrompt": { "type": "boolean" },
+        "hasSubmittedFirstLessonFeedback": { "type": "boolean" },
+        "credits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/entities/UserCredit"
+            }
+        }
+      },
+      "required": ["uid", "name", "email", "role", "createdAt"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Represents a scheduled lesson booking. This can be for a private lesson or a group session.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string", "format": "time" },
+        "status": { "type": "string", "enum": ["awaiting-payment", "payment-pending-confirmation", "confirmed", "cancelled", "completed", "cancellation-requested", "refunded", "credit-issued", "cancelled-by-admin", "rescheduled"] },
+        "tutorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "groupSessionId": { "type": "string", "description": "If this is a booking for a group session, this ID links to the groupSessions collection." },
+        "statusHistory": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "status": { "type": "string" },
+                    "changedAt": { "type": "string", "format": "date-time" },
+                    "changedBy": { "type": "string" },
+                    "reason": { "type": "string" }
+                }
+            }
+        }
+      },
+      "required": ["userId", "userName", "date", "time", "status", "tutorId", "createdAt"]
+    },
+    "TimeOffBlock": {
+      "title": "Time Off Block",
+      "description": "Represents a block of time when a tutor is unavailable.",
+      "type": "object",
+      "properties": {
+        "tutorId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string", "description": "The slot value, e.g., '09:00'" },
+        "startISO": { "type": "string", "format": "date-time", "description": "Optional ISO datetime for the start of the block." },
+        "endISO": { "type": "string", "format": "date-time", "description": "Optional ISO datetime for the end of the block." },
+        "blockedById": { "type": "string", "description": "The UID of the admin who blocked the time." },
+        "blockedByEmail": { "type": "string", "format": "email", "description": "The email of the admin for convenience." },
+        "note": { "type": "string", "description": "An optional note from the admin." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tutorId", "date", "time", "blockedById", "createdAt"]
+    },
+    "GroupSession": {
+      "title": "Group Session",
+      "description": "Represents a scheduled group class that multiple students can register for.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "duration": { "type": "number", "description": "Duration in minutes." },
+        "price": { "type": "number" },
+        "tutorId": { "type": "string" },
+        "tutorName": { "type": "string" },
+        "maxStudents": { "type": "number" },
+        "participantCount": { "type": "number" },
+        "participantIds": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["scheduled", "cancelled", "completed"] },
+        "zoomLink": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "startTime", "endTime", "duration", "price", "tutorId", "maxStudents"]
+    },
+    "UserCredit": {
+        "title": "User Credit",
+        "description": "Represents a single type of lesson credit a user holds.",
+        "type": "object",
+        "properties": {
+            "lessonType": { "type": "string", "description": "e.g., 'quick-practice-bundle' or 'learning-intensive'" },
+            "count": { "type": "number", "description": "Number of credits for this lesson type." },
+            "purchasedAt": { "type": "string", "format": "date-time" },
+            "packageBookingId": { "type": "string", "description": "The ID of the original booking that granted these credits." }
+        },
+        "required": ["lessonType", "count", "purchasedAt"]
+    }
+  },
+  "auth": {
+    "providers": ["email-password", "google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores individual user profiles, including their lesson credits."
+    },
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "Stores all lesson booking documents."
+    },
+    "/timeOff/{timeOffId}": {
+      "schema": { "$ref": "#/entities/TimeOffBlock" },
+      "description": "Stores blocks of time when tutors are marked as unavailable."
+    },
+    "/groupSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/GroupSession" },
+      "description": "Stores all scheduled group session documents."
+    }
+  }
+}

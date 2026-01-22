@@ -1,0 +1,180 @@
+
+<<<<<<< HEAD
+=======
+
+>>>>>>> before-product-selection-rewrite
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, LogIn, UserCircle, ShieldCheck } from "lucide-react";
+import { siteConfig } from "@/config/site";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
+import React from "react";
+import { SiteLogo } from "./SiteLogo";
+import { Separator } from "../ui/separator";
+
+export function Navbar() {
+  const pathname = usePathname();
+  const { user, loading, signOut, isAdmin } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+<<<<<<< HEAD
+  const publicNavLinks = [
+    { title: "About Tutor", href: "/tutor-profile" },
+    { title: "Packages", href: "/packages" },
+=======
+  // This logic is now inside the Navbar itself.
+  // It ensures the navbar doesn't render on special pages.
+  const showNav = !pathname.startsWith('/admin') && !pathname.startsWith('/profile') && pathname !== "/" && !pathname.startsWith('/register') && !pathname.startsWith('/login') && !pathname.startsWith('/forgot-password');
+
+  if (!showNav) {
+    return null;
+  }
+
+  const publicNavLinks = [
+    { title: "About Tutor", href: "/tutor-profile" },
+    { title: "Packages", href: "/packages" },
+    { title: "Group Sessions", href: "/group-sessions" },
+>>>>>>> before-product-selection-rewrite
+    { title: "Testimonials", href: "/testimonials" },
+    { title: "Resources", href: "/resources" },
+    { title: "Contact", href: "/contact" },
+  ];
+
+<<<<<<< HEAD
+  // CORRECT LOGIC: Create a single, unified list of links for the mobile menu.
+  const mobileNavLinks = [...publicNavLinks];
+  if (isAdmin) {
+    // Add a separator object and then the admin links to the same array.
+=======
+  const mobileNavLinks = [...publicNavLinks];
+  if (isAdmin) {
+>>>>>>> before-product-selection-rewrite
+    mobileNavLinks.push({ title: "separator", href: "#" });
+    mobileNavLinks.push(...siteConfig.adminNav);
+  }
+
+<<<<<<< HEAD
+
+=======
+>>>>>>> before-product-selection-rewrite
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
+      <div className="container flex h-16 items-center justify-between">
+        <SiteLogo />
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-6">
+          {publicNavLinks.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary",
+                pathname === item.href ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              {item.title}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex items-center space-x-2">
+          {loading ? (
+            <div className="h-8 w-8 animate-pulse rounded-full bg-muted"></div>
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <UserCircle className="h-6 w-6" />
+                  <span className="sr-only">User menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{user.displayName || user.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">Dashboard</Link>
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/dashboard">
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut} className="cursor-pointer">
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button variant="ghost" asChild className="hidden md:inline-flex">
+                <Link href="/login">Log In</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/register">Sign Up</Link>
+              </Button>
+            </>
+          )}
+
+          {/* Mobile Navigation */}
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <SheetHeader>
+                 <SheetTitle className="sr-only">Main Menu</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 mb-4 px-2">
+                 <SiteLogo />
+              </div>
+              <nav className="grid gap-2 text-lg font-medium px-2">
+                {mobileNavLinks.map((item) => 
+                  item.title === 'separator' ? (
+                    <div key="admin-separator" className="py-2">
+                      <Separator />
+                       <h3 className="font-semibold text-foreground text-base flex items-center gap-2 mt-4">
+                            <ShieldCheck className="h-5 w-5" />
+                            Admin Panel
+                        </h3>
+                    </div>
+                  ) : (
+                   <SheetClose asChild key={item.href}>
+                    <Link 
+                      href={item.href} 
+                      onClick={() => setIsMobileMenuOpen(false)} 
+                      className="block py-2 text-lg font-medium text-muted-foreground hover:text-primary"
+                    >
+                      {item.title}
+                    </Link>
+                   </SheetClose>
+                  )
+                )}
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </header>
+  );
+}

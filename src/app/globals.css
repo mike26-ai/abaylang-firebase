@@ -1,0 +1,137 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Abylang Brand Theme */
+    --background: 39 81% 94%; /* #FDF6E3 */
+    --foreground: 210 22% 28%; /* #36454F */
+
+    --muted: 210 9% 53%; 
+    --muted-foreground: 30 1% 52%; /* Aksumite Stone */
+
+    --popover: 39 81% 94%;
+    --popover-foreground: 210 22% 28%;
+
+    --card: 39 81% 94%; /* Parchment White for cards */
+    --card-foreground: 210 22% 28%;
+
+    --border: 30 1% 52%; /* #848482 - Aksumite Stone */
+    --input: 30 1% 52%;
+
+    --primary: 30 71% 47%; /* #CC7722 - Deep Ochre */
+    --primary-foreground: 39 81% 94%; /* #FDF6E3 */
+
+    --secondary: 30 1% 90%; /* Light version of Aksumite Stone */
+    --secondary-foreground: 210 22% 28%;
+
+    --accent: 30 71% 95%; /* Very light ochre for hover */
+    --accent-foreground: 30 71% 40%; /* Darker ochre for text on hover */
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --ring: 30 71% 47%; /* #CC7722 */
+
+    --radius: 0.5rem; /* 8px - a bit of rounding */
+
+    --font-lora: "Lora", serif;
+    --font-lato: "Lato", sans-serif;
+    
+    /* Chart Colors */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 40 80% 55%;
+    --chart-4: 280 75% 60%;
+    --chart-5: 340 85% 65%;
+  }
+
+  .dark {
+    /* Abylang Dark Theme (Inverted for contrast) */
+    --background: 210 22% 15%; /* Dark charcoal-blue */
+    --foreground: 39 56% 95%; /* Parchment White */
+
+    --muted: 210 22% 25%;
+    --muted-foreground: 30 1% 70%; /* Lighter stone */
+
+    --popover: 210 22% 15%;
+    --popover-foreground: 39 56% 95%;
+
+    --card: 210 22% 20%;
+    --card-foreground: 39 56% 95%;
+
+    --border: 30 1% 33%; /* Darker stone border */
+    --input: 30 1% 28%;
+
+    --primary: 30 71% 55%; /* Brighter Ochre for dark mode */
+    --primary-foreground: 210 22% 10%; /* Very dark for contrast on ochre */
+
+    --secondary: 30 1% 25%;
+    --secondary-foreground: 39 56% 95%;
+
+    --accent: 30 71% 25%; /* Dark ochre for accent background */
+    --accent-foreground: 30 71% 80%; /* Lighter ochre for text on accent */
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --ring: 30 71% 55%;
+    
+    /* Chart Colors - Dark */
+    --chart-1: 220 70% 60%;
+    --chart-2: 160 60% 55%;
+    --chart-3: 40 80% 65%;
+    --chart-4: 280 75% 70%;
+    --chart-5: 340 85% 75%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-lato), sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-lora), serif;
+  }
+
+  /* Target Shadcn Card component to remove default shadow and ensure border */
+  .card {
+     box-shadow: none;
+     border-width: 1px;
+  }
+
+  a {
+    @apply text-primary;
+    text-decoration: none;
+  }
+  a:hover {
+    @apply underline;
+  }
+}
+
+/* Styling for the footer logo specifically */
+@layer components {
+  .footer-logo svg {
+    color: hsl(var(--background));
+  }
+}
+
+
+/* Subtle animations */
+@layer utilities {
+  .transition-default {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  .hover-lift {
+    @apply hover:transform hover:-translate-y-1 transition-default;
+  }
+}

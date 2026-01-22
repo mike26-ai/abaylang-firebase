@@ -1,0 +1,105 @@
+
+{
+  "beginner": [
+    {
+      "id": "fc001",
+      "amharic": "ሰላም",
+      "english": "Hello / Peace",
+      "pronunciation": "se-lam",
+      "category": "Greetings"
+    },
+    {
+      "id": "fc002",
+      "amharic": "አዎ",
+      "english": "Yes",
+      "pronunciation": "a-wo",
+      "category": "Common Words"
+    },
+    {
+      "id": "fc003",
+      "amharic": "አይ",
+      "english": "No",
+      "pronunciation": "a-yi",
+      "category": "Common Words"
+    },
+    {
+      "id": "fc004",
+      "amharic": "እባክህ",
+      "english": "Please (to male)",
+      "pronunciation": "i-bak-ih",
+      "category": "Politeness"
+    },
+    {
+      "id": "fc005",
+      "amharic": "እባክሽ",
+      "english": "Please (to female)",
+      "pronunciation": "i-bak-ish",
+      "category": "Politeness"
+    },
+    {
+      "id": "fc006",
+      "amharic": "አመሰግናለሁ",
+      "english": "Thank you",
+      "pronunciation": "a-me-seg-na-le-hu",
+      "category": "Politeness"
+    },
+    {
+      "id": "fc007",
+      "amharic": "ውሃ",
+      "english": "Water",
+      "pronunciation": "wi-ha",
+      "category": "Food & Drink"
+    },
+    {
+      "id": "fc008",
+      "amharic": "ቡና",
+      "english": "Coffee",
+      "pronunciation": "bu-na",
+      "category": "Food & Drink"
+    },
+    {
+      "id": "fc009",
+      "amharic": "ስምህ ማን ነው?",
+      "english": "What is your name? (to male)",
+      "pronunciation": "sim-ih man new?",
+      "category": "Introductions"
+    },
+    {
+      "id": "fc010",
+      "amharic": "ስምሽ ማን ነው?",
+      "english": "What is your name? (to female)",
+      "pronunciation": "sim-ish man new?",
+      "category": "Introductions"
+    },
+    {
+      "id": "fc011",
+      "amharic": "ደህና ነኝ",
+      "english": "I am fine",
+      "pronunciation": "deh-na negn",
+      "category": "Well-being"
+    },
+    {
+      "id": "fc012",
+      "amharic": "ቻው",
+      "english": "Goodbye / Bye",
+      "pronunciation": "chow",
+      "category": "Greetings"
+    }
+  ],
+  "intermediate": [
+    {
+        "id": "fc101",
+        "amharic": "ትምህርት ቤት",
+        "english": "School",
+        "pronunciation": "tim-hirt bet",
+        "category": "Places"
+      },
+      {
+        "id": "fc102",
+        "amharic": "ገበያ",
+        "english": "Market",
+        "pronunciation": "ge-be-ya",
+        "category": "Places"
+      }
+  ]
+}
