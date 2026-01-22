@@ -1,13 +1,5 @@
 {
   "projects": {
-<<<<<<< HEAD
     "default": "amharic-connect"
   }
-=======
-    "default": "amharic-connect",
-    "dev": "amharic-connect"
-  },
-  "targets": {},
-  "etags": {}
->>>>>>> before-product-selection-rewrite
 }
