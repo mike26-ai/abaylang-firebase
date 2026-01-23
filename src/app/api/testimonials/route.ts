@@ -1,6 +1,6 @@
 // File: src/app/api/testimonials/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb } from '@/lib/firebase-admin';
 
 /**
  * Securely fetches all 'approved' testimonials using the Firebase Admin SDK.
