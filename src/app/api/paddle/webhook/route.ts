@@ -1,4 +1,3 @@
-
 // File: src/app/api/paddle/webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { Paddle, type TransactionCompletedEvent } from '@paddle/paddle-node-sdk';
@@ -21,7 +20,8 @@ const paddle = new Paddle(paddleApiKey || '');
 
 
 async function handleTransactionConfirmation(transactionId: string, customData: PaddleCustomData) {
-    if (!adminDb) {
+    const db = adminDb;
+    if (!db) {
       console.error("Webhook Error: Firebase Admin SDK not initialized.");
       return;
     }
@@ -29,10 +29,10 @@ async function handleTransactionConfirmation(transactionId: string, customData: 
     const { booking_id, user_id, product_id, product_type } = customData;
     console.log(`Webhook: Processing transaction ${transactionId} for booking ${booking_id} of type ${product_type}`);
 
-    const bookingDocRef = adminDb.collection('bookings').doc(booking_id);
-    const userDocRef = adminDb.collection('users').doc(user_id);
+    const bookingDocRef = db.collection('bookings').doc(booking_id);
+    const userDocRef = db.collection('users').doc(user_id);
 
-    await adminDb.runTransaction(async (transaction: Transaction) => {
+    await db.runTransaction(async (transaction: Transaction) => {
         const bookingDoc = await transaction.get(bookingDocRef);
         if (!bookingDoc.exists) {
             console.error(`Webhook Error: Booking with ID ${booking_id} not found.`);
