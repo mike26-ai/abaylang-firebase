@@ -1,6 +1,6 @@
 // File: src/app/api/group-sessions/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb, Timestamp } from '@/lib/firebase-admin';
+import { adminDb, Timestamp } from '@/lib/firebaseAdmin';
 
 export const dynamic = 'force-dynamic';
 

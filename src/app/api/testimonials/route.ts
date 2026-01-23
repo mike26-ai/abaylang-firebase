@@ -1,6 +1,6 @@
 // File: src/app/api/testimonials/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 export const dynamic = 'force-dynamic';
 

@@ -3,7 +3,7 @@
  * This file contains the core, testable business logic for the bookings endpoints.
  * It now uses the server-side product catalog as the single source of truth.
  */
-import { adminDb, Timestamp, FieldValue } from '@/lib/firebase-admin';
+import { adminDb, Timestamp, FieldValue } from '@/lib/firebaseAdmin';
 import type { Transaction } from 'firebase-admin/firestore';
 import { addMinutes, parse, format } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
