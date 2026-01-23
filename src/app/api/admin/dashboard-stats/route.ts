@@ -1,6 +1,6 @@
 // File: src/app/api/admin/dashboard-stats/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminAuth, adminDb, Timestamp } from '@/lib/firebaseAdmin';
+import { adminAuth, adminDb, Timestamp } from '@/lib/firebase-admin';
 import { startOfDay } from 'date-fns';
 import type { Booking, Testimonial } from '@/lib/types';
 import type { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore';

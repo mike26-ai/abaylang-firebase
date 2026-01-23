@@ -1,6 +1,6 @@
 // File: src/app/api/group-sessions/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth, Timestamp } from '@/lib/firebaseAdmin';
+import { adminDb, adminAuth, Timestamp } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { addMinutes, isBefore } from 'date-fns';
 

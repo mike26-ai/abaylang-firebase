@@ -1,6 +1,6 @@
 // File: src/app/api/group-sessions/update/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
+import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { z } from 'zod';
 
 const UpdateGroupSessionSchema = z.object({

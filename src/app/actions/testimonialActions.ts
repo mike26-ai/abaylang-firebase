@@ -2,7 +2,7 @@
 // By adding 'use server' at the top, all functions in this file are marked as Server Actions.
 'use server';
 
-import { adminDb, adminAuth, FieldValue } from "@/lib/firebaseAdmin";
+import { adminDb, adminAuth, FieldValue } from "@/lib/firebase-admin";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from 'next/headers';

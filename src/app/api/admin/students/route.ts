@@ -1,6 +1,6 @@
 // File: src/app/api/admin/students/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth, Timestamp } from '@/lib/firebaseAdmin';
+import { adminDb, adminAuth, Timestamp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic'; // Ensures the route is not cached
 

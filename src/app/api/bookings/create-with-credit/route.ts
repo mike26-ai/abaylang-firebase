@@ -1,6 +1,6 @@
 // File: src/app/api/bookings/create-with-credit/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth, Timestamp, FieldValue } from '@/lib/firebaseAdmin';
+import { adminDb, adminAuth, Timestamp, FieldValue } from '@/lib/firebase-admin';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { products, isValidProductId } from '@/config/products';
