@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -227,17 +226,19 @@ export default function BookLessonPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
-      <header className="bg-card border-b sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to ABYLANG</span>
-          </Link>
-          <SiteLogo />
+       <header className="bg-card border-b sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex flex-col items-start gap-2">
+            <div className="h-16 w-auto">
+                <SiteLogo />
+            </div>
+            <Link href="/" className="flex items-center text-muted-foreground hover:text-primary transition-colors">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            <span className="text-sm font-medium">Back to ABYLANG</span>
+            </Link>
         </div>
-      </header>
+        </header>
 
-      <div className="container mx-auto px-4 pt-24 pb-8 max-w-6xl">
+      <div className="container mx-auto px-4 pt-40 md:pt-48 pb-12 max-w-6xl">
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
@@ -527,3 +528,5 @@ export default function BookLessonPage() {
     </div>
   )
 }
+
+    
