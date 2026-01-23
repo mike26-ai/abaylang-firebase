@@ -49,7 +49,4 @@ env:
     secret: PADDLE_API_KEY
   - variable: PADDLE_WEBHOOK_SECRET
     secret: PADDLE_WEBHOOK_SECRET
-  - variable: CLOUDINARY_API_KEY
-    secret: CLOUDINARY_API_KEY
-  - variable: CLOUDINARY_API_SECRET
-    secret: CLOUDINARY_API_SECRET
+  
