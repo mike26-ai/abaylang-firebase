@@ -11,7 +11,9 @@ export const dynamic = 'force-dynamic'; // Ensures the route is not cached
  */
 export async function GET(request: NextRequest) {
   try {
-    if (!adminAuth || !adminDb) {
+    const auth = adminAuth();
+    const db = adminDb();
+    if (!auth || !db) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     // 1. Verify Authentication and Admin Status from the incoming request
@@ -20,8 +22,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized: No authentication token provided.' }, { status: 401 });
     }
     
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
     const userData = userDoc.data();
 
     if (userData?.role !== 'admin') {
@@ -29,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. Perform database query using the Admin SDK
-    const usersSnapshot = await adminDb.collection('users').orderBy('createdAt', 'desc').get();
+    const usersSnapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
     
     // 3. Serialize the data to be client-safe
     const students = usersSnapshot.docs.map(doc => {

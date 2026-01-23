@@ -7,12 +7,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    if (!adminDb) {
+    const db = adminDb();
+    if (!db) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     const now = new Date();
     // Fetch all scheduled sessions that have not ended yet.
-    const sessionsSnapshot = await adminDb.collection('groupSessions')
+    const sessionsSnapshot = await db.collection('groupSessions')
       .where('status', '==', 'scheduled')
       .where('startTime', '>', now) // Only fetch future sessions
       .orderBy('startTime', 'asc') // Order them from soonest to latest

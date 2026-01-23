@@ -20,7 +20,8 @@ const CreateWithCreditSchema = z.object({
 type CreateWithCreditPayload = z.infer<typeof CreateWithCreditSchema>;
 
 async function _createBookingWithCredit(payload: CreateWithCreditPayload, decodedToken: DecodedIdToken) {
-    if (!adminDb) throw new Error("Database service not available.");
+    const db = adminDb();
+    if (!db) throw new Error("Database service not available.");
 
     if (decodedToken.uid !== payload.userId) {
         throw new Error('unauthorized');
@@ -35,9 +36,9 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
     const startDateTime = parse(`${payload.date} ${payload.time}`, 'yyyy-MM-dd HH:mm', new Date());
     const startTime = Timestamp.fromDate(startDateTime);
     const endTime = Timestamp.fromDate(addMinutes(startDateTime, lessonDetails.duration as number));
-    const userRef = adminDb.collection('users').doc(payload.userId);
+    const userRef = db.collection('users').doc(payload.userId);
     
-    return await adminDb.runTransaction(async (transaction) => {
+    return await db.runTransaction(async (transaction) => {
         // --- 1. Verify Credit Balance & Time Slot Availability ---
         const userDoc = await transaction.get(userRef);
         if (!userDoc.exists) throw new Error('user_not_found');
@@ -50,7 +51,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
             throw new Error('insufficient_credits');
         }
 
-        const bookingsRef = adminDb.collection('bookings');
+        const bookingsRef = db.collection('bookings');
         const conflictQuery = bookingsRef
             .where('tutorId', '==', 'MahderNegashMamo')
             .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
@@ -70,7 +71,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
         transaction.update(userRef, { credits: newCredits });
 
         // --- 3. Create Booking Document ---
-        const newBookingRef = adminDb.collection('bookings').doc();
+        const newBookingRef = db.collection('bookings').doc();
         const productDetails = products[payload.creditType as keyof typeof products];
         const newBookingDoc = {
             userId: payload.userId,
@@ -108,13 +109,14 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
 
 export async function POST(request: NextRequest) {
   try {
-    if (!adminAuth) throw new Error("Authentication service not available.");
+    const auth = adminAuth();
+    if (!auth) throw new Error("Authentication service is not available.");
 
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, message: 'No authentication token provided.' }, { status: 401 });
     }
-    const decodedToken: DecodedIdToken = await adminAuth.verifyIdToken(idToken);
+    const decodedToken: DecodedIdToken = await auth.verifyIdToken(idToken);
     
     const body = await request.json();
     const validationResult = CreateWithCreditSchema.safeParse(body);

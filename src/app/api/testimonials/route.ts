@@ -8,10 +8,11 @@ import { adminDb } from '@/lib/firebaseAdmin';
  */
 export async function GET() {
   try {
-    if (!adminDb) {
+    const db = adminDb();
+    if (!db) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
-    const snapshot = await adminDb
+    const snapshot = await db
       .collection("testimonials")
       .where("status", "==", "approved")
       .get();

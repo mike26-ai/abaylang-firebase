@@ -16,7 +16,8 @@ const UnblockTimeSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!adminAuth) {
+    const auth = adminAuth();
+    if (!auth) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     // 1. Verify Authentication
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'No authentication token provided.' }, { status: 401 });
     }
-    const decodedToken: DecodedIdToken = await adminAuth.verifyIdToken(idToken);
+    const decodedToken: DecodedIdToken = await auth.verifyIdToken(idToken);
 
     // 2. Validate Input Body
     const body = await request.json();

@@ -13,7 +13,9 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    if (!adminAuth || !adminDb) {
+    const auth = adminAuth();
+    const db = adminDb();
+    if (!auth || !db) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     // 1. Verify Authentication and Admin Status from the incoming request
@@ -22,8 +24,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized: No authentication token provided.' }, { status: 401 });
     }
     
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
     const userData = userDoc.data();
 
     const isAdmin = userData?.role === 'admin';
@@ -43,13 +45,13 @@ export async function GET(request: NextRequest) {
         recentMessagesSnapshot,
         recentStudentsSnapshot,
     ] = await Promise.all([
-        adminDb.collection('bookings').get(),
-        adminDb.collection('testimonials').get(),
-        adminDb.collection('contactMessages').where('read', '==', false).count().get(),
-        adminDb.collection('users').where('role', '==', 'student').count().get(),
-        adminDb.collection('bookings').orderBy('createdAt', 'desc').limit(5).get(),
-        adminDb.collection('contactMessages').orderBy('createdAt', 'desc').limit(5).get(),
-        adminDb.collection('users').where('role', '==', 'student').orderBy('createdAt', 'desc').limit(5).get(),
+        db.collection('bookings').get(),
+        db.collection('testimonials').get(),
+        db.collection('contactMessages').where('read', '==', false).count().get(),
+        db.collection('users').where('role', '==', 'student').count().get(),
+        db.collection('bookings').orderBy('createdAt', 'desc').limit(5).get(),
+        db.collection('contactMessages').orderBy('createdAt', 'desc').limit(5).get(),
+        db.collection('users').where('role', '==', 'student').orderBy('createdAt', 'desc').limit(5).get(),
     ]);
 
     // 3. Process the results in-memory to avoid complex index requirements

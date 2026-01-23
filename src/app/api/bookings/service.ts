@@ -20,7 +20,8 @@ interface BookingPayload {
 }
 
 export async function _createBooking(payload: BookingPayload, decodedToken: DecodedIdToken) {
-    if (!adminDb) {
+    const db = adminDb();
+    if (!db) {
       throw new Error("Database service not available.");
     }
 
@@ -34,7 +35,7 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     }
 
     const isPaidLesson = product.price > 0;
-    const newBookingRef = adminDb.collection('bookings').doc();
+    const newBookingRef = db.collection('bookings').doc();
     
     let startTime: Timestamp | null = null;
     let endTime: Timestamp | null = null;
@@ -42,10 +43,10 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     let finalTime = payload.time;
 
     // This transaction now also handles group session participant updates.
-    await adminDb.runTransaction(async (transaction: Transaction) => {
+    await db.runTransaction(async (transaction: Transaction) => {
         // --- Group Session Logic ---
         if (product.type === 'group' && payload.groupSessionId) {
-            const sessionRef = adminDb.collection('groupSessions').doc(payload.groupSessionId);
+            const sessionRef = db.collection('groupSessions').doc(payload.groupSessionId);
             const sessionDoc = await transaction.get(sessionRef);
 
             if (!sessionDoc.exists) throw new Error('group_session_not_found');
@@ -86,8 +87,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             startTime = Timestamp.fromDate(startDateTime);
             endTime = Timestamp.fromDate(addMinutes(startTime.toDate(), product.duration as number));
 
-            const bookingsRef = adminDb.collection('bookings');
-            const timeOffRef = adminDb.collection('timeOff');
+            const bookingsRef = db.collection('bookings');
+            const timeOffRef = db.collection('timeOff');
             const tutorId = "MahderNegashMamo";
 
             const bookingConflictQuery = bookingsRef
@@ -146,7 +147,7 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
         transaction.set(newBookingRef, newBookingDoc);
 
         if (product.type === 'package' && product.totalLessons) {
-            const userRef = adminDb.collection('users').doc(payload.userId);
+            const userRef = db.collection('users').doc(payload.userId);
             const newCreditObject = { 
                 lessonType: payload.productId, 
                 count: product.totalLessons, 

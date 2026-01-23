@@ -5,14 +5,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
-    if (!adminDb) {
+    const db = adminDb();
+    if (!db) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     const { searchParams } = new URL(req.url);
     const tutorId = searchParams.get("tutorId");
     if (!tutorId) return NextResponse.json({ error: "Missing tutorId" }, { status: 400 });
     
-    const bookingsRef = adminDb.collection("bookings");
+    const bookingsRef = db.collection("bookings");
     const q = bookingsRef.where("tutorId", "==", tutorId);
     const snapshot = await q.get();
 

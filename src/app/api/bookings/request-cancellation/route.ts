@@ -14,14 +14,16 @@ const RequestCancellationSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    if (!adminAuth || !adminDb) {
+    const auth = adminAuth();
+    const db = adminDb();
+    if (!auth || !db) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
     }
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const decodedToken = await auth.verifyIdToken(idToken);
 
     const body = await request.json();
     const validation = RequestCancellationSchema.safeParse(body);
@@ -30,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
     
     const { bookingId, resolutionChoice, reason } = validation.data;
-    const bookingRef = adminDb.collection('bookings').doc(bookingId);
+    const bookingRef = db.collection('bookings').doc(bookingId);
     
     const bookingDoc = await bookingRef.get();
     if (!bookingDoc.exists) {
@@ -63,10 +65,10 @@ export async function POST(request: NextRequest) {
     
     // --- ATOMIC RESCHEDULE LOGIC ---
     if (resolutionChoice === 'reschedule') {
-        const userRef = adminDb.collection('users').doc(booking.userId);
+        const userRef = db.collection('users').doc(booking.userId);
         let issuedCredit = null;
 
-        await adminDb.runTransaction(async (transaction) => {
+        await db.runTransaction(async (transaction) => {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists) throw new Error("User not found for credit issuance.");
             
