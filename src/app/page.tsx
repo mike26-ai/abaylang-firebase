@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useState, type ChangeEvent, type FormEvent, useEffect } from "react"
-import { addDoc, collection, serverTimestamp } from "firebase/firestore"
+import { addDoc, collection, query, where, orderBy, limit, getDocs, serverTimestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo, siteConfig } from "@/config/site"
@@ -30,27 +30,30 @@ export default function HomePage() {
     const fetchTestimonials = async () => {
       setIsLoadingTestimonials(true);
       try {
-        // Fetch from the new, secure API route
-        const response = await fetch('/api/testimonials');
-        if (!response.ok) {
-          throw new Error('Failed to fetch testimonials');
-        }
-        const data = await response.json();
-
-        // Sort by date client-side
-        const sortedTestimonials = data.sort((a: TestimonialType, b: TestimonialType) => {
-            const dateA = a.createdAt ? new Date(a.createdAt as any).getTime() : 0;
-            const dateB = b.createdAt ? new Date(b.createdAt as any).getTime() : 0;
-            return dateB - dateA;
-        });
-
-        setTestimonials(sortedTestimonials.slice(0, 3)); // Take top 3
+        const testimonialsCol = collection(db, "testimonials");
+        const q = query(
+          testimonialsCol,
+          where("status", "==", "approved"),
+          orderBy("createdAt", "desc"),
+          limit(3)
+        );
+        const querySnapshot = await getDocs(q);
+        const fetchedTestimonials = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as TestimonialType));
+        
+        setTestimonials(fetchedTestimonials);
 
       } catch (error: any) {
         console.error("Error fetching testimonials for homepage:", error);
+        let description = "Could not load recent testimonials.";
+        if (error.code === 'failed-precondition') {
+          description = "Could not load testimonials. This feature may require a database index. Please check the Firestore console for instructions to create the necessary index.";
+        }
         toast({
           title: "Error Loading Testimonials",
-          description: "Could not load recent testimonials.",
+          description: description,
           variant: "destructive",
         });
       } finally {
