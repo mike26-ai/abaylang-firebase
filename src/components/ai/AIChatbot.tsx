@@ -1,4 +1,3 @@
-
 "use client"
 
 // This component is not used in the MVP as AI features are removed.
@@ -94,11 +93,7 @@ export function AIChatbot() {
                         variant="ghost"
                         size="sm"
                         onClick={() => playAudio(message.text)}
-<<<<<<< HEAD
-                        className={`mt-1 h-6 px-2 text-xs ${message.sender === 'user' ? 'text-primary-foreground/80 hover:text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-=======
                         className={`mt-1 h-6 px-2 text-xs ${message.sender === 'bot' ? 'text-muted-foreground hover:text-foreground' : 'text-primary-foreground/80 hover:text-primary-foreground'}`}
->>>>>>> before-product-selection-rewrite
                         disabled // Disabled for MVP
                       >
                         <Volume2 className="w-3 h-3 mr-1" /> Listen
