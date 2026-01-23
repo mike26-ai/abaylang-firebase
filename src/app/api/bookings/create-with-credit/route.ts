@@ -50,7 +50,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
             throw new Error('insufficient_credits');
         }
 
-        const bookingsRef = adminDb.collection('bookings');
+        const bookingsRef = adminDb!.collection('bookings');
         const conflictQuery = bookingsRef
             .where('tutorId', '==', 'MahderNegashMamo')
             .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
@@ -70,7 +70,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
         transaction.update(userRef, { credits: newCredits });
 
         // --- 3. Create Booking Document ---
-        const newBookingRef = adminDb.collection('bookings').doc();
+        const newBookingRef = adminDb!.collection('bookings').doc();
         const productDetails = products[payload.creditType as keyof typeof products];
         const newBookingDoc = {
             userId: payload.userId,

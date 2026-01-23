@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       const endTimestamp = Timestamp.fromDate(endDateTime);
 
       // --- CORRECTED QUERIES ---
-      const bookingsRef = adminDb.collection('bookings');
+      const bookingsRef = adminDb!.collection('bookings');
       const bookingConflictQuery = bookingsRef
           .where('tutorId', '==', tutorId)
           .where('startTime', '<', endTimestamp)
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         throw new Error('A private lesson is already booked in this time slot.');
       }
       
-      const groupSessionsRef = adminDb.collection('groupSessions');
+      const groupSessionsRef = adminDb!.collection('groupSessions');
       const groupSessionConflictQuery = groupSessionsRef
           .where('tutorId', '==', tutorId)
           .where('startTime', '<', endTimestamp)
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
           throw new Error('Another group session is already scheduled in this time slot.');
       }
 
-      const timeOffRef = adminDb.collection('timeOff');
+      const timeOffRef = adminDb!.collection('timeOff');
       const timeOffConflictQuery = timeOffRef
           .where('tutorId', '==', tutorId)
           .where('startISO', '<', endDateTime.toISOString())
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
           throw new Error('The tutor has blocked off this time as unavailable.');
       }
       
-      const newSessionRef = adminDb.collection('groupSessions').doc();
+      const newSessionRef = adminDb!.collection('groupSessions').doc();
       const newSessionData = {
         title: sessionTypeDetails.label,
         description: sessionTypeDetails.description,

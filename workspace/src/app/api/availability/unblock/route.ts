@@ -1,13 +1,13 @@
 // File: src/app/api/availability/unblock/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebase-admin';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { _unblockSlot } from '@/app/api/availability/service'; // Corrected import path
 
 // Initialize Firebase Admin SDK
 try {
-  initAdmin();
+ 
 } catch (error) {
   console.error("CRITICAL: Failed to initialize Firebase Admin SDK in unblock/route.ts", error);
 }

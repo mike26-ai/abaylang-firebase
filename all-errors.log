@@ -1,0 +1,23 @@
+src/app/api/availability/service.ts(85,25): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/availability/service.ts(100,27): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/availability/service.ts(127,27): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/bookings/create-private-group/route.ts(42,29): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/bookings/create-private-group/route.ts(54,36): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/bookings/create-private-group/route.ts(75,35): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/bookings/create-with-credit/route.ts(53,29): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/bookings/create-with-credit/route.ts(73,31): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/bookings/service.ts(48,32): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/bookings/service.ts(89,33): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/bookings/service.ts(90,32): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/bookings/service.ts(149,29): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/group-sessions/create/route.ts(64,27): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/group-sessions/create/route.ts(78,32): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/group-sessions/create/route.ts(89,26): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/group-sessions/create/route.ts(99,29): error TS18047: 'adminDb' is possibly 'null'.
+src/app/api/group-sessions/route.ts(30,59): error TS2339: Property 'toDate' does not exist on type 'typeof Timestamp'.
+src/app/api/group-sessions/route.ts(31,55): error TS2339: Property 'toDate' does not exist on type 'typeof Timestamp'.
+src/app/api/group-sessions/route.ts(32,59): error TS2339: Property 'toDate' does not exist on type 'typeof Timestamp'.
+workspace/src/app/api/availability/block/route.ts(3,10): error TS2305: Module '"@/lib/firebase-admin"' has no exported member 'initAdmin'.
+workspace/src/app/api/availability/get/route.ts(3,10): error TS2305: Module '"@/lib/firebase-admin"' has no exported member 'initAdmin'.
+workspace/src/app/api/availability/unblock/route.ts(3,10): error TS2305: Module '"@/lib/firebase-admin"' has no exported member 'initAdmin'.
+workspace/src/app/api/bookings/create/route.ts(4,10): error TS2305: Module '"@/lib/firebase-admin"' has no exported member 'initAdmin'.

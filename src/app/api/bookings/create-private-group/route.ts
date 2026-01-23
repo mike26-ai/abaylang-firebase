@@ -39,7 +39,7 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
 
     return await adminDb.runTransaction(async (transaction) => {
         // 1. Check for booking conflicts for the tutor
-        const bookingsRef = adminDb.collection('bookings');
+        const bookingsRef = adminDb!.collection('bookings');
         const bookingConflictQuery = bookingsRef
             .where('tutorId', '==', payload.tutorId)
             .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
@@ -51,7 +51,7 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
         }
         
         // 2. Create the private GroupSession document
-        const newGroupSessionRef = adminDb.collection('groupSessions').doc();
+        const newGroupSessionRef = adminDb!.collection('groupSessions').doc();
         transaction.set(newGroupSessionRef, {
             title: `Private Group - ${payload.leader.name}`,
             description: `A private lesson for a group of ${allParticipants.length} organized by ${payload.leader.name}.`,
@@ -72,7 +72,7 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
         // 3. Create a placeholder booking for each participant
         let leaderBookingId = '';
         for (const participant of allParticipants) {
-            const newBookingRef = adminDb.collection('bookings').doc();
+            const newBookingRef = adminDb!.collection('bookings').doc();
             const isLeader = participant.uid === leaderUid;
             
             if (isLeader) {

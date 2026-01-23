@@ -2,7 +2,7 @@
 /**
  * This file contains the core, testable business logic for the availability endpoints.
  */
-import { adminDb, Timestamp } from '@/lib/firebaseAdmin';
+import { adminDb, Timestamp } from '@/lib/firebase-admin';
 import { startOfDay, endOfDay, parse } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { ADMIN_EMAIL } from '@/config/site';
@@ -81,8 +81,8 @@ export async function _blockSlot(payload: { tutorId: string; startISO: string; e
   const startTime = new Date(startISO);
   const endTime = new Date(endISO);
 
-  return await adminDb.runTransaction(async (transaction) => {
-    const bookingsRef = adminDb.collection('bookings');
+  return await adminDb!.runTransaction(async (transaction) => {
+    const bookingsRef = adminDb!.collection('bookings');
     
     // Check for conflicting confirmed bookings
     const bookingConflictQuery = bookingsRef
@@ -97,7 +97,7 @@ export async function _blockSlot(payload: { tutorId: string; startISO: string; e
         throw new Error('slot_already_booked');
     }
 
-    const newTimeOffRef = adminDb.collection('timeOff').doc();
+    const newTimeOffRef = adminDb!.collection('timeOff').doc();
     const timeOffDoc = {
         tutorId,
         startISO,
@@ -124,7 +124,7 @@ export async function _unblockSlot(timeOffId: string, decodedToken: DecodedIdTok
     throw new Error("Database service not available.");
   }
   return await adminDb.runTransaction(async (transaction) => {
-    const timeOffDocRef = adminDb.collection('timeOff').doc(timeOffId);
+    const timeOffDocRef = adminDb!.collection('timeOff').doc(timeOffId);
     const docSnap = await transaction.get(timeOffDocRef);
 
     if (!docSnap.exists) {

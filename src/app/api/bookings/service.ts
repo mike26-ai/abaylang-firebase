@@ -45,7 +45,7 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     await adminDb.runTransaction(async (transaction: Transaction) => {
         // --- Group Session Logic ---
         if (product.type === 'group' && payload.groupSessionId) {
-            const sessionRef = adminDb.collection('groupSessions').doc(payload.groupSessionId);
+            const sessionRef = adminDb!.collection('groupSessions').doc(payload.groupSessionId);
             const sessionDoc = await transaction.get(sessionRef);
 
             if (!sessionDoc.exists) throw new Error('group_session_not_found');
@@ -86,8 +86,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             startTime = Timestamp.fromDate(startDateTime);
             endTime = Timestamp.fromDate(addMinutes(startTime.toDate(), product.duration as number));
 
-            const bookingsRef = adminDb.collection('bookings');
-            const timeOffRef = adminDb.collection('timeOff');
+            const bookingsRef = adminDb!.collection('bookings');
+            const timeOffRef = adminDb!.collection('timeOff');
             const tutorId = "MahderNegashMamo";
 
             const bookingConflictQuery = bookingsRef
@@ -146,7 +146,7 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
         transaction.set(newBookingRef, newBookingDoc);
 
         if (product.type === 'package' && product.totalLessons) {
-            const userRef = adminDb.collection('users').doc(payload.userId);
+            const userRef = adminDb!.collection('users').doc(payload.userId);
             const newCreditObject = { 
                 lessonType: payload.productId, 
                 count: product.totalLessons, 

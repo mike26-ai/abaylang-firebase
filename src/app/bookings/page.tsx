@@ -19,7 +19,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { tutorInfo } from "@/config/site"
 import type { Booking as BookingType, TimeOff } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo"
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAvailability } from "@/services/availabilityService";
 import { createBooking, type CreateBookingPayload } from "@/services/bookingService";
 import { TimeSlot, TimeSlotProps } from "@/components/bookings/time-slot"
@@ -223,6 +223,7 @@ export default function BookLessonPage() {
 
   const isPackageSelected = selectedLessonDetails?.type === 'package';
   const isPaidLesson = (selectedLessonDetails?.price || 0) > 0;
+  const availableSlots = useMemo(() => displayTimeSlots.filter(slot => slot.status === 'available'), [displayTimeSlots]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
@@ -236,7 +237,7 @@ export default function BookLessonPage() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 pt-24 pb-8 max-w-6xl">
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
@@ -342,19 +343,21 @@ export default function BookLessonPage() {
                     <CardContent>
                     {isFetchingSlots ? (
                         <div className="flex justify-center items-center h-24"><Spinner /></div>
-                    ) : displayTimeSlots.length === 0 ? (
+                    ) : availableSlots.length === 0 ? (
                         <p className="text-muted-foreground text-center py-4">No available slots for this duration/date.</p>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {displayTimeSlots.map((slot) => (
-                            <TimeSlot
-                                key={slot.value}
-                                {...slot}
-                                isSelected={selectedTime === slot.value}
-                                onClick={(clickedSlot) => setSelectedTime(clickedSlot.value)}
-                             />
-                        ))}
-                        </div>
+                        <Select onValueChange={setSelectedTime} value={selectedTime}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an available time slot..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableSlots.map((slot) => (
+                              <SelectItem key={slot.value} value={slot.value}>
+                                {slot.display}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                     )}
                     </CardContent>
                 </Card>

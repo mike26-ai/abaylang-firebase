@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
       return {
         ...data,
         uid: doc.id,
-        createdAt: createdAt && typeof (createdAt as typeof Timestamp).toDate === 'function' ? (createdAt as typeof Timestamp).toDate().toISOString() : null,
-        lastCreditPurchase: lastCreditPurchase && typeof (lastCreditPurchase as typeof Timestamp).toDate === 'function' ? (lastCreditPurchase as typeof Timestamp).toDate().toISOString() : null,
+        createdAt: createdAt && typeof (createdAt as any).toDate === 'function' ? (createdAt as any).toDate().toISOString() : null,
+        lastCreditPurchase: lastCreditPurchase && typeof (lastCreditPurchase as any).toDate === 'function' ? (lastCreditPurchase as any).toDate().toISOString() : null,
         credits: data.credits?.map((credit: any) => ({
             ...credit,
             purchasedAt: credit.purchasedAt && typeof credit.purchasedAt.toDate === 'function' ? credit.purchasedAt.toDate().toISOString() : null,

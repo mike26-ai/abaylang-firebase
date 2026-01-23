@@ -1,12 +1,12 @@
 // File: src/app/api/availability/get/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { _getAvailability } from '@/app/api/availability/service'; // Corrected import path
 
 // Initialize Firebase Admin SDK to ensure it's ready
 try {
-  initAdmin();
+ 
 } catch (error) {
   console.error("CRITICAL: Failed to initialize Firebase Admin SDK in get/route.ts", error);
 }

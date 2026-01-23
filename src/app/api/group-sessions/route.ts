@@ -27,9 +27,9 @@ export async function GET() {
         return {
           ...data,
           id: doc.id,
-          startTime: (data.startTime as typeof Timestamp).toDate().toISOString(),
-          endTime: (data.endTime as typeof Timestamp).toDate().toISOString(),
-          createdAt: (data.createdAt as typeof Timestamp).toDate().toISOString(),
+          startTime: (data.startTime as any).toDate().toISOString(),
+          endTime: (data.endTime as any).toDate().toISOString(),
+          createdAt: (data.createdAt as any).toDate().toISOString(),
         };
       });
 

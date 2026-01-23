@@ -1,6 +1,6 @@
 // File: src/app/api/availability/block/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin, Timestamp as AdminTimestamp } from '@/lib/firebase-admin';
+import { adminDb, Timestamp as AdminTimestamp } from '@/lib/firebase-admin';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { ADMIN_EMAIL } from '@/config/site';
@@ -8,7 +8,7 @@ import { _blockSlot } from '@/app/api/availability/service'; // Corrected import
 
 // Initialize Firebase Admin SDK
 try {
-  initAdmin();
+
 } catch (error) {
   console.error("CRITICAL: Failed to initialize Firebase Admin SDK in block/route.ts", error);
 }

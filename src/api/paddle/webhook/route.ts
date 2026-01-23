@@ -21,7 +21,7 @@ const paddle = new Paddle(paddleApiKey || '');
 
 
 async function handleTransactionConfirmation(transactionId: string, customData: PaddleCustomData) {
-    const db = adminDb();
+    const db = adminDb;
     if (!db) {
       console.error("Webhook Error: Firebase Admin SDK not initialized.");
       return;

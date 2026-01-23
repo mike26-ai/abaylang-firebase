@@ -1,14 +1,14 @@
 
 // File: src/app/api/bookings/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebase-admin';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { _createBooking } from '@/app/api/bookings/service';
 import { isValidProductId } from '@/config/products';
 
 // Initialize Firebase Admin SDK
-initAdmin();
+
 const auth = getAuth();
 
 // Zod schema for input validation, now including productId
