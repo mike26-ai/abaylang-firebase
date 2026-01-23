@@ -26,8 +26,7 @@ const CreatePrivateGroupSchema = z.object({
 type PrivateGroupPayload = z.infer<typeof CreatePrivateGroupSchema>;
 
 async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedToken: DecodedIdToken) {
-    const db = adminDb();
-    if (!db) throw new Error("Database service is not available.");
+    if (!adminDb) throw new Error("Database service not available.");
     const leaderUid = payload.leader.uid;
     if (decodedToken.uid !== leaderUid) { 
         throw new Error("unauthorized");
@@ -38,9 +37,9 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
     const endTime = Timestamp.fromDate(addMinutes(startDateTime, payload.duration));
     const allParticipants = [payload.leader, ...payload.members];
 
-    return await db.runTransaction(async (transaction) => {
+    return await adminDb.runTransaction(async (transaction) => {
         // 1. Check for booking conflicts for the tutor
-        const bookingsRef = db.collection('bookings');
+        const bookingsRef = adminDb.collection('bookings');
         const bookingConflictQuery = bookingsRef
             .where('tutorId', '==', payload.tutorId)
             .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
@@ -52,7 +51,7 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
         }
         
         // 2. Create the private GroupSession document
-        const newGroupSessionRef = db.collection('groupSessions').doc();
+        const newGroupSessionRef = adminDb.collection('groupSessions').doc();
         transaction.set(newGroupSessionRef, {
             title: `Private Group - ${payload.leader.name}`,
             description: `A private lesson for a group of ${allParticipants.length} organized by ${payload.leader.name}.`,
@@ -73,7 +72,7 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
         // 3. Create a placeholder booking for each participant
         let leaderBookingId = '';
         for (const participant of allParticipants) {
-            const newBookingRef = db.collection('bookings').doc();
+            const newBookingRef = adminDb.collection('bookings').doc();
             const isLeader = participant.uid === leaderUid;
             
             if (isLeader) {
@@ -111,13 +110,12 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = adminAuth();
-    if (!auth) throw new Error("Authentication service is not available.");
+    if (!adminAuth) throw new Error("Authentication service is not available.");
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
-    const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
     
     const body = await request.json();
     

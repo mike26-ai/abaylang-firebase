@@ -18,10 +18,9 @@ const lessonTypeCreditMap: Record<string, string> = {
 };
 
 async function handleCreditIssuance(transaction: Transaction, booking: Booking) {
-  const db = adminDb();
-  if (!db) throw new Error("Database service not available.");
+  if (!adminDb) throw new Error("Database service not available.");
 
-  const userRef = db.collection('users').doc(booking.userId);
+  const userRef = adminDb.collection('users').doc(booking.userId);
   const userDoc = await transaction.get(userRef);
 
   if (!userDoc.exists) {
@@ -53,17 +52,15 @@ async function handleCreditIssuance(transaction: Transaction, booking: Booking) 
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = adminAuth();
-    const db = adminDb();
-    if (!auth || !db) {
+    if (!adminAuth || !adminDb) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
-    const decodedToken = await auth.verifyIdToken(idToken);
-    const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
 
     if (userDoc.data()?.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
@@ -76,9 +73,9 @@ export async function POST(request: NextRequest) {
     }
 
     const { bookingId, approved } = validation.data;
-    const bookingRef = db.collection('bookings').doc(bookingId);
+    const bookingRef = adminDb.collection('bookings').doc(bookingId);
 
-    await db.runTransaction(async (transaction) => {
+    await adminDb.runTransaction(async (transaction) => {
       const bookingDoc = await transaction.get(bookingRef);
       if (!bookingDoc.exists) {
         throw new Error('Booking not found.');

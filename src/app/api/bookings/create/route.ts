@@ -24,8 +24,7 @@ const CreateBookingRequestSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const auth = adminAuth();
-    if (!auth) {
+    if (!adminAuth) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     // 1. Verify Authentication from client and get the authenticated user
@@ -33,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (!idToken) {
       return NextResponse.json({ success: false, message: 'No authentication token provided.' }, { status: 401 });
     }
-    const decodedToken: DecodedIdToken = await auth.verifyIdToken(idToken);
+    const decodedToken: DecodedIdToken = await adminAuth.verifyIdToken(idToken);
     
     // 2. Validate Input Body
     const body = await request.json();

@@ -1,7 +1,6 @@
 // File: src/app/api/admin/students/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
-import type { Timestamp } from 'firebase-admin/firestore';
+import { adminDb, adminAuth, Timestamp } from '@/lib/firebaseAdmin';
 
 export const dynamic = 'force-dynamic'; // Ensures the route is not cached
 
@@ -11,9 +10,7 @@ export const dynamic = 'force-dynamic'; // Ensures the route is not cached
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = adminAuth();
-    const db = adminDb();
-    if (!auth || !db) {
+    if (!adminAuth || !adminDb) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     // 1. Verify Authentication and Admin Status from the incoming request
@@ -22,8 +19,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized: No authentication token provided.' }, { status: 401 });
     }
     
-    const decodedToken = await auth.verifyIdToken(idToken);
-    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
     const userData = userDoc.data();
 
     if (userData?.role !== 'admin') {
@@ -31,7 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. Perform database query using the Admin SDK
-    const usersSnapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
+    const usersSnapshot = await adminDb.collection('users').orderBy('createdAt', 'desc').get();
     
     // 3. Serialize the data to be client-safe
     const students = usersSnapshot.docs.map(doc => {
@@ -43,8 +40,8 @@ export async function GET(request: NextRequest) {
       return {
         ...data,
         uid: doc.id,
-        createdAt: createdAt && typeof (createdAt as Timestamp).toDate === 'function' ? (createdAt as Timestamp).toDate().toISOString() : null,
-        lastCreditPurchase: lastCreditPurchase && typeof (lastCreditPurchase as Timestamp).toDate === 'function' ? (lastCreditPurchase as Timestamp).toDate().toISOString() : null,
+        createdAt: createdAt && typeof (createdAt as typeof Timestamp).toDate === 'function' ? (createdAt as typeof Timestamp).toDate().toISOString() : null,
+        lastCreditPurchase: lastCreditPurchase && typeof (lastCreditPurchase as typeof Timestamp).toDate === 'function' ? (lastCreditPurchase as typeof Timestamp).toDate().toISOString() : null,
         credits: data.credits?.map((credit: any) => ({
             ...credit,
             purchasedAt: credit.purchasedAt && typeof credit.purchasedAt.toDate === 'function' ? credit.purchasedAt.toDate().toISOString() : null,

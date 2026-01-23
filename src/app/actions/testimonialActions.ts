@@ -24,9 +24,8 @@ export async function submitTestimonialAction(formData: FormData) {
   
   let decodedToken;
   try {
-      const auth = adminAuth();
-      if (!auth) throw new Error("Authentication service is not available.");
-      decodedToken = await auth.verifyIdToken(idToken);
+      if (!adminAuth) throw new Error("Authentication service is not available.");
+      decodedToken = await adminAuth.verifyIdToken(idToken);
   } catch (error) {
       console.error("Error verifying ID token:", error);
       throw new Error("Unauthorized: Invalid authentication token.");
@@ -44,10 +43,9 @@ export async function submitTestimonialAction(formData: FormData) {
   }
 
   try {
-    const db = adminDb();
-    if (!db) throw new Error("Database service is not available.");
+    if (!adminDb) throw new Error("Database service is not available.");
     // 2. Save the new testimonial to Firestore with a 'pending' status
-    await db.collection("testimonials").add({
+    await adminDb.collection("testimonials").add({
       userId: user.uid,
       name: user.name,
       userEmail: user.email,

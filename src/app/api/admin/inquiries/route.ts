@@ -10,9 +10,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    const auth = adminAuth();
-    const db = adminDb();
-    if (!auth || !db) {
+    if (!adminAuth || !adminDb) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     // 1. Verify Authentication and Admin Status
@@ -21,15 +19,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const decodedToken = await auth.verifyIdToken(idToken);
-    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
     
     if (userDoc.data()?.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // 2. Perform database query using the Admin SDK
-    const inquiriesSnapshot = await db.collection('contactMessages').orderBy('createdAt', 'desc').get();
+    const inquiriesSnapshot = await adminDb.collection('contactMessages').orderBy('createdAt', 'desc').get();
     
     // 3. Serialize the data
     const inquiries = inquiriesSnapshot.docs.map(doc => {

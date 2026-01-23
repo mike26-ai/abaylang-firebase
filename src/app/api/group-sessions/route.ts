@@ -1,19 +1,17 @@
 // File: src/app/api/group-sessions/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
-import type { Timestamp } from 'firebase-admin/firestore';
+import { adminDb, Timestamp } from '@/lib/firebaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const db = adminDb();
-    if (!db) {
+    if (!adminDb) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     const now = new Date();
     // Fetch all scheduled sessions that have not ended yet.
-    const sessionsSnapshot = await db.collection('groupSessions')
+    const sessionsSnapshot = await adminDb.collection('groupSessions')
       .where('status', '==', 'scheduled')
       .where('startTime', '>', now) // Only fetch future sessions
       .orderBy('startTime', 'asc') // Order them from soonest to latest
@@ -29,9 +27,9 @@ export async function GET() {
         return {
           ...data,
           id: doc.id,
-          startTime: (data.startTime as Timestamp).toDate().toISOString(),
-          endTime: (data.endTime as Timestamp).toDate().toISOString(),
-          createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+          startTime: (data.startTime as typeof Timestamp).toDate().toISOString(),
+          endTime: (data.endTime as typeof Timestamp).toDate().toISOString(),
+          createdAt: (data.createdAt as typeof Timestamp).toDate().toISOString(),
         };
       });
 

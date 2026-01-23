@@ -18,17 +18,15 @@ const UpdateGroupSessionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = adminAuth();
-    const db = adminDb();
-    if (!auth || !db) {
+    if (!adminAuth || !adminDb) {
       throw new Error("Firebase Admin SDK not initialized.");
     }
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
-    const decodedToken = await auth.verifyIdToken(idToken);
-    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
     
     if (userDoc.data()?.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
@@ -41,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
     
     const { sessionId, ...updateData } = validation.data;
-    const sessionRef = db.collection('groupSessions').doc(sessionId);
+    const sessionRef = adminDb.collection('groupSessions').doc(sessionId);
     const sessionDoc = await sessionRef.get();
 
     if (!sessionDoc.exists) {

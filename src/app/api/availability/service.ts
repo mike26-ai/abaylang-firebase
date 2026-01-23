@@ -15,8 +15,7 @@ import { ADMIN_EMAIL } from '@/config/site';
  * @returns An object with arrays of bookings and time-off blocks.
  */
 export async function _getAvailability(tutorId: string, date: string) {
-    const db = adminDb();
-    if (!db) {
+    if (!adminDb) {
         throw new Error("Database service not available.");
     }
     const selectedDate = parse(date, 'yyyy-MM-dd', new Date());
@@ -28,7 +27,7 @@ export async function _getAvailability(tutorId: string, date: string) {
 
     // Fetch confirmed bookings
     try {
-      const bookingsQuery = db.collection('bookings')
+      const bookingsQuery = adminDb.collection('bookings')
         .where('tutorId', '==', tutorId)
         .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
         .where('startTime', '>=', startOfSelectedDay)
@@ -49,7 +48,7 @@ export async function _getAvailability(tutorId: string, date: string) {
 
     // Fetch time-off blocks
     try {
-      const timeOffQuery = db.collection('timeOff')
+      const timeOffQuery = adminDb.collection('timeOff')
           .where('tutorId', '==', tutorId)
           .where('startISO', '>=', startOfSelectedDay.toISOString())
           .where('startISO', '<=', endOfSelectedDay.toISOString());
@@ -75,16 +74,15 @@ export async function _getAvailability(tutorId: string, date: string) {
  * @returns The newly created time-off document.
  */
 export async function _blockSlot(payload: { tutorId: string; startISO: string; endISO: string; note?: string; decodedToken: DecodedIdToken; }) {
-  const db = adminDb();
-  if (!db) {
+  if (!adminDb) {
     throw new Error("Database service not available.");
   }
   const { tutorId, startISO, endISO, note, decodedToken } = payload;
   const startTime = new Date(startISO);
   const endTime = new Date(endISO);
 
-  return await db.runTransaction(async (transaction) => {
-    const bookingsRef = db.collection('bookings');
+  return await adminDb.runTransaction(async (transaction) => {
+    const bookingsRef = adminDb.collection('bookings');
     
     // Check for conflicting confirmed bookings
     const bookingConflictQuery = bookingsRef
@@ -99,7 +97,7 @@ export async function _blockSlot(payload: { tutorId: string; startISO: string; e
         throw new Error('slot_already_booked');
     }
 
-    const newTimeOffRef = db.collection('timeOff').doc();
+    const newTimeOffRef = adminDb.collection('timeOff').doc();
     const timeOffDoc = {
         tutorId,
         startISO,
@@ -122,12 +120,11 @@ export async function _blockSlot(payload: { tutorId: string; startISO: string; e
  * @returns A success message.
  */
 export async function _unblockSlot(timeOffId: string, decodedToken: DecodedIdToken) {
-  const db = adminDb();
-  if (!db) {
+  if (!adminDb) {
     throw new Error("Database service not available.");
   }
-  return await db.runTransaction(async (transaction) => {
-    const timeOffDocRef = db.collection('timeOff').doc(timeOffId);
+  return await adminDb.runTransaction(async (transaction) => {
+    const timeOffDocRef = adminDb.collection('timeOff').doc(timeOffId);
     const docSnap = await transaction.get(timeOffDocRef);
 
     if (!docSnap.exists) {
