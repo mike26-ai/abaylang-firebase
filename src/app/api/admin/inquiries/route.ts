@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       return {
         ...data,
         id: doc.id,
-        createdAt: (data.createdAt as Timestamp)?.toDate().toISOString(),
+        createdAt: (data.createdAt as any)?.toDate?.().toISOString(),
       };
     });
 
