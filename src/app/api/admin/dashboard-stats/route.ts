@@ -1,4 +1,3 @@
-
 // File: src/app/api/admin/dashboard-stats/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, adminDb, Timestamp } from '@/lib/firebaseAdmin';
@@ -72,11 +71,11 @@ export async function GET(request: NextRequest) {
 
     const pendingResolutions = allBookings
         .filter(doc => doc.status === 'cancellation-requested')
-        .sort((a, b) => (b.createdAt as Timestamp).toMillis() - (a.createdAt as Timestamp).toMillis());
+        .sort((a, b) => (b.createdAt as any).toMillis() - (a.createdAt as any).toMillis());
 
     const pendingTestimonials = allTestimonials
         .filter(t => t.status === 'pending')
-        .sort((a, b) => (b.createdAt as Timestamp).toMillis() - (a.createdAt as Timestamp).toMillis());
+        .sort((a, b) => (b.createdAt as any).toMillis() - (a.createdAt as any).toMillis());
 
     const approvedRatings = allTestimonials
         .filter(t => t.status === 'approved')
