@@ -37,8 +37,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     const isPaidLesson = product.price > 0;
     const newBookingRef = db.collection('bookings').doc();
     
-    let startTime: Timestamp | null = null;
-    let endTime: Timestamp | null = null;
+    let startTime: any = null;
+    let endTime: any = null;
     let finalDate = payload.date;
     let finalTime = payload.time;
 
