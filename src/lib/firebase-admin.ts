@@ -1,6 +1,6 @@
 // File: src/lib/firebase-admin.ts
 import admin from 'firebase-admin';
-import { Timestamp } from 'firebase-admin/firestore';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
 if (!admin.apps.length) {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
@@ -19,4 +19,4 @@ if (!admin.apps.length) {
 
 export const adminAuth = admin.apps.length > 0 ? admin.auth() : null;
 export const adminDb = admin.apps.length > 0 ? admin.firestore() : null;
-export { Timestamp, admin };
+export { Timestamp, FieldValue, admin };
