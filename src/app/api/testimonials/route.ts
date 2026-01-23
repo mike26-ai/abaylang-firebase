@@ -1,6 +1,6 @@
 // File: src/app/api/testimonials/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 /**
  * Securely fetches all 'approved' testimonials using the Firebase Admin SDK.
@@ -8,6 +8,9 @@ import { adminDb } from '@/lib/firebase-admin';
  */
 export async function GET() {
   try {
+    if (!adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     const snapshot = await adminDb
       .collection("testimonials")
       .where("status", "==", "approved")

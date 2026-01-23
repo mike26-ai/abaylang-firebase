@@ -1,10 +1,7 @@
-
 // File: src/app/api/group-sessions/update/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth, initAdmin } from '@/lib/firebase-admin';
+import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
 import { z } from 'zod';
-
-initAdmin();
 
 const UpdateGroupSessionSchema = z.object({
   sessionId: z.string().min(1),
@@ -21,6 +18,9 @@ const UpdateGroupSessionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    if (!adminAuth || !adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

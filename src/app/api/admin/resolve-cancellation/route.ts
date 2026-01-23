@@ -1,14 +1,9 @@
-
 // File: src/app/api/admin/resolve-cancellation/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin, adminDb } from '@/lib/firebase-admin';
-import { getAuth } from 'firebase-admin/auth';
+import { adminDb, adminAuth, FieldValue, Timestamp } from '@/lib/firebaseAdmin';
 import { z } from 'zod';
 import type { Booking, UserCredit } from '@/lib/types';
-import { FieldValue, Transaction, Timestamp } from 'firebase-admin/firestore';
-
-initAdmin();
-const auth = getAuth();
+import type { Transaction } from 'firebase-admin/firestore';
 
 const ResolveCancellationSchema = z.object({
   bookingId: z.string().min(1, "bookingId is required."),
@@ -23,6 +18,8 @@ const lessonTypeCreditMap: Record<string, string> = {
 };
 
 async function handleCreditIssuance(transaction: Transaction, booking: Booking) {
+  if (!adminDb) throw new Error("Database service not available.");
+
   const userRef = adminDb.collection('users').doc(booking.userId);
   const userDoc = await transaction.get(userRef);
 
@@ -55,11 +52,14 @@ async function handleCreditIssuance(transaction: Transaction, booking: Booking) 
 
 export async function POST(request: NextRequest) {
   try {
+    if (!adminAuth || !adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
-    const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
     const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
 
     if (userDoc.data()?.role !== 'admin') {

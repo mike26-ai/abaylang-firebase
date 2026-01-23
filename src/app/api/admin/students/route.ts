@@ -1,13 +1,7 @@
-
 // File: src/app/api/admin/students/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin, adminDb } from '@/lib/firebase-admin';
-import { getAuth } from 'firebase-admin/auth';
+import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
 import type { Timestamp } from 'firebase-admin/firestore';
-
-// Initialize Firebase Admin SDK
-initAdmin();
-const adminAuth = getAuth();
 
 export const dynamic = 'force-dynamic'; // Ensures the route is not cached
 
@@ -17,6 +11,9 @@ export const dynamic = 'force-dynamic'; // Ensures the route is not cached
  */
 export async function GET(request: NextRequest) {
   try {
+    if (!adminAuth || !adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     // 1. Verify Authentication and Admin Status from the incoming request
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
@@ -44,8 +41,8 @@ export async function GET(request: NextRequest) {
       return {
         ...data,
         uid: doc.id,
-        createdAt: createdAt && typeof createdAt.toDate === 'function' ? createdAt.toDate().toISOString() : null,
-        lastCreditPurchase: lastCreditPurchase && typeof lastCreditPurchase.toDate === 'function' ? lastCreditPurchase.toDate().toISOString() : null,
+        createdAt: createdAt && typeof (createdAt as Timestamp).toDate === 'function' ? (createdAt as Timestamp).toDate().toISOString() : null,
+        lastCreditPurchase: lastCreditPurchase && typeof (lastCreditPurchase as Timestamp).toDate === 'function' ? (lastCreditPurchase as Timestamp).toDate().toISOString() : null,
         credits: data.credits?.map((credit: any) => ({
             ...credit,
             purchasedAt: credit.purchasedAt && typeof credit.purchasedAt.toDate === 'function' ? credit.purchasedAt.toDate().toISOString() : null,

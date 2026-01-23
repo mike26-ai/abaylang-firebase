@@ -1,12 +1,8 @@
-
 // This file contains server-side logic for handling testimonials.
 // By adding 'use server' at the top, all functions in this file are marked as Server Actions.
 'use server';
 
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { getFirestore } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
-import { initAdmin } from "@/lib/firebase-admin"; // Import the admin app initializer
+import { adminDb, adminAuth, FieldValue } from "@/lib/firebaseAdmin";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from 'next/headers';
@@ -18,12 +14,7 @@ export async function submitTestimonialAction(formData: FormData) {
   const comment = formData.get("comment") as string;
   const rating = parseInt(ratingStr, 10);
 
-  // 1. Initialize the Firebase Admin SDK
-  const app = initAdmin();
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  // 2. Securely get the user from the ID token in the headers.
+  // 1. Securely get the user from the ID token in the headers.
   const headersList = headers();
   const authorization = headersList.get('Authorization');
   if (!authorization || !authorization.startsWith('Bearer ')) {
@@ -33,7 +24,8 @@ export async function submitTestimonialAction(formData: FormData) {
   
   let decodedToken;
   try {
-      decodedToken = await auth.verifyIdToken(idToken);
+      if (!adminAuth) throw new Error("Authentication service is not available.");
+      decodedToken = await adminAuth.verifyIdToken(idToken);
   } catch (error) {
       console.error("Error verifying ID token:", error);
       throw new Error("Unauthorized: Invalid authentication token.");
@@ -51,15 +43,16 @@ export async function submitTestimonialAction(formData: FormData) {
   }
 
   try {
-    // 3. Save the new testimonial to Firestore with a 'pending' status
-    await db.collection("testimonials").add({
+    if (!adminDb) throw new Error("Database service is not available.");
+    // 2. Save the new testimonial to Firestore with a 'pending' status
+    await adminDb.collection("testimonials").add({
       userId: user.uid,
       name: user.name,
       userEmail: user.email,
       rating: rating,
       comment: comment,
       status: "pending", // All new submissions are pending approval
-      createdAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
 
   } catch (error) {
@@ -68,7 +61,7 @@ export async function submitTestimonialAction(formData: FormData) {
     throw new Error("Could not save your testimonial due to a server error. Please try again later.");
   }
   
-  // 4. Revalidate paths and redirect on SUCCESS. This should be outside the try block.
+  // 3. Revalidate paths and redirect on SUCCESS. This should be outside the try block.
   revalidatePath('/testimonials');
   revalidatePath('/admin/dashboard');
   redirect("/submit-testimonial/success");

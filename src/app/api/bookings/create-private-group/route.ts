@@ -1,7 +1,6 @@
-
 // File: src/app/api/bookings/create-private-group/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminAuth, adminDb, Timestamp } from '@/lib/firebase-admin';
+import { adminAuth, adminDb, Timestamp } from '@/lib/firebaseAdmin';
 import { z } from 'zod';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { addMinutes, parse } from 'date-fns';
@@ -27,6 +26,7 @@ const CreatePrivateGroupSchema = z.object({
 type PrivateGroupPayload = z.infer<typeof CreatePrivateGroupSchema>;
 
 async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedToken: DecodedIdToken) {
+    if (!adminDb) throw new Error("Database service is not available.");
     const leaderUid = payload.leader.uid;
     if (decodedToken.uid !== leaderUid) { 
         throw new Error("unauthorized");
@@ -110,6 +110,7 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
 
 export async function POST(request: NextRequest) {
   try {
+    if (!adminAuth) throw new Error("Authentication service is not available.");
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });

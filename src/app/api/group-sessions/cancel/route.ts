@@ -1,9 +1,7 @@
 // File: src/app/api/group-sessions/cancel/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth, initAdmin } from '@/lib/firebase-admin';
+import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
 import { z } from 'zod';
-
-initAdmin();
 
 const CancelGroupSessionSchema = z.object({
   sessionId: z.string().min(1, "Session ID is required."),
@@ -11,6 +9,9 @@ const CancelGroupSessionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    if (!adminAuth || !adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -30,11 +31,6 @@ export async function POST(request: NextRequest) {
     
     const { sessionId } = validation.data;
     
-    // --- REFACTORED LOGIC ---
-    // Perform a more resilient two-step operation instead of a single transaction
-    // to avoid issues with missing composite indexes.
-
-    // 1. Find and update all associated bookings first.
     const bookingsRef = adminDb.collection('bookings');
     const bookingsQuery = bookingsRef.where('groupSessionId', '==', sessionId);
     const bookingsSnapshot = await bookingsQuery.get();
@@ -47,10 +43,9 @@ export async function POST(request: NextRequest) {
                 cancellationReason: 'The group session was cancelled by the administrator.'
             });
         });
-        await batch.commit(); // Commit all booking updates at once
+        await batch.commit();
     }
 
-    // 2. After successfully updating bookings, cancel the main group session document.
     const sessionRef = adminDb.collection('groupSessions').doc(sessionId);
     const sessionDoc = await sessionRef.get();
     if (!sessionDoc.exists) {

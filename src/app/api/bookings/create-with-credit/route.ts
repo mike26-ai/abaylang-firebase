@@ -1,19 +1,12 @@
-
 // File: src/app/api/bookings/create-with-credit/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin, adminDb, Timestamp } from '@/lib/firebase-admin';
-import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
+import { adminDb, adminAuth, Timestamp, FieldValue } from '@/lib/firebaseAdmin';
+import type { DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { products, isValidProductId } from '@/config/products';
 import { addMinutes, parse } from 'date-fns';
 import type { UserCredit } from '@/lib/types';
 import { creditToLessonMap } from '@/config/creditMapping';
-import { FieldValue } from 'firebase-admin/firestore';
-
-
-// Initialize Firebase Admin SDK
-initAdmin();
-const auth = getAuth();
 
 // Zod schema for input validation
 const CreateWithCreditSchema = z.object({
@@ -27,6 +20,8 @@ const CreateWithCreditSchema = z.object({
 type CreateWithCreditPayload = z.infer<typeof CreateWithCreditSchema>;
 
 async function _createBookingWithCredit(payload: CreateWithCreditPayload, decodedToken: DecodedIdToken) {
+    if (!adminDb) throw new Error("Database service not available.");
+
     if (decodedToken.uid !== payload.userId) {
         throw new Error('unauthorized');
     }
@@ -113,11 +108,13 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
 
 export async function POST(request: NextRequest) {
   try {
+    if (!adminAuth) throw new Error("Authentication service not available.");
+
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, message: 'No authentication token provided.' }, { status: 401 });
     }
-    const decodedToken: DecodedIdToken = await auth.verifyIdToken(idToken);
+    const decodedToken: DecodedIdToken = await adminAuth.verifyIdToken(idToken);
     
     const body = await request.json();
     const validationResult = CreateWithCreditSchema.safeParse(body);

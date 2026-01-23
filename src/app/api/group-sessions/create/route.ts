@@ -1,10 +1,8 @@
 // File: src/app/api/group-sessions/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth, initAdmin, Timestamp } from '@/lib/firebase-admin';
+import { adminDb, adminAuth, Timestamp } from '@/lib/firebaseAdmin';
 import { z } from 'zod';
 import { addMinutes, isBefore } from 'date-fns';
-
-initAdmin();
 
 const groupLessonTypes = [
     { value: 'quick-group-conversation', label: 'Quick Group Conversation', duration: 30, price: 7, description: 'A 30-minute session for practicing conversation with fellow learners.' },
@@ -25,6 +23,9 @@ const CreateGroupSessionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    if (!adminAuth || !adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -60,7 +61,6 @@ export async function POST(request: NextRequest) {
       const endTimestamp = Timestamp.fromDate(endDateTime);
 
       // --- CORRECTED QUERIES ---
-      // 1. Check for private booking conflicts
       const bookingsRef = adminDb.collection('bookings');
       const bookingConflictQuery = bookingsRef
           .where('tutorId', '==', tutorId)
@@ -75,7 +75,6 @@ export async function POST(request: NextRequest) {
         throw new Error('A private lesson is already booked in this time slot.');
       }
       
-      // 2. Check for group session conflicts
       const groupSessionsRef = adminDb.collection('groupSessions');
       const groupSessionConflictQuery = groupSessionsRef
           .where('tutorId', '==', tutorId)
@@ -87,7 +86,6 @@ export async function POST(request: NextRequest) {
           throw new Error('Another group session is already scheduled in this time slot.');
       }
 
-      // 3. Check for time-off conflicts
       const timeOffRef = adminDb.collection('timeOff');
       const timeOffConflictQuery = timeOffRef
           .where('tutorId', '==', tutorId)
@@ -98,7 +96,6 @@ export async function POST(request: NextRequest) {
           throw new Error('The tutor has blocked off this time as unavailable.');
       }
       
-      // 4. If no conflicts, create the session
       const newSessionRef = adminDb.collection('groupSessions').doc();
       const newSessionData = {
         title: sessionTypeDetails.label,

@@ -3,13 +3,12 @@
  * This file contains the core, testable business logic for the bookings endpoints.
  * It now uses the server-side product catalog as the single source of truth.
  */
-import { getFirestore, Timestamp, FieldValue, Transaction } from 'firebase-admin/firestore';
+import { adminDb, Timestamp, FieldValue } from '@/lib/firebaseAdmin';
+import type { Transaction } from 'firebase-admin/firestore';
 import { addMinutes, parse, format } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { products, type ProductId } from '@/config/products'; // Import the server-side catalog
+import { products, type ProductId } from '@/config/products';
 import { paddlePriceIds } from '@/config/paddle';
-
-const db = getFirestore();
 
 interface BookingPayload {
   productId: ProductId;
@@ -21,6 +20,10 @@ interface BookingPayload {
 }
 
 export async function _createBooking(payload: BookingPayload, decodedToken: DecodedIdToken) {
+    if (!adminDb) {
+      throw new Error("Database service not available.");
+    }
+
     if (decodedToken.uid !== payload.userId) {
         throw new Error('unauthorized');
     }
@@ -31,7 +34,7 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     }
 
     const isPaidLesson = product.price > 0;
-    const newBookingRef = db.collection('bookings').doc();
+    const newBookingRef = adminDb.collection('bookings').doc();
     
     let startTime: Timestamp | null = null;
     let endTime: Timestamp | null = null;
@@ -39,10 +42,10 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     let finalTime = payload.time;
 
     // This transaction now also handles group session participant updates.
-    await db.runTransaction(async (transaction: Transaction) => {
+    await adminDb.runTransaction(async (transaction: Transaction) => {
         // --- Group Session Logic ---
         if (product.type === 'group' && payload.groupSessionId) {
-            const sessionRef = db.collection('groupSessions').doc(payload.groupSessionId);
+            const sessionRef = adminDb.collection('groupSessions').doc(payload.groupSessionId);
             const sessionDoc = await transaction.get(sessionRef);
 
             if (!sessionDoc.exists) throw new Error('group_session_not_found');
@@ -59,12 +62,10 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             startTime = sessionData.startTime;
             endTime = sessionData.endTime;
 
-            // FIX: Add a null check to ensure startTime exists before using its methods.
             if (startTime && endTime) {
                 finalDate = format(startTime.toDate(), 'yyyy-MM-dd');
                 finalTime = format(startTime.toDate(), 'HH:mm');
             } else {
-                // If a group session document is missing a start/end time, it's a critical data error.
                 throw new Error('group_session_time_missing');
             }
             
@@ -85,8 +86,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             startTime = Timestamp.fromDate(startDateTime);
             endTime = Timestamp.fromDate(addMinutes(startTime.toDate(), product.duration as number));
 
-            const bookingsRef = db.collection('bookings');
-            const timeOffRef = db.collection('timeOff');
+            const bookingsRef = adminDb.collection('bookings');
+            const timeOffRef = adminDb.collection('timeOff');
             const tutorId = "MahderNegashMamo";
 
             const bookingConflictQuery = bookingsRef
@@ -141,19 +142,17 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             ...(payload.paymentNote && { paymentNote: payload.paymentNote }),
         };
         
-        console.info("FINAL_BOOKING_PAYLOAD", newBookingDoc); // Temporary debug log
+        console.info("FINAL_BOOKING_PAYLOAD", newBookingDoc);
         transaction.set(newBookingRef, newBookingDoc);
 
         if (product.type === 'package' && product.totalLessons) {
-            const userRef = db.collection('users').doc(payload.userId);
+            const userRef = adminDb.collection('users').doc(payload.userId);
             const newCreditObject = { 
                 lessonType: payload.productId, 
                 count: product.totalLessons, 
                 purchasedAt: Timestamp.now(),
                 packageBookingId: newBookingRef.id
             };
-            // Note: This logic assumes credits are added on purchase, not on completion.
-            // In a real scenario, this might happen in the webhook after payment confirmation.
             transaction.update(userRef, { 
                 credits: FieldValue.arrayUnion(newCreditObject),
                 lastCreditPurchase: Timestamp.now() 
@@ -161,17 +160,13 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
         }
     });
 
-    // --- LOGIC CHANGE FOR TESTING ---
     if (!isPaidLesson) {
-        // Free trial flow remains the same
         return { 
             bookingId: newBookingRef.id, 
             redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&free_trial=true` 
         };
     }
 
-    // For paid lessons, simulate a successful payment by redirecting to the success page
-    // instead of the Paddle checkout URL.
     return { 
         bookingId: newBookingRef.id, 
         redirectUrl: `/bookings/success?booking_id=${newBookingRef.id}&simulated_payment=true` 

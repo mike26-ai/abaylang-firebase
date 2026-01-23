@@ -1,14 +1,15 @@
 // File: src/app/api/group-sessions/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb, initAdmin } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebaseAdmin';
 import type { Timestamp } from 'firebase-admin/firestore';
-
-initAdmin();
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    if (!adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     const now = new Date();
     // Fetch all scheduled sessions that have not ended yet.
     const sessionsSnapshot = await adminDb.collection('groupSessions')

@@ -1,17 +1,10 @@
-
 // File: src/app/api/bookings/request-cancellation/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin, adminDb } from '@/lib/firebase-admin';
-import { getAuth } from 'firebase-admin/auth';
+import { adminDb, adminAuth, FieldValue, Timestamp } from '@/lib/firebaseAdmin';
 import { z } from 'zod';
 import { differenceInHours, parse } from 'date-fns';
-import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { creditToLessonMap } from '@/config/creditMapping';
 import type { Booking } from '@/lib/types';
-
-
-initAdmin();
-const auth = getAuth();
 
 const RequestCancellationSchema = z.object({
   bookingId: z.string().min(1, "Booking ID is required."),
@@ -21,11 +14,14 @@ const RequestCancellationSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    if (!adminAuth || !adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
       return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
     }
-    const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
 
     const body = await request.json();
     const validation = RequestCancellationSchema.safeParse(body);

@@ -1,17 +1,10 @@
 // File: src/app/api/availability/block/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminAuth, initAdmin } from '@/lib/firebase-admin';
+import { adminAuth } from '@/lib/firebaseAdmin';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { ADMIN_EMAIL } from '@/config/site';
 import { _blockSlot } from '../service';
-
-// Initialize Firebase Admin SDK
-try {
-  initAdmin();
-} catch (error) {
-  console.error("CRITICAL: Failed to initialize Firebase Admin SDK in block/route.ts", error);
-}
 
 // Zod schema for input validation
 const BlockTimeSchema = z.object({
@@ -30,6 +23,9 @@ const BlockTimeSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    if (!adminAuth) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     // 1. Verify Authentication
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {

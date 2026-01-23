@@ -1,17 +1,9 @@
-
 // File: src/app/api/admin/dashboard-stats/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin } from '@/lib/firebase-admin';
-import admin from "firebase-admin";
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { adminAuth, adminDb } from '@/lib/firebaseAdmin';
 import { startOfDay } from 'date-fns';
 import type { Booking, Testimonial } from '@/lib/types';
-
-// Initialize Firebase Admin SDK
-initAdmin();
-const adminAuth = getAuth();
-const adminDb = getFirestore();
+import type { DocumentData, QueryDocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +13,9 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
+    if (!adminAuth || !adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     // 1. Verify Authentication and Admin Status from the incoming request
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
@@ -39,11 +34,9 @@ export async function GET(request: NextRequest) {
     // 2. Perform all database queries concurrently using the Admin SDK
     const today = startOfDay(new Date());
 
-    // FIX: Removed complex queries that required composite indexes.
-    // Filtering will now be done in the server-side code after fetching.
     const [
-        allBookingsSnapshot, // Fetch all bookings to filter in-memory
-        allTestimonialsSnapshot, // Fetch all testimonials to filter in-memory
+        allBookingsSnapshot,
+        allTestimonialsSnapshot,
         newInquiriesSnapshot,
         totalStudentsSnapshot,
         recentBookingsSnapshot,
@@ -76,11 +69,11 @@ export async function GET(request: NextRequest) {
 
     const pendingResolutions = allBookings
         .filter(doc => doc.status === 'cancellation-requested')
-        .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        .sort((a, b) => (b.createdAt as Timestamp).toMillis() - (a.createdAt as Timestamp).toMillis());
 
     const pendingTestimonials = allTestimonials
         .filter(t => t.status === 'pending')
-        .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        .sort((a, b) => (b.createdAt as Timestamp).toMillis() - (a.createdAt as Timestamp).toMillis());
 
     const approvedRatings = allTestimonials
         .filter(t => t.status === 'approved')
@@ -101,26 +94,26 @@ export async function GET(request: NextRequest) {
       averageRating: averageRating,
     };
 
-    const serializeTimestamp = (docs: admin.firestore.DocumentData[]) => 
+    const serializeTimestamp = (docs: DocumentData[]) => 
       docs.map(doc => {
           const data = doc;
           const serializedData: { [key: string]: any } = { id: doc.id };
           for (const key in data) {
-              if (data[key] instanceof admin.firestore.Timestamp) {
+              if (data[key] instanceof Timestamp) {
                   serializedData[key] = data[key].toDate().toISOString();
-              } else if (key !== 'id') { // Avoid duplicating id if it exists on data
+              } else if (key !== 'id') {
                   serializedData[key] = data[key];
               }
           }
           return serializedData;
       });
       
-    const serializeSnapshot = (docs: admin.firestore.QueryDocumentSnapshot[]) => 
+    const serializeSnapshot = (docs: QueryDocumentSnapshot[]) => 
         docs.map(doc => {
             const data = doc.data();
             const serializedData: { [key: string]: any } = { id: doc.id };
             for (const key in data) {
-                if (data[key] instanceof admin.firestore.Timestamp) {
+                if (data[key] instanceof Timestamp) {
                     serializedData[key] = data[key].toDate().toISOString();
                 } else {
                     serializedData[key] = data[key];

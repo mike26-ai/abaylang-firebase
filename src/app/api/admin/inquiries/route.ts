@@ -1,16 +1,8 @@
-
 // File: src/app/api/admin/inquiries/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { initAdmin } from '@/lib/firebase-admin';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, type Timestamp } from 'firebase-admin/firestore';
+import { adminAuth, adminDb, Timestamp } from '@/lib/firebaseAdmin';
 
-// Initialize Firebase Admin SDK
-initAdmin();
-const adminAuth = getAuth();
-const adminDb = getFirestore();
-
-export const dynamic = 'force-dynamic'; // This line is added
+export const dynamic = 'force-dynamic';
 
 /**
  * This API route securely fetches all contact messages.
@@ -18,6 +10,9 @@ export const dynamic = 'force-dynamic'; // This line is added
  */
 export async function GET(request: NextRequest) {
   try {
+    if (!adminAuth || !adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     // 1. Verify Authentication and Admin Status
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {

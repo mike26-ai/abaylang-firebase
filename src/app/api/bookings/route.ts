@@ -1,20 +1,17 @@
-
 import { NextResponse } from "next/server";
-import { initAdmin, adminDb } from "@/lib/firebase-admin";
+import { adminDb } from "@/lib/firebaseAdmin";
 
-// Initialize admin SDK
-initAdmin();
-
-export const dynamic = 'force-dynamic'; // This line is added
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
+    if (!adminDb) {
+      throw new Error("Firebase Admin SDK not initialized.");
+    }
     const { searchParams } = new URL(req.url);
     const tutorId = searchParams.get("tutorId");
     if (!tutorId) return NextResponse.json({ error: "Missing tutorId" }, { status: 400 });
     
-    // FIX: Use the correct Admin SDK syntax for querying.
-    // The previous code was mixing client SDK functions (query, collection, where) with the adminDb instance.
     const bookingsRef = adminDb.collection("bookings");
     const q = bookingsRef.where("tutorId", "==", tutorId);
     const snapshot = await q.get();

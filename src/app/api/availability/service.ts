@@ -1,20 +1,11 @@
-
 // File: src/app/api/availability/service.ts
 /**
  * This file contains the core, testable business logic for the availability endpoints.
  */
-import { adminDb, Timestamp, initAdmin } from '@/lib/firebase-admin';
+import { adminDb, Timestamp } from '@/lib/firebaseAdmin';
 import { startOfDay, endOfDay, parse } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { ADMIN_EMAIL } from '@/config/site';
-
-// Ensure Firebase Admin is initialized
-try {
-  initAdmin();
-} catch (e) {
-  console.error("Firebase Admin SDK initialization error in availability/service.ts", e);
-}
-
 
 /**
  * Fetches bookings and time-off blocks for a specific tutor and date.
@@ -24,6 +15,9 @@ try {
  * @returns An object with arrays of bookings and time-off blocks.
  */
 export async function _getAvailability(tutorId: string, date: string) {
+    if (!adminDb) {
+        throw new Error("Database service not available.");
+    }
     const selectedDate = parse(date, 'yyyy-MM-dd', new Date());
     const startOfSelectedDay = startOfDay(selectedDate);
     const endOfSelectedDay = endOfDay(selectedDate);
@@ -80,6 +74,9 @@ export async function _getAvailability(tutorId: string, date: string) {
  * @returns The newly created time-off document.
  */
 export async function _blockSlot(payload: { tutorId: string; startISO: string; endISO: string; note?: string; decodedToken: DecodedIdToken; }) {
+  if (!adminDb) {
+    throw new Error("Database service not available.");
+  }
   const { tutorId, startISO, endISO, note, decodedToken } = payload;
   const startTime = new Date(startISO);
   const endTime = new Date(endISO);
@@ -123,6 +120,9 @@ export async function _blockSlot(payload: { tutorId: string; startISO: string; e
  * @returns A success message.
  */
 export async function _unblockSlot(timeOffId: string, decodedToken: DecodedIdToken) {
+  if (!adminDb) {
+    throw new Error("Database service not available.");
+  }
   return await adminDb.runTransaction(async (transaction) => {
     const timeOffDocRef = adminDb.collection('timeOff').doc(timeOffId);
     const docSnap = await transaction.get(timeOffDocRef);
