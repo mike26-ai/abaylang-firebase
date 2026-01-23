@@ -1,6 +1,6 @@
 // File: src/app/api/bookings/request-cancellation/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth, FieldValue, Timestamp } from '@/lib/firebase-admin';
+import { adminDb, adminAuth, FieldValue, Timestamp } from '@/lib/firebaseAdmin';
 import { z } from 'zod';
 import { differenceInHours, parse } from 'date-fns';
 import { creditToLessonMap } from '@/config/creditMapping';

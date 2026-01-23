@@ -1,6 +1,6 @@
 // File: src/app/api/availability/block/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import { adminAuth } from '@/lib/firebaseAdmin';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { ADMIN_EMAIL } from '@/config/site';
@@ -63,3 +63,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+    

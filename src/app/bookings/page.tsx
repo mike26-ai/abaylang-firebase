@@ -1,7 +1,8 @@
 
+
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -50,7 +51,11 @@ export default function BookLessonPage() {
     ...product,
   })), []);
 
-  const [selectedType, setSelectedType] = useState<ProductId>(initialType && allProducts.some(p => p.id === initialType) ? initialType as ProductId : "comprehensive-lesson");
+  // Set initial selectedType safely
+  const initialProduct = initialType ? allProducts.find(p => p.id === initialType) : undefined;
+  const defaultProduct = allProducts.find(p => p.id === 'comprehensive-lesson') || allProducts.find(p => p.type === 'individual');
+
+  const [selectedType, setSelectedType] = useState<ProductId>(initialProduct ? initialProduct.id : defaultProduct!.id);
   const [selectedDate, setSelectedDateState] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [paymentNote, setPaymentNote] = useState("");
@@ -60,11 +65,14 @@ export default function BookLessonPage() {
   const [dailyTimeOff, setDailyTimeOff] = useState<TimeOff[]>([]);
 
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const selectedLessonDetails = useMemo(() => allProducts.find((p) => p.id === selectedType), [selectedType, allProducts]);
+  const selectedLessonDetails = useMemo(() => allProducts.find(p => p.id === selectedType), [selectedType, allProducts]);
 
-  const fetchAvailability = async (date: Date) => {
+
+  const fetchAvailability = useCallback((date: Date) => {
     setIsFetchingSlots(true);
+    setError(null);
     
     getAvailability(date).then(({ bookings, timeOff }) => {
       setDailyBookedSlots(bookings);
@@ -72,11 +80,11 @@ export default function BookLessonPage() {
       setSelectedTime(undefined);
     }).catch(error => {
       console.error("Failed to get availability data:", error);
-      toast({ title: "Error", description: "Could not fetch available slots.", variant: "destructive" });
+      setError(error.message || "An unknown error occurred.");
     }).finally(() => {
         setIsFetchingSlots(false);
     });
-  }
+  }, []);
 
   useEffect(() => {
     if (!selectedDate || !isValid(selectedDate)) {
@@ -85,8 +93,7 @@ export default function BookLessonPage() {
       return;
     }
     fetchAvailability(selectedDate);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, toast]);
+  }, [selectedDate, fetchAvailability]);
 
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -226,19 +233,19 @@ export default function BookLessonPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
-       <header className="bg-card border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex flex-col items-start gap-2">
+      <header className="bg-card border-b sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex flex-col items-start gap-4">
             <div className="h-16 w-auto">
                 <SiteLogo />
             </div>
             <Link href="/" className="flex items-center text-muted-foreground hover:text-primary transition-colors">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            <span className="text-sm font-medium">Back to ABYLANG</span>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              <span className="text-sm font-medium">Back to ABYLANG</span>
             </Link>
         </div>
-        </header>
+      </header>
 
-      <div className="container mx-auto px-4 pt-40 md:pt-48 pb-12 max-w-6xl">
+      <main className="container mx-auto px-4 pt-48 md:pt-48 pb-12 max-w-6xl">
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
@@ -281,7 +288,7 @@ export default function BookLessonPage() {
                                             {lesson.label}
                                             {lesson.price === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400">Free Trial</Badge>}
                                             {lesson.type === "package" && <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 dark:text-purple-400">Package</Badge>}
-                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group (${lesson.minStudents}-${lesson.maxStudents} people)</Badge>}
+                                            {lesson.type === "group" && <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">Group</Badge>}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
                                             {typeof lesson.duration === 'number' ? `${lesson.duration} minutes` : lesson.duration} • {lesson.description}
@@ -344,6 +351,20 @@ export default function BookLessonPage() {
                     <CardContent>
                     {isFetchingSlots ? (
                         <div className="flex justify-center items-center h-24"><Spinner /></div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center p-10 bg-orange-50 rounded-2xl border border-orange-200 text-center">
+                            <div className="text-4xl mb-4">🗓️</div>
+                            <h3 className="text-xl font-bold text-gray-800">Hang on a second...</h3>
+                            <p className="text-gray-600 mb-6 max-w-xs mx-auto">
+                                We&apos;re having a little trouble loading Mahder&apos;s schedule right now.
+                            </p>
+                            <button 
+                                onClick={() => window.location.reload()}
+                                className="px-6 py-3 bg-[#CC7722] text-white font-bold rounded-full hover:bg-black transition-all"
+                            >
+                                Try Refreshing
+                            </button>
+                        </div>
                     ) : availableSlots.length === 0 ? (
                         <p className="text-muted-foreground text-center py-4">No available slots for this duration/date.</p>
                     ) : (
@@ -524,9 +545,7 @@ export default function BookLessonPage() {
             </Card>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   )
 }
-
-    
