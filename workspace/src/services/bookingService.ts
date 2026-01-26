@@ -1,6 +1,6 @@
 
 // File: src/services/bookingService.ts
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/firebaseAdmin.ts";
 
 const API_BASE_URL = '/api';
 

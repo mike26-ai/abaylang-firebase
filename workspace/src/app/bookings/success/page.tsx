@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebaseAdmin.ts";
 import { doc, getDoc } from "firebase/firestore";
 import type { Booking } from "@/lib/types";
 import { format, parse } from 'date-fns';

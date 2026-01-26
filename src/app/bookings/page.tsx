@@ -233,19 +233,19 @@ export default function BookLessonPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
-      <header className="bg-card border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex flex-col items-start gap-4">
-            <div className="h-16 w-auto">
-                <SiteLogo />
-            </div>
-            <Link href="/" className="flex items-center text-muted-foreground hover:text-primary transition-colors">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              <span className="text-sm font-medium">Back to ABYLANG</span>
-            </Link>
-        </div>
-      </header>
+     <header className="bg-[#FFFDF9] border-b sticky top-0 z-50 w-full shadow-sm">
+  <div className="container mx-auto px-6 py-6 flex flex-col items-start gap-4">
+      <div className="h-12 w-auto overflow-visible">
+          <SiteLogo /> {/* Ensure SiteLogo doesn't have fixed large dimensions inside */}
+      </div>
+      <Link href="/" className="group flex items-center text-gray-500 hover:text-black transition-colors">
+        <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+        <span className="text-sm font-semibold tracking-wide uppercase">Back to ABYLANG</span>
+      </Link>
+  </div>
+</header>
 
-      <main className="container mx-auto px-4 pt-48 md:pt-48 pb-12 max-w-6xl">
+      <main className="container mx-auto px-4 pt-64 md:pt-72 pb-12 max-w-6xl">
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
@@ -351,19 +351,19 @@ export default function BookLessonPage() {
                     <CardContent>
                     {isFetchingSlots ? (
                         <div className="flex justify-center items-center h-24"><Spinner /></div>
-                    ) : error ? (
-                        <div className="flex flex-col items-center justify-center p-10 bg-orange-50 rounded-2xl border border-orange-200 text-center">
-                            <div className="text-4xl mb-4">🗓️</div>
-                            <h3 className="text-xl font-bold text-gray-800">Hang on a second...</h3>
-                            <p className="text-gray-600 mb-6 max-w-xs mx-auto">
-                                We&apos;re having a little trouble loading Mahder&apos;s schedule right now.
+                      ) : error ? (
+                        <div className="flex flex-col items-center justify-center p-8 bg-orange-50/50 rounded-2xl border border-orange-200 text-center">
+                            <div className="text-5xl mb-4">⏳</div>
+                            <h3 className="text-xl font-bold text-gray-800 mb-2">Mahder's schedule is loading...</h3>
+                            <p className="text-gray-600 mb-6 text-sm max-w-xs mx-auto">
+                                We're having a small technical "slippage" fetching available slots.
                             </p>
-                            <button 
+                            <Button 
                                 onClick={() => window.location.reload()}
-                                className="px-6 py-3 bg-[#CC7722] text-white font-bold rounded-full hover:bg-black transition-all"
+                                className="bg-[#CC7722] hover:bg-black text-white rounded-full px-8"
                             >
-                                Try Refreshing
-                            </button>
+                                Refresh Schedule
+                            </Button>
                         </div>
                     ) : availableSlots.length === 0 ? (
                         <p className="text-muted-foreground text-center py-4">No available slots for this duration/date.</p>
