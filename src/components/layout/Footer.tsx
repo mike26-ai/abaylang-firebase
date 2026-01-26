@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -15,42 +16,51 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t bg-foreground text-background py-12 px-4">
+    <footer className="border-t bg-[#1A1A1A] text-white py-16 px-4">
       <div className="container mx-auto">
-        <div style={{ textAlign: 'center', padding: '28px 0' }}>
-            <Link href="/" aria-label="ABYLANG home" style={{ display: 'inline-block' }}>
-                <Image src="/logo.svg" alt="ABYLANG logo" width={150} height={38} style={{ height: 'auto', display: 'block', margin: '0 auto' }} />
+        {/* LOGO SECTION: Centered and constrained */}
+        <div className="flex justify-center mb-12">
+            <Link href="/" aria-label="ABYLANG home" className="opacity-90 hover:opacity-100 transition-opacity">
+                <Image 
+                  src="/logo.svg" 
+                  alt="ABYLANG logo" 
+                  width={150} 
+                  height={38} 
+                  className="h-10 w-auto md:h-12" // This makes it consistent with the header
+                />
             </Link>
         </div>
-        <div className="grid md:grid-cols-4 gap-8">
-          <div className="md:col-span-2 group">
-            <p className="text-muted-foreground mt-4 mb-4 max-w-md">
+
+        <div className="grid md:grid-cols-4 gap-12">
+          <div className="md:col-span-2">
+            <p className="text-gray-400 mt-4 mb-4 max-w-md leading-relaxed">
               {siteConfig.description}
             </p>
           </div>
           <div>
-            <h3 className="font-semibold mb-4 text-background">Learning</h3>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/bookings" className="hover:text-background">Book Lesson</Link></li>
-              <li><Link href="/tutor-profile" className="hover:text-background">About Mahder</Link></li>
-              <li><Link href="/testimonials" className="hover:text-background">Reviews</Link></li>
-              <li><Link href="/packages" className="hover:text-background">View Packages</Link></li>
+            <h3 className="font-bold mb-6 text-white uppercase tracking-wider text-sm">Learning</h3>
+            <ul className="space-y-3 text-gray-400">
+              <li><Link href="/bookings" className="hover:text-[#EAB308] transition-colors">Book Lesson</Link></li>
+              <li><Link href="/tutor-profile" className="hover:text-[#EAB308] transition-colors">About Mahder</Link></li>
+              <li><Link href="/testimonials" className="hover:text-[#EAB308] transition-colors">Reviews</Link></li>
+              <li><Link href="/packages" className="hover:text-[#EAB308] transition-colors">View Packages</Link></li>
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-4 text-background">Support</h3>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link href="/contact" className="hover:text-background">Contact</Link></li>
-              <li><Link href="/privacy" className="hover:text-background">Privacy</Link></li>
-              <li><Link href="/terms" className="hover:text-background">Terms</Link></li>
-              <li><Link href="/faq" className="hover:text-background">FAQ</Link></li>
+            <h3 className="font-bold mb-6 text-white uppercase tracking-wider text-sm">Support</h3>
+            <ul className="space-y-3 text-gray-400">
+              <li><Link href="/contact" className="hover:text-[#EAB308] transition-colors">Contact</Link></li>
+              <li><Link href="/privacy" className="hover:text-[#EAB308] transition-colors">Privacy</Link></li>
+              <li><Link href="/terms" className="hover:text-[#EAB308] transition-colors">Terms</Link></li>
+              <li><Link href="/faq" className="hover:text-[#EAB308] transition-colors">FAQ</Link></li>
             </ul>
           </div>
         </div>
-        <div className="border-t border-background/20 mt-8 pt-8 text-center text-muted-foreground">
+
+        <div className="border-t border-white/10 mt-12 pt-8 text-center text-gray-500 text-sm">
           <p>&copy; {new Date().getFullYear()} {siteConfig.name}. Made with ❤️ for the Amharic learning community.</p>
         </div>
       </div>
     </footer>
-  );
+  )
 }

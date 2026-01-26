@@ -233,19 +233,15 @@ export default function BookLessonPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
-     <header className="bg-[#FFFDF9] border-b sticky top-0 z-50 w-full shadow-sm">
-  <div className="container mx-auto px-6 py-6 flex flex-col items-start gap-4">
-      <div className="h-12 w-auto overflow-visible">
-          <SiteLogo /> {/* Ensure SiteLogo doesn't have fixed large dimensions inside */}
-      </div>
-      <Link href="/" className="group flex items-center text-gray-500 hover:text-black transition-colors">
-        <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-        <span className="text-sm font-semibold tracking-wide uppercase">Back to ABYLANG</span>
-      </Link>
-  </div>
-</header>
+    
 
-      <main className="container mx-auto px-4 pt-64 md:pt-72 pb-12 max-w-6xl">
+    <main className="container mx-auto px-4 pt-24 md:pt-32 pb-12 max-w-6xl">
+    <div className="mb-8">
+  <Link href="/" className="flex items-center text-muted-foreground hover:text-primary transition-colors">
+    <ArrowLeft className="w-4 h-4 mr-2" />
+    <span className="text-sm font-medium">Back to ABYLANG</span>
+  </Link>
+</div>
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
