@@ -57,6 +57,24 @@
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "lessonId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "groupSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tutorId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "startTime", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "groupSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tutorId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "endTime", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
