@@ -90,24 +90,39 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             const timeOffRef = adminDb!.collection('timeOff');
             const tutorId = "MahderNegashMamo";
 
-            const bookingConflictQuery = bookingsRef
+            // Firestore doesn't allow range filters on two different fields.
+            // We check for conflicts by querying for any booking or time-off that starts
+            // before the new booking ends, and then filtering for ones that end after it starts.
+
+            // 1. Check for booking conflicts
+            const potentialBookingConflictsQuery = bookingsRef
                 .where('tutorId', '==', tutorId)
                 .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-                .where('startTime', '<', endTime)
-                .where('endTime', '>', startTime);
-            
-            const timeOffConflictQuery = timeOffRef
-                .where('tutorId', '==', tutorId)
-                .where('startISO', '<', endTime.toDate().toISOString())
-                .where('endISO', '>', startTime.toDate().toISOString());
+                .where('startTime', '<', endTime);
 
-            const [conflictingBookingsSnapshot, conflictingTimeOff] = await Promise.all([
-                transaction.get(bookingConflictQuery),
-                transaction.get(timeOffConflictQuery)
+            // 2. Check for time-off conflicts
+            const potentialTimeOffConflictsQuery = timeOffRef
+                .where('tutorId', '==', tutorId)
+                .where('startISO', '<', endTime.toDate().toISOString());
+            
+            const [potentialBookingsSnapshot, potentialTimeOffSnapshot] = await Promise.all([
+                transaction.get(potentialBookingConflictsQuery),
+                transaction.get(potentialTimeOffConflictsQuery)
             ]);
 
-            if (!conflictingBookingsSnapshot.empty) throw new Error('slot_already_booked');
-            if (!conflictingTimeOff.empty) throw new Error('tutor_unavailable');
+            const bookingConflict = potentialBookingsSnapshot.docs.some(doc => {
+                const booking = doc.data();
+                return (booking.endTime as Timestamp).toDate() > startTime.toDate();
+            });
+
+            if (bookingConflict) throw new Error('slot_already_booked');
+            
+            const timeOffConflict = potentialTimeOffSnapshot.docs.some(doc => {
+                const block = doc.data();
+                return new Date(block.endISO) > startTime.toDate();
+            });
+
+            if (timeOffConflict) throw new Error('tutor_unavailable');
         }
 
         let initialStatus: 'confirmed' | 'payment-pending-confirmation' = 'payment-pending-confirmation';

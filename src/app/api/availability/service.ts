@@ -2,7 +2,7 @@
 /**
  * This file contains the core, testable business logic for the availability endpoints.
  */
-import { adminDb, Timestamp } from '@/lib/firebase-admin';
+import { adminDb, Timestamp, type Timestamp as AdminTimestamp } from '@/lib/firebase-admin';
 import { startOfDay, endOfDay, parse } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { ADMIN_EMAIL } from '@/config/site';
@@ -84,16 +84,25 @@ export async function _blockSlot(payload: { tutorId: string; startISO: string; e
   return await adminDb!.runTransaction(async (transaction) => {
     const bookingsRef = adminDb!.collection('bookings');
     
-    // Check for conflicting confirmed bookings
-    const bookingConflictQuery = bookingsRef
+    // Firestore does not support range filters on different fields.
+    // The correct way to check for an overlap is to query on one field and filter the other in memory.
+    // We check for any booking that STARTS before our new block ENDS.
+    const potentialConflictsQuery = bookingsRef
         .where('tutorId', '==', tutorId)
         .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-        .where('startTime', '<', Timestamp.fromDate(endTime))
-        .where('endTime', '>', Timestamp.fromDate(startTime));
-        
-    const conflictingBookingsSnapshot = await transaction.get(bookingConflictQuery);
+        .where('startTime', '<', Timestamp.fromDate(endTime));
 
-    if (!conflictingBookingsSnapshot.empty) {
+    const potentialConflictsSnapshot = await transaction.get(potentialConflictsQuery);
+
+    // Now, we filter in memory for any booking that ENDS after our new block STARTS.
+    const hasConflict = potentialConflictsSnapshot.docs.some(doc => {
+        const booking = doc.data();
+        const bookingEnd = (booking.endTime as AdminTimestamp).toDate();
+        // If bookingEnd > startTime, it's an overlap.
+        return bookingEnd > startTime;
+    });
+
+    if (hasConflict) {
         throw new Error('slot_already_booked');
     }
 

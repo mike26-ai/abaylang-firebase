@@ -62,37 +62,41 @@ export async function POST(request: NextRequest) {
 
       // --- CORRECTED QUERIES ---
       const bookingsRef = adminDb!.collection('bookings');
-      const bookingConflictQuery = bookingsRef
-          .where('tutorId', '==', tutorId)
-          .where('startTime', '<', endTimestamp)
-          .where('endTime', '>', startTimestamp);
-        
-      const conflictingBookingsSnapshot = await transaction.get(bookingConflictQuery);
-      const conflictingStatuses = ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'];
-      const hasBookingConflict = conflictingBookingsSnapshot.docs.some(doc => conflictingStatuses.includes(doc.data().status));
+      const groupSessionsRef = adminDb!.collection('groupSessions');
+      const timeOffRef = adminDb!.collection('timeOff');
 
-      if (hasBookingConflict) {
+      // 1. Check for private booking conflicts
+      const potentialBookingConflictsQuery = bookingsRef
+          .where('tutorId', '==', tutorId)
+          .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
+          .where('startTime', '<', endTimestamp);
+      
+      const bookingSnapshot = await transaction.get(potentialBookingConflictsQuery);
+      const bookingConflict = bookingSnapshot.docs.some(doc => (doc.data().endTime as Timestamp).toDate() > startDateTime);
+      if (bookingConflict) {
         throw new Error('A private lesson is already booked in this time slot.');
       }
       
-      const groupSessionsRef = adminDb!.collection('groupSessions');
-      const groupSessionConflictQuery = groupSessionsRef
+      // 2. Check for other group session conflicts
+      const potentialGroupConflictsQuery = groupSessionsRef
           .where('tutorId', '==', tutorId)
-          .where('startTime', '<', endTimestamp)
-          .where('endTime', '>', startTimestamp)
-          .where('status', '==', 'scheduled');
-      const conflictingGroupSessions = await transaction.get(groupSessionConflictQuery);
-       if (!conflictingGroupSessions.empty) {
+          .where('status', '==', 'scheduled')
+          .where('startTime', '<', endTimestamp);
+
+      const groupSnapshot = await transaction.get(potentialGroupConflictsQuery);
+      const groupConflict = groupSnapshot.docs.some(doc => (doc.data().endTime as Timestamp).toDate() > startDateTime);
+       if (groupConflict) {
           throw new Error('Another group session is already scheduled in this time slot.');
       }
 
-      const timeOffRef = adminDb!.collection('timeOff');
-      const timeOffConflictQuery = timeOffRef
+      // 3. Check for time off conflicts
+      const potentialTimeOffConflictsQuery = timeOffRef
           .where('tutorId', '==', tutorId)
-          .where('startISO', '<', endDateTime.toISOString())
-          .where('endISO', '>', startDateTime.toISOString());
-      const conflictingTimeOff = await transaction.get(timeOffConflictQuery);
-      if (!conflictingTimeOff.empty) {
+          .where('startISO', '<', endDateTime.toISOString());
+          
+      const timeOffSnapshot = await transaction.get(potentialTimeOffConflictsQuery);
+      const timeOffConflict = timeOffSnapshot.docs.some(doc => new Date(doc.data().endISO) > startDateTime);
+      if (timeOffConflict) {
           throw new Error('The tutor has blocked off this time as unavailable.');
       }
       

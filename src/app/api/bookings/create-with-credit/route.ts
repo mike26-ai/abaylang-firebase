@@ -51,15 +51,41 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
         }
 
         const bookingsRef = adminDb!.collection('bookings');
-        const conflictQuery = bookingsRef
-            .where('tutorId', '==', 'MahderNegashMamo')
+        const timeOffRef = adminDb!.collection('timeOff');
+        const tutorId = "MahderNegashMamo";
+
+        // Check for booking conflicts
+        const potentialBookingConflictsQuery = bookingsRef
+            .where('tutorId', '==', tutorId)
             .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-            .where('startTime', '<', endTime)
-            .where('endTime', '>', startTime);
+            .where('startTime', '<', endTime);
+
+        // Check for time-off conflicts
+        const potentialTimeOffConflictsQuery = timeOffRef
+            .where('tutorId', '==', tutorId)
+            .where('startISO', '<', endTime.toDate().toISOString());
         
-        const conflictingBookings = await transaction.get(conflictQuery);
-        if (!conflictingBookings.empty) {
+        const [potentialBookingsSnapshot, potentialTimeOffSnapshot] = await Promise.all([
+            transaction.get(potentialBookingConflictsQuery),
+            transaction.get(potentialTimeOffConflictsQuery)
+        ]);
+
+        const bookingConflict = potentialBookingsSnapshot.docs.some(doc => {
+            const booking = doc.data();
+            return (booking.endTime as Timestamp).toDate() > startTime.toDate();
+        });
+
+        if (bookingConflict) {
             throw new Error('slot_already_booked');
+        }
+
+        const timeOffConflict = potentialTimeOffSnapshot.docs.some(doc => {
+            const block = doc.data();
+            return new Date(block.endISO) > startTime.toDate();
+        });
+
+        if (timeOffConflict) {
+            throw new Error('tutor_unavailable');
         }
         
         const parentPackageId = currentCredits[creditIndex].packageBookingId;
@@ -140,6 +166,10 @@ export async function POST(request: NextRequest) {
     }
     if (error.message === 'slot_already_booked') {
         message = 'This time slot has just been booked. Please select another.';
+        status = 409;
+    }
+    if (error.message === 'tutor_unavailable') {
+        message = 'The tutor is unavailable at this time.';
         status = 409;
     }
     if (error.message === 'insufficient_credits') {
