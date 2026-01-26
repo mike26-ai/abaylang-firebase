@@ -1,4 +1,3 @@
-
 // File: src/app/faq/page.tsx
 
 import {
@@ -35,7 +34,7 @@ const faqData = [
   },
   {
     question: "What is your 3-Hour Confirmation Guarantee?",
-    answer: "We stand by our confirmation promise. In the very unlikely event that your lesson is not confirmed within 3 hours of you marking &apos;Payment Submitted&apos;, you are entitled to a **full and immediate refund or a free lesson credit**, no questions asked. If this happens, please contact us immediately using one of the methods listed on our contact page so we can resolve it for you.",
+    answer: "We stand by our confirmation promise. In the very unlikely event that your lesson is not confirmed within 3 hours of you marking 'Payment Submitted', you are entitled to a **full and immediate refund or a free lesson credit**, no questions asked. If this happens, please contact us immediately using one of the methods listed on our contact page so we can resolve it for you.",
   },
   {
     question: "What is your cancellation and refund policy?",
