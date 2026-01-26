@@ -235,7 +235,7 @@ export default function BookLessonPage() {
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
     
 
-    <main className="container mx-auto px-4 pt-24 md:pt-32 pb-12 max-w-6xl">
+    <main className="container mx-auto px-4 pt-40 md:pt-48 pb-12 max-w-6xl">
     <div className="mb-8">
   <Link href="/" className="flex items-center text-muted-foreground hover:text-primary transition-colors">
     <ArrowLeft className="w-4 h-4 mr-2" />
