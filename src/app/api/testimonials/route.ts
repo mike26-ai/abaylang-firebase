@@ -1,6 +1,6 @@
 // File: src/app/api/testimonials/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb, FieldValue, Timestamp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 

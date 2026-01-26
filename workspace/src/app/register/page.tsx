@@ -15,7 +15,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Timestamp, doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth, db } from "@/lib/firebaseAdmin.ts"; // auth is imported here
+import { auth, db } from "@/lib/firebase";
+
 import type { UserProfile } from "@/lib/types";
 import { SiteLogo } from "@/components/layout/SiteLogo";
 import { Spinner } from "@/components/ui/spinner";

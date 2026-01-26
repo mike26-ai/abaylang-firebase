@@ -1,6 +1,6 @@
 // File: src/app/api/bookings/create-private-group/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminAuth, adminDb, Timestamp } from '@/lib/firebaseAdmin';
+import { adminDb, adminAuth, Timestamp } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { addMinutes, parse } from 'date-fns';

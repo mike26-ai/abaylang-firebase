@@ -1,6 +1,6 @@
 // File: src/app/api/availability/block/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminAuth } from '@/lib/firebaseAdmin';
+import { adminAuth, Timestamp, adminDb, FieldValue } from '@/lib/firebase-admin';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { ADMIN_EMAIL } from '@/config/site';

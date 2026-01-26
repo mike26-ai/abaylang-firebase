@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebaseAdmin.ts";
+import { auth } from "@/lib/firebase";
+
 import { Button } from "@/components/ui/button";
 import {
   Form,

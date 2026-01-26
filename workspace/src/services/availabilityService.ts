@@ -1,7 +1,8 @@
 
 // File: src/services/availabilityService.ts
 
-import { auth } from "@/lib/firebaseAdmin.ts";
+import { auth } from "@/lib/firebase";
+
 import type { Booking, TimeOff } from "@/lib/types";
 import { format } from "date-fns";
 
