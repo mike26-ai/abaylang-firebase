@@ -245,7 +245,7 @@ export default function BookLessonPage() {
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
-          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with ${tutorInfo.name}</p>
+          <p className="text-xl text-muted-foreground">Choose your lesson type and schedule with {tutorInfo.name}</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -350,9 +350,9 @@ export default function BookLessonPage() {
                       ) : error ? (
                         <div className="flex flex-col items-center justify-center p-8 bg-orange-50/50 rounded-2xl border border-orange-200 text-center">
                             <div className="text-5xl mb-4">⏳</div>
-                            <h3 className="text-xl font-bold text-gray-800 mb-2">Mahder's schedule is loading...</h3>
+                            <h3 className="text-xl font-bold text-gray-800 mb-2">Mahder&apos;s schedule is loading...</h3>
                             <p className="text-gray-600 mb-6 text-sm max-w-xs mx-auto">
-                                We're having a small technical "slippage" fetching available slots.
+                                We&apos;re having a small technical &quot;slippage&quot; fetching available slots.
                             </p>
                             <Button 
                                 onClick={() => window.location.reload()}
@@ -443,8 +443,8 @@ export default function BookLessonPage() {
                   <div className="w-20 h-20 bg-accent rounded-full mx-auto mb-3 flex items-center justify-center">
                     <span className="text-2xl text-primary font-bold">{tutorInfo.name.split(" ").map(n=>n[0]).join("")}</span>
                   </div>
-                  <h3 className="font-semibold text-foreground">${tutorInfo.name}</h3>
-                  <p className="text-sm text-muted-foreground">${tutorInfo.shortIntro}</p>
+                  <h3 className="font-semibold text-foreground">{tutorInfo.name}</h3>
+                  <p className="text-sm text-muted-foreground">{tutorInfo.shortIntro}</p>
                   <div className="flex items-center justify-center gap-1 mt-2">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
