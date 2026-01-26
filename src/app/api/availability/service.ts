@@ -2,7 +2,8 @@
 /**
  * This file contains the core, testable business logic for the availability endpoints.
  */
-import { adminDb, Timestamp, type Timestamp as AdminTimestamp } from '@/lib/firebase-admin';
+import { adminDb, Timestamp } from '@/lib/firebase-admin';
+import type { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
 import { startOfDay, endOfDay, parse } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { ADMIN_EMAIL } from '@/config/site';

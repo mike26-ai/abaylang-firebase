@@ -1,6 +1,7 @@
 // File: src/app/api/bookings/create-with-credit/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, Timestamp, FieldValue } from '@/lib/firebase-admin';
+import type { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { products, isValidProductId } from '@/config/products';
@@ -72,7 +73,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
 
         const bookingConflict = potentialBookingsSnapshot.docs.some(doc => {
             const booking = doc.data();
-            return (booking.endTime as Timestamp).toDate() > startTime.toDate();
+            return (booking.endTime as AdminTimestamp).toDate() > startTime.toDate();
         });
 
         if (bookingConflict) {

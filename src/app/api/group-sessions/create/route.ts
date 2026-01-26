@@ -1,6 +1,7 @@
 // File: src/app/api/group-sessions/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, Timestamp, FieldValue } from '@/lib/firebase-admin';
+import type { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { addMinutes, isBefore } from 'date-fns';
 
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
           .where('startTime', '<', endTimestamp);
       
       const bookingSnapshot = await transaction.get(potentialBookingConflictsQuery);
-      const bookingConflict = bookingSnapshot.docs.some(doc => (doc.data().endTime as Timestamp).toDate() > startDateTime);
+      const bookingConflict = bookingSnapshot.docs.some(doc => (doc.data().endTime as AdminTimestamp).toDate() > startDateTime);
       if (bookingConflict) {
         throw new Error('A private lesson is already booked in this time slot.');
       }
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
           .where('startTime', '<', endTimestamp);
 
       const groupSnapshot = await transaction.get(potentialGroupConflictsQuery);
-      const groupConflict = groupSnapshot.docs.some(doc => (doc.data().endTime as Timestamp).toDate() > startDateTime);
+      const groupConflict = groupSnapshot.docs.some(doc => (doc.data().endTime as AdminTimestamp).toDate() > startDateTime);
        if (groupConflict) {
           throw new Error('Another group session is already scheduled in this time slot.');
       }
