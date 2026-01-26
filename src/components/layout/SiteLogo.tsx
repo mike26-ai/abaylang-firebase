@@ -14,7 +14,7 @@ export function SiteLogo() {
          width={140} 
          height={35} 
          priority 
-         className="h-18 w-auto md:h-10 object-contain" 
+         className="h-18 w-auto md:h-12 object-contain" 
        />
     </Link>
   );

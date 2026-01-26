@@ -233,15 +233,13 @@ export default function BookLessonPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
-    
-
-    <main className="container mx-auto px-4 pt-40 md:pt-48 pb-12 max-w-6xl">
-    <div className="mb-8">
-  <Link href="/" className="flex items-center text-muted-foreground hover:text-primary transition-colors">
-    <ArrowLeft className="w-4 h-4 mr-2" />
-    <span className="text-sm font-medium">Back to ABYLANG</span>
-  </Link>
-</div>
+      <div className="container mx-auto px-4 pb-12 max-w-6xl">
+        <div className="mb-8">
+          <Link href="/" className="flex items-center text-muted-foreground hover:text-primary transition-colors">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            <span className="text-sm font-medium">Back to ABYLANG</span>
+          </Link>
+        </div>
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
           <h1 className="text-4xl font-bold text-foreground mb-2">Start Your Amharic Journey</h1>
@@ -541,7 +539,7 @@ export default function BookLessonPage() {
             </Card>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 }
