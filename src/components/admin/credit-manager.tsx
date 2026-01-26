@@ -58,7 +58,7 @@ export function CreditManager() {
 
     } catch (error: any) {
       console.error("Error fetching users:", error);
-      toast({ title: "Error", description: error.message || "Could not fetch user data.", variant: "destructive" });
+      toast({ title: "Error Fetching Users", description: error.message || "Could not load user data.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

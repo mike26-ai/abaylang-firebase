@@ -56,7 +56,7 @@ export function InquiriesViewer() {
       setInquiries(fetchedInquiries);
     } catch (error: any) {
       console.error("Error fetching inquiries:", error);
-      toast({ title: "Error", description: error.message || "Could not fetch contact inquiries.", variant: "destructive" });
+      toast({ title: "Error Fetching Inquiries", description: error.message || "Could not load contact inquiries.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

@@ -33,9 +33,8 @@ export function GroupSessionList() {
         setSessions(upcomingSessions);
       } catch (error: any) {
         toast({
-          title: 'Error Fetching Group Sessions',
-          description: error.message,
-          variant: 'destructive',
+          title: 'Could Not Load Sessions',
+          description: "There was a problem retrieving group sessions. Please try refreshing the page.",
         });
       } finally {
         setIsLoading(false);

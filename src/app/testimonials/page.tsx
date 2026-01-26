@@ -68,17 +68,9 @@ export default function ReviewsPage() {
         setAllReviews(fetchedTestimonials);
       } catch (error: any) {
         console.error("Error fetching testimonials:", error);
-        let description = "Could not fetch reviews.";
-        if (error.code === 'failed-precondition') {
-            description = "Could not fetch reviews. This often means a required database index is missing. Please check the browser console for a link to create it, or check Firestore indexes.";
-        } else if (error.code === 'permission-denied') {
-            description = "Could not fetch reviews due to a permission issue. Please check Firestore security rules for 'testimonials'.";
-        }
         toast({
-          title: "Error Fetching Reviews",
-          description: description,
-          variant: "destructive",
-          duration: 9000,
+          title: "Could Not Load Reviews",
+          description: "There was a problem retrieving testimonials. Please try again later.",
         });
       } finally {
         setIsLoading(false);

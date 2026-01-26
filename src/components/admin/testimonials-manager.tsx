@@ -42,7 +42,7 @@ export function TestimonialsManager() {
       setTestimonials(fetchedTestimonials);
     } catch (error) {
       console.error("Error fetching testimonials:", error);
-      toast({ title: "Error", description: "Could not fetch testimonials.", variant: "destructive" });
+      toast({ title: "Error Fetching Testimonials", description: "Could not load testimonial data.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

@@ -46,7 +46,7 @@ export function TimeOffManager() {
       } catch (err: any) {
         console.error("Could not fetch available slots:", err);
         setError("Could not fetch available slots. Please try again.");
-        toast({ title: 'Error', description: err.message || 'Could not fetch schedule data.', variant: 'destructive' });
+        toast({ title: 'Error Fetching Schedule', description: err.message || 'Could not fetch schedule data.', variant: 'destructive' });
       } finally {
         setIsLoading(false);
       }

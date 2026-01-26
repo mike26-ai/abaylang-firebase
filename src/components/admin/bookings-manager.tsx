@@ -83,7 +83,7 @@ export function BookingsManager() {
       setAllBookings(fetchedBookings);
     } catch (error) {
       console.error("Error fetching bookings:", error);
-      toast({ title: "Error", description: "Could not fetch bookings.", variant: "destructive" });
+      toast({ title: "Error Fetching Bookings", description: "Could not load booking data. Please check your connection and try again.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -502,4 +502,3 @@ export function BookingsManager() {
     )
   }
 }
-

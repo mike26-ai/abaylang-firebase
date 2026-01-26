@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { createBooking } from '@/services/bookingService';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import type { ProductId } from '@/config/products';
 
 export default function GroupSessionsPage() {
   const [sessions, setSessions] = useState<GroupSession[]>([]);
@@ -33,9 +34,8 @@ export default function GroupSessionsPage() {
         setSessions(fetchedSessions);
       } catch (error: any) {
         toast({
-          title: 'Error Fetching Sessions',
-          description: error.message || 'Could not load available group sessions.',
-          variant: 'destructive',
+          title: 'Could Not Load Sessions',
+          description: "There was a problem retrieving the data. Please try refreshing the page.",
         });
       } finally {
         setIsLoading(false);
@@ -53,10 +53,11 @@ export default function GroupSessionsPage() {
     setIsBooking(session.id);
     try {
       const { bookingId, redirectUrl } = await createBooking({
-        productId: session.title.toLowerCase().includes('quick') ? 'quick-group-conversation' : 'immersive-conversation-practice',
+        productId: (session.title.toLowerCase().includes('quick') ? 'quick-group-conversation' : 'immersive-conversation-practice') as ProductId,
         userId: user.uid,
-        date: format(session.startTime.toDate(), 'yyyy-MM-dd'),
-        time: format(session.startTime.toDate(), 'HH:mm'),
+        groupSessionId: session.id,
+        date: format((session.startTime as any).toDate(), 'yyyy-MM-dd'),
+        time: format((session.startTime as any).toDate(), 'HH:mm'),
       });
       
       // Redirect to Paddle for payment
@@ -124,11 +125,11 @@ export default function GroupSessionsPage() {
                 <CardContent className="flex-grow space-y-4">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>{format(session.startTime.toDate(), 'PPP')}</span>
+                    <span>{format((session.startTime as any).toDate(), 'PPP')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="h-4 w-4" />
-                    <span>{format(session.startTime.toDate(), 'p')} ({session.duration} mins)</span>
+                    <span>{format((session.startTime as any).toDate(), 'p')} ({session.duration} mins)</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="h-4 w-4" />

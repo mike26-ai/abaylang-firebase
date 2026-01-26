@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { Button } from "@/components/ui/button"
@@ -47,14 +46,9 @@ export default function HomePage() {
 
       } catch (error: any) {
         console.error("Error fetching testimonials for homepage:", error);
-        let description = "Could not load recent testimonials.";
-        if (error.code === 'failed-precondition') {
-          description = "Could not load testimonials. This feature may require a database index. Please check the Firestore console for instructions to create the necessary index.";
-        }
         toast({
-          title: "Error Loading Testimonials",
-          description: description,
-          variant: "destructive",
+          title: "Could Not Load Testimonials",
+          description: "Recent student reviews could not be loaded at this time.",
         });
       } finally {
         setIsLoadingTestimonials(false);

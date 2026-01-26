@@ -49,7 +49,7 @@ export function StudentsManager() {
 
     } catch (error: any) {
       console.error("Error fetching students:", error);
-      toast({ title: "Error", description: error.message || "Could not fetch student data.", variant: "destructive" });
+      toast({ title: "Error Fetching Students", description: error.message || "Could not load student data.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -239,5 +239,3 @@ export function StudentsManager() {
     </>
   );
 }
-
-    
