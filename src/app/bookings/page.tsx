@@ -232,13 +232,14 @@ export default function BookLessonPage() {
   const availableSlots = useMemo(() => displayTimeSlots.filter(slot => slot.status === 'available'), [displayTimeSlots]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
+    <div className="bg-gradient-to-b from-primary/5 to-background">
       <div className="container mx-auto px-4 pb-12 max-w-6xl">
-        <div className="mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <Link href="/" className="flex items-center text-muted-foreground hover:text-primary transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" />
             <span className="text-sm font-medium">Back to ABYLANG</span>
           </Link>
+          <SiteLogo />
         </div>
         <div className="mb-8 text-center">
           <Badge className="mb-4 bg-accent text-accent-foreground">Book Your Lesson</Badge>
@@ -350,7 +351,7 @@ export default function BookLessonPage() {
                             <div className="text-5xl mb-4">⏳</div>
                             <h3 className="text-xl font-bold text-gray-800 mb-2">Mahder&apos;s schedule is loading...</h3>
                             <p className="text-gray-600 mb-6 text-sm max-w-xs mx-auto">
-                                We&apos;re having a small technical &quot;slippage&quot; fetching available slots.
+                                We&apos;re having a small &quot;slippage&quot; fetching available slots.
                             </p>
                             <Button 
                                 onClick={() => window.location.reload()}
