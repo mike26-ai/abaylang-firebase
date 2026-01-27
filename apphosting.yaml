@@ -38,6 +38,9 @@ env:
     value: "mahdernmamo@gmail.com"
   - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
     value: "YOUR_RECAPTCHA_SITE_KEY_HERE"
+  
+  # --- Optional Public Variables for Image Uploads ---
+  # These are only required if you want to enable the optional Cloudinary image upload feature.
   - variable: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
     value: "YOUR_CLOUD_NAME_HERE"
   - variable: NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
@@ -45,8 +48,17 @@ env:
   
   # --- Server-Side Secrets ---
   # These are now securely referenced from Google Cloud Secret Manager.
+  # The values are retrieved during runtime.
   - variable: PADDLE_API_KEY
     secret: PADDLE_API_KEY
   - variable: PADDLE_WEBHOOK_SECRET
     secret: PADDLE_WEBHOOK_SECRET
+  
+  # --- Optional Server-Side Secrets for Image Uploads ---
+  # Uncomment the following lines and create the corresponding secrets in Google
+  # Secret Manager if you want to enable the optional Cloudinary image upload feature.
+  # - variable: CLOUDINARY_API_KEY
+  #   secret: CLOUDINARY_API_KEY
+  # - variable: CLOUDINARY_API_SECRET
+  #   secret: CLOUDINARY_API_SECRET
   

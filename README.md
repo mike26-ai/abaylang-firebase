@@ -23,8 +23,11 @@ Your application's server-side functions require secret keys. These are stored i
     *   `ADMIN_FIREBASE_PRIVATE_KEY`
     *   `PADDLE_API_KEY`
     *   `PADDLE_WEBHOOK_SECRET`
-    *   `CLOUDINARY_API_KEY`
-    *   `CLOUDINARY_API_SECRET`
+
+**Optional Secrets for Image Uploads:**
+To enable users to upload images (e.g., for testimonials), you also need to create these secrets. If you don't need this feature, you can skip this step.
+*   `CLOUDINARY_API_KEY`
+*   `CLOUDINARY_API_SECRET`
 
 **To generate Firebase Admin credentials:**
 1.  Go to your Firebase Console -> Project Settings -> Service accounts.
@@ -63,6 +66,8 @@ Ensure the public environment variables used by the client-side of your applicat
 
 *   `NEXT_PUBLIC_ADMIN_EMAIL`
 *   `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`
+
+**Optional for Image Uploads:**
 *   `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
 *   `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`
 
@@ -70,10 +75,10 @@ Ensure the public environment variables used by the client-side of your applicat
 
 ## External Media Uploads (Cloudinary)
 
-This project is configured to use an external service (Cloudinary) for all media uploads (images, videos, etc.), decoupling it from Firebase Storage.
+This project is configured to use an external service (Cloudinary) for all media uploads (images, videos, etc.), decoupling it from Firebase Storage. This feature is **optional**. If you do not configure the Cloudinary environment variables, the image upload functionality will be gracefully disabled without causing errors.
 
 ### How It Works
 
-1.  **Configuration**: All Cloudinary settings are managed in your environment variables.
+1.  **Configuration**: All Cloudinary settings are managed in your environment variables. See the "Production Deployment Guide" for setup instructions.
 2.  **Upload Logic**: File uploads are handled by a Next.js Server Action located in `src/app/actions/uploadActions.ts`.
-3.  **Storage**: The URL returned by Cloudinary is then stored as a simple string in your Firestore documents.
+3.  **Storage**: The URL returned by Cloudinary is then stored as a simple string in your Firestore documents (e.g., in a `testimonials` document).

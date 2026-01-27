@@ -3,19 +3,13 @@
 
 import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
 
-// Configure Cloudinary with your credentials.
-// It's safe to do this here because this is a server-side action.
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
+// NOTE: Cloudinary config is now moved inside the function to avoid server
+// startup errors if environment variables are not set.
 
 /**
  * Uploads an image to Cloudinary using an unsigned upload preset.
- * This function now conditionally handles uploads. If Cloudinary is not configured,
- * it will skip the upload and return a success state with no URL.
+ * This function now conditionally handles uploads. If any Cloudinary variables 
+ * are missing, it will gracefully skip the upload without causing an error.
  * @param formData - The FormData object containing the file to upload.
  * @returns An object with either the secure URL of the uploaded image or an error message.
  */
@@ -27,41 +21,49 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
   
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-  // Gracefully handle missing configuration for development
-  if (!cloudName || !uploadPreset) {
+  // Gracefully handle missing configuration. This makes the feature entirely optional.
+  if (!cloudName || !uploadPreset || !apiKey || !apiSecret) {
     console.warn(`
       ********************************************************************************
-      Cloudinary environment variables (NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and 
-      NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) are not set. 
-      Skipping image upload. The feature will work, but no image will be attached.
-      To enable uploads, please configure these in your .env file.
+      Cloudinary environment variables are not fully configured. 
+      This is not an error. The image upload feature is optional.
+      To enable uploads, please configure all four Cloudinary variables in your 
+      .env file and hosting environment:
+      - NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+      - NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+      - CLOUDINARY_API_KEY
+      - CLOUDINARY_API_SECRET
       ********************************************************************************
     `);
     // Return a success state indicating the upload was skipped, not failed.
     return { success: true, url: undefined, skipped: true };
   }
-
+  
+  // Configure Cloudinary only when we are sure all variables are present.
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+  });
 
   // Convert the file to a buffer to upload
   const arrayBuffer = await file.arrayBuffer();
   const buffer = new Uint8Array(arrayBuffer);
-
 
   try {
     const result = await new Promise<UploadApiResponse>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           upload_preset: uploadPreset,
-          // You can add more options here, like tags, folders, etc.
-          // folder: "amharic_connect_testimonials"
         },
         (error, result) => {
           if (error) {
             reject(error);
             return;
           }
-          // FIX: Explicitly check for an undefined result before resolving.
           if (!result) {
             reject(new Error("Cloudinary upload failed: The result is undefined."));
             return;
