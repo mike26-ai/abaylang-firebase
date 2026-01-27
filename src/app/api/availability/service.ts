@@ -11,6 +11,7 @@ import { ADMIN_EMAIL } from '@/config/site';
 /**
  * Fetches bookings and time-off blocks for a specific tutor and date.
  * This function contains the actual database query logic.
+ * It has been updated to use valid queries that don't crash the server.
  * @param tutorId The ID of the tutor.
  * @param date The date string in "yyyy-MM-dd" format.
  * @returns An object with arrays of bookings and time-off blocks.
@@ -26,28 +27,36 @@ export async function _getAvailability(tutorId: string, date: string) {
     let bookings: any[] = [];
     let timeOff: any[] = [];
 
-    // Fetch confirmed bookings
+    // --- CORRECTED BOOKING QUERY ---
+    // Fetch all bookings for the tutor that could possibly overlap with the day.
+    // This query is simpler and does not rely on complex indexes.
     try {
       const bookingsQuery = adminDb.collection('bookings')
         .where('tutorId', '==', tutorId)
-        .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
         .where('startTime', '>=', startOfSelectedDay)
         .where('startTime', '<=', endOfSelectedDay);
         
       const bookingsSnapshot = await bookingsQuery.get();
-      bookings = bookingsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        startTime: doc.data().startTime?.toDate().toISOString(),
-        endTime: doc.data().endTime?.toDate().toISOString(),
-        createdAt: doc.data().createdAt?.toDate().toISOString(),
-      }));
+      // Further filter in memory for the exact statuses needed
+      bookings = bookingsSnapshot.docs
+        .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            startTime: doc.data().startTime?.toDate().toISOString(),
+            endTime: doc.data().endTime?.toDate().toISOString(),
+            createdAt: doc.data().createdAt?.toDate().toISOString(),
+        }))
+        .filter(booking => ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'].includes(booking.status));
+
     } catch (error: any) {
       console.error("API Service Error: Failed to fetch bookings:", error.message);
-      // Do not throw; allow the function to continue and return partial data.
+      // Let the error propagate to the client for better error handling.
+      throw new Error("Failed to fetch booking data from the database.");
     }
 
-    // Fetch time-off blocks
+    // --- CORRECTED TIME-OFF QUERY ---
+    // This query fetches any time-off block that *starts* during the selected day.
+    // It avoids using two range filters, which was causing a server crash.
     try {
       const timeOffQuery = adminDb.collection('timeOff')
           .where('tutorId', '==', tutorId)
@@ -62,7 +71,7 @@ export async function _getAvailability(tutorId: string, date: string) {
       }));
     } catch (error: any) {
         console.error("API Service Error: Failed to fetch timeOff blocks:", error.message);
-        // Do not throw; allow the function to continue and return partial data.
+        throw new Error("Failed to fetch schedule blocks from the database.");
     }
 
     return { bookings, timeOff };

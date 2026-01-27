@@ -354,7 +354,7 @@ export default function BookLessonPage() {
                                 We&apos;re having a small &quot;slippage&quot; fetching available slots.
                             </p>
                             <Button 
-                                onClick={() => window.location.reload()}
+                                onClick={() => { if(selectedDate) fetchAvailability(selectedDate) }}
                                 className="bg-[#CC7722] hover:bg-black text-white rounded-full px-8"
                             >
                                 Refresh Schedule
