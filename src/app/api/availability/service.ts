@@ -1,166 +1,101 @@
-// File: src/app/api/availability/service.ts
-/**
- * This file contains the core, testable business logic for the availability endpoints.
- */
-import { adminDb, Timestamp } from '@/lib/firebase-admin';
-import type { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
-import { startOfDay, endOfDay, parse } from 'date-fns';
+import { adminDb, Timestamp, FieldValue } from '@/lib/firebase-admin';
+import type { Booking, TimeOff } from '@/lib/types';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { ADMIN_EMAIL } from '@/config/site';
+import type { Transaction } from 'firebase-admin/firestore';
+import { startOfDay, endOfDay, parseISO } from 'date-fns';
 
-/**
- * Fetches bookings and time-off blocks for a specific tutor and date.
- * This function contains the actual database query logic.
- * It has been updated to use valid queries that don't crash the server.
- * @param tutorId The ID of the tutor.
- * @param date The date string in "yyyy-MM-dd" format.
- * @returns An object with arrays of bookings and time-off blocks.
- */
 export async function _getAvailability(tutorId: string, date: string) {
-    if (!adminDb) {
-        throw new Error("Database service not available.");
-    }
-    const selectedDate = parse(date, 'yyyy-MM-dd', new Date());
-    const startOfSelectedDay = startOfDay(selectedDate);
-    const endOfSelectedDay = endOfDay(selectedDate);
+    if (!adminDb) throw new Error("Firebase Admin SDK not initialized.");
+
+    const dayStart = startOfDay(parseISO(date));
+    const dayEnd = endOfDay(parseISO(date));
+
+    const dayStartTimestamp = Timestamp.fromDate(dayStart);
     
-    let bookings: any[] = [];
-    let timeOff: any[] = [];
-
-    // --- CORRECTED BOOKING QUERY ---
-    // Fetch all bookings for the tutor that could possibly overlap with the day.
-    // This query is simpler and does not rely on complex indexes.
-    try {
-      const bookingsQuery = adminDb.collection('bookings')
+    const bookingsQuery = adminDb.collection('bookings')
         .where('tutorId', '==', tutorId)
-        .where('startTime', '>=', startOfSelectedDay)
-        .where('startTime', '<=', endOfSelectedDay);
-        
-      const bookingsSnapshot = await bookingsQuery.get();
-      // Further filter in memory for the exact statuses needed
-      bookings = bookingsSnapshot.docs
-        .filter(doc =>
-          ["confirmed", "awaiting-payment", "payment-pending-confirmation"]
-            .includes(doc.data().status)
-        )
-        .map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            startTime: doc.data().startTime?.toDate().toISOString(),
-            endTime: doc.data().endTime?.toDate().toISOString(),
-            createdAt: doc.data().createdAt?.toDate().toISOString(),
-        }));
+        .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
+        .where('startTime', '<', Timestamp.fromDate(dayEnd));
 
-    } catch (error: any) {
-      console.error("API Service Error: Failed to fetch bookings:", error.message);
-      // Let the error propagate to the client for better error handling.
-      throw new Error("Failed to fetch booking data from the database.");
-    }
+    const timeOffQuery = adminDb.collection('timeOff')
+        .where('tutorId', '==', tutorId)
+        .where('startISO', '<', dayEnd.toISOString());
 
-    // --- CORRECTED TIME-OFF QUERY ---
-    // This query fetches any time-off block that *starts* during the selected day.
-    // It avoids using two range filters, which was causing a server crash.
-    try {
-      const timeOffQuery = adminDb.collection('timeOff')
-          .where('tutorId', '==', tutorId)
-          .where('startISO', '>=', startOfSelectedDay.toISOString())
-          .where('startISO', '<=', endOfSelectedDay.toISOString());
-          
-      const timeOffSnapshot = await timeOffQuery.get();
-      timeOff = timeOffSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate().toISOString(),
-      }));
-    } catch (error: any) {
-        console.error("API Service Error: Failed to fetch timeOff blocks:", error.message);
-        throw new Error("Failed to fetch schedule blocks from the database.");
-    }
+    const [bookingsSnapshot, timeOffSnapshot] = await Promise.all([
+        bookingsQuery.get(),
+        timeOffQuery.get()
+    ]);
+    
+    const bookings = bookingsSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as Booking))
+        .filter(booking => (booking.endTime as any).toDate() > dayStart);
+
+    const timeOff = timeOffSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as TimeOff))
+        .filter(block => new Date(block.endISO) > dayStart);
 
     return { bookings, timeOff };
 }
 
 
-/**
- * Core logic to block a time slot in Firestore using a transaction.
- * @param payload The data for the time slot to block.
- * @returns The newly created time-off document.
- */
-export async function _blockSlot(payload: { tutorId: string; startISO: string; endISO: string; note?: string; decodedToken: DecodedIdToken; }) {
-  if (!adminDb) {
-    throw new Error("Database service not available.");
-  }
-  const { tutorId, startISO, endISO, note, decodedToken } = payload;
-  const startTime = new Date(startISO);
-  const endTime = new Date(endISO);
-
-  return await adminDb!.runTransaction(async (transaction) => {
-    const bookingsRef = adminDb!.collection('bookings');
-    
-    // Firestore does not support range filters on different fields.
-    // The correct way to check for an overlap is to query on one field and filter the other in memory.
-    // We check for any booking that STARTS before our new block ENDS.
-    const potentialConflictsQuery = bookingsRef
-        .where('tutorId', '==', tutorId)
-        .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
-        .where('startTime', '<', Timestamp.fromDate(endTime));
-
-    const potentialConflictsSnapshot = await transaction.get(potentialConflictsQuery);
-
-    // Now, we filter in memory for any booking that ENDS after our new block STARTS.
-    const hasConflict = potentialConflictsSnapshot.docs.some(doc => {
-        const booking = doc.data();
-        const bookingEnd = (booking.endTime as AdminTimestamp).toDate();
-        // If bookingEnd > startTime, it's an overlap.
-        return bookingEnd > startTime;
-    });
-
-    if (hasConflict) {
-        throw new Error('slot_already_booked');
-    }
-
-    const newTimeOffRef = adminDb!.collection('timeOff').doc();
-    const timeOffDoc = {
-        tutorId,
-        startISO,
-        endISO,
-        note: note || 'Admin Block',
-        blockedById: decodedToken.uid,
-        blockedByEmail: decodedToken.email,
-        createdAt: Timestamp.now(),
-    };
-  
-    transaction.set(newTimeOffRef, timeOffDoc);
-    return { id: newTimeOffRef.id, ...timeOffDoc };
-  });
+interface BlockSlotPayload {
+  tutorId: string;
+  startISO: string;
+  endISO: string;
+  note?: string;
+  decodedToken: DecodedIdToken;
 }
 
-/**
- * Core logic to unblock a time slot in Firestore using a transaction.
- * @param timeOffId The ID of the time-off block to delete.
- * @param decodedToken The verified token of the user making the request.
- * @returns A success message.
- */
+export async function _blockSlot(payload: BlockSlotPayload) {
+    if (!adminDb) throw new Error("Firebase Admin SDK not initialized.");
+
+    const { tutorId, startISO, endISO, note, decodedToken } = payload;
+    const newTimeOffRef = adminDb.collection('timeOff').doc();
+    const startTime = new Date(startISO);
+    const endTime = new Date(endISO);
+
+    await adminDb.runTransaction(async (transaction: Transaction) => {
+        const bookingsRef = adminDb.collection('bookings');
+        const conflictQuery = bookingsRef
+            .where('tutorId', '==', tutorId)
+            .where('status', 'in', ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'])
+            .where('startTime', '<', Timestamp.fromDate(endTime))
+            .where('endTime', '>', Timestamp.fromDate(startTime));
+            
+        const conflictingBookings = await transaction.get(conflictQuery);
+        
+        if (!conflictingBookings.empty) {
+            throw new Error('slot_already_booked');
+        }
+
+        transaction.set(newTimeOffRef, {
+            tutorId,
+            startISO,
+            endISO,
+            note: note || 'Admin Block',
+            blockedById: decodedToken.uid,
+            blockedByEmail: decodedToken.email,
+            createdAt: FieldValue.serverTimestamp(),
+        });
+    });
+
+    const newTimeOffDoc = await newTimeOffRef.get();
+    return { id: newTimeOffDoc.id, ...newTimeOffDoc.data() };
+}
+
 export async function _unblockSlot(timeOffId: string, decodedToken: DecodedIdToken) {
-  if (!adminDb) {
-    throw new Error("Database service not available.");
-  }
-  return await adminDb.runTransaction(async (transaction) => {
-    const timeOffDocRef = adminDb!.collection('timeOff').doc(timeOffId);
-    const docSnap = await transaction.get(timeOffDocRef);
-
-    if (!docSnap.exists) {
-        throw new Error('not_found');
-    }
-
-    const timeOffData = docSnap.data();
-    const isAdmin = decodedToken.admin === true || decodedToken.email === ADMIN_EMAIL;
-    // An admin should be able to delete any block, not just their own
-    if (!isAdmin) {
-        throw new Error('unauthorized');
-    }
+    if (!adminDb) throw new Error("Firebase Admin SDK not initialized.");
     
-    transaction.delete(timeOffDocRef);
-    return { message: 'Time off block successfully deleted.' };
-  });
+    const timeOffRef = adminDb.collection('timeOff').doc(timeOffId);
+    
+    await adminDb.runTransaction(async (transaction: Transaction) => {
+        const doc = await transaction.get(timeOffRef);
+        if (!doc.exists) {
+            throw new Error('not_found');
+        }
+        
+        transaction.delete(timeOffRef);
+    });
+
+    return { message: 'Time slot successfully unblocked.' };
 }
