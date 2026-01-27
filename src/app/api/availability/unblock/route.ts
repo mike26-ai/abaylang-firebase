@@ -1,4 +1,3 @@
-import admin from '../../../lib/firebase-admin';
 // File: src/app/api/availability/unblock/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, Timestamp } from '@/lib/firebase-admin';

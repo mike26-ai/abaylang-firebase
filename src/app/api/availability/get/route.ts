@@ -1,4 +1,3 @@
-import admin from '../../../lib/firebase-admin';
 // File: src/app/api/availability/get/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
