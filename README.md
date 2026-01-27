@@ -7,6 +7,27 @@ To get started, take a look at src/app/page.tsx.
 
 ---
 
+## 🛑 Security Best Practices: Securing Your Project Owner Account
+
+You have correctly identified that using a personal email account with the **Owner** role is a significant security risk. The `Owner` role provides complete control over your entire Google Cloud project, including billing and data access. If your personal email is compromised, your entire cloud project is at risk.
+
+**Please take the following actions to secure your project:**
+
+### 1. Enable 2-Factor Authentication (2FA) Immediately
+
+This is the single most important step. Enabling 2FA on the Google account that owns the project (`znationman217@gmail.com`) means that even if an attacker steals your password, they will not be able to log in without access to your second factor (e.g., your phone).
+
+*   **How to enable 2FA:** Go to your Google Account's security settings: [myaccount.google.com/security](https://myaccount.google.com/security)
+
+### 2. Follow the Principle of Least Privilege
+
+For day-to-day development and management, avoid using the `Owner` account.
+
+*   **Create a Dedicated Admin Account:** Consider creating a separate Google Account used *only* for managing this cloud project. Grant it the `Owner` role and use your primary personal account only for less privileged roles like `Editor` or `Firebase Admin`.
+*   **Limit Permissions:** When you add other users or service accounts, grant them the most restrictive roles they need to perform their function (e.g., `Viewer`, `Firebase Viewer`) instead of broad roles like `Editor` or `Owner`.
+
+---
+
 ## 🚀 Production Deployment Guide
 
 **IMPORTANT:** For your application to work in a live hosting environment, you must complete the following configuration steps. These are not required for local development but are essential for production.
