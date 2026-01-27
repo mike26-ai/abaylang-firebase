@@ -39,17 +39,14 @@ export async function _getAvailability(tutorId: string, date: string) {
       const bookingsSnapshot = await bookingsQuery.get();
       // Further filter in memory for the exact statuses needed
       bookings = bookingsSnapshot.docs
-        .filter(doc =>
-          ["confirmed", "awaiting-payment", "payment-pending-confirmation"]
-            .includes(doc.data().status)
-        )
         .map(doc => ({
             id: doc.id,
             ...doc.data(),
             startTime: doc.data().startTime?.toDate().toISOString(),
             endTime: doc.data().endTime?.toDate().toISOString(),
             createdAt: doc.data().createdAt?.toDate().toISOString(),
-        }));
+        }))
+        .filter(booking => ['confirmed', 'awaiting-payment', 'payment-pending-confirmation'].includes(booking.status));
 
     } catch (error: any) {
       console.error("API Service Error: Failed to fetch bookings:", error.message);
