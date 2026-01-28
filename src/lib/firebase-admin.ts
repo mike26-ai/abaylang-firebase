@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue as AdminFieldValue, Timestamp as AdminTimestamp } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 
 /**
@@ -32,9 +32,11 @@ if (!admin.apps.length) {
 }
 
 /** Firestore */
-export const adminDb = admin.apps.length ? getFirestore() : null as any;
-export const adminAuth = admin.apps.length ? getAuth() : null as any;
+// FIX: Removed 'as any' to allow for correct type inference.
+export const adminDb = admin.apps.length ? getFirestore() : null;
+export const adminAuth = admin.apps.length ? getAuth() : null;
+
 /** Helpers */
-// We use the direct namespace to avoid initialization requirements for types
-export const FieldValue = admin.firestore?.FieldValue;
-export const Timestamp = admin.firestore?.Timestamp;
+// FIX: Re-exporting aliased imports to avoid naming conflicts with client-side SDK.
+export const FieldValue = AdminFieldValue;
+export const Timestamp = AdminTimestamp;

@@ -37,8 +37,8 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
     const isPaidLesson = product.price > 0;
     const newBookingRef = adminDb.collection('bookings').doc();
     
-    let startTime: any = null;
-    let endTime: any = null;
+    let startTime: AdminTimestamp | null = null;
+    let endTime: AdminTimestamp | null = null;
     let finalDate = payload.date;
     let finalTime = payload.time;
 
@@ -113,14 +113,14 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
 
             const bookingConflict = potentialBookingsSnapshot.docs.some((doc: QueryDocumentSnapshot) => {
                 const booking = doc.data() as Booking;
-                return (booking.endTime as AdminTimestamp).toDate() > startTime.toDate();
+                return (booking.endTime as AdminTimestamp).toDate() > startTime!.toDate();
             });
 
             if (bookingConflict) throw new Error('slot_already_booked');
             
             const timeOffConflict = potentialTimeOffSnapshot.docs.some((doc: QueryDocumentSnapshot) => {
                 const block = doc.data();
-                return new Date(block.endISO) > startTime.toDate();
+                return new Date(block.endISO) > startTime!.toDate();
             });
 
             if (timeOffConflict) throw new Error('tutor_unavailable');
