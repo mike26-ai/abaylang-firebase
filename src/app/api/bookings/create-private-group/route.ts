@@ -5,6 +5,7 @@ import { z } from 'zod';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { addMinutes, parse } from 'date-fns';
 import { createBooking } from '@/services/bookingService';
+import type { Transaction } from 'firebase-admin/firestore';
 
 const PrivateGroupMemberSchema = z.object({
   uid: z.string().optional(), // Make UID optional for incoming non-leader members
@@ -37,7 +38,7 @@ async function _createPrivateGroupBooking(payload: PrivateGroupPayload, decodedT
     const endTime = Timestamp.fromDate(addMinutes(startDateTime, payload.duration));
     const allParticipants = [payload.leader, ...payload.members];
 
-    return await adminDb.runTransaction(async (transaction) => {
+    return await adminDb.runTransaction(async (transaction: Transaction) => {
         // 1. Check for booking conflicts for the tutor
         const bookingsRef = adminDb!.collection('bookings');
         const bookingConflictQuery = bookingsRef

@@ -4,12 +4,12 @@
  * It now uses the server-side product catalog as the single source of truth.
  */
 import { adminDb, Timestamp, FieldValue } from '@/lib/firebase-admin';
-import type { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
-import type { Transaction } from 'firebase-admin/firestore';
+import type { Timestamp as AdminTimestamp, Transaction, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { addMinutes, parse, format } from 'date-fns';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { products, type ProductId } from '@/config/products';
 import { paddlePriceIds } from '@/config/paddle';
+import type { Booking } from '@/lib/types';
 
 interface BookingPayload {
   productId: ProductId;
@@ -111,14 +111,14 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
                 transaction.get(potentialTimeOffConflictsQuery)
             ]);
 
-            const bookingConflict = potentialBookingsSnapshot.docs.some(doc => {
-                const booking = doc.data();
+            const bookingConflict = potentialBookingsSnapshot.docs.some((doc: QueryDocumentSnapshot) => {
+                const booking = doc.data() as Booking;
                 return (booking.endTime as AdminTimestamp).toDate() > startTime.toDate();
             });
 
             if (bookingConflict) throw new Error('slot_already_booked');
             
-            const timeOffConflict = potentialTimeOffSnapshot.docs.some(doc => {
+            const timeOffConflict = potentialTimeOffSnapshot.docs.some((doc: QueryDocumentSnapshot) => {
                 const block = doc.data();
                 return new Date(block.endISO) > startTime.toDate();
             });

@@ -1,6 +1,7 @@
 // File: src/app/api/admin/inquiries/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, Timestamp } from '@/lib/firebase-admin';
+import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
     const inquiriesSnapshot = await adminDb.collection('contactMessages').orderBy('createdAt', 'desc').get();
     
     // 3. Serialize the data
-    const inquiries = inquiriesSnapshot.docs.map(doc => {
+    const inquiries = inquiriesSnapshot.docs.map((doc: QueryDocumentSnapshot) => {
       const data = doc.data();
       return {
         ...data,

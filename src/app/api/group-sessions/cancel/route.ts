@@ -2,6 +2,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, Timestamp } from '@/lib/firebase-admin';
 import { z } from 'zod';
+import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 const CancelGroupSessionSchema = z.object({
   sessionId: z.string().min(1, "Session ID is required."),
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     
     if (!bookingsSnapshot.empty) {
         const batch = adminDb.batch();
-        bookingsSnapshot.docs.forEach(doc => {
+        bookingsSnapshot.docs.forEach((doc: QueryDocumentSnapshot) => {
             batch.update(doc.ref, { 
                 status: 'cancelled-by-admin',
                 cancellationReason: 'The group session was cancelled by the administrator.'

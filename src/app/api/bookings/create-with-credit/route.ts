@@ -1,12 +1,12 @@
 // File: src/app/api/bookings/create-with-credit/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, Timestamp, FieldValue } from '@/lib/firebase-admin';
-import type { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
+import type { Timestamp as AdminTimestamp, Transaction, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { products, isValidProductId } from '@/config/products';
 import { addMinutes, parse } from 'date-fns';
-import type { UserCredit } from '@/lib/types';
+import type { UserCredit, Booking } from '@/lib/types';
 import { creditToLessonMap } from '@/config/creditMapping';
 
 // Zod schema for input validation
@@ -38,7 +38,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
     const endTime = Timestamp.fromDate(addMinutes(startDateTime, lessonDetails.duration as number));
     const userRef = adminDb.collection('users').doc(payload.userId);
     
-    return await adminDb.runTransaction(async (transaction) => {
+    return await adminDb.runTransaction(async (transaction: Transaction) => {
         // --- 1. Verify Credit Balance & Time Slot Availability ---
         const userDoc = await transaction.get(userRef);
         if (!userDoc.exists) throw new Error('user_not_found');
@@ -71,8 +71,8 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
             transaction.get(potentialTimeOffConflictsQuery)
         ]);
 
-        const bookingConflict = potentialBookingsSnapshot.docs.some(doc => {
-            const booking = doc.data();
+        const bookingConflict = potentialBookingsSnapshot.docs.some((doc: QueryDocumentSnapshot) => {
+            const booking = doc.data() as Booking;
             return (booking.endTime as AdminTimestamp).toDate() > startTime.toDate();
         });
 
@@ -80,7 +80,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
             throw new Error('slot_already_booked');
         }
 
-        const timeOffConflict = potentialTimeOffSnapshot.docs.some(doc => {
+        const timeOffConflict = potentialTimeOffSnapshot.docs.some((doc: QueryDocumentSnapshot) => {
             const block = doc.data();
             return new Date(block.endISO) > startTime.toDate();
         });

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { differenceInHours, parse } from 'date-fns';
 import { creditToLessonMap } from '@/config/creditMapping';
 import type { Booking } from '@/lib/types';
+import type { Transaction } from 'firebase-admin/firestore';
 
 const RequestCancellationSchema = z.object({
   bookingId: z.string().min(1, "Booking ID is required."),
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
         const userRef = adminDb.collection('users').doc(booking.userId);
         let issuedCredit = null;
 
-        await adminDb.runTransaction(async (transaction) => {
+        await adminDb.runTransaction(async (transaction: Transaction) => {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists) throw new Error("User not found for credit issuance.");
             

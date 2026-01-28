@@ -1,7 +1,7 @@
 // File: src/app/api/group-sessions/create/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, Timestamp, FieldValue } from '@/lib/firebase-admin';
-import type { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
+import type { Timestamp as AdminTimestamp, Transaction, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { addMinutes, isBefore } from 'date-fns';
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
     const endDateTime = addMinutes(startDateTime, sessionTypeDetails.duration);
 
-    const newSessionId = await adminDb.runTransaction(async (transaction) => {
+    const newSessionId = await adminDb.runTransaction(async (transaction: Transaction) => {
       const startTimestamp = Timestamp.fromDate(startDateTime);
       const endTimestamp = Timestamp.fromDate(endDateTime);
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
           .where('startTime', '<', endTimestamp);
       
       const bookingSnapshot = await transaction.get(potentialBookingConflictsQuery);
-      const bookingConflict = bookingSnapshot.docs.some(doc => (doc.data().endTime as AdminTimestamp).toDate() > startDateTime);
+      const bookingConflict = bookingSnapshot.docs.some((doc: QueryDocumentSnapshot) => (doc.data().endTime as AdminTimestamp).toDate() > startDateTime);
       if (bookingConflict) {
         throw new Error('A private lesson is already booked in this time slot.');
       }
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           .where('startTime', '<', endTimestamp);
 
       const groupSnapshot = await transaction.get(potentialGroupConflictsQuery);
-      const groupConflict = groupSnapshot.docs.some(doc => (doc.data().endTime as AdminTimestamp).toDate() > startDateTime);
+      const groupConflict = groupSnapshot.docs.some((doc: QueryDocumentSnapshot) => (doc.data().endTime as AdminTimestamp).toDate() > startDateTime);
        if (groupConflict) {
           throw new Error('Another group session is already scheduled in this time slot.');
       }
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
           .where('startISO', '<', endDateTime.toISOString());
           
       const timeOffSnapshot = await transaction.get(potentialTimeOffConflictsQuery);
-      const timeOffConflict = timeOffSnapshot.docs.some(doc => new Date(doc.data().endISO) > startDateTime);
+      const timeOffConflict = timeOffSnapshot.docs.some((doc: QueryDocumentSnapshot) => new Date(doc.data().endISO) > startDateTime);
       if (timeOffConflict) {
           throw new Error('The tutor has blocked off this time as unavailable.');
       }

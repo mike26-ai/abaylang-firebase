@@ -1,7 +1,7 @@
 import { adminDb, Timestamp, FieldValue } from '@/lib/firebase-admin';
 import type { Booking, TimeOff } from '@/lib/types';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import type { Transaction } from 'firebase-admin/firestore';
+import type { Transaction, QueryDocumentSnapshot, Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
 import { startOfDay, endOfDay, parseISO } from 'date-fns';
 
 export async function _getAvailability(tutorId: string, date: string) {
@@ -27,12 +27,12 @@ export async function _getAvailability(tutorId: string, date: string) {
     ]);
     
     const bookings = bookingsSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as Booking))
-        .filter(booking => (booking.endTime as any).toDate() > dayStart);
+        .map((doc: QueryDocumentSnapshot) => ({ id: doc.id, ...doc.data() } as Booking))
+        .filter((booking: Booking) => (booking.endTime as AdminTimestamp).toDate() > dayStart);
 
     const timeOff = timeOffSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as TimeOff))
-        .filter(block => new Date(block.endISO) > dayStart);
+        .map((doc: QueryDocumentSnapshot) => ({ id: doc.id, ...doc.data() } as TimeOff))
+        .filter((block: TimeOff) => new Date(block.endISO) > dayStart);
 
     return { bookings, timeOff };
 }

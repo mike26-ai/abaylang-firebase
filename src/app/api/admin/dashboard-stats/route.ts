@@ -53,34 +53,34 @@ export async function GET(request: NextRequest) {
     ]);
 
     // 3. Process the results in-memory to avoid complex index requirements
-    const allBookings = allBookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
-    const allTestimonials = allTestimonialsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial));
+    const allBookings = allBookingsSnapshot.docs.map((doc: QueryDocumentSnapshot) => ({ id: doc.id, ...doc.data() } as Booking));
+    const allTestimonials = allTestimonialsSnapshot.docs.map((doc: QueryDocumentSnapshot) => ({ id: doc.id, ...doc.data() } as Testimonial));
 
-    const upcomingBookingsCount = allBookings.filter(doc => {
+    const upcomingBookingsCount = allBookings.filter((doc: Booking) => {
         const bookingDate = doc.date;
         if (!bookingDate || typeof bookingDate !== 'string') return false;
         const date = new Date(bookingDate);
         return doc.status === 'confirmed' && (isNaN(date.getTime()) ? false : date >= today);
     }).length;
 
-    const newBookingsCount = allBookings.filter(doc => 
+    const newBookingsCount = allBookings.filter((doc: Booking) => 
         ['awaiting-payment', 'payment-pending-confirmation'].includes(doc.status)
     ).length;
 
     const pendingResolutions = allBookings
-        .filter(doc => doc.status === 'cancellation-requested')
-        .sort((a, b) => (b.createdAt as any).toMillis() - (a.createdAt as any).toMillis());
+        .filter((doc: Booking) => doc.status === 'cancellation-requested')
+        .sort((a: Booking, b: Booking) => (b.createdAt as any).toMillis() - (a.createdAt as any).toMillis());
 
     const pendingTestimonials = allTestimonials
-        .filter(t => t.status === 'pending')
-        .sort((a, b) => (b.createdAt as any).toMillis() - (a.createdAt as any).toMillis());
+        .filter((t: Testimonial) => t.status === 'pending')
+        .sort((a: Testimonial, b: Testimonial) => (b.createdAt as any).toMillis() - (a.createdAt as any).toMillis());
 
     const approvedRatings = allTestimonials
-        .filter(t => t.status === 'approved')
-        .map(t => t.rating);
+        .filter((t: Testimonial) => t.status === 'approved')
+        .map((t: Testimonial) => t.rating);
 
     const averageRating = approvedRatings.length > 0 
-        ? approvedRatings.reduce((sum, rating) => sum + rating, 0) / approvedRatings.length 
+        ? approvedRatings.reduce((sum: number, rating: number) => sum + rating, 0) / approvedRatings.length 
         : 0;
 
     const stats = {
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     };
 
     const serializeTimestamp = (docs: DocumentData[]) => 
-      docs.map(doc => {
+      docs.map((doc: DocumentData) => {
           const data = doc;
           const serializedData: { [key: string]: any } = { id: doc.id };
           for (const key in data) {
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       });
       
     const serializeSnapshot = (docs: QueryDocumentSnapshot[]) => 
-        docs.map(doc => {
+        docs.map((doc: QueryDocumentSnapshot) => {
             const data = doc.data();
             const serializedData: { [key: string]: any } = { id: doc.id };
             for (const key in data) {

@@ -1,8 +1,7 @@
-
 // File: src/app/api/paddle/webhook/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { Paddle, type TransactionCompletedEvent } from '@paddle/paddle-node-sdk';
-import { adminDb, FieldValue, Timestamp } from '@/lib/firebase-admin';
+import { adminDb, FieldValue } from '@/lib/firebase-admin';
 import type { Transaction } from 'firebase-admin/firestore';
 import { products, type ProductId } from '@/config/products';
 

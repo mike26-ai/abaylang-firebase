@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     const { bookingId, approved } = validation.data;
     const bookingRef = adminDb.collection('bookings').doc(bookingId);
 
-    await adminDb.runTransaction(async (transaction) => {
+    await adminDb.runTransaction(async (transaction: Transaction) => {
       const bookingDoc = await transaction.get(bookingRef);
       if (!bookingDoc.exists) {
         throw new Error('Booking not found.');

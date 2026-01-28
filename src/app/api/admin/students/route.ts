@@ -1,6 +1,7 @@
 // File: src/app/api/admin/students/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, Timestamp } from '@/lib/firebase-admin';
+import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic'; // Ensures the route is not cached
 
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     const usersSnapshot = await adminDb.collection('users').orderBy('createdAt', 'desc').get();
     
     // 3. Serialize the data to be client-safe
-    const students = usersSnapshot.docs.map(doc => {
+    const students = usersSnapshot.docs.map((doc: QueryDocumentSnapshot) => {
       const data = doc.data();
       // Safely convert Timestamps to ISO strings
       const createdAt = data.createdAt;

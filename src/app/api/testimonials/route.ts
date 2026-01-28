@@ -1,6 +1,7 @@
 // File: src/app/api/testimonials/route.ts
 import { NextResponse } from 'next/server';
 import { adminDb, FieldValue, Timestamp } from '@/lib/firebase-admin';
+import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
       return NextResponse.json([]);
     }
     
-    const data = snapshot.docs.map((doc) => {
+    const data = snapshot.docs.map((doc: QueryDocumentSnapshot) => {
         const docData = doc.data();
         return { 
             id: doc.id, 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb, Timestamp } from '@/lib/firebase-admin';
+import type { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ success: true, data: [] });
     }
 
-    const sessions = sessionsSnapshot.docs.map(doc => {
+    const sessions = sessionsSnapshot.docs.map((doc: QueryDocumentSnapshot) => {
       const data = doc.data();
       const parseTimestamp = (value: any) =>
         value instanceof Timestamp ? value.toDate().toISOString() : null;
