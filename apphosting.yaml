@@ -54,6 +54,13 @@ env:
   - variable: PADDLE_WEBHOOK_SECRET
     secret: PADDLE_WEBHOOK_SECRET
   
+  # --- Firebase Admin Secrets (Linked to Secret Manager) ---
+  - variable: ADMIN_FIREBASE_PROJECT_ID
+    secret: ADMIN_FIREBASE_PROJECT_ID
+  - variable: ADMIN_FIREBASE_CLIENT_EMAIL
+    secret: ADMIN_FIREBASE_CLIENT_EMAIL
+  - variable: ADMIN_FIREBASE_PRIVATE_KEY
+    secret: ADMIN_FIREBASE_PRIVATE_KEY
   # --- Optional Server-Side Secrets for Image Uploads ---
   # Uncomment the following lines and create the corresponding secrets in Google
   # Secret Manager if you want to enable the optional Cloudinary image upload feature.
