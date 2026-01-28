@@ -32,11 +32,9 @@ if (!admin.apps.length) {
 }
 
 /** Firestore */
-export const adminDb = getFirestore();
-
-/** Auth */
-export const adminAuth = getAuth();
-
+export const adminDb = admin.apps.length ? getFirestore() : null as any;
+export const adminAuth = admin.apps.length ? getAuth() : null as any;
 /** Helpers */
-export const FieldValue = admin.firestore.FieldValue;
-export const Timestamp = admin.firestore.Timestamp;
+// We use the direct namespace to avoid initialization requirements for types
+export const FieldValue = admin.firestore?.FieldValue;
+export const Timestamp = admin.firestore?.Timestamp;
