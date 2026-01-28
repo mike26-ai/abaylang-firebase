@@ -55,6 +55,9 @@ export async function _blockSlot(payload: BlockSlotPayload) {
     const endTime = new Date(endISO);
 
     await adminDb.runTransaction(async (transaction: Transaction) => {
+        if (!adminDb) { // Added null check for type safety inside transaction
+          throw new Error("Database service is not available inside transaction.");
+        }
         const bookingsRef = adminDb.collection('bookings');
         const conflictQuery = bookingsRef
             .where('tutorId', '==', tutorId)
