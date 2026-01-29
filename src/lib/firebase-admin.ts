@@ -31,12 +31,13 @@ if (!admin.apps.length) {
   }
 }
 
-/** Firestore */
-// FIX: Removed 'as any' to allow for correct type inference.
-export const adminDb = admin.apps.length ? getFirestore() : null;
-export const adminAuth = admin.apps.length ? getAuth() : null;
+/** 
+ * Build-Safe Database and Auth Exports
+ * This pattern prevents 'null' crashes and works during the build phase.
+ */
+export const adminDb = admin.apps.length ? getFirestore() : ({} as any);
+export const adminAuth = admin.apps.length ? getAuth() : ({} as any);
 
 /** Helpers */
-// FIX: Re-exporting aliased imports to avoid naming conflicts with client-side SDK.
-export const FieldValue = AdminFieldValue;
-export const Timestamp = AdminTimestamp;
+export const FieldValue = admin.firestore?.FieldValue;
+export const Timestamp = admin.firestore?.Timestamp;
