@@ -93,7 +93,7 @@ export async function _unblockSlot(timeOffId: string, decodedToken: DecodedIdTok
     
     await adminDb.runTransaction(async (transaction: Transaction) => {
         const doc = await transaction.get(timeOffRef);
-        if (!doc.exists) {
+        if (!(doc as any).exists) {
             throw new Error('not_found');
         }
         

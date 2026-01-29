@@ -69,9 +69,9 @@ export async function POST(request: NextRequest) {
 
         await adminDb.runTransaction(async (transaction: Transaction) => {
             const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists) throw new Error("User not found for credit issuance.");
+            if (!(userDoc as any).exists)throw new Error("User not found for credit issuance.");
             
-            const userData = userDoc.data()!;
+            const userData = (userDoc as any).data()!;
             // Determine credit type from the original booking's product ID
             const creditType = Object.keys(creditToLessonMap).find(key => creditToLessonMap[key] === booking.productId) || booking.productId;
             

@@ -41,9 +41,9 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
     return await adminDb.runTransaction(async (transaction: Transaction) => {
         // --- 1. Verify Credit Balance & Time Slot Availability ---
         const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists) throw new Error('user_not_found');
+        if (!(userDoc as any).exists) throw new Error('user_not_found');
         
-        const userData = userDoc.data()!;
+        const userData = (userDoc as any).data()!;
         const currentCredits: UserCredit[] = userData.credits || [];
         const creditIndex = currentCredits.findIndex(c => c.lessonType === payload.creditType);
 
@@ -71,7 +71,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
             transaction.get(potentialTimeOffConflictsQuery)
         ]);
 
-        const bookingConflict = potentialBookingsSnapshot.docs.some((doc: QueryDocumentSnapshot) => {
+        const bookingConflict = potentialBookingsSnapshot.docs.some((doc: any) => {
             const booking = doc.data() as Booking;
             return (booking.endTime as AdminTimestamp).toDate() > startTime.toDate();
         });
@@ -80,7 +80,7 @@ async function _createBookingWithCredit(payload: CreateWithCreditPayload, decode
             throw new Error('slot_already_booked');
         }
 
-        const timeOffConflict = potentialTimeOffSnapshot.docs.some((doc: QueryDocumentSnapshot) => {
+        const timeOffConflict = potentialTimeOffSnapshot.docs.some((doc: any) =>{
             const block = doc.data();
             return new Date(block.endISO) > startTime.toDate();
         });

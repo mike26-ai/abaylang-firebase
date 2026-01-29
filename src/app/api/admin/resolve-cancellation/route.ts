@@ -23,11 +23,11 @@ async function handleCreditIssuance(transaction: Transaction, booking: Booking) 
   const userRef = adminDb.collection('users').doc(booking.userId);
   const userDoc = await transaction.get(userRef);
 
-  if (!userDoc.exists) {
+  if (!(userDoc as any).exists){
     throw new Error(`User with ID ${booking.userId} not found.`);
   }
   
-  const userData = userDoc.data()!;
+  const userData = (userDoc as any).data()!;
   const lessonType = booking.lessonType || '';
   const creditTypeToGrant = lessonTypeCreditMap[lessonType] || (booking.duration === 30 ? 'starter-bundle' : 'foundation-pack');
 
@@ -77,10 +77,10 @@ export async function POST(request: NextRequest) {
 
     await adminDb.runTransaction(async (transaction: Transaction) => {
       const bookingDoc = await transaction.get(bookingRef);
-      if (!bookingDoc.exists) {
+      if (!(bookingDoc as any).exists) {
         throw new Error('Booking not found.');
       }
-      const booking = bookingDoc.data() as Booking;
+      const booking = (bookingDoc as any).data() as Booking;
 
       if (booking.status !== 'cancellation-requested') {
         throw new Error('This booking is not pending a cancellation request.');

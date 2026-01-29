@@ -49,9 +49,9 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
             const sessionRef = adminDb!.collection('groupSessions').doc(payload.groupSessionId);
             const sessionDoc = await transaction.get(sessionRef);
 
-            if (!sessionDoc.exists) throw new Error('group_session_not_found');
+            if (!(sessionDoc as any).exists) throw new Error('group_session_not_found');
             
-            const sessionData = sessionDoc.data()!;
+            const sessionData = (sessionDoc as any).data()!;
             if (sessionData.participantCount >= sessionData.maxStudents) {
                 throw new Error('group_session_full');
             }
@@ -111,14 +111,14 @@ export async function _createBooking(payload: BookingPayload, decodedToken: Deco
                 transaction.get(potentialTimeOffConflictsQuery)
             ]);
 
-            const bookingConflict = potentialBookingsSnapshot.docs.some((doc: QueryDocumentSnapshot) => {
+            const bookingConflict = potentialBookingsSnapshot.docs.some((doc: any) => {
                 const booking = doc.data() as Booking;
                 return (booking.endTime as AdminTimestamp).toDate() > startTime!.toDate();
             });
 
             if (bookingConflict) throw new Error('slot_already_booked');
             
-            const timeOffConflict = potentialTimeOffSnapshot.docs.some((doc: QueryDocumentSnapshot) => {
+            const timeOffConflict = potentialTimeOffSnapshot.docs.some((doc: any) => {
                 const block = doc.data();
                 return new Date(block.endISO) > startTime!.toDate();
             });
