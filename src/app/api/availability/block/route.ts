@@ -23,9 +23,11 @@ const BlockTimeSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!adminAuth) {
-      throw new Error("Firebase Admin SDK not initialized.");
-    }
+    // We check for .verifyIdToken specifically to ensure the tool is ready!
+if (!adminAuth || typeof adminAuth.verifyIdToken !== 'function') {
+  console.error("Firebase Admin Error: Auth module not ready.");
+  return NextResponse.json({ success: false, error: 'Internal server initialization error.' }, { status: 500 });
+}
     // 1. Verify Authentication
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
