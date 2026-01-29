@@ -34,7 +34,7 @@ async function handleTransactionConfirmation(transactionId: string, customData: 
 
     await db.runTransaction(async (transaction: Transaction) => {
         const bookingDoc = await transaction.get(bookingDocRef);
-        if (!bookingDoc.exists) {
+        if (!(bookingDoc as any).exists) {
             console.error(`Webhook Error: Booking with ID ${booking_id} not found.`);
             // Don't throw, just log and exit. The transaction might be for something else.
             return;
@@ -52,12 +52,12 @@ async function handleTransactionConfirmation(transactionId: string, customData: 
             const creditType = product_id; // e.g., 'learning-intensive'
 
             const userDoc = await transaction.get(userDocRef);
-            if (!userDoc.exists) {
+            if (!(userDoc as any).exists) {
                 console.error(`Webhook Error: User with ID ${user_id} not found. Cannot allocate credits.`);
                 return; // Exit transaction
             }
 
-            const userData = userDoc.data();
+            const userData = (userDoc as any).data();
             const currentCredits = userData?.credits || [];
             const existingCreditIndex = currentCredits.findIndex((c: any) => c.lessonType === creditType);
             
