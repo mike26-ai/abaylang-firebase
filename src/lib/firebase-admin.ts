@@ -7,10 +7,10 @@ import { getAuth } from "firebase-admin/auth";
  * This version is "Build-Safe" to prevent Code 51 crashes.
  */
 
-// 1. Grab the "pointers" from the environment
-const projectId = process.env.ADMIN_FIREBASE_PROJECT_ID;
-const clientEmail = process.env.ADMIN_FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.ADMIN_FIREBASE_PRIVATE_KEY;
+// 1. Grab pointers and use .trim() as an Insurance Policy against illegal spaces!
+const projectId = process.env.ADMIN_FIREBASE_PROJECT_ID?.trim();
+const clientEmail = process.env.ADMIN_FIREBASE_CLIENT_EMAIL?.trim();
+const privateKey = process.env.ADMIN_FIREBASE_PRIVATE_KEY?.trim();
 
 if (!admin.apps.length) {
   // 2. THE SAFETY GUARD: Only initialize if all keys are present.
