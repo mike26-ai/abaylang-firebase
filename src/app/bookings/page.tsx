@@ -327,10 +327,28 @@ export default function BookLessonPage() {
                           <CardDescription>Choose an available date for your lesson.</CardDescription>
                       </CardHeader>
                       <CardContent>
-                          <DateSelection
-                            selectedDate={selectedDate}
-                            onDateSelect={handleDateSelect}
-                          />
+                      <CardContent>
+  <Select 
+    onValueChange={(val) => handleDateSelect(new Date(val))} 
+    value={selectedDate ? selectedDate.toISOString() : ""}
+  >
+    <SelectTrigger className="w-full h-12 bg-white border-2 border-[#EAB308]/20 rounded-xl shadow-sm text-gray-700">
+      <SelectValue placeholder="Pick a date to see availability..." />
+    </SelectTrigger>
+    <SelectContent className="bg-white z-[100] border-2 border-orange-100 shadow-xl">
+      {/* This creates the list of the next 30 days */}
+      {Array.from({ length: 30 }, (_, i) => addDays(startOfDay(new Date()), i)).map((date) => (
+        <SelectItem 
+          key={date.toISOString()} 
+          value={date.toISOString()}
+          className="cursor-pointer hover:bg-orange-50 py-3"
+        >
+          {format(date, 'EEEE, MMMM do')}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</CardContent>
                       </CardContent>
                 </Card>
 

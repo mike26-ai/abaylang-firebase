@@ -26,7 +26,7 @@ export function Footer() {
                   alt="ABYLANG logo" 
                   width={150} 
                   height={38} 
-                  className="h-28 w-auto md:h-26" // This makes it consistent with the header
+                  className="h-14 w-auto md:h-16" // This makes it consistent with the header
                 />
             </Link>
         </div>
