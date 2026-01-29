@@ -61,6 +61,22 @@ env:
     secret: ADMIN_FIREBASE_CLIENT_EMAIL
   - variable: ADMIN_FIREBASE_PRIVATE_KEY
     secret: ADMIN_FIREBASE_PRIVATE_KEY
+
+     # --- Public Variables (The Frontend "Gas") ---
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyBumiCm3dKkI8MWgSXesPXuONwTGkIKFAo"
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "amharic-connect.firebaseapp.com"
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "amharic-connect"
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "amharic-connect.firebasestorage.app"
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "673154458403"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:673154458403:web:6f7dd9aedefe920cf62296"
+  - variable: NEXT_PUBLIC_ADMIN_EMAIL
+    value: "mahdernmamo@gmail.com"
   # --- Optional Server-Side Secrets for Image Uploads ---
   # Uncomment the following lines and create the corresponding secrets in Google
   # Secret Manager if you want to enable the optional Cloudinary image upload feature.
