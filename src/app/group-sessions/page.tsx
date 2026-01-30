@@ -1,3 +1,4 @@
+
 // File: src/app/group-sessions/page.tsx
 "use client";
 
@@ -87,7 +88,7 @@ export default function GroupSessionsPage() {
           <AlertCircle className="h-12 w-12 text-destructive mb-4" />
           <h3 className="text-2xl font-bold text-foreground mb-3">Error Loading Sessions</h3>
           <p className="text-muted-foreground mb-8 text-lg">
-            We're having a small technical issue loading the group schedule. Please try refreshing the page.
+            We&apos;re having a small technical issue loading the group schedule. Please try refreshing the page.
           </p>
           <Button 
             onClick={() => window.location.reload()}
