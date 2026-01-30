@@ -20,10 +20,15 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: 'ABYLANG — Learn Amharic with a Native Tutor',
-  description: 'Connect to Ethiopian language and culture with Mahder Negash Mamo, a seasoned Amharic tutor offering live online lessons and cultural immersion through ABYLANG.',
+  title: 'ABYLANG | Learn Amharic Online with Native Tutor Mahder',
+  description: 'Connect to Ethiopian language and culture with Mahder Negash Mamo. Master Amharic with personalized 1-on-1 lessons and cultural immersion.',
+  manifest: '/site.webmanifest',
   icons: {
-    apple: '/icon-192x192.png',
+    icon: [
+      { url: '/icon.png', sizes: '96x96', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
   },
 };
 
