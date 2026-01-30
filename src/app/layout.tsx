@@ -43,7 +43,7 @@ export default function RootLayout({
         <ClientProviders>
           <div className="flex flex-col min-h-screen">
             <Navbar />
-            <main className="flex-grow pt-28 md:pt-36 px-4">{children}</main>
+            <main className="flex-grow pt-20 md:pt-24 px-4">{children}</main>
             <Footer />
           </div>
         </ClientProviders>

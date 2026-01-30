@@ -1,4 +1,3 @@
-
 // File: src/app/group-sessions/page.tsx
 "use client";
 
@@ -25,18 +24,18 @@ export default function GroupSessionsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchSessions() {
       setIsLoading(true);
+      setError(null);
       try {
         const fetchedSessions = await getGroupSessions();
         setSessions(fetchedSessions);
       } catch (error: any) {
-        toast({
-          title: 'Could Not Load Sessions',
-          description: "There was a problem retrieving the data. Please try refreshing the page.",
-        });
+        console.error("Fetch error:", error);
+        setError("Could not load sessions");
       } finally {
         setIsLoading(false);
       }
@@ -56,11 +55,11 @@ export default function GroupSessionsPage() {
         productId: (session.title.toLowerCase().includes('quick') ? 'quick-group-conversation' : 'immersive-conversation-practice') as ProductId,
         userId: user.uid,
         groupSessionId: session.id,
-        date: format((session.startTime as any).toDate(), 'yyyy-MM-dd'),
-        time: format((session.startTime as any).toDate(), 'HH:mm'),
+        date: format(new Date(session.startTime as any), 'yyyy-MM-dd'),
+        time: format(new Date(session.startTime as any), 'HH:mm'),
       });
       
-      // Redirect to Paddle for payment
+// Redirect to Paddle for payment
        window.location.href = redirectUrl;
 
     } catch (error: any) {
@@ -72,6 +71,92 @@ export default function GroupSessionsPage() {
       setIsBooking(null);
     }
   };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <Spinner size="lg" />
+        </div>
+      );
+    }
+    
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center p-12 bg-card rounded-lg border-2 border-destructive/20 text-center max-w-2xl mx-auto my-10">
+          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+          <h3 className="text-2xl font-bold text-foreground mb-3">Error Loading Sessions</h3>
+          <p className="text-muted-foreground mb-8 text-lg">
+            We're having a small technical issue loading the group schedule. Please try refreshing the page.
+          </p>
+          <Button 
+            onClick={() => window.location.reload()}
+            variant="destructive"
+          >
+            Retry Connection
+          </Button>
+        </div>
+      );
+    }
+
+    if (sessions.length === 0) {
+      return (
+        <Card className="text-center py-16 shadow-lg">
+          <CardHeader>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
+                <Calendar className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <CardTitle>No Upcoming Sessions</CardTitle>
+            <CardDescription>There are no public group sessions scheduled at the moment. Please check back later!</CardDescription>
+          </CardHeader>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {sessions.map((session) => {
+          const isFull = session.participantCount >= session.maxStudents;
+          return (
+            <Card key={session.id} className="flex flex-col shadow-lg">
+              <CardHeader>
+                <CardTitle>{session.title}</CardTitle>
+                <CardDescription>{session.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow space-y-4">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>{format(new Date(session.startTime as any), 'PPP')}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>{format(new Date(session.startTime as any), 'p')} ({session.duration} mins)</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  <span>
+                    {session.participantCount} / {session.maxStudents} spots filled
+                  </span>
+                  {isFull ? <Badge variant="destructive">Full</Badge> : <Badge variant="secondary">{session.maxStudents - session.participantCount} spots left</Badge>}
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Tag className="h-4 w-4" />
+                  <span className="font-semibold text-primary">${session.price} per person</span>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" onClick={() => handleBookSession(session)} disabled={isFull || isBooking === session.id}>
+                  {isBooking === session.id ? <Spinner size="sm" className="mr-2" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                  {isBooking === session.id ? 'Processing...' : 'Book Your Spot'}
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
 
   return (
     <div className="container py-12 px-4 md:px-6">
@@ -97,63 +182,9 @@ export default function GroupSessionsPage() {
                 </Button>
             </CardContent>
         </Card>
+      
+      {renderContent()}
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <Spinner size="lg" />
-        </div>
-      ) : sessions.length === 0 ? (
-        <Card className="text-center py-16 shadow-lg">
-          <CardHeader>
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
-                <Calendar className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <CardTitle>No Upcoming Sessions</CardTitle>
-            <CardDescription>There are no public group sessions scheduled at the moment. Please check back later!</CardDescription>
-          </CardHeader>
-        </Card>
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {sessions.map((session) => {
-            const isFull = session.participantCount >= session.maxStudents;
-            return (
-              <Card key={session.id} className="flex flex-col shadow-lg">
-                <CardHeader>
-                  <CardTitle>{session.title}</CardTitle>
-                  <CardDescription>{session.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow space-y-4">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>{format((session.startTime as any).toDate(), 'PPP')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>{format((session.startTime as any).toDate(), 'p')} ({session.duration} mins)</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>
-                      {session.participantCount} / {session.maxStudents} spots filled
-                    </span>
-                    {isFull ? <Badge variant="destructive">Full</Badge> : <Badge variant="secondary">{session.maxStudents - session.participantCount} spots left</Badge>}
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Tag className="h-4 w-4" />
-                    <span className="font-semibold text-primary">${session.price} per person</span>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full" onClick={() => handleBookSession(session)} disabled={isFull || isBooking === session.id}>
-                    {isBooking === session.id ? <Spinner size="sm" className="mr-2" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                    {isBooking === session.id ? 'Processing...' : 'Book Your Spot'}
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

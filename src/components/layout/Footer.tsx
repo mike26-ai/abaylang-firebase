@@ -16,7 +16,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t bg-[#1A1A1A] text-white py-16 px-4">
+    <footer className="border-t bg-[#334155] text-white py-16 px-4">
       <div className="container mx-auto">
         {/* LOGO SECTION: Centered and constrained */}
         <div className="flex justify-center mb-12">
